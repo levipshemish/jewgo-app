@@ -402,7 +402,7 @@ cache_service = RedisCacheService()
 def cache_decorator(ttl: int = 3600, namespace: str = None):
     """Decorator for automatic caching of function results."""
 
-    def decorator(func):
+    def cache_decorator_inner(func):
         def wrapper(*args, **kwargs):
             # Generate cache key from function name and arguments
             key_parts = [func.__name__]
@@ -420,4 +420,4 @@ def cache_decorator(ttl: int = 3600, namespace: str = None):
 
         return wrapper
 
-    return decorator
+    return cache_decorator_inner

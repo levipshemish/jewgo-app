@@ -59,6 +59,34 @@ class ImageRepository(BaseRepository[RestaurantImage]):
             self.logger.exception("Error getting restaurant images count", error=str(e))
             return 0
 
+    def get_images_for_restaurants(self, restaurant_ids: List[int]) -> Dict[int, List[RestaurantImage]]:
+        """Get images for multiple restaurants in a single query to avoid N+1 problem."""
+        try:
+            if not restaurant_ids:
+                return {}
+            
+            session = self.connection_manager.get_session()
+            images = (
+                session.query(RestaurantImage)
+                .filter(RestaurantImage.restaurant_id.in_(restaurant_ids))
+                .order_by(RestaurantImage.restaurant_id, RestaurantImage.image_order.asc())
+                .all()
+            )
+            session.close()
+            
+            # Group images by restaurant_id
+            images_map = {}
+            for image in images:
+                restaurant_id = image.restaurant_id
+                if restaurant_id not in images_map:
+                    images_map[restaurant_id] = []
+                images_map[restaurant_id].append(image)
+            
+            return images_map
+        except Exception as e:
+            self.logger.exception("Error getting bulk restaurant images", error=str(e))
+            return {}
+
     def add_restaurant_image(
         self,
         restaurant_id: int,

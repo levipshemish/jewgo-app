@@ -3,7 +3,7 @@
  * Provides order management functionality including order creation, retrieval, and status updates
  */
 
-import { OrderFormData, OrderItem } from '@/lib/types/order';
+import { OrderFormData as _OrderFormData, OrderItem as _OrderItem } from '@/lib/types/order';
 
 export interface CreateOrderRequest {
   restaurant_id: number;

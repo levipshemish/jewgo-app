@@ -72,7 +72,8 @@ export async function GET(_request: NextRequest) {
 
     if (accessToken) {
       try {
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+        // Prefer explicit BACKEND_URL, fallback to NEXT_PUBLIC_BACKEND_URL, then localhost
+        const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8082';
         const resp = await fetch(`${backendUrl}/api/auth/user-role`, {
           method: 'GET',
           headers: {

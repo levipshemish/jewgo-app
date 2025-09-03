@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Import Kosher Miami Data with Image Scraping
 ============================================
@@ -15,14 +14,11 @@ import json
 import time
 from pathlib import Path
 
-# Add the backend directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
-
-def import_kosher_miami_data():
+def import__data():
     """Import Kosher Miami data with image scraping."""
 
-    # Set environment variables (placeholders; provide real values via environment)
     os.environ.setdefault("CLOUDINARY_CLOUD_NAME", "your-cloudinary-cloud-name")
     os.environ.setdefault("CLOUDINARY_API_KEY", "your-cloudinary-api-key")
     os.environ.setdefault("CLOUDINARY_API_SECRET", "your-cloudinary-api-secret")
@@ -31,14 +27,11 @@ def import_kosher_miami_data():
     )
 
     try:
-        # Import the enhanced importer
-        from backend.utils.kosher_miami.image_enhanced_importer import (
-            ImageEnhancedKosherMiamiImporter,
+            ImageEnhancedImporter,
         )
 
-        # Load the Kosher Miami data
         data_file = (
-            Path(__file__).parent.parent / "data" / "kosher_miami_establishments.json"
+            Path(__file__).parent.parent / "data" / "_establishments.json"
         )
 
         if not data_file.exists():
@@ -52,10 +45,8 @@ def import_kosher_miami_data():
 
         print(f"📊 Found {len(restaurants)} restaurants in data file")
 
-        # Initialize the importer
-        importer = ImageEnhancedKosherMiamiImporter(enable_image_scraping=True)
+        importer = ImageEnhancedImporter(enable_image_scraping=True)
 
-        # Import restaurants (limit to first 10 for testing)
         test_restaurants = restaurants[:10]
         print(f"🔄 Importing first {len(test_restaurants)} restaurants...")
 
@@ -84,6 +75,5 @@ def import_kosher_miami_data():
     except Exception as e:
         print(f"❌ Error: {e}")
 
-
 if __name__ == "__main__":
-    import_kosher_miami_data()
+    import__data()

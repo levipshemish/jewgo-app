@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { useSupabase } from '@/lib/contexts/SupabaseContext';
 
-export interface FeatureFlag {
+export interface FeatureFlagConfig {
   enabled: boolean;
   description: string;
   version: string;
@@ -11,7 +11,7 @@ export interface FeatureFlag {
 }
 
 export interface FeatureFlagsResponse {
-  feature_flags: Record<string, FeatureFlag>;
+  feature_flags: Record<string, FeatureFlagConfig>;
   environment: string;
   user_id?: string;
 }
@@ -30,7 +30,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
   } = options;
 
   const { session } = useSupabase();
-  const [flags, setFlags] = useState<Record<string, FeatureFlag>>({});
+  const [flags, setFlags] = useState<Record<string, FeatureFlagConfig>>({});
   const [environment, setEnvironment] = useState<string>('');
   const [userId, setUserId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);

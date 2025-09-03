@@ -29,126 +29,164 @@ class ReviewServiceV4(BaseService):
         Returns:
             List of review dictionaries (both user and Google reviews)
         """
-        self.log_operation("get_reviews", restaurant_id=restaurant_id, status=status, include_google_reviews=include_google_reviews)
+        self.log_operation(
+            "get_reviews",
+            restaurant_id=restaurant_id,
+            status=status,
+            include_google_reviews=include_google_reviews,
+        )
         try:
-            # Get user reviews
-            self.logger.info(f"ReviewServiceV4: Calling db_manager.get_reviews with restaurant_id={restaurant_id}, status={status}")
-            user_reviews = self.db_manager.get_reviews(
-                restaurant_id=restaurant_id,
-                status=status,
-                limit=limit,
-                offset=offset,
-                filters=filters,
+            user_reviews = self._fetch_user_reviews(
+                restaurant_id, status, limit, offset, filters
             )
-            self.logger.info(f"ReviewServiceV4: db_manager returned {len(user_reviews)} user reviews")
-            
-            # Add source identifier to user reviews
-            for review in user_reviews:
-                review['source'] = 'user'
-            
-            # Get Google reviews if requested
-            google_reviews = []
-            if include_google_reviews and restaurant_id:
-                try:
-                    # Get restaurant to find place_id
-                    restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
-                    if restaurant and restaurant.get('place_id'):
-                        self.logger.info(f"ReviewServiceV4: Fetching Google reviews for place_id={restaurant['place_id']}")
-                        google_reviews = self.db_manager.get_google_reviews(
-                            restaurant_id=restaurant_id,
-                            place_id=restaurant['place_id'],
-                            limit=limit,
-                            offset=offset,
-                        )
-                        self.logger.info(f"ReviewServiceV4: db_manager returned {len(google_reviews)} Google reviews")
-                    else:
-                        self.logger.info(f"ReviewServiceV4: No place_id found for restaurant {restaurant_id}")
-                except Exception as e:
-                    self.logger.warning(f"ReviewServiceV4: Error fetching Google reviews: {e}")
-                    google_reviews = []
-            
-            # Get Google reviews from restaurant table google_reviews field
-            restaurant_google_reviews = []
-            if include_google_reviews and restaurant_id:
-                try:
-                    restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
-                    if restaurant and restaurant.get('google_reviews'):
-                        google_reviews_data = restaurant['google_reviews']
-                        self.logger.info(f"ReviewServiceV4: Google reviews data type: {type(google_reviews_data)}")
-                        self.logger.info(f"ReviewServiceV4: Google reviews data: {google_reviews_data}")
-                        
-                        if isinstance(google_reviews_data, str):
-                            import json
-                            import ast
-                            try:
-                                # First try to parse as JSON
-                                google_reviews_data = json.loads(google_reviews_data)
-                                self.logger.info(f"ReviewServiceV4: Parsed JSON successfully")
-                            except json.JSONDecodeError:
-                                try:
-                                    # If JSON fails, try to parse as Python literal (handles single quotes)
-                                    google_reviews_data = ast.literal_eval(google_reviews_data)
-                                    self.logger.info(f"ReviewServiceV4: Parsed Python literal successfully")
-                                except (ValueError, SyntaxError) as e:
-                                    self.logger.warning(f"ReviewServiceV4: Failed to parse google_reviews data: {e}")
-                                    google_reviews_data = None
-                        
-                        if google_reviews_data and isinstance(google_reviews_data, dict) and 'reviews' in google_reviews_data:
-                            # Format: {"reviews": [...], "overall_rating": 5, "total_reviews": 68}
-                            reviews_list = google_reviews_data['reviews']
-                            self.logger.info(f"ReviewServiceV4: Found {len(reviews_list)} reviews in dict format")
-                        elif google_reviews_data and isinstance(google_reviews_data, list):
-                            # Format: [{"author": "...", "rating": 5, "text": "...", "time": ...}]
-                            reviews_list = google_reviews_data
-                            self.logger.info(f"ReviewServiceV4: Found {len(reviews_list)} reviews in list format")
-                        else:
-                            reviews_list = []
-                            self.logger.info(f"ReviewServiceV4: No valid reviews found in data")
-                        
-                        for review in reviews_list:
-                            restaurant_google_reviews.append({
-                                'id': f"google_{review.get('google_review_id', review.get('time', 'unknown'))}",
-                                'restaurant_id': restaurant_id,
-                                'author_name': review.get('author_name', review.get('author', 'Anonymous')),
-                                'rating': review.get('rating', 0),
-                                'text': review.get('text', ''),
-                                'time': review.get('time', review.get('rating_date', '')),
-                                'relative_time_description': review.get('relative_time_description', ''),
-                                'profile_photo_url': review.get('profile_photo_url', ''),
-                                'source': 'google'
-                            })
-                        
-                        self.logger.info(f"ReviewServiceV4: Found {len(restaurant_google_reviews)} Google reviews from restaurant table")
-                except Exception as e:
-                    self.logger.warning(f"ReviewServiceV4: Error fetching Google reviews from restaurant table: {e}")
-                    restaurant_google_reviews = []
-            
-            # Combine reviews with user reviews first, then Google reviews
-            # Sort each type by date (most recent first)
-            user_reviews.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-            google_reviews.sort(key=lambda x: x.get('time', ''), reverse=True)
-            restaurant_google_reviews.sort(key=lambda x: x.get('time', ''), reverse=True)
-            
-            # Combine with user reviews first, then Google reviews from both sources
-            all_reviews = user_reviews + google_reviews + restaurant_google_reviews
-            
-            # Apply limit to combined results
-            if limit:
-                all_reviews = all_reviews[:limit]
-            
-            self.logger.info(
-                "Successfully retrieved combined reviews",
-                user_count=len(user_reviews),
-                google_count=len(google_reviews),
-                restaurant_google_count=len(restaurant_google_reviews),
-                total_count=len(all_reviews),
-                restaurant_id=restaurant_id,
-                status=status,
+            google_reviews = self._maybe_fetch_google_reviews(
+                restaurant_id, include_google_reviews, limit, offset
+            )
+            restaurant_google_reviews = self._maybe_parse_embedded_google_reviews(
+                restaurant_id, include_google_reviews
+            )
+            all_reviews = self._combine_and_limit_reviews(
+                user_reviews, google_reviews, restaurant_google_reviews, limit
+            )
+            self._log_combined_counts(
+                user_reviews,
+                google_reviews,
+                restaurant_google_reviews,
+                all_reviews,
+                restaurant_id,
+                status,
             )
             return all_reviews
         except Exception as e:
             self.logger.exception("Error retrieving reviews", error=str(e))
             raise
+
+    def _fetch_user_reviews(self, restaurant_id, status, limit, offset, filters):
+        self.logger.info(
+            "ReviewServiceV4: Calling db_manager.get_reviews",
+            extra={"restaurant_id": restaurant_id, "status": status},
+        )
+        user_reviews = self.db_manager.get_reviews(
+            restaurant_id=restaurant_id,
+            status=status,
+            limit=limit,
+            offset=offset,
+            filters=filters,
+        )
+        for review in user_reviews:
+            review["source"] = "user"
+        return user_reviews
+
+    def _maybe_fetch_google_reviews(
+        self, restaurant_id, include_google_reviews, limit, offset
+    ):
+        reviews = []
+        if include_google_reviews and restaurant_id:
+            try:
+                restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
+                if restaurant and restaurant.get("place_id"):
+                    self.logger.info(
+                        "ReviewServiceV4: Fetching Google reviews",
+                        extra={"place_id": restaurant["place_id"]},
+                    )
+                    reviews = self.db_manager.get_google_reviews(
+                        restaurant_id=restaurant_id,
+                        place_id=restaurant["place_id"],
+                        limit=limit,
+                        offset=offset,
+                    )
+            except Exception as e:
+                self.logger.warning(
+                    "ReviewServiceV4: Error fetching Google reviews",
+                    extra={"error": str(e)},
+                )
+        return reviews
+
+    def _maybe_parse_embedded_google_reviews(
+        self, restaurant_id, include_google_reviews
+    ):
+        agg_reviews = []
+        if include_google_reviews and restaurant_id:
+            try:
+                restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
+                data = restaurant.get("google_reviews") if restaurant else None
+                if not data:
+                    return []
+                reviews_list = self._parse_google_reviews_field(data)
+                for review in reviews_list:
+                    agg_reviews.append(
+                        {
+                            "id": f"google_{review.get('google_review_id', review.get('time', 'unknown'))}",
+                            "restaurant_id": restaurant_id,
+                            "author_name": review.get(
+                                "author_name", review.get("author", "Anonymous")
+                            ),
+                            "rating": review.get("rating", 0),
+                            "text": review.get("text", ""),
+                            "time": review.get("time", review.get("rating_date", "")),
+                            "relative_time_description": review.get(
+                                "relative_time_description", ""
+                            ),
+                            "profile_photo_url": review.get("profile_photo_url", ""),
+                            "source": "google",
+                        }
+                    )
+            except Exception as e:
+                self.logger.warning(
+                    "ReviewServiceV4: Error fetching Google reviews from restaurant table",
+                    extra={"error": str(e)},
+                )
+        return agg_reviews
+
+    def _parse_google_reviews_field(self, google_reviews_data):
+        if isinstance(google_reviews_data, str):
+            import json
+            import ast
+
+            try:
+                google_reviews_data = json.loads(google_reviews_data)
+            except json.JSONDecodeError:
+                try:
+                    google_reviews_data = ast.literal_eval(google_reviews_data)
+                except (ValueError, SyntaxError):
+                    return []
+        if isinstance(google_reviews_data, dict) and "reviews" in google_reviews_data:
+            return google_reviews_data["reviews"]
+        if isinstance(google_reviews_data, list):
+            return google_reviews_data
+        return []
+
+    def _combine_and_limit_reviews(
+        self, user_reviews, google_reviews, restaurant_google_reviews, limit
+    ):
+        user_reviews.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        google_reviews.sort(key=lambda x: x.get("time", ""), reverse=True)
+        restaurant_google_reviews.sort(key=lambda x: x.get("time", ""), reverse=True)
+        all_reviews = user_reviews + google_reviews + restaurant_google_reviews
+        if limit:
+            all_reviews = all_reviews[:limit]
+        return all_reviews
+
+    def _log_combined_counts(
+        self,
+        user_reviews,
+        google_reviews,
+        restaurant_google_reviews,
+        all_reviews,
+        restaurant_id,
+        status,
+    ):
+        self.logger.info(
+            "Successfully retrieved combined reviews",
+            extra={
+                "user_count": len(user_reviews),
+                "google_count": len(google_reviews),
+                "restaurant_google_count": len(restaurant_google_reviews),
+                "total_count": len(all_reviews),
+                "restaurant_id": restaurant_id,
+                "status": status,
+            },
+        )
 
     def get_reviews_count(
         self,

@@ -18,7 +18,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
-const actionTypes = {
+const _actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
   DISMISS_TOAST: "DISMISS_TOAST",
@@ -32,7 +32,7 @@ function genId() {
   return count.toString()
 }
 
-type ActionType = typeof actionTypes
+type ActionType = typeof _actionTypes
 
 type Action =
   | {
@@ -142,20 +142,20 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function createToast({ ...toastProps }: Toast) {
   const id = genId()
 
-  const update = (props: ToasterToast) =>
+  const update = (updateProps: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
-      toast: { ...props, id },
+      toast: { ...updateProps, id },
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
   dispatch({
     type: "ADD_TOAST",
     toast: {
-      ...props,
+      ...toastProps,
       id,
       open: true,
       onOpenChange: (open) => {
@@ -186,9 +186,9 @@ function useToast() {
 
   return {
     ...state,
-    toast,
+    toast: createToast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
 
-export { useToast, toast }
+export { useToast, createToast as toast }

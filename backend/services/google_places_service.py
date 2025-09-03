@@ -25,7 +25,7 @@ class GooglePlacesService(BaseService):
         super().__init__(db_manager, config)
         config_manager = ConfigManager()
         external_services = config_manager.get_external_services_config()
-        self.api_key = external_services.get('google_places_api_key')
+        self.api_key = external_services.get("google_places_api_key")
         self.base_url = "https://maps.googleapis.com/maps/api/place"
         if not self.api_key:
             logger.warning("Google Places API key not found in environment")
@@ -148,7 +148,7 @@ class GooglePlacesService(BaseService):
         Returns:
             True if successful, False otherwise
         """
-        context = create_error_context(restaurant_id=restaurant_id, place_id=place_id)
+        _ = create_error_context(restaurant_id=restaurant_id, place_id=place_id)
         if not place_id:
             # Get restaurant info to search for place
             if not self.db_manager:
@@ -194,7 +194,7 @@ class GooglePlacesService(BaseService):
         Returns:
             Dictionary with results summary
         """
-        context = create_error_context(limit=limit)
+        _ = create_error_context(limit=limit)
         if not self.db_manager:
             return {"success": False, "error": "No DB manager available"}
         # Get restaurants without recent reviews
@@ -236,9 +236,7 @@ class GooglePlacesService(BaseService):
         Returns:
             True if successful, False otherwise
         """
-        context = create_error_context(
-            restaurant_id=restaurant_id, website_url=website_url
-        )
+        _ = create_error_context(restaurant_id=restaurant_id, website_url=website_url)
         if not self.validate_website_url(website_url):
             self.log_operation(
                 "website_validation_failed",
@@ -266,7 +264,7 @@ class GooglePlacesService(BaseService):
         Returns:
             List of restaurant dictionaries
         """
-        context = create_error_context(limit=limit)
+        _ = create_error_context(limit=limit)
         if self.db_manager:
             return self.db_manager.get_restaurants_without_websites(limit)
         return []
@@ -278,7 +276,7 @@ class GooglePlacesService(BaseService):
         Returns:
             Dictionary with processing results
         """
-        context = create_error_context(restaurant_id=restaurant.get("id"))
+        _ = create_error_context(restaurant_id=restaurant.get("id"))
         restaurant_id = restaurant["id"]
         restaurant_name = restaurant["name"]
         address = restaurant.get("address", "")
@@ -319,7 +317,7 @@ class GooglePlacesService(BaseService):
         Returns:
             Dictionary with batch processing results
         """
-        context = create_error_context(limit=limit)
+        _ = create_error_context(limit=limit)
         if not self.db_manager:
             return {"success": False, "error": "No DB manager available"}
         # Get restaurants to process

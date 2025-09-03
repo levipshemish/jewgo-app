@@ -87,7 +87,7 @@ If you prefer to run tests manually:
 
 - Python 3.11.8+
 - Node.js 22.x
-- PostgreSQL (Neon recommended)
+- PostgreSQL (api.jewgo.app recommended)
 - Git
 - GitHub account
 

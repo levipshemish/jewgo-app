@@ -32,7 +32,7 @@ function buildAllowedOrigins(): Set<string> {
       } else {
         origins.add(`${parsed.protocol}//${parsed.host}`);
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn(`[ADMIN] Invalid URL in environment: ${url}`);
     }
   });

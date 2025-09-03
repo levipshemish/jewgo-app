@@ -52,6 +52,11 @@ class RestaurantRepository(BaseRepository[Restaurant]):
                     query = query.filter(Restaurant.kosher_category == kosher_type)
                 if status:
                     query = query.filter(Restaurant.status == status)
+            # Filter out obvious test data (restaurants with test-like names)
+            test_patterns = ['SUCCESS', 'TEST', '🎉', '🏆']
+            for pattern in test_patterns:
+                query = query.filter(~Restaurant.name.ilike(f'%{pattern}%'))
+            
             # Add ordering for consistent results
             query = query.order_by(Restaurant.id)
             restaurants = query.limit(limit).offset(offset).all()

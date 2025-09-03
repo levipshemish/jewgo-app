@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 
 import { BottomNavigation } from "@/components/navigation/ui"
+import { CategoryTabs } from "@/components/navigation/ui"
 import { MarketplaceAPI } from "@/lib/api/marketplace"
 import type {
   MarketplaceListing,
-  MarketplaceCategory,
+  MarketplaceCategory as _MarketplaceCategory,
   MarketplaceFilters as MarketplaceFiltersType,
-  MarketplaceStats,
+  MarketplaceStats as _MarketplaceStats,
 } from "@/lib/types/marketplace"
 
 import EnhancedMarketplaceGrid from "./EnhancedMarketplaceGrid"
@@ -167,7 +168,7 @@ function LocationDisplay() {
 
 export default function MarketplacePageClient() {
   const [products, setProducts] = useState<MarketplaceListing[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, _setSearchQuery] = useState("")
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: "",
     subcategory: "",
@@ -263,7 +264,7 @@ export default function MarketplacePageClient() {
       <div className="min-h-screen bg-gray-50">
         <MarketplaceHeader onSearch={handleSearch} />
         <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-          {/* CategoryTabs component removed - functionality moved to action buttons */}
+          <CategoryTabs activeTab="marketplace" />
         </div>
         <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
           <div className="max-w-7xl mx-auto space-y-4">
@@ -281,7 +282,7 @@ export default function MarketplacePageClient() {
             />
           </div>
         </div>
-        <BottomNavigation />
+        <BottomNavigation size="compact" showLabels="active-only" />
       </div>
     )
   }
@@ -290,7 +291,7 @@ export default function MarketplacePageClient() {
     <div className="min-h-screen bg-gray-50">
       <MarketplaceHeader onSearch={handleSearch} />
       <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-        {/* CategoryTabs component removed - functionality moved to action buttons */}
+        <CategoryTabs activeTab="marketplace" />
       </div>
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
         <div className="max-w-7xl mx-auto space-y-4">
@@ -324,7 +325,7 @@ export default function MarketplacePageClient() {
           isOpen={showEnhancedFilters}
         />
       </div>
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
     </div>
   )
 }

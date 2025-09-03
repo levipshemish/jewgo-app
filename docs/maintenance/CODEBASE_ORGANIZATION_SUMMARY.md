@@ -86,7 +86,7 @@ scripts/
 
 #### **🛠️ Utility Scripts**
 - `generate_admin_token.py`
-- `import_kosher_miami.py`
+- `import_.py`
 - `jewgo-cli.py`
 
 ## 📚 **Documentation Organization**

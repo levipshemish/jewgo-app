@@ -15,7 +15,7 @@ venv/
 
 # Documentation (not needed for deployment)
 DEPLOYMENT_GUIDE.md
-NEON_SETUP_GUIDE.md
+api.jewgo.app
 POSTGRESQL_SETUP.md
 
 # Python cache

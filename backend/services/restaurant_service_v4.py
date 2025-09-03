@@ -18,6 +18,9 @@ class RestaurantServiceV4(BaseService):
     def get_all_restaurants(
         self,
         filters: dict[str, Any] | None = None,
+        *,
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[dict[str, Any]]:
         """Get all restaurants with optional filtering.
         Args:
@@ -30,7 +33,8 @@ class RestaurantServiceV4(BaseService):
         # Handle database operation with specific error handling
         restaurants = handle_database_operation(
             operation=lambda: self.db_manager.get_restaurants(
-                limit=1000,  # Get all restaurants
+                limit=limit,
+                offset=offset,
                 as_dict=True,
                 filters=self._process_restaurant_filters(filters or {}),
             ),
@@ -180,18 +184,20 @@ class RestaurantServiceV4(BaseService):
             create_result = self.db_manager.restaurant_repo.create(processed_data)
             if not create_result or not create_result.get("id"):
                 raise Exception("Failed to create restaurant")
-            
+
             restaurant_id = create_result["id"]
-            
+
             # Return success with basic restaurant info
             created_restaurant = {
-                'id': restaurant_id,
-                'name': create_result.get("name"),
-                'status': 'pending',
-                'message': 'Restaurant created successfully and is pending approval'
+                "id": restaurant_id,
+                "name": create_result.get("name"),
+                "status": "pending",
+                "message": "Restaurant created successfully and is pending approval",
             }
-                
-            self.logger.info("Successfully created restaurant", restaurant_id=restaurant_id)
+
+            self.logger.info(
+                "Successfully created restaurant", restaurant_id=restaurant_id
+            )
             return created_restaurant
         except ValidationError:
             raise
@@ -549,7 +555,23 @@ class RestaurantServiceV4(BaseService):
     def _preprocess_restaurant_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess restaurant data before saving."""
         processed_data = data.copy()
-        # Handle business_images field - convert JSON string to array if needed
+        processed_data = self._normalize_business_images(processed_data)
+        processed_data = self._remove_unmodeled_fields(processed_data)
+        processed_data = self._extract_primary_image(processed_data)
+        processed_data = self._ensure_pending_status(processed_data)
+        processed_data = self._normalize_kosher_category(processed_data)
+        processed_data = self._normalize_kosher_flags(processed_data)
+        processed_data = self._parse_address_if_needed(processed_data)
+        if (
+            "hours_of_operation" not in processed_data
+            and "hours_open" in processed_data
+        ):
+            processed_data["hours_of_operation"] = processed_data["hours_open"]
+        return processed_data
+
+    def _normalize_business_images(
+        self, processed_data: dict[str, Any]
+    ) -> dict[str, Any]:
         if "business_images" in processed_data:
             business_images = processed_data["business_images"]
             self.logger.info(
@@ -567,7 +589,6 @@ class RestaurantServiceV4(BaseService):
                         result=processed_data["business_images"],
                     )
                 except (json.JSONDecodeError, TypeError) as e:
-                    # If it's not valid JSON, treat it as a single image
                     processed_data["business_images"] = (
                         [business_images] if business_images else []
                     )
@@ -575,7 +596,6 @@ class RestaurantServiceV4(BaseService):
                         "Failed to parse business_images as JSON", error=str(e)
                     )
             elif not isinstance(business_images, list):
-                # If it's not a list, convert to list
                 processed_data["business_images"] = (
                     [business_images] if business_images else []
                 )
@@ -583,124 +603,106 @@ class RestaurantServiceV4(BaseService):
                     "Converted business_images to list",
                     result=processed_data["business_images"],
                 )
-            else:
-                self.logger.info(
-                    "business_images already a list",
-                    result=processed_data["business_images"],
-                )
-        # Remove fields that don't exist in the database model
+        return processed_data
+
+    def _remove_unmodeled_fields(
+        self, processed_data: dict[str, Any]
+    ) -> dict[str, Any]:
         fields_to_remove = [
-            "description",  # Not in model
-            "business_email",  # Not in model  
-            "hours_open",  # Use hours_of_operation instead
-            "submission_status",  # Not in model
-            "submission_date",  # Use created_at instead
-            "is_owner_submission",  # Not in model
-            "owner_name",  # Not in model
-            "owner_email",  # Not in model
-            "owner_phone",  # Not in model
-            "business_license",  # Not in model
-            "tax_id",  # Not in model
-            "years_in_business",  # Not in model
-            "delivery_available",  # Not in model
-            "takeout_available",  # Not in model
-            "catering_available",  # Not in model
-            "preferred_contact_method",  # Not in model
-            "preferred_contact_time",  # Not in model
-            "contact_notes",  # Not in model
-            "instagram_link",  # Not in model
-            "facebook_link",  # Not in model
-            "tiktok_link",  # Not in model
-            "seating_capacity",  # Not in model
+            "description",
+            "business_email",
+            "hours_open",
+            "submission_status",
+            "submission_date",
+            "is_owner_submission",
+            "owner_name",
+            "owner_email",
+            "owner_phone",
+            "business_license",
+            "tax_id",
+            "years_in_business",
+            "delivery_available",
+            "takeout_available",
+            "catering_available",
+            "preferred_contact_method",
+            "preferred_contact_time",
+            "contact_notes",
+            "instagram_link",
+            "facebook_link",
+            "tiktok_link",
+            "seating_capacity",
         ]
-        
         for field in fields_to_remove:
             if field in processed_data:
-                self.logger.debug(f"Removing field '{field}' from restaurant data")
+                self.logger.debug("Removing field from data", field=field)
                 del processed_data[field]
-        
-        # Handle business_images - use first image as main image_url, then remove the field
+        return processed_data
+
+    def _extract_primary_image(self, processed_data: dict[str, Any]) -> dict[str, Any]:
         if "business_images" in processed_data and processed_data["business_images"]:
-            if isinstance(processed_data["business_images"], list) and len(processed_data["business_images"]) > 0:
+            if isinstance(processed_data["business_images"], list):
                 processed_data["image_url"] = processed_data["business_images"][0]
                 self.logger.info("Set image_url from first business_image")
-            # Remove business_images since it's not in the database model
             del processed_data["business_images"]
-            
-        # Ensure status is set to pending for new submissions
+        return processed_data
+
+    def _ensure_pending_status(self, processed_data: dict[str, Any]) -> dict[str, Any]:
         if "status" not in processed_data or processed_data["status"] == "active":
             processed_data["status"] = "pending"
             self.logger.info(
                 "Set status to pending", original_status=processed_data.get("status")
             )
-        # Capitalize kosher category
-        if "kosher_category" in processed_data and processed_data["kosher_category"]:
-            kosher_category = processed_data["kosher_category"].lower()
-            self.logger.info(
-                "Processing kosher_category",
-                original=processed_data["kosher_category"],
-                lowercase=kosher_category,
-            )
-            if kosher_category == "dairy":
-                processed_data["kosher_category"] = "Dairy"
-            elif kosher_category == "meat":
-                processed_data["kosher_category"] = "Meat"
-            elif kosher_category == "pareve":
-                processed_data["kosher_category"] = "Pareve"
+        return processed_data
+
+    def _normalize_kosher_category(
+        self, processed_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        value = processed_data.get("kosher_category")
+        if value:
+            lower = str(value).lower()
+            mapping = {"dairy": "Dairy", "meat": "Meat", "pareve": "Pareve"}
+            processed_data["kosher_category"] = mapping.get(lower, value)
             self.logger.info(
                 "Capitalized kosher_category", result=processed_data["kosher_category"]
             )
-        # Handle null values for kosher flags - convert empty strings to None
-        kosher_flags = ["is_cholov_yisroel", "is_pas_yisroel", "cholov_stam"]
-        for flag in kosher_flags:
+        return processed_data
+
+    def _normalize_kosher_flags(self, processed_data: dict[str, Any]) -> dict[str, Any]:
+        for flag in ["is_cholov_yisroel", "is_pas_yisroel", "cholov_stam"]:
             if flag in processed_data:
-                if processed_data[flag] == "" or processed_data[flag] is None:
+                val = processed_data[flag]
+                if val == "" or val is None:
                     processed_data[flag] = None
-                elif isinstance(processed_data[flag], str):
-                    # Convert string to boolean
-                    processed_data[flag] = processed_data[flag].lower() in [
-                        "true",
-                        "1",
-                        "yes",
-                    ]
-        # Parse address components if full address is provided
-        if "address" in processed_data and processed_data["address"]:
-            address = processed_data["address"]
-            # If address contains city, state, zip, try to parse it
+                elif isinstance(val, str):
+                    processed_data[flag] = val.lower() in ("true", "1", "yes")
+        return processed_data
+
+    def _parse_address_if_needed(
+        self, processed_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        address = processed_data.get("address")
+        if address:
             if "," in address and not processed_data.get("city"):
                 parts = address.split(",")
                 if len(parts) >= 2:
-                    # Extract street address (everything before the first comma)
                     processed_data["address"] = parts[0].strip()
-                    # Try to extract city, state, zip from remaining parts
                     remaining = ",".join(parts[1:]).strip()
                     if remaining:
-                        # Look for state and zip pattern
                         import re
 
-                        state_zip_pattern = r"([A-Z]{2})\s+(\d{5}(?:-\d{4})?)"
-                        match = re.search(state_zip_pattern, remaining)
+                        match = re.search(r"([A-Z]{2})\s+(\d{5}(?:-\d{4})?)", remaining)
                         if match:
-                            state = match.group(1)
-                            zip_code = match.group(2)
+                            state, zip_code = match.group(1), match.group(2)
                             city = (
                                 remaining.replace(f"{state} {zip_code}", "")
                                 .strip()
                                 .rstrip(",")
                                 .strip()
                             )
-                            if not processed_data.get("state"):
-                                processed_data["state"] = state
-                            if not processed_data.get("zip_code"):
-                                processed_data["zip_code"] = zip_code
-                            if not processed_data.get("city") and city:
+                            processed_data.setdefault("state", state)
+                            processed_data.setdefault("zip_code", zip_code)
+                            if city and not processed_data.get("city"):
                                 processed_data["city"] = city
-        # Ensure hours_of_operation is included
-        if (
-            "hours_of_operation" not in processed_data
-            and "hours_open" in processed_data
-        ):
-            processed_data["hours_of_operation"] = processed_data["hours_open"]
         return processed_data
 
     def _get_created_restaurant(self, data: dict[str, Any]) -> dict[str, Any]:

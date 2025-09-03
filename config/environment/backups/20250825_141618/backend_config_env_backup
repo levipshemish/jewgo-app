@@ -1,5 +1,5 @@
-# Database Configuration (Neon PostgreSQL)
-DATABASE_URL=postgresql://[neon-username]:[neon-password]@[neon-host]/[neon-database]?sslmode=require
+# Database Configuration (api.jewgo.app PostgreSQL)
+DATABASE_URL=postgresql://[api-user]:[api-pass]@api.jewgo.app/[api-db]?sslmode=require
 
 # Redis Configuration (Render Redis)
 REDIS_URL=redis://[render-redis-host]:[render-redis-port]

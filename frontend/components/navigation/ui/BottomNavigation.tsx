@@ -4,14 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, User, MessageSquare, Bell, Search} from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 import { useNotifications } from '@/lib/contexts/NotificationsContext';
 
 interface BottomNavigationProps {
   maxWidth?: string;
+  size?: 'compact' | 'default' | 'roomy';
+  showLabels?: 'always' | 'active-only' | 'never';
 }
 
-const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth = 'max-w-lg' }) => {
+const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth = 'max-w-lg', size = 'default', showLabels = 'always' }) => {
   const router = useRouter();
   const pathname = usePathname();
   const { unreadCount } = useNotifications();
@@ -20,9 +23,19 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   
   useEffect(() => {
     setIsHydrated(true);
+    // Ensure a stable portal container attached to document.body
+    const id = 'bottom-nav-portal';
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.setAttribute('id', id);
+      document.body.appendChild(el);
+    }
+    setPortalEl(el);
     const checkMobile = () => {
       const mobile = typeof window !== 'undefined' && window.innerWidth <= 768;
       setIsMobile(mobile);
@@ -81,17 +94,22 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
     router.push(href);
   };
 
-  return (
+  const navContent = (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[var(--z-bottom-nav)]"
+      className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[var(--z-bottom-nav)] pointer-events-auto rounded-t-2xl bottom-navigation-fixed"
       style={{ 
         backgroundColor: '#ffffff', 
         opacity: 1,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 'var(--z-bottom-nav)'
       }}
     >
-      <div className="w-full bg-white" style={{ backgroundColor: '#ffffff' }}>
-        <div className={`dynamic-bottom-nav flex items-center justify-around bg-white ${isHydrated && isMobileView ? 'mobile-nav' : ''}`} style={{ backgroundColor: '#ffffff' }}>
+      <div className="w-full bg-transparent">
+        <div className={`dynamic-bottom-nav flex items-center justify-around bg-transparent ${size === 'compact' ? 'px-2 py-1.5 gap-1' : size === 'roomy' ? 'px-4 py-3 gap-2' : 'px-3 py-2 gap-1'} ${isHydrated && isMobileView ? 'mobile-nav' : ''}`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.id === 'explore' && pathname === '/eatery');
@@ -101,7 +119,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
               <ButtonContainer
                 key={item.id}
                 onClick={() => handleNavigation(item.href)}
-                className="dynamic-bottom-nav-button flex flex-col items-center space-y-1 flex-1 transition-all duration-200 relative"
+                className={`dynamic-bottom-nav-button flex flex-col items-center ${size === 'roomy' ? 'space-y-1.5' : 'space-y-1'} flex-1 transition-all duration-200 relative rounded-xl ${size === 'compact' ? 'px-1.5 py-0.5' : size === 'roomy' ? 'px-3 py-2' : 'px-2 py-1'} ${isActive ? 'bg-gray-100' : 'bg-transparent'}`}
                 {...(isHydrated && !isMobile ? {
                   whileHover: { scale: 1.05 },
                   whileTap: { scale: 0.95 }
@@ -121,8 +139,8 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
               >
                 <div className="relative">
                   <Icon 
-                    size={22} 
-                    className={`${isActive ? 'text-black' : 'text-gray-400'} transition-colors duration-200`}
+                    size={size === 'compact' ? 22 : size === 'roomy' ? 26 : 24} 
+                    className={`${isActive ? 'text-black' : 'text-gray-500'} transition-colors duration-200`}
                   />
                   {/* Unread notifications indicator */}
                   {hasUnread && (
@@ -147,28 +165,22 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
                     </DivContainer>
                   )}
                 </div>
-                <span className={`dynamic-text-xs font-medium transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-400'}`}>
-                  {item.label}
-                </span>
+                {showLabels !== 'never' && (showLabels === 'always' || isActive) && (
+                  <span className={`${size === 'compact' ? 'text-[10px]' : size === 'roomy' ? 'text-xs' : 'text-[11px]'} leading-tight font-medium transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-500'}`}>
+                    {item.label}
+                  </span>
+                )}
                 {isHydrated && isMobile ? (
-                  isActive && (
-                    <div
-                      className="w-1 h-1 bg-black rounded-full mt-1"
-                      style={{
-                        transform: 'scale(1)',
-                        opacity: 1
-                      }}
-                    />
-                  )
+                  isActive && (<div className="w-5 h-0.5 bg-black rounded-full mt-1" />)
                 ) : (
                   <AnimatePresence>
                     {isActive && (
                       <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: 20, opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                        className="w-1 h-1 bg-black rounded-full mt-1"
+                        className="h-0.5 bg-black rounded-full mt-1"
                       />
                     )}
                   </AnimatePresence>
@@ -180,6 +192,9 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
       </div>
     </div>
   );
+
+  // Render via portal once hydrated to decouple from page layout/expanding viewport
+  return isHydrated && portalEl ? ReactDOM.createPortal(navContent, portalEl) : navContent;
 };
 
 export default BottomNavigation; 

@@ -220,5 +220,5 @@ fix(hours): accept human-readable blobs; normalize unicode/dashes; stop json.loa
 1. **Elimination of "bad record mac" errors** through proper TLS connection management
 2. **No more hours parsing errors** in logs due to robust format handling
 3. **Graceful degradation** instead of 500 errors when database is temporarily unavailable
-4. **Improved reliability** for long-running connections on Render/Neon
+4. **Improved reliability** for long-running connections on Render/api.jewgo.app
 5. **Better user experience** with consistent hours display regardless of data format

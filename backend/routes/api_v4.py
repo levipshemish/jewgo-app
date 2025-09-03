@@ -1,8 +1,8 @@
 import os
 import re
 from datetime import datetime
-from functools import wraps
 from typing import Any, Dict, Optional
+from flask import Blueprint, current_app, jsonify, request
 from utils.logging_config import get_logger
 from utils.limiter import limiter
 from werkzeug.exceptions import HTTPException
@@ -78,6 +78,7 @@ except ImportError:
     def require_admin_auth(f):
         return f
 
+
 # Super admin auth decorator
 try:
     # Use the canonical security decorator to ensure consistent, fail-closed checks
@@ -85,7 +86,8 @@ try:
 
     def require_super_admin_auth(f):
         """Require super_admin using the central security decorator."""
-        return _require_admin('super_admin')(f)
+        return _require_admin("super_admin")(f)
+
 except Exception:
     # Fallback: if security module unavailable, leave endpoint unmodified
     def require_super_admin_auth(f):
@@ -130,13 +132,11 @@ try:
 except ImportError:
     # Fallback decorator if feature flags module is not available
     def require_api_v4_flag(flag_name: str, default: bool = False):
-        def decorator(f):
+        def fallback_decorator(f):
             return f
 
-        return decorator
+        return fallback_decorator
 
-
-from flask import Blueprint, current_app, jsonify, request
 
 logger = get_logger(__name__)
 # !/usr/bin/env python3
@@ -164,19 +164,24 @@ if all(essential_dependencies):
 
     # Simple in-memory rate limiter for sensitive role mutation endpoints (dev safeguard only)
     _rate_limits: dict = {}
+
     def _allow_rate(user_key: str, max_ops: int = 30, window_sec: int = 60) -> bool:
         # Only apply rate limiting in development when explicitly enabled
-        if os.getenv('NODE_ENV') != 'development' or os.getenv('ENABLE_DEV_RATE_LIMITING') != 'true':
+        if (
+            os.getenv("NODE_ENV") != "development"
+            or os.getenv("ENABLE_DEV_RATE_LIMITING") != "true"
+        ):
             return True
-        
+
         import time
+
         now = int(time.time())
         bucket = _rate_limits.get(user_key)
-        if not bucket or now - bucket['ts'] >= window_sec:
-            bucket = {'count': 0, 'ts': now}
-        bucket['count'] += 1
+        if not bucket or now - bucket["ts"] >= window_sec:
+            bucket = {"count": 0, "ts": now}
+        bucket["count"] += 1
         _rate_limits[user_key] = bucket
-        return bucket['count'] <= max_ops
+        return bucket["count"] <= max_ops
 
     logger.info("API v4 blueprint created successfully")
     # Log which optional dependencies are missing
@@ -371,7 +376,7 @@ def get_restaurants():
         kosher_type = request.args.get("kosher_type")
         status = request.args.get("status")
         limit = min(int(request.args.get("limit", 100)), 1000)
-        offset = int(request.args.get("offset", 0))
+        offset = max(int(request.args.get("offset", 0)), 0)
         business_types = request.args.getlist("business_types")
         # Build filters
         filters = {}
@@ -381,14 +386,38 @@ def get_restaurants():
             filters["status"] = status
         if business_types:
             filters["business_types"] = business_types
+        # Optional field projection to reduce payload size
+        fields_param = request.args.get("fields")
+        selected_fields = None
+        if fields_param:
+            # Accept comma-separated list, trim whitespace
+            selected_fields = {f.strip() for f in fields_param.split(",") if f.strip()}
         # Use v4 service
         service = create_restaurant_service()
-        restaurants = service.get_all_restaurants(filters=filters)
-        # Apply pagination
-        total_count = len(restaurants)
-        paginated_restaurants = restaurants[offset : offset + limit]
+        # Get total count via DB for accurate pagination
+        db_manager, _, _ = get_service_dependencies()
+        total_count = 0
+        try:
+            if db_manager and hasattr(db_manager, "get_restaurants_count"):
+                total_count = db_manager.get_restaurants_count(
+                    filters=filters
+                )
+        except Exception:
+            # Fallback if count fails
+            total_count = 0
+        # Fetch only the current page from DB
+        paginated_restaurants = service.get_all_restaurants(
+            filters=filters,
+            limit=limit,
+            offset=offset,
+        )
+        # Apply field selection projection if requested
+        if selected_fields:
+            def _project(item: dict) -> dict:
+                return {k: v for k, v in item.items() if k in selected_fields}
+            paginated_restaurants = [_project(r) for r in paginated_restaurants]
         # Calculate total pages for frontend compatibility
-        total_pages = (total_count + limit - 1) // limit
+        total_pages = (total_count + limit - 1) // limit if total_count else 0
         # Return response in the format expected by frontend
         return (
             jsonify(
@@ -593,50 +622,53 @@ def get_restaurant_by_name(name: str):
         # Use the same approach as the working restaurants endpoint
         # Get database manager from the app context
         from flask import current_app
-        
+
         # Try to get the database manager from the app context
         db_manager = None
         try:
             # Try to access the database manager through the app context
-            if hasattr(current_app, 'deps') and 'get_db_manager' in current_app.deps:
-                db_manager = current_app.deps['get_db_manager']()
+            if hasattr(current_app, "deps") and "get_db_manager" in current_app.deps:
+                db_manager = current_app.deps["get_db_manager"]()
             else:
                 # Fallback: create a new database manager instance
                 from database.database_manager_v3 import EnhancedDatabaseManager
+
                 db_manager = EnhancedDatabaseManager()
                 if not db_manager.connect():
                     return error_response("Database connection failed", 503)
         except Exception as e:
             logger.error(f"Failed to get database manager: {e}")
             return error_response("Database connection failed", 503)
-        
+
         try:
             # Get all restaurants using the database manager
             restaurants = db_manager.get_restaurants(limit=1000, as_dict=True)
             logger.info(f"Retrieved {len(restaurants)} restaurants from database")
-            
+
             # Find restaurant by URL-friendly name
             for restaurant in restaurants:
-                restaurant_url_name = restaurant.get('name', '').lower()
-                restaurant_url_name = re.sub(r'[^a-z0-9\s-]', '', restaurant_url_name)
-                restaurant_url_name = re.sub(r'\s+', '-', restaurant_url_name)
-                restaurant_url_name = re.sub(r'-+', '-', restaurant_url_name).strip()
-                
+                restaurant_url_name = restaurant.get("name", "").lower()
+                restaurant_url_name = re.sub(r"[^a-z0-9\s-]", "", restaurant_url_name)
+                restaurant_url_name = re.sub(r"\s+", "-", restaurant_url_name)
+                restaurant_url_name = re.sub(r"-+", "-", restaurant_url_name).strip()
+
                 if restaurant_url_name == name.lower():
-                    logger.info(f"Found restaurant: {restaurant.get('name')} (ID: {restaurant.get('id')})")
+                    logger.info(
+                        f"Found restaurant: {restaurant.get('name')} (ID: {restaurant.get('id')})"
+                    )
                     return success_response({"restaurant": restaurant})
-            
+
             logger.warning(f"No restaurant found with name: {name}")
             return not_found_response(f"Restaurant with name '{name}'", "restaurant")
-            
+
         finally:
             # Close database connection if we created it
             try:
-                if hasattr(db_manager, 'close'):
+                if hasattr(db_manager, "close"):
                     db_manager.close()
             except Exception as e:
                 logger.warning(f"Error closing database connection: {e}")
-                
+
     except Exception as e:
         logger.exception("Error fetching restaurant by name", name=name, error=str(e))
         return error_response("Failed to fetch restaurant", 500)
@@ -699,117 +731,144 @@ def delete_restaurant(restaurant_id: int):
         return error_response("Failed to delete restaurant", 500)
 
 
+def _fetch_filter_rows(db_manager):
+    """Fetch filter rows using the repository pattern instead of raw SQL."""
+    try:
+        # Use the restaurant repository to get filter data
+        restaurants = db_manager.restaurant_repo.get_restaurants_with_filters(
+            status="active",
+            limit=10000,  # Get all active restaurants for filtering
+            offset=0
+        )
+        
+        # Extract unique values from the restaurant data
+        agencies = set()
+        kosher_categories = set()
+        listing_types = set()
+        price_ranges = set()
+        cities = set()
+        states = set()
+        
+        for restaurant in restaurants:
+            if hasattr(restaurant, 'certifying_agency') and restaurant.certifying_agency:
+                agencies.add(restaurant.certifying_agency)
+            if hasattr(restaurant, 'kosher_category') and restaurant.kosher_category:
+                kosher_categories.add(restaurant.kosher_category)
+            if hasattr(restaurant, 'listing_type') and restaurant.listing_type:
+                listing_types.add(restaurant.listing_type)
+            if hasattr(restaurant, 'price_range') and restaurant.price_range:
+                price_ranges.add(restaurant.price_range)
+            if hasattr(restaurant, 'city') and restaurant.city:
+                cities.add(restaurant.city)
+            if hasattr(restaurant, 'state') and restaurant.state:
+                states.add(restaurant.state)
+        
+        # Return as a list of tuples to maintain compatibility with existing code
+        # Each tuple represents one restaurant's data
+        results = []
+        for restaurant in restaurants:
+            results.append((
+                getattr(restaurant, 'certifying_agency', None),
+                getattr(restaurant, 'kosher_category', None),
+                getattr(restaurant, 'listing_type', None),
+                getattr(restaurant, 'price_range', None),
+                getattr(restaurant, 'city', None),
+                getattr(restaurant, 'state', None)
+            ))
+        
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error fetching filter rows: {e}")
+        # Return empty results on error
+        return []
+
+
+def _collect_sets_from_rows(rows):
+    agencies, kosher_categories, listing_types, price_ranges, cities, states = (
+        set(),
+        set(),
+        set(),
+        set(),
+        set(),
+        set(),
+    )
+    for row in rows:
+        if row[0]:
+            agencies.add(row[0])
+        if row[1]:
+            kosher_categories.add(row[1])
+        if row[2]:
+            listing_types.add(row[2])
+        if row[3]:
+            price_ranges.add(row[3])
+        if row[4]:
+            cities.add(row[4])
+        if row[5]:
+            states.add(row[5])
+    return agencies, kosher_categories, listing_types, price_ranges, cities, states
+
+
+def _collect_sets_from_restaurants(restaurants):
+    agencies = {
+        r.get("certifying_agency") for r in restaurants if r.get("certifying_agency")
+    }
+    kosher_categories = {
+        r.get("kosher_category") for r in restaurants if r.get("kosher_category")
+    }
+    listing_types = {
+        r.get("listing_type") for r in restaurants if r.get("listing_type")
+    }
+    price_ranges = {r.get("price_range") for r in restaurants if r.get("price_range")}
+    cities = {r.get("city") for r in restaurants if r.get("city")}
+    states = {r.get("state") for r in restaurants if r.get("state")}
+    return agencies, kosher_categories, listing_types, price_ranges, cities, states
+
+
+def _build_filter_options_response(sets_tuple):
+    agencies, kosher_categories, listing_types, price_ranges, cities, states = (
+        sets_tuple
+    )
+    return {
+        "agencies": sorted(list(agencies)),
+        "kosherCategories": sorted(list(kosher_categories)),
+        "listingTypes": sorted(list(listing_types)),
+        "priceRanges": sorted(list(price_ranges)),
+        "cities": sorted(list(cities)),
+        "states": sorted(list(states)),
+    }
+
+
 @safe_route("/restaurants/filter-options", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
 def get_restaurant_filter_options():
-    """Get filter options for restaurants using v4 service with caching and optimized queries."""
+    """Get restaurant filter options with caching and optimized DB path."""
     try:
-        db_manager, cache_manager, config = get_service_dependencies()
+        db_manager, cache_manager, _ = get_service_dependencies()
         cache_key = "restaurant_filter_options"
-        
-        # Try to get from cache first (15 minutes TTL)
+        # Try cache first
         if cache_manager:
             cached_options = cache_manager.get(cache_key)
             if cached_options:
                 logger.debug("Returning cached filter options")
                 return success_response(cached_options)
-        
-        # Use optimized direct database query instead of loading all restaurants
+        # Try optimized DB path, then fallback to service
         try:
-            # Get database connection
-            connection = db_manager.get_connection()
-            cursor = connection.cursor()
-            
-            # Single optimized query to get distinct values for all filter categories
-            query = """
-                SELECT DISTINCT 
-                    certifying_agency,
-                    kosher_category,
-                    listing_type,
-                    price_range,
-                    city,
-                    state
-                FROM restaurants 
-                WHERE status = 'active' 
-                AND (certifying_agency IS NOT NULL 
-                     OR kosher_category IS NOT NULL 
-                     OR listing_type IS NOT NULL 
-                     OR price_range IS NOT NULL 
-                     OR city IS NOT NULL 
-                     OR state IS NOT NULL)
-            """
-            
-            cursor.execute(query)
-            results = cursor.fetchall()
-            
-            # Extract unique values for each category using sets for efficiency
-            agencies = set()
-            kosher_categories = set()
-            listing_types = set()
-            price_ranges = set()
-            cities = set()
-            states = set()
-            
-            for row in results:
-                if row[0]:  # certifying_agency
-                    agencies.add(row[0])
-                if row[1]:  # kosher_category
-                    kosher_categories.add(row[1])
-                if row[2]:  # listing_type
-                    listing_types.add(row[2])
-                if row[3]:  # price_range
-                    price_ranges.add(row[3])
-                if row[4]:  # city
-                    cities.add(row[4])
-                if row[5]:  # state
-                    states.add(row[5])
-            
-            cursor.close()
-            connection.close()
-            
+            rows = _fetch_filter_rows(db_manager)
+            sets_tuple = _collect_sets_from_rows(rows)
         except Exception as db_error:
-            logger.warning(f"Optimized DB query failed, falling back to service method: {db_error}")
-            # Fallback to original method if optimized query fails
+            logger.warning(
+                "Optimized DB query failed, falling back to service method: %s",
+                db_error,
+            )
             service = create_restaurant_service()
             restaurants = service.get_all_restaurants()
-            
-            # Extract unique values using sets for efficiency
-            agencies = set(
-                r.get("certifying_agency")
-                for r in restaurants
-                if r.get("certifying_agency")
-            )
-            kosher_categories = set(
-                r.get("kosher_category")
-                for r in restaurants
-                if r.get("kosher_category")
-            )
-            listing_types = set(
-                r.get("listing_type") for r in restaurants if r.get("listing_type")
-            )
-            price_ranges = set(
-                r.get("price_range") for r in restaurants if r.get("price_range")
-            )
-            cities = set(r.get("city") for r in restaurants if r.get("city"))
-            states = set(r.get("state") for r in restaurants if r.get("state"))
-        
-        # Convert sets to sorted lists
-        filter_options = {
-            "agencies": sorted(list(agencies)),
-            "kosherCategories": sorted(list(kosher_categories)),
-            "listingTypes": sorted(list(listing_types)),
-            "priceRanges": sorted(list(price_ranges)),
-            "cities": sorted(list(cities)),
-            "states": sorted(list(states)),
-        }
-        
-        # Cache the result for 15 minutes
+            sets_tuple = _collect_sets_from_restaurants(restaurants)
+        filter_options = _build_filter_options_response(sets_tuple)
         if cache_manager:
-            cache_manager.set(cache_key, filter_options, ttl=900)  # 15 minutes
+            cache_manager.set(cache_key, filter_options, ttl=900)
             logger.debug("Cached filter options for 15 minutes")
-            
         return success_response(filter_options)
-        
     except Exception as e:
         logger.exception("Error fetching filter options", error=str(e))
         return error_response("Failed to fetch filter options", 500)
@@ -930,68 +989,36 @@ def get_restaurant_hours(restaurant_id: int):
 def get_reviews():
     """Get reviews with optional filtering using v4 service."""
     try:
-        restaurant_id = request.args.get("restaurantId")
-        status = request.args.get("status", "approved")
-        limit = int(request.args.get("limit", 10))
-        offset = int(request.args.get("offset", 0))
-        include_google_reviews = request.args.get("includeGoogleReviews", "true").lower() == "true"
-        
-        # Build filters
-        filters = {}
-        if restaurant_id:
-            filters["restaurant_id"] = int(restaurant_id)
-        if status:
-            filters["status"] = status
-        
+        (
+            restaurant_id,
+            status,
+            limit,
+            offset,
+            include_google_reviews,
+        ) = _parse_review_query_params(request)
+        filters = _build_review_filters(restaurant_id, status)
+
         service = create_review_service()
-        logger.info(f"Fetching reviews for restaurant_id={restaurant_id}, status={status}, limit={limit}, offset={offset}, include_google_reviews={include_google_reviews}")
-        
-        # Get reviews with pagination
-        reviews = service.get_reviews(
-            restaurant_id=int(restaurant_id) if restaurant_id else None,
-            status=status,
-            limit=limit,
-            offset=offset,
-            filters=filters,
-            include_google_reviews=include_google_reviews,
+        _log_fetch_reviews(restaurant_id, status, limit, offset, include_google_reviews)
+
+        reviews = _fetch_reviews(
+            service,
+            restaurant_id,
+            status,
+            limit,
+            offset,
+            filters,
+            include_google_reviews,
         )
-        
-        logger.info(f"Found {len(reviews)} total reviews")
-        
-        # Get total count for pagination
-        total_count = service.get_reviews_count(
-            restaurant_id=int(restaurant_id) if restaurant_id else None,
-            status=status,
-            filters=filters,
-        )
-        
-        # Count Google reviews separately if needed
+
+        total_count = _compute_total_reviews(service, restaurant_id, status, filters)
         if include_google_reviews and restaurant_id:
-            try:
-                restaurant = service.db_manager.get_restaurant_by_id(int(restaurant_id))
-                if restaurant and restaurant.get('place_id'):
-                    google_count = service.db_manager.get_google_reviews_count(
-                        restaurant_id=int(restaurant_id),
-                        place_id=restaurant['place_id']
-                    )
-                    total_count += google_count
-            except Exception as e:
-                logger.warning(f"Error getting Google reviews count: {e}")
-        
-        # Calculate if there are more reviews
-        has_more = offset + limit < total_count
-        
+            total_count += _safe_google_review_count(service, restaurant_id)
+
         return success_response(
             {
                 "reviews": reviews,
-                "pagination": {
-                    "total": total_count,
-                    "limit": limit,
-                    "offset": offset,
-                    "hasMore": has_more,
-                    "currentPage": (offset // limit) + 1,
-                    "totalPages": (total_count + limit - 1) // limit,
-                },
+                "pagination": _build_pagination(total_count, limit, offset),
             }
         )
     except ValidationError as e:
@@ -1003,6 +1030,86 @@ def get_reviews():
         return error_response("Failed to fetch reviews", 500)
 
 
+def _parse_review_query_params(req):
+    restaurant_id = req.args.get("restaurantId")
+    status = req.args.get("status", "approved")
+    limit = int(req.args.get("limit", 10))
+    offset = int(req.args.get("offset", 0))
+    include_google_reviews = (
+        req.args.get("includeGoogleReviews", "true").lower() == "true"
+    )
+    return restaurant_id, status, limit, offset, include_google_reviews
+
+
+def _build_review_filters(restaurant_id, status):
+    filters: Dict[str, Any] = {}
+    if restaurant_id:
+        filters["restaurant_id"] = int(restaurant_id)
+    if status:
+        filters["status"] = status
+    return filters
+
+
+def _log_fetch_reviews(restaurant_id, status, limit, offset, include_google_reviews):
+    logger.info(
+        "Fetching reviews",
+        extra={
+            "restaurant_id": restaurant_id,
+            "status": status,
+            "limit": limit,
+            "offset": offset,
+            "include_google_reviews": include_google_reviews,
+        },
+    )
+
+
+def _fetch_reviews(
+    service, restaurant_id, status, limit, offset, filters, include_google_reviews
+):
+    return service.get_reviews(
+        restaurant_id=int(restaurant_id) if restaurant_id else None,
+        status=status,
+        limit=limit,
+        offset=offset,
+        filters=filters,
+        include_google_reviews=include_google_reviews,
+    )
+
+
+def _compute_total_reviews(service, restaurant_id, status, filters):
+    return service.get_reviews_count(
+        restaurant_id=int(restaurant_id) if restaurant_id else None,
+        status=status,
+        filters=filters,
+    )
+
+
+def _safe_google_review_count(service, restaurant_id: str) -> int:
+    try:
+        restaurant = service.db_manager.get_restaurant_by_id(int(restaurant_id))
+        if restaurant and restaurant.get("place_id"):
+            return service.db_manager.get_google_reviews_count(
+                restaurant_id=int(restaurant_id),
+                place_id=restaurant["place_id"],
+            )
+    except Exception as e:
+        logger.warning("Error getting Google reviews count", extra={"error": str(e)})
+    return 0
+
+
+def _build_pagination(
+    total_count: int, limit: int, offset: int
+) -> Dict[str, int | bool]:
+    return {
+        "total": total_count,
+        "limit": limit,
+        "offset": offset,
+        "hasMore": offset + limit < total_count,
+        "currentPage": (offset // limit) + 1,
+        "totalPages": (total_count + limit - 1) // limit,
+    }
+
+
 @safe_route("/reviews/sync-google", methods=["POST"])
 @require_api_v4_flag("api_v4_reviews")
 @limiter.limit("30/minute")
@@ -1010,37 +1117,42 @@ def sync_google_reviews():
     """Sync Google reviews for restaurants."""
     try:
         from services.google_review_sync_service import GoogleReviewSyncService
-        
+
         data = request.get_json(silent=True) or {}
         restaurant_id = data.get("restaurantId")
         place_id = data.get("placeId")
         max_reviews = int(data.get("maxReviews", 20))
-        
+
         service = GoogleReviewSyncService()
-        
+
         if restaurant_id and place_id:
             # Sync for specific restaurant
             success = service.sync_restaurant_google_reviews(
                 restaurant_id=int(restaurant_id),
                 place_id=place_id,
-                max_reviews=max_reviews
+                max_reviews=max_reviews,
             )
-            
+
             if success:
                 return success_response(
-                    {"message": f"Successfully synced Google reviews for restaurant {restaurant_id}"}
+                    {
+                        "message": f"Successfully synced Google reviews for restaurant {restaurant_id}"
+                    }
                 )
             else:
-                return error_response(f"Failed to sync Google reviews for restaurant {restaurant_id}", 500)
+                return error_response(
+                    f"Failed to sync Google reviews for restaurant {restaurant_id}", 500
+                )
         else:
             # Sync for all restaurants
-            results = service.sync_all_restaurants_google_reviews(max_reviews=max_reviews)
-            
-            return success_response({
-                "message": "Google review sync completed",
-                "results": results
-            })
-            
+            results = service.sync_all_restaurants_google_reviews(
+                max_reviews=max_reviews
+            )
+
+            return success_response(
+                {"message": "Google review sync completed", "results": results}
+            )
+
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
@@ -1240,7 +1352,7 @@ def admin_delete_user():
 
 
 # Role Management Routes
-@safe_route('/admin/roles/assign', methods=['POST'])
+@safe_route("/admin/roles/assign", methods=["POST"])
 @limiter.limit("30/minute")
 @require_super_admin_auth
 def assign_admin_role():
@@ -1248,93 +1360,54 @@ def assign_admin_role():
     try:
         data = request.get_json()
         if not data:
-            return error_response('Request body is required', 400)
-        
-        user_id = data.get('user_id')
-        role = data.get('role')
-        expires_at = data.get('expires_at')
-        notes = data.get('notes')
-        
-        if not user_id or not role:
-            return error_response('user_id and role are required', 400)
-        
-        # Get current admin user from JWT
-        current_user = get_current_supabase_user()
-        if not current_user:
-            return error_response('Authentication required', 401)
-        
-        # Validate role is allowed
-        allowed_roles = ['moderator', 'data_admin', 'system_admin', 'super_admin']
-        if role not in allowed_roles:
-            return error_response(f'Invalid role. Must be one of: {", ".join(allowed_roles)}', 400)
-        
-        # Only super_admin can assign any admin role (normalize role field)
-        user_role = current_user.get('role') or current_user.get('adminRole')
-        if user_role != 'super_admin':
-            return error_response('Insufficient permissions: super_admin role required', 403)
-        
-        # Validate expires_at format if provided (ISO8601)
-        if expires_at:
-            try:
-                # Allow 'Z' suffix
-                iso = expires_at.replace('Z', '+00:00')
-                datetime.fromisoformat(iso)
-            except Exception:
-                return error_response('Invalid expires_at format. Use ISO8601 UTC.', 400)
-        
-        # Rate limit guard
-        if not _allow_rate(f"roles_assign_{current_user['id']}"):
-            return error_response('Too many requests', 429)
+            return error_response("Request body is required", 400)
 
-        # Create user service instance
-        user_service = create_user_service() if UserServiceV4 else None
-        if not user_service:
-            return error_response('User service not available', 503)
-        
-        result = user_service.assign_user_role(
-            target_user_id=user_id,
+        user_id, role, expires_at, notes = _parse_role_mutation_body(data)
+        if not user_id or not role:
+            return error_response("user_id and role are required", 400)
+
+        current_user = _require_current_user()
+        if isinstance(current_user, tuple):
+            return current_user
+
+        if not _is_allowed_role(role):
+            return error_response(
+                "Invalid role. Must be one of: moderator, data_admin, system_admin, super_admin",
+                400,
+            )
+
+        perm_err = _check_role_assign_permissions(current_user)
+        if perm_err:
+            return perm_err
+
+        fmt_err = _validate_expires_at(expires_at)
+        if fmt_err:
+            return fmt_err
+
+        prep = _prepare_role_mutation(current_user, action_prefix="roles_assign")
+        if isinstance(prep, tuple):
+            return prep
+        user_service = prep
+
+        return _assign_role_and_respond(
+            user_service,
+            user_id=user_id,
             role=role,
-            assigned_by_user_id=current_user['id'],
+            assigned_by=current_user["id"],
             expires_at=expires_at,
-            notes=notes
+            notes=notes,
         )
-        
-        if isinstance(result, dict) and result.get('success'):
-            # Invalidate role cache after successful change
-            try:
-                from utils.supabase_role_manager import get_role_manager
-                rm = get_role_manager()
-                rm.invalidate_user_role(user_id)
-            except Exception:
-                pass
-            return success_response({
-                'user_id': user_id,
-                'role': role,
-                'assigned_by': current_user['id'],
-                'assigned_at': datetime.utcnow().isoformat()
-            }, 'Role assigned successfully')
-        elif isinstance(result, dict) and 'error' in result:
-            # Map error types precisely
-            error_type = result.get('error_type')
-            if error_type == 'conflict':
-                return error_response(result.get('error', 'Conflict'), 409)
-            if error_type == 'not_found':
-                return error_response(result.get('error', 'Not found'), 404)
-            status_code = result.get('status_code', 500)
-            return error_response(result.get('error', 'Failed to assign role'), status_code)
-        else:
-            return error_response('Failed to assign role', 500)
-            
+
     except ValueError as e:
         return error_response(str(e), 400)
-    except ExternalServiceError as e:
-        return error_response('Role service unavailable', 503)
+    except ExternalServiceError:
+        return error_response("Role service unavailable", 503)
     except Exception as e:
         logger.exception(f"Error assigning admin role: {str(e)}")
-        return error_response('Internal server error', 500)
+        return error_response("Internal server error", 500)
 
 
-@safe_route('/admin/roles/revoke', methods=['POST'])
+@safe_route("/admin/roles/revoke", methods=["POST"])
 @limiter.limit("30/minute")
 @require_super_admin_auth
 def revoke_admin_role():
@@ -1342,115 +1415,243 @@ def revoke_admin_role():
     try:
         data = request.get_json()
         if not data:
-            return error_response('Request body is required', 400)
-        
-        user_id = data.get('user_id')
-        role = data.get('role')
-        
-        if not user_id or not role:
-            return error_response('user_id and role are required', 400)
-        
-        # Get current admin user from JWT
-        current_user = get_current_supabase_user()
-        if not current_user:
-            return error_response('Authentication required', 401)
-        
-        # Only super_admin can revoke admin roles (normalize role field)
-        user_role = current_user.get('role') or current_user.get('adminRole')
-        if user_role != 'super_admin':
-            return error_response('Insufficient permissions: super_admin role required', 403)
-        
-        # Prevent self-revocation of super_admin
-        if role == 'super_admin' and user_id == current_user['id']:
-            return error_response('Cannot revoke your own super_admin role', 409)
-        
-        # Rate limit guard
-        if not _allow_rate(f"roles_revoke_{current_user['id']}"):
-            return error_response('Too many requests', 429)
+            return error_response("Request body is required", 400)
 
-        # Create user service instance
-        user_service = create_user_service() if UserServiceV4 else None
-        if not user_service:
-            return error_response('User service not available', 503)
-        
-        # Prevent removing the last super_admin
-        if role == 'super_admin':
-            try:
-                # Use dedicated precise count method from service/DB
-                super_admin_count = 0
-                if hasattr(user_service, 'get_active_super_admin_count'):
-                    super_admin_count = user_service.get_active_super_admin_count()
-                if super_admin_count <= 1:
-                    return error_response('Cannot remove the last super_admin', 409)
-            except Exception as e:
-                logger.warning(f"Could not verify super_admin count: {str(e)}")
-                # Fail-safe: prevent removal if we can't verify count
-                return error_response('Cannot verify super_admin count for safe removal', 503)
-        
-        result = user_service.revoke_user_role(
-            target_user_id=user_id,
-            role=role,
-            removed_by_user_id=current_user['id']
-        )
-        
-        if isinstance(result, dict) and result.get('success'):
-            # Invalidate role cache after successful change
-            try:
-                from utils.supabase_role_manager import get_role_manager
-                rm = get_role_manager()
-                rm.invalidate_user_role(user_id)
-            except Exception:
-                pass
-            return success_response({
-                'user_id': user_id,
-                'role': role,
-                'removed_by': current_user['id'],
-                'removed_at': datetime.utcnow().isoformat()
-            }, 'Role revoked successfully')
-        elif isinstance(result, dict) and 'error' in result:
-            error_type = result.get('error_type')
-            if error_type == 'conflict':
-                return error_response(result.get('error', 'Conflict'), 409)
-            if error_type == 'not_found':
-                return error_response(result.get('error', 'Not found'), 404)
-            status_code = result.get('status_code', 500)
-            return error_response(result.get('error', 'Failed to revoke role'), status_code)
-        else:
-            return error_response('Failed to revoke role', 500)
-            
+        user_id = data.get("user_id")
+        role = data.get("role")
+        err = _validate_revoke_request(user_id, role)
+        if err:
+            return err
+
+        current_user = _require_current_user()
+        if isinstance(current_user, tuple):
+            return current_user
+
+        perm_err = _check_revoke_constraints(current_user, role, user_id)
+        if perm_err:
+            return perm_err
+
+        prep = _prepare_role_mutation(current_user, action_prefix="roles_revoke")
+        if isinstance(prep, tuple):
+            return prep
+        user_service = prep
+
+        guard_err = _guard_last_super_admin(user_service, role)
+        if guard_err:
+            return guard_err
+
+        return _revoke_role_and_respond(user_service, user_id, role, current_user["id"])
+
     except ValueError as e:
         return error_response(str(e), 400)
-    except ExternalServiceError as e:
-        return error_response('Role service unavailable', 503)
+    except ExternalServiceError:
+        return error_response("Role service unavailable", 503)
     except Exception as e:
         logger.exception(f"Error revoking admin role: {str(e)}")
-        return error_response('Internal server error', 500)
+        return error_response("Internal server error", 500)
 
 
-@safe_route('/admin/roles', methods=['GET'])
+def _parse_role_mutation_body(data: Dict[str, Any]):
+    return (
+        data.get("user_id"),
+        data.get("role"),
+        data.get("expires_at"),
+        data.get("notes"),
+    )
+
+
+def _require_current_user():
+    current_user = get_current_supabase_user()
+    if not current_user:
+        return error_response("Authentication required", 401)
+    return current_user
+
+
+def _is_allowed_role(role: str) -> bool:
+    return role in {"moderator", "data_admin", "system_admin", "super_admin"}
+
+
+def _is_super_admin_user(user: Dict[str, Any]) -> bool:
+    user_role = user.get("role") or user.get("adminRole")
+    return user_role == "super_admin"
+
+
+def _check_role_assign_permissions(current_user: Dict[str, Any]):
+    if not _is_super_admin_user(current_user):
+        return error_response(
+            "Insufficient permissions: super_admin role required", 403
+        )
+    return None
+
+
+def _validate_expires_at(expires_at: Optional[str]):
+    if not expires_at:
+        return None
+    try:
+        iso = expires_at.replace("Z", "+00:00")
+        datetime.fromisoformat(iso)
+        return None
+    except Exception:
+        return error_response("Invalid expires_at format. Use ISO8601 UTC.", 400)
+
+
+def _prepare_role_mutation(current_user: Dict[str, Any], action_prefix: str):
+    if not _allow_rate(f"{action_prefix}_{current_user['id']}"):
+        return error_response("Too many requests", 429)
+    user_service = _require_user_service()
+    return user_service
+
+
+def _assign_role_and_respond(
+    user_service,
+    user_id: str,
+    role: str,
+    assigned_by: str,
+    expires_at: Optional[str],
+    notes: Optional[str],
+):
+    result = user_service.assign_user_role(
+        target_user_id=user_id,
+        role=role,
+        assigned_by_user_id=assigned_by,
+        expires_at=expires_at,
+        notes=notes,
+    )
+    if isinstance(result, dict) and result.get("success"):
+        _invalidate_role_cache_safe(user_id)
+        return success_response(
+            _build_role_assigned_payload(user_id, role, assigned_by),
+            "Role assigned successfully",
+        )
+    if isinstance(result, dict) and "error" in result:
+        return _map_role_service_error(result, default_message="Failed to assign role")
+    return error_response("Failed to assign role", 500)
+
+
+def _validate_revoke_request(user_id: Optional[str], role: Optional[str]):
+    if not user_id or not role:
+        return error_response("user_id and role are required", 400)
+    if role not in {"moderator", "data_admin", "system_admin", "super_admin"}:
+        return error_response(
+            "Invalid role. Must be one of: moderator, data_admin, system_admin, super_admin",
+            400,
+        )
+    return None
+
+
+def _check_revoke_constraints(current_user: Dict[str, Any], role: str, user_id: str):
+    if not _is_super_admin_user(current_user):
+        return error_response(
+            "Insufficient permissions: super_admin role required", 403
+        )
+    if role == "super_admin" and user_id == current_user["id"]:
+        return error_response("Cannot revoke your own super_admin role", 409)
+    return None
+
+
+def _require_user_service():
+    user_service = create_user_service() if UserServiceV4 else None
+    if not user_service:
+        return error_response("User service not available", 503)
+    return user_service
+
+
+def _map_role_service_error(result: Dict[str, Any], default_message: str):
+    error_type = result.get("error_type")
+    if error_type == "conflict":
+        return error_response(result.get("error", "Conflict"), 409)
+    if error_type == "not_found":
+        return error_response(result.get("error", "Not found"), 404)
+    status_code = result.get("status_code", 500)
+    return error_response(result.get("error", default_message), status_code)
+
+
+def _guard_last_super_admin(user_service, role: str):
+    if role != "super_admin":
+        return None
+    try:
+        count = 0
+        if hasattr(user_service, "get_active_super_admin_count"):
+            count = user_service.get_active_super_admin_count()
+        if count <= 1:
+            return error_response("Cannot remove the last super_admin", 409)
+    except Exception as e:
+        logger.warning("Could not verify super_admin count", extra={"error": str(e)})
+        return error_response("Cannot verify super_admin count for safe removal", 503)
+    return None
+
+
+def _revoke_role_and_respond(user_service, user_id: str, role: str, removed_by: str):
+    result = user_service.revoke_user_role(
+        target_user_id=user_id, role=role, removed_by_user_id=removed_by
+    )
+    if isinstance(result, dict) and result.get("success"):
+        _invalidate_role_cache_safe(user_id)
+        return success_response(
+            _build_role_revoked_payload(user_id, role, removed_by),
+            "Role revoked successfully",
+        )
+    if isinstance(result, dict) and "error" in result:
+        return _map_role_service_error(result, default_message="Failed to revoke role")
+    return error_response("Failed to revoke role", 500)
+
+
+def _invalidate_role_cache_safe(user_id: str) -> None:
+    try:
+        from utils.supabase_role_manager import get_role_manager
+
+        rm = get_role_manager()
+        rm.invalidate_user_role(user_id)
+    except Exception:
+        pass
+
+
+def _build_role_assigned_payload(
+    user_id: str, role: str, assigned_by: str
+) -> Dict[str, Any]:
+    return {
+        "user_id": user_id,
+        "role": role,
+        "assigned_by": assigned_by,
+        "assigned_at": datetime.utcnow().isoformat(),
+    }
+
+
+def _build_role_revoked_payload(
+    user_id: str, role: str, removed_by: str
+) -> Dict[str, Any]:
+    return {
+        "user_id": user_id,
+        "role": role,
+        "removed_by": removed_by,
+        "removed_at": datetime.utcnow().isoformat(),
+    }
+
+
+@safe_route("/admin/roles", methods=["GET"])
 @require_admin_auth
 def get_admin_roles():
     """Get list of users with their admin roles"""
     try:
-        page = request.args.get('page', 1, type=int)
-        limit = request.args.get('limit', 50, type=int)
-        search = request.args.get('search', '')
-        user_id = request.args.get('user_id')
-        role_filter = request.args.get('role')
-        include_all = request.args.get('include_all', 'false').lower() == 'true'
-        include_expired = request.args.get('include_expired', 'false').lower() == 'true'
-        
+        page = request.args.get("page", 1, type=int)
+        limit = request.args.get("limit", 50, type=int)
+        search = request.args.get("search", "")
+        user_id = request.args.get("user_id")
+        role_filter = request.args.get("role")
+        include_all = request.args.get("include_all", "false").lower() == "true"
+        include_expired = request.args.get("include_expired", "false").lower() == "true"
+
         # Validate pagination parameters
         if page < 1:
             page = 1
         if limit < 1 or limit > 100:
             limit = 50
-        
+
         # Create user service instance
         user_service = create_user_service() if UserServiceV4 else None
         if not user_service:
-            return error_response('User service not available', 503)
-        
+            return error_response("User service not available", 503)
+
         users_with_roles = user_service.get_user_roles(
             user_id=user_id,
             page=page,
@@ -1458,19 +1659,21 @@ def get_admin_roles():
             search=search,
             role_filter=role_filter,
             include_all=include_all,
-            include_expired=include_expired
+            include_expired=include_expired,
         )
-        
-        return success_response(users_with_roles, 'Users with roles retrieved successfully')
-        
-    except ExternalServiceError as e:
-        return error_response('Role service unavailable', 503)
+
+        return success_response(
+            users_with_roles, "Users with roles retrieved successfully"
+        )
+
+    except ExternalServiceError:
+        return error_response("Role service unavailable", 503)
     except Exception as e:
         logger.exception(f"Error retrieving admin roles: {str(e)}")
-        return error_response('Internal server error', 500)
+        return error_response("Internal server error", 500)
 
 
-@safe_route('/admin/roles/available', methods=['GET'])
+@safe_route("/admin/roles/available", methods=["GET"])
 @require_admin_auth
 def get_available_roles():
     """Get list of available admin roles and their descriptions"""
@@ -1478,16 +1681,18 @@ def get_available_roles():
         # Create user service instance
         user_service = create_user_service() if UserServiceV4 else None
         if not user_service:
-            return error_response('User service not available', 503)
-        
+            return error_response("User service not available", 503)
+
         available_roles = user_service.get_available_roles()
-        return success_response(available_roles, 'Available roles retrieved successfully')
-        
-    except ExternalServiceError as e:
-        return error_response('Role service unavailable', 503)
+        return success_response(
+            available_roles, "Available roles retrieved successfully"
+        )
+
+    except ExternalServiceError:
+        return error_response("Role service unavailable", 503)
     except Exception as e:
         logger.exception(f"Error retrieving available roles: {str(e)}")
-        return error_response('Internal server error', 500)
+        return error_response("Internal server error", 500)
 
 
 # Statistics Routes
@@ -1602,7 +1807,8 @@ def get_marketplace_listings():
         lng = request.args.get("lng", type=float)
         radius = min(request.args.get("radius", 10, type=float), 1000)  # miles
         # Use marketplace service
-        logger.info("Creating marketplace service...")
+        # Reduce verbose logs to avoid serializing large payloads
+        logger.info("Creating marketplace service")
         service = create_marketplace_service()
         if not service:
             # Return empty marketplace response instead of error
@@ -1620,7 +1826,7 @@ def get_marketplace_listings():
                     },
                 }
             )
-        logger.info("Marketplace service created successfully, calling get_listings...")
+        logger.info("Marketplace service ready; fetching listings")
         result = service.get_listings(
             limit=limit,
             offset=offset,
@@ -1638,8 +1844,12 @@ def get_marketplace_listings():
             lng=lng,
             radius=radius,
         )
-        logger.info(f"Service result: {result}")
-        if result["success"]:
+        # Log only summary to avoid huge payloads in logs
+        if result.get("success"):
+            data = result.get("data", {})
+            listings_count = len(data.get("listings", [])) if isinstance(data, dict) else None
+            total = (data.get("pagination", {}) or {}).get("total") if isinstance(data, dict) else None
+            logger.info("Marketplace listings fetched", listings_count=listings_count, total=total)
             return success_response(result["data"])
         else:
             return error_response(result.get("error", "Failed to fetch listings"), 500)
@@ -2299,117 +2509,141 @@ def proxy_image():
         image_url = request.args.get("url")
         if not image_url:
             return error_response("Image URL is required", 400)
-        
+
         # Validate URL to prevent SSRF attacks
         if not image_url.startswith(("http://", "https://")):
             return error_response("Invalid image URL", 400)
-        
+
         # Only allow Google profile images for security
-        if not any(domain in image_url for domain in ["googleusercontent.com", "lh3.googleusercontent.com"]):
+        if not any(
+            domain in image_url
+            for domain in ["googleusercontent.com", "lh3.googleusercontent.com"]
+        ):
             return error_response("Only Google profile images are allowed", 403)
-        
+
         # For now, return a redirect to the original URL with CORS headers
         # This is a simpler approach that should work for most cases
         from flask import redirect
+
         response = redirect(image_url)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Cache-Control'] = 'public, max-age=3600'
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Cache-Control"] = "public, max-age=3600"
         return response
-        
+
     except Exception as e:
         logger.error(f"Error proxying image: {e}")
         return error_response("Internal server error", 500)
 
+
 # Test endpoint for CI/CD (no authentication required)
-@safe_route('/test/health', methods=['GET'])
+@safe_route("/test/health", methods=["GET"])
 def test_health():
     """Simple health check endpoint for testing."""
-    return jsonify({
-        'status': 'healthy',
-        'message': 'API v4 is working',
-        'timestamp': datetime.now().isoformat()
-    })
+    return jsonify(
+        {
+            "status": "healthy",
+            "message": "API v4 is working",
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
+
 
 # Additional test endpoints for comprehensive testing
-@safe_route('/test/info', methods=['GET'])
+@safe_route("/test/info", methods=["GET"])
 def test_info():
     """Test endpoint that returns system information."""
-    return jsonify({
-        'version': '4.0',
-        'environment': os.getenv('NODE_ENV', 'development'),
-        'timestamp': datetime.now().isoformat(),
-        'endpoints': [
-            '/api/v4/test/health',
-            '/api/v4/test/info',
-            '/api/v4/test/status',
-            '/api/v4/test/echo'
-        ]
-    })
+    return jsonify(
+        {
+            "version": "4.0",
+            "environment": os.getenv("NODE_ENV", "development"),
+            "timestamp": datetime.now().isoformat(),
+            "endpoints": [
+                "/api/v4/test/health",
+                "/api/v4/test/info",
+                "/api/v4/test/status",
+                "/api/v4/test/echo",
+            ],
+        }
+    )
 
-@safe_route('/test/status', methods=['GET'])
+
+@safe_route("/test/status", methods=["GET"])
 def test_status():
     """Test endpoint that returns detailed status information."""
-    return jsonify({
-        'status': 'operational',
-        'uptime': 'running',
-        'version': '4.0.0',
-        'build_date': '2024-01-01',
-        'features': {
-            'authentication': 'enabled',
-            'rate_limiting': 'enabled',
-            'caching': 'enabled'
-        },
-        'timestamp': datetime.now().isoformat()
-    })
+    return jsonify(
+        {
+            "status": "operational",
+            "uptime": "running",
+            "version": "4.0.0",
+            "build_date": "2024-01-01",
+            "features": {
+                "authentication": "enabled",
+                "rate_limiting": "enabled",
+                "caching": "enabled",
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
 
-@safe_route('/test/echo', methods=['POST'])
+
+@safe_route("/test/echo", methods=["POST"])
 def test_echo():
     """Test endpoint that echoes back the request data."""
     try:
         data = request.get_json() or {}
-        return jsonify({
-            'echo': data,
-            'method': request.method,
-            'headers': dict(request.headers),
-            'timestamp': datetime.now().isoformat()
-        })
+        return jsonify(
+            {
+                "echo": data,
+                "method": request.method,
+                "headers": dict(request.headers),
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
     except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }), 400
+        return jsonify({"error": str(e), "timestamp": datetime.now().isoformat()}), 400
 
-@safe_route('/test/validate', methods=['POST'])
+
+@safe_route("/test/validate", methods=["POST"])
 def test_validate():
     """Test endpoint that validates JSON data."""
     try:
         data = request.get_json()
         if not data:
-            return jsonify({
-                'error': 'No JSON data provided',
-                'timestamp': datetime.now().isoformat()
-            }), 400
-        
+            return (
+                jsonify(
+                    {
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+                400,
+            )
+
         # Simple validation
-        if 'name' not in data:
-            return jsonify({
-                'error': 'Missing required field: name',
-                'timestamp': datetime.now().isoformat()
-            }), 400
-        
-        if 'email' not in data:
-            return jsonify({
-                'error': 'Missing required field: email',
-                'timestamp': datetime.now().isoformat()
-            }), 400
-        
-        return jsonify({
-            'valid': True,
-            'data': data,
-            'timestamp': datetime.now().isoformat()
-        })
+        if "name" not in data:
+            return (
+                jsonify(
+                    {
+                        "error": "Missing required field: name",
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+                400,
+            )
+
+        if "email" not in data:
+            return (
+                jsonify(
+                    {
+                        "error": "Missing required field: email",
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+                400,
+            )
+
+        return jsonify(
+            {"valid": True, "data": data, "timestamp": datetime.now().isoformat()}
+        )
     except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }), 400
+        return jsonify({"error": str(e), "timestamp": datetime.now().isoformat()}), 400

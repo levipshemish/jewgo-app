@@ -178,7 +178,7 @@ class RestaurantStatusCalculator:
         try:
             tz = pytz.timezone(timezone_str)
             return datetime.now(tz)
-        except Exception as e:
+        except Exception:
             logger.exception("Error getting time in timezone %s", timezone_str)
             return datetime.now(pytz.UTC)
 
@@ -218,7 +218,7 @@ class RestaurantStatusCalculator:
                     return True, parsed_hours
             # Try fallback parsing
             return self._fallback_hours_parsing(hours_data)
-        except Exception as e:
+        except Exception:
             logger.exception("Error parsing business hours")
             return False, []
 
@@ -261,7 +261,7 @@ class RestaurantStatusCalculator:
                     end_ampm,
                 )
                 return [{"day": day.lower(), "start": start_time, "end": end_time}]
-        except Exception as e:
+        except Exception:
             logger.exception("Error parsing day hours")
         return []
 
@@ -310,7 +310,7 @@ class RestaurantStatusCalculator:
                 start_time = time(0, 0)
                 end_time = time(23, 59)
                 return True, [{"day": "daily", "start": start_time, "end": end_time}]
-        except Exception as e:
+        except Exception:
             logger.exception("Error in fallback hours parsing")
         return False, []
 

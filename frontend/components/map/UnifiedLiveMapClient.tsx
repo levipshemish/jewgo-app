@@ -82,7 +82,7 @@ export default function UnifiedLiveMapClient() {
     restaurantsWithCoords: [],
     visibleCount: null,
   });
-  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
+  const [_performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     loadTime: 0,
     filterTime: 0,
     renderTime: 0,
@@ -543,15 +543,6 @@ export default function UnifiedLiveMapClient() {
             showRatingBubbles={true}
             onMapStateUpdate={(state) => setMapState(state)}
           />
-          {/* Debug info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="fixed bottom-4 right-4 z-50 bg-red-500 text-white p-2 rounded text-xs">
-              <div>All: {allRestaurants.length}</div>
-              <div>Displayed: {displayedRestaurants.length}</div>
-              <div>Loading: {loading ? 'YES' : 'NO'}</div>
-              <div>Error: {error || 'None'}</div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -631,18 +622,6 @@ export default function UnifiedLiveMapClient() {
           )}
         </div>
       </div>
-
-      {/* Performance Metrics (Development Only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed top-4 right-4 z-40 bg-black/80 text-white text-xs p-2 rounded">
-          <div>Load: {performanceMetrics.loadTime}ms</div>
-          <div>Filter: {performanceMetrics.filterTime}ms</div>
-          <div>Cache: {Math.round(performanceMetrics.cacheHitRate * 100)}%</div>
-          <div>Restaurants: {allRestaurants.length}</div>
-          <div>Displayed: {displayedRestaurants.length}</div>
-
-        </div>
-      )}
 
       {/* Filters Modal */}
       {showFilters && (

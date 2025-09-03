@@ -174,7 +174,10 @@ class DatabaseManager:
             filters=filters,
         )
         if as_dict:
-            return [self._restaurant_to_dict(restaurant) for restaurant in restaurants]
+            # Use bulk image loading to avoid N+1 query problem
+            restaurant_ids = [restaurant.id for restaurant in restaurants]
+            images_map = self.image_repo.get_images_for_restaurants(restaurant_ids)
+            return [self._restaurant_to_dict_with_images(restaurant, images_map.get(restaurant.id, [])) for restaurant in restaurants]
         return restaurants
 
     @handle_operation_with_fallback(fallback_value=0)
@@ -898,7 +901,7 @@ class DatabaseManager:
     def _restaurant_to_dict(self, restaurant) -> Dict[str, Any]:
         """Convert restaurant model to dictionary."""
         try:
-            # Get restaurant images
+            # Get restaurant images (N+1 query - use _restaurant_to_dict_with_images for better performance)
             images = self.image_repo.get_restaurant_images(restaurant.id)
             image_dicts = [self._image_to_dict(img) for img in images]
             # Get restaurant status
@@ -908,58 +911,79 @@ class DatabaseManager:
                     "timezone": restaurant.timezone,
                 }
             )
-            return {
-                "id": restaurant.id,
-                "name": restaurant.name,
-                "address": restaurant.address,
-                "city": restaurant.city,
-                "state": restaurant.state,
-                "zip_code": restaurant.zip_code,
-                "phone_number": restaurant.phone_number,
-                "website": restaurant.website,
-                "certifying_agency": restaurant.certifying_agency,
-                "kosher_category": restaurant.kosher_category,
-                "listing_type": restaurant.listing_type,
-                "google_listing_url": restaurant.google_listing_url,
-                "price_range": restaurant.price_range,
-                "short_description": restaurant.short_description,
-                "hours_of_operation": restaurant.hours_of_operation,
-                "hours_json": restaurant.hours_json,
-                "hours_last_updated": (
-                    restaurant.hours_last_updated.isoformat()
-                    if restaurant.hours_last_updated
-                    else None
-                ),
-                "timezone": restaurant.timezone,
-                "latitude": restaurant.latitude,
-                "longitude": restaurant.longitude,
-                "is_cholov_yisroel": restaurant.is_cholov_yisroel,
-                "is_pas_yisroel": restaurant.is_pas_yisroel,
-                "cholov_stam": restaurant.cholov_stam,
-                "image_url": restaurant.image_url,
-                "specials": self._safe_json_loads(restaurant.specials, []),
-                "status": restaurant.status,
-                "place_id": restaurant.place_id,
-                "created_at": (
-                    restaurant.created_at.isoformat() if restaurant.created_at else None
-                ),
-                "updated_at": (
-                    restaurant.updated_at.isoformat() if restaurant.updated_at else None
-                ),
-                "current_time_local": (
-                    restaurant.current_time_local.isoformat()
-                    if restaurant.current_time_local
-                    else None
-                ),
-                "hours_parsed": restaurant.hours_parsed,
-                "google_reviews": getattr(restaurant, 'google_reviews', None),
-                "images": image_dicts,
-                "is_open": status_info.get("is_open", False),
-                "status_info": status_info,
-            }
+            return self._build_restaurant_dict(restaurant, image_dicts, status_info)
         except Exception as e:
             logger.exception("Error converting restaurant to dict", error=str(e))
             return {}
+
+    def _restaurant_to_dict_with_images(self, restaurant, images: List[Any]) -> Dict[str, Any]:
+        """Convert restaurant model to dictionary with pre-loaded images (avoids N+1 queries)."""
+        try:
+            # Convert pre-loaded images to dicts
+            image_dicts = [self._image_to_dict(img) for img in images]
+            # Get restaurant status
+            status_info = get_restaurant_status(
+                {
+                    "hours_json": restaurant.hours_json,
+                    "timezone": restaurant.timezone,
+                }
+            )
+            return self._build_restaurant_dict(restaurant, image_dicts, status_info)
+        except Exception as e:
+            logger.exception("Error converting restaurant to dict with images", error=str(e))
+            return {}
+
+    def _build_restaurant_dict(self, restaurant, image_dicts: List[Dict[str, Any]], status_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Build the restaurant dictionary from restaurant model, images, and status info."""
+        return {
+            "id": restaurant.id,
+            "name": restaurant.name,
+            "address": restaurant.address,
+            "city": restaurant.city,
+            "state": restaurant.state,
+            "zip_code": restaurant.zip_code,
+            "phone_number": restaurant.phone_number,
+            "website": restaurant.website,
+            "certifying_agency": restaurant.certifying_agency,
+            "kosher_category": restaurant.kosher_category,
+            "listing_type": restaurant.listing_type,
+            "google_listing_url": restaurant.google_listing_url,
+            "price_range": restaurant.price_range,
+            "short_description": restaurant.short_description,
+            "hours_of_operation": restaurant.hours_of_operation,
+            "hours_json": restaurant.hours_json,
+            "hours_last_updated": (
+                restaurant.hours_last_updated.isoformat()
+                if restaurant.hours_last_updated
+                else None
+            ),
+            "timezone": restaurant.timezone,
+            "latitude": restaurant.latitude,
+            "longitude": restaurant.longitude,
+            "is_cholov_yisroel": restaurant.is_cholov_yisroel,
+            "is_pas_yisroel": restaurant.is_pas_yisroel,
+            "cholov_stam": restaurant.cholov_stam,
+            "image_url": restaurant.image_url,
+            "specials": self._safe_json_loads(restaurant.specials, []),
+            "status": restaurant.status,
+            "place_id": restaurant.place_id,
+            "created_at": (
+                restaurant.created_at.isoformat() if restaurant.created_at else None
+            ),
+            "updated_at": (
+                restaurant.updated_at.isoformat() if restaurant.updated_at else None
+            ),
+            "current_time_local": (
+                restaurant.current_time_local.isoformat()
+                if restaurant.current_time_local
+                else None
+            ),
+            "hours_parsed": restaurant.hours_parsed,
+            "google_reviews": getattr(restaurant, 'google_reviews', None),
+            "images": image_dicts,
+            "is_open": status_info.get("is_open", False),
+            "status_info": status_info,
+        }
 
     def _review_to_dict(self, review) -> Dict[str, Any]:
         """Convert review model to dictionary."""

@@ -7,7 +7,7 @@ import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
 // Enhanced middleware with security hardening and admin route protection
 export const config = {
   matcher: [
-    // Admin routes only
+    // Admin routes only - exclude auth routes to prevent redirect loops
     '/admin/:path*',
     '/api/admin/:path*',
   ]
@@ -200,6 +200,14 @@ function redirectToSignin(request: NextRequest): NextResponse {
  * Check if path requires protection
  */
 function isProtectedPath(pathname: string): boolean {
+  // Exclude auth routes to prevent redirect loops
+  if (pathname.startsWith('/auth/') || 
+      pathname.startsWith('/_next/') || 
+      pathname.startsWith('/static/') ||
+      pathname.startsWith('/api/auth/')) {
+    return false;
+  }
+  
   return pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
 }
 

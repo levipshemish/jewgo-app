@@ -29,7 +29,6 @@ from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-
 def check_current_certifying_agencies():
     """Check current certifying agency values in the database."""
     try:
@@ -67,7 +66,6 @@ def check_current_certifying_agencies():
         logger.error(f"Error checking certifying agencies: {e}")
         return False
 
-
 def update_certifying_agency_capitalization():
     """Update certifying agency capitalization in the database."""
     
@@ -96,7 +94,7 @@ def update_certifying_agency_capitalization():
             logger.info(f"Updated {orb_updated} restaurants from 'Orb' to 'ORB'")
 
             # Update "Kosher miami" to "Kosher Miami"
-            kosher_miami_result = session.execute(
+            _result = session.execute(
                 text(
                     """
                 UPDATE restaurants 
@@ -105,14 +103,14 @@ def update_certifying_agency_capitalization():
                 """
                 )
             )
-            kosher_miami_updated = kosher_miami_result.rowcount
-            print(f"Updated {kosher_miami_updated} restaurants from 'Kosher miami' to 'Kosher Miami'")
-            logger.info(f"Updated {kosher_miami_updated} restaurants from 'Kosher miami' to 'Kosher Miami'")
+            _updated = _result.rowcount
+            print(f"Updated {_updated} restaurants from 'Kosher miami' to 'Kosher Miami'")
+            logger.info(f"Updated {_updated} restaurants from 'Kosher miami' to 'Kosher Miami'")
 
             # Commit the changes
             session.commit()
             
-            total_updated = orb_updated + kosher_miami_updated
+            total_updated = orb_updated + _updated
             print(f"Total restaurants updated: {total_updated}")
             logger.info(f"Total restaurants updated: {total_updated}")
 
@@ -121,7 +119,6 @@ def update_certifying_agency_capitalization():
     except Exception as e:
         logger.error(f"Error updating certifying agency capitalization: {e}")
         return False
-
 
 def verify_capitalization_update():
     """Verify that the capitalization updates were applied correctly."""
@@ -162,7 +159,6 @@ def verify_capitalization_update():
     except Exception as e:
         logger.error(f"Error verifying capitalization updates: {e}")
         return False
-
 
 def main():
     """Main function to run the capitalization update."""
@@ -208,7 +204,6 @@ def main():
     print("=== Capitalization Update Complete ===")
     logger.info("=== Capitalization Update Complete ===")
     return True
-
 
 if __name__ == "__main__":
     success = main()

@@ -299,7 +299,7 @@ safety check
 ### Service Providers
 - **Vercel**: Frontend hosting issues
 - **Render**: Backend hosting issues
-- **Neon**: Database issues
+- **api.jewgo.app**: Database issues
 
 ---
 

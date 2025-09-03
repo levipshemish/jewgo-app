@@ -98,9 +98,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           setPermissionStatus('prompt');
           return 'prompt';
         }
-      } catch (error) {
+      } catch (_error) {
         // If permission query fails, default to prompt
-        if (DEBUG) { debugLog('📍 LocationContext: Permission query failed:', error); }
+        if (DEBUG) { debugLog('📍 LocationContext: Permission query failed:', _error); }
         setPermissionStatus('prompt');
         return 'prompt';
       }
@@ -129,7 +129,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               if (DEBUG) { debugLog(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`); }
             }
           }
-        } catch (error) {
+        } catch (_error) {
           // Clear corrupted data
           localStorage.removeItem(LOCATION_STORAGE_KEY);
         }
@@ -171,8 +171,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       try {
         localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
         if (DEBUG) { debugLog('📍 LocationContext: Saved location data to localStorage'); }
-      } catch (error) {
-        if (DEBUG) { console.error('❌ LocationContext: Failed to save location data:', error); }
+      } catch (_error) {
+        if (DEBUG) { console.error('❌ LocationContext: Failed to save location data:', _error); }
       }
     }
   }, [hasInitialized, userLocation, permissionStatus]);
@@ -243,25 +243,25 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         };
         if (DEBUG) { /* location obtained successfully */ }
         setUserLocation(location);
-      } catch (error: any) {
+      } catch (locationError: any) {
         setIsLoading(false);
         let errorMessage = 'Unable to get your location';
         
-        if (error.message === 'timeout') {
+        if (locationError.message === 'timeout') {
           errorMessage = 'Location request timed out. Please try again.';
           // Keep permission status as prompt so user can retry
           setPermissionStatus('prompt');
           if (DEBUG) { debugLog('📍 LocationContext: Location request timed out after 10 seconds'); }
-        } else if (error.code) {
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
+        } else if (locationError.code) {
+          switch (locationError.code) {
+            case locationError.PERMISSION_DENIED:
               setPermissionStatus('denied');
               errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
               break;
-            case error.POSITION_UNAVAILABLE:
+            case locationError.POSITION_UNAVAILABLE:
               errorMessage = 'Location information is unavailable. Please try again.';
               break;
-            case error.TIMEOUT:
+            case locationError.TIMEOUT:
               errorMessage = 'Location request timed out. Please try again.';
               break;
           }
@@ -288,8 +288,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setPermissionStatus(status);
   }, []);
 
-  const setErrorHandler = useCallback((error: string | null) => {
-    setError(error);
+  const setErrorHandler = useCallback((errorMessage: string | null) => {
+    setError(errorMessage);
   }, []);
 
   const setLoadingHandler = useCallback((loading: boolean) => {
@@ -309,7 +309,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         // For older browsers, we can't check without actually requesting
         return 'prompt';
       }
-    } catch (error) {
+    } catch (_error) {
       return 'prompt';
     }
   }, []);

@@ -41,11 +41,7 @@ consistent service.
 Author: JewGo Development Team
 Version: 1.0
 """
-# Import Restaurant model at module level to avoid repeated imports
-try:
-    from database.database_manager_v3 import Restaurant
-except ImportError:
-    Restaurant = None
+# Restaurant model already imported above
 
 
 class SearchType(Enum):

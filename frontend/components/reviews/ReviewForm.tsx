@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { Star, X, Upload } from 'lucide-react';
 import { LoadingButton } from '@/components/ui/LoadingStates';
 import { cn } from '@/lib/utils/cn';
 

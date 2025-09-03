@@ -56,7 +56,8 @@ def redis_health_check_route():
         set_time = (time.time() - start_time) * 1000
         # Test get operation
         start_time = time.time()
-        retrieved = r.get(test_key)
+        # Fetch to validate read path (value unused; only timing matters)
+        r.get(test_key)
         get_time = (time.time() - start_time) * 1000
         # Clean up test key
         r.delete(test_key)

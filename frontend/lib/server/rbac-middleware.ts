@@ -92,7 +92,7 @@ export function withPermission(requiredPermission: string) {
     
     // Check if user has the required permission
     const reqLower = requiredPermission.toLowerCase();
-    const hasPermission = userPermissions.some(permission => {
+    const userHasPermission = userPermissions.some(permission => {
       const permLower = permission.toLowerCase();
       // Handle wildcard permissions (both :* and :all)
       if (permLower.endsWith(':*')) {
@@ -106,7 +106,7 @@ export function withPermission(requiredPermission: string) {
       return permLower === reqLower;
     });
     
-    if (!hasPermission) {
+    if (!userHasPermission) {
       forbidden(`Insufficient permissions. Required: ${requiredPermission}`);
     }
     

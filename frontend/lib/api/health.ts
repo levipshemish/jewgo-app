@@ -89,7 +89,7 @@ export class HealthAPI {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       
-      const response = await fetch(`${API_BASE_URL}/api/restaurants?limit=1`, {
+      const response = await fetch(`${API_BASE_URL}/api/v4/restaurants?limit=1`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

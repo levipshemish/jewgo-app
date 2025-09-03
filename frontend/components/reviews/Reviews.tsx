@@ -121,9 +121,9 @@ export default function Reviews({
 
       setReviews(prev => [newReview, ...prev]);
       setShowReviewForm(false);
-    } catch (error) {
-      console.error('Error adding review:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error adding review:', err);
+      throw err;
     }
   };
 

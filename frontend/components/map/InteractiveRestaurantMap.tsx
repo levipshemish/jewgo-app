@@ -10,7 +10,7 @@ import { performanceMonitor } from '@/lib/utils/performanceOptimization';
 import { safeFilter } from '@/lib/utils/validation';
 
 import { useMarkerManagement } from './hooks/useMarkerManagement';
-import { MapPerformanceMonitor } from '../monitoring/MapPerformanceMonitor';
+
 
 // Optional globals for clustering when available at runtime
 declare global {
@@ -323,10 +323,6 @@ export function InteractiveRestaurantMap({
         </div>
       )}
 
-      {/* Performance Monitor */}
-      {process.env.NODE_ENV === 'development' && (
-        <MapPerformanceMonitor />
-      )}
     </div>
   );
 }

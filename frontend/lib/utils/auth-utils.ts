@@ -1,5 +1,5 @@
 import ipaddr from 'ipaddr.js';
-import { type TransformedUser, type AuthProvider } from '@/lib/types/supabase-auth';
+import { type TransformedUser, type AuthProvider as _AuthProvider } from '@/lib/types/supabase-auth';
 
 // User type definition - moved here to avoid circular dependencies
 interface User {
@@ -70,13 +70,9 @@ export async function transformSupabaseUser(
   // If running on the server, use server-aware role fetcher to avoid relative URL issues
   if (typeof window === 'undefined') {
     const { transformSupabaseUserWithRoles } = await import('./auth-utils-client');
-    // Server-side role fetching removed to prevent client bundle issues
-    // Roles will be fetched through API endpoints instead
-    if (!user) return null;
-    const base = await transformSupabaseUserWithRoles(user, { includeRoles: false });
-    if (!base) return null;
-    // Return base user without roles for server-side rendering
-    return base as TransformedUser;
+    // Server-side: honor includeRoles + userToken to enable admin auth
+    // Delegates to the client-safe role transformer which uses API endpoints
+    return await transformSupabaseUserWithRoles(user, options);
   }
   // Client path delegates to client-safe implementation
   const { transformSupabaseUserWithRoles } = await import('./auth-utils-client');
@@ -271,7 +267,7 @@ function verifySignedCSRFToken(token: string): boolean {
     // For client-side, we only validate format, not signature
     // Actual signature verification should be done server-side
     return true;
-  } catch (error) {
+  } catch (_error) {
     // CSRF token verification failed
     return false;
   }
@@ -317,7 +313,7 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     
     // Check for // in query parameters to prevent external redirects
     const searchParams = urlObj.searchParams;
-    const hasDangerousQueryParam = Array.from(searchParams.entries()).some(([key, value]) => {
+    const hasDangerousQueryParam = Array.from(searchParams.entries()).some(([_key, value]) => {
       return value.includes('//');
     });
     
@@ -502,7 +498,7 @@ export function validateSupabaseFeatureSupport(): boolean {
 
     return true;
     
-  } catch (error) {
+  } catch (_error) {
     // Feature validation failed
     return false;
   }

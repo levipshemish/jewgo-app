@@ -17,7 +17,7 @@ def cleanup_migration_files():
     # Files to remove (temporary migration scripts)
     files_to_remove = [
         # Migration scripts (no longer needed)
-        "backend/migrate_neon_to_oracle.py",
+        "backend/migrate_api_jewgo_app_to_oracle.py",
         "backend/migrate_restaurants_common_columns.py",
         "backend/migrate_remaining_restaurants.py",
         "backend/final_restaurants_migration.py",
@@ -36,7 +36,7 @@ def cleanup_migration_files():
         "backend/test_marketplace_categories.py",
         
         # Data checking scripts (temporary)
-        "backend/check_neon_data.py",
+        "backend/check_api_jewgo_app_data.py",
         "backend/check_table_structure.py",
         "backend/check_column_differences.py",
         "backend/check_db_schema.py",
@@ -157,7 +157,7 @@ This document summarizes the cleanup performed after the successful Oracle Cloud
 ## 📁 Files Removed
 
 ### Migration Scripts (Temporary)
-- `migrate_neon_to_oracle.py` - Initial migration attempt
+- `migrate_api_jewgo_app_to_oracle.py` - Initial migration attempt
 - `migrate_restaurants_common_columns.py` - Final restaurants migration
 - `migrate_remaining_restaurants.py` - NULL value fixes
 - `fix_restaurants_migration*.py` - Various migration fix attempts
@@ -173,7 +173,7 @@ This document summarizes the cleanup performed after the successful Oracle Cloud
 - `test_marketplace_categories.py` - Marketplace category tests
 
 ### Data Checking Scripts (Temporary)
-- `check_neon_data.py` - Neon data verification
+- `check_api_jewgo_app_data.py` - api.jewgo.app data verification
 - `check_table_structure.py` - Table structure checks
 - `check_column_differences.py` - Column comparison
 - `check_db_schema.py` - Database schema checks

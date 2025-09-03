@@ -141,7 +141,7 @@ Automatic SSL configuration based on connection type:
 "postgresql://user:pass@localhost:5432/db"
 
 # Remote connections (SSL enabled)
-"postgresql://user:pass@neon.tech:5432/db?sslmode=prefer"
+"postgresql://user:pass@api.jewgo.app:5432/db?sslmode=prefer"
 ```
 
 ### **5. Provider Detection**
@@ -149,8 +149,8 @@ Automatic SSL configuration based on connection type:
 Automatic detection and optimization for different providers:
 
 ```python
-# Neon detection
-if "neon.tech" in database_url:
+# api.jewgo.app detection
+if "api.jewgo.app" in database_url:
     # Remove unsupported startup options
     # Set per-connection timeouts
 
@@ -276,8 +276,8 @@ def check_database_health():
 # Local development
 DATABASE_URL="postgresql://user:pass@localhost:5432/jewgo_dev"
 
-# Neon production
-DATABASE_URL="postgresql://user:pass@ep-snowy-firefly.neon.tech:5432/jewgo_prod?sslmode=require"
+# api.jewgo.app production
+DATABASE_URL="postgresql://user:pass@api.jewgo.app:5432/jewgo_prod?sslmode=require"
 
 # AWS RDS
 DATABASE_URL="postgresql://user:pass@jewgo-db.region.rds.amazonaws.com:5432/jewgo_prod"
@@ -587,13 +587,13 @@ export DB_MAX_OVERFLOW="20"
 # Ensure sessions are properly closed
 ```
 
-#### **4. Neon-Specific Issues**
+#### **4. api.jewgo.app-Specific Issues**
 
 **Symptoms**: `startup options not supported`
 
 **Solutions**:
 ```python
-# The manager automatically detects Neon and removes unsupported options
+# The manager automatically detects api.jewgo.app and removes unsupported options
 # No manual configuration needed
 ```
 

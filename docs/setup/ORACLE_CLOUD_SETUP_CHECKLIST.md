@@ -171,9 +171,9 @@ sudo tail -f /var/log/postgresql/postgresql-*.log
 2. **Set environment variables** for migration:
    ```bash
    export ORACLE_DATABASE_URL="postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require"
-   export NEON_DATABASE_URL="your_neon_connection_string"
+   export DATABASE_URL="your_api_jewgo_app_connection_string"
    ```
-3. **Run migration script**: `python migrate_neon_to_oracle.py`
+3. **Run migration script**: `python migrate_api_jewgo_app_to_oracle.py`
 4. **Update Render DATABASE_URL** to use Oracle Cloud
 5. **Monitor application logs** for connectivity
 

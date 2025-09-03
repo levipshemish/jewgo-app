@@ -413,7 +413,7 @@ def require_feature_flag(flag_name: str, default: bool = False):
         default: Default value if flag is not found
     """
 
-    def decorator(f):
+    def feature_flag_decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             # Get user ID from request if available
@@ -436,7 +436,7 @@ def require_feature_flag(flag_name: str, default: bool = False):
 
         return decorated_function
 
-    return decorator
+    return feature_flag_decorator
 
 
 def feature_flag_context(flag_name: str, default: bool = False):

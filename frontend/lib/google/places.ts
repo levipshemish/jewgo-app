@@ -231,10 +231,10 @@ export class ModernGooglePlacesAPI {
       const dummyDiv = document.createElement('div');
       const placesService = new google.maps.places.PlacesService(dummyDiv);
       
-      const searchResults = await new Promise<google.maps.PlaceResult[]>((resolve, reject) => {
-        placesService.textSearch(searchRequest, (results, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-            resolve(results);
+      const searchResults = await new Promise<google.maps.PlaceResult[]>((resolve, _reject) => {
+        placesService.textSearch(searchRequest, (placeResults, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && placeResults) {
+            resolve(placeResults);
           } else {
             resolve([]);
           }
@@ -612,7 +612,7 @@ export class ModernGooglePlacesAPI {
           this.diagnostics.detailsStrategy = 'modern';
           this.refreshDiagnostics('details.modern');
           return legacyResult;
-        } catch (e) {
+        } catch (_e) {
           if (process.env.NODE_ENV === 'development') {
 
           }

@@ -39,7 +39,7 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
   
   // Disable WebSocket in development and production if not explicitly enabled
-  const isProduction = process.env.NODE_ENV === 'production';
+  const _isProduction = process.env.NODE_ENV === 'production';
   const shouldUseWebSocket = false; // Disable WebSocket for now since backend doesn't support it
   
   const [isConnected, setIsConnected] = useState(false);
@@ -168,8 +168,8 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
         setError('WebSocket connection error');
       };
 
-    } catch (err) {
-      // console.error('Error creating WebSocket:', err);
+    } catch (_err) {
+      // console.error('Error creating WebSocket:', _err);
       setError('Failed to create WebSocket connection');
       setIsConnecting(false);
     }

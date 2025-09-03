@@ -936,7 +936,7 @@ function MarketplacePageContent() {
           </div>
         </div>
         
-        <BottomNavigation />
+        <BottomNavigation size="compact" showLabels="active-only" />
       </div>
     );
   }
@@ -1161,7 +1161,7 @@ function MarketplacePageContent() {
       )}
 
       {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
 
       {/* Categories Dropdown */}
       <MarketplaceCategoriesDropdown

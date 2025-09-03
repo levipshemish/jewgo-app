@@ -84,8 +84,8 @@ export class SpecialsAPI {
       }
       
       return [];
-    } catch (error) {
-      // // console.error('Failed to fetch specials from API:', error);
+    } catch (_error) {
+      // // console.error('Failed to fetch specials from API:', _error);
       // Return mock data as fallback
       return this.getMockSpecials();
     }
@@ -98,8 +98,8 @@ export class SpecialsAPI {
       });
       
       return response;
-    } catch (error) {
-      // // console.error('Failed to claim deal:', error);
+    } catch (_error) {
+      // // console.error('Failed to claim deal:', _error);
       
       // Fallback mock response
       await new Promise(resolve => setTimeout(resolve, 1000));

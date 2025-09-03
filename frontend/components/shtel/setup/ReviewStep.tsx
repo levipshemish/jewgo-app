@@ -80,7 +80,7 @@ export default function ReviewStep({
           Review & Launch Your Store
         </h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Review all your store details before going live. You're almost ready to start selling!
+          Review all your store details before going live. You&apos;re almost ready to start selling!
         </p>
       </div>
 

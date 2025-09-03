@@ -17,12 +17,7 @@ from utils.redis_client import get_redis_client
 logger = get_logger(__name__)
 
 # Single source of truth for role levels
-ROLE_LEVELS = {
-    "moderator": 1,
-    "data_admin": 2, 
-    "system_admin": 3,
-    "super_admin": 4
-}
+ROLE_LEVELS = {"moderator": 1, "data_admin": 2, "system_admin": 3, "super_admin": 4}
 
 # Module-level locks for singleflight when Redis is disabled
 _fallback_locks = {}
@@ -35,23 +30,31 @@ class SupabaseRoleManager:
     def __init__(self):
         self.supabase_url = os.getenv("SUPABASE_URL")
         self.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
-        self.base_ttl = int(os.getenv("ADMIN_ROLE_CACHE_TTL", os.getenv("ADMIN_ROLE_CACHE_SECONDS", "90")))
-        
+        self.base_ttl = int(
+            os.getenv(
+                "ADMIN_ROLE_CACHE_TTL", os.getenv("ADMIN_ROLE_CACHE_SECONDS", "90")
+            )
+        )
+
         # Initialize Redis with graceful degradation
         try:
             self.redis = get_redis_client()
             if not self.redis:
-                logger.warning("STARTUP_WARNING: Redis client not available - admin role caching disabled. Performance may be degraded under load.")
+                logger.warning(
+                    "STARTUP_WARNING: Redis client not available - admin role caching disabled. Performance may be degraded under load."
+                )
                 self.redis = None
         except Exception as e:
-            logger.warning(f"STARTUP_WARNING: Failed to initialize Redis client: {e} - admin role caching disabled. Performance may be degraded under load.")
+            logger.warning(
+                f"STARTUP_WARNING: Failed to initialize Redis client: {e} - admin role caching disabled. Performance may be degraded under load."
+            )
             self.redis = None
-        
+
         # Initialize in-process cache fallback for when Redis is unavailable
         self._fallback_cache = {}
         self._fallback_cache_lock = threading.Lock()
         self._fallback_cache_ttl = 60  # Short 60-second TTL for in-process cache
-        
+
         # Require URL, but allow missing anon key (optional header)
         if not self.supabase_url:
             raise ValueError("SUPABASE_URL must be set")
@@ -67,18 +70,23 @@ class SupabaseRoleManager:
         try:
             # Always derive user_id from verified token to prevent confused-deputy attacks
             from utils.supabase_auth import parse_sub_from_verified_token
+
             user_id = parse_sub_from_verified_token(user_token)
             if not user_id:
-                logger.error("Could not parse sub from verified token - rejecting request")
+                logger.error(
+                    "Could not parse sub from verified token - rejecting request"
+                )
                 return None
-            
+
             # Get role with strict singleflight control
             return self._call_supabase_rpc_with_strict_locking(user_token, user_id)
         except Exception as e:
             logger.error(f"Error getting admin role: {e}")
             return None
 
-    def get_user_admin_role_checked(self, user_token: str, verified_sub: str) -> Optional[Dict[str, Any]]:
+    def get_user_admin_role_checked(
+        self, user_token: str, verified_sub: str
+    ) -> Optional[Dict[str, Any]]:
         """
         Get admin role for user with hard equality check on user_id.
         Args:
@@ -90,22 +98,25 @@ class SupabaseRoleManager:
         try:
             # Parse sub from token header without re-verification to prevent confused-deputy attacks
             from utils.supabase_auth import parse_sub_unverified_payload
+
             token_sub = parse_sub_unverified_payload(user_token)
             if not token_sub:
-                logger.error("Could not parse sub from token header - rejecting request")
+                logger.error(
+                    "Could not parse sub from token header - rejecting request"
+                )
                 return None
-            
+
             # Hard equality check - fail-closed if mismatch
             if token_sub != verified_sub:
-                logger.error(f"Token sub ({token_sub}) does not match verified_sub ({verified_sub}) - rejecting request")
+                logger.error(
+                    f"Token sub ({token_sub}) does not match verified_sub ({verified_sub}) - rejecting request"
+                )
                 return None
-            
+
             return self._call_supabase_rpc_with_strict_locking(user_token, verified_sub)
         except Exception as e:
             logger.error(f"Error getting admin role with verified sub: {e}")
             return None
-
-
 
     def _call_supabase_rpc_with_strict_locking(
         self, user_token: str, user_id: str
@@ -120,25 +131,31 @@ class SupabaseRoleManager:
         """
         cache_key = f"admin_role:{user_id}"
         lock_key = f"lock:role:{user_id}"
-        
+
         # If Redis is not available, use in-process caching and singleflight
         if not self.redis:
-            logger.debug(f"Redis not available - using in-process cache and singleflight for user {user_id}")
-            
+            logger.debug(
+                f"Redis not available - using in-process cache and singleflight for user {user_id}"
+            )
+
             # Check in-process cache first
             with self._fallback_cache_lock:
                 cached_data = self._fallback_cache.get(user_id)
                 if cached_data and cached_data.get("expires_at", 0) > time.time():
                     logger.debug(f"FALLBACK_CACHE_HIT for user {user_id}")
                     return cached_data
-                    
+
             # Cache miss or expired - fetch with singleflight
-            result = self._fetch_role_from_supabase_with_singleflight(user_token, user_id)
-            
+            result = self._fetch_role_from_supabase_with_singleflight(
+                user_token, user_id
+            )
+
             # Cache the result if successful and normalize shape
             if result is not None:
                 with self._fallback_cache_lock:
-                    expires_at = time.time() + self._ttl_with_jitter(self._fallback_cache_ttl)
+                    expires_at = time.time() + self._ttl_with_jitter(
+                        self._fallback_cache_ttl
+                    )
                     cache_data = {
                         "role": result.get("role"),
                         "level": result.get("level", 0),
@@ -155,14 +172,14 @@ class SupabaseRoleManager:
                 return cache_data
 
             return result
-        
+
         # Check cache first - only serve if within TTL
         cached = self.redis.get(cache_key)
         if cached:
             try:
                 # Handle potential bytes response from Redis
                 if isinstance(cached, (bytes, bytearray)):
-                    cached = cached.decode('utf-8')
+                    cached = cached.decode("utf-8")
                 cache_data = json.loads(cached)
                 if cache_data.get("expires_at", 0) > time.time():
                     logger.debug(f"ROLE_CACHE_HIT for user {user_id}")
@@ -189,7 +206,7 @@ class SupabaseRoleManager:
                 try:
                     # Handle potential bytes response from Redis
                     if isinstance(cached, (bytes, bytearray)):
-                        cached = cached.decode('utf-8')
+                        cached = cached.decode("utf-8")
                     cache_data = json.loads(cached)
                     if cache_data.get("expires_at", 0) > time.time():
                         logger.debug(f"ROLE_CACHE_HIT_AFTER_WAIT for user {user_id}")
@@ -218,29 +235,36 @@ class SupabaseRoleManager:
             if user_id not in _fallback_locks:
                 _fallback_locks[user_id] = threading.Lock()
             lock = _fallback_locks[user_id]
-        
+
         # Try to acquire lock with timeout
         if lock.acquire(timeout=1.0):
             try:
                 logger.debug(f"ROLE_FALLBACK_LOCK_ACQUIRED for user {user_id}")
-                return self._fetch_role_from_supabase(user_token, user_id, cache_key=None)
+                return self._fetch_role_from_supabase(
+                    user_token, user_id, cache_key=None
+                )
             finally:
                 lock.release()
                 logger.debug(f"ROLE_FALLBACK_LOCK_RELEASED for user {user_id}")
         else:
             # Lock acquisition failed - wait briefly then check cache again with TTL validation
             import time
+
             time.sleep(0.1 + random.uniform(0, 0.05))  # 100-150ms jitter
-            
+
             # Recheck in-process cache and validate TTL (fail-closed if expired)
             with self._fallback_cache_lock:
                 cached_data = self._fallback_cache.get(user_id)
                 if cached_data and cached_data.get("expires_at", 0) > time.time():
-                    logger.debug(f"ROLE_FALLBACK_CACHE_HIT_AFTER_WAIT for user {user_id}")
+                    logger.debug(
+                        f"ROLE_FALLBACK_CACHE_HIT_AFTER_WAIT for user {user_id}"
+                    )
                     return cached_data
                 else:
                     # Cache expired or missing - fail closed
-                    logger.warning(f"ROLE_FALLBACK_LOCK_TIMEOUT for user {user_id} - expired cache")
+                    logger.warning(
+                        f"ROLE_FALLBACK_LOCK_TIMEOUT for user {user_id} - expired cache"
+                    )
                     return None
 
     def _fetch_role_from_supabase(
@@ -273,14 +297,20 @@ class SupabaseRoleManager:
             )
             if response.status_code == 200:
                 data = response.json()
-                row = data[0] if isinstance(data, list) and data else (data if isinstance(data, dict) else None)
+                row = (
+                    data[0]
+                    if isinstance(data, list) and data
+                    else (data if isinstance(data, dict) else None)
+                )
                 if row is not None:
                     role = row.get("admin_role")
                     level = row.get("role_level", 0)
                     if role and level > 0:
                         # Cache positive result only if Redis is available
                         if self.redis:
-                            self._cache_set_role(user_id, {"role": role, "level": level})
+                            self._cache_set_role(
+                                user_id, {"role": role, "level": level}
+                            )
                         logger.info(f"ROLE_DB_SUCCESS for user {user_id}: {role}")
                         # Normalize return with expires_at using base TTL
                         expires_at = time.time() + self._ttl_with_jitter(self.base_ttl)
@@ -324,7 +354,7 @@ class SupabaseRoleManager:
         if not self.redis:
             logger.debug(f"Redis not available - skipping cache for user {user_id}")
             return
-            
+
         try:
             ttl = self._ttl_with_jitter(self.base_ttl)
             expires_at = time.time() + ttl
@@ -381,8 +411,10 @@ class SupabaseRoleManager:
                 self.redis.delete(cache_key)
                 logger.info(f"Invalidated Redis role cache for user {user_id}")
             except Exception as e:
-                logger.error(f"Error invalidating Redis role cache for user {user_id}: {e}")
-        
+                logger.error(
+                    f"Error invalidating Redis role cache for user {user_id}: {e}"
+                )
+
         # Also invalidate fallback cache
         with self._fallback_cache_lock:
             if user_id in self._fallback_cache:
@@ -396,22 +428,24 @@ class SupabaseRoleManager:
         """
         current_time = time.time()
         expired_keys = []
-        
+
         for user_id, cached_data in self._fallback_cache.items():
             if cached_data.get("expires_at", 0) <= current_time:
                 expired_keys.append(user_id)
-        
+
         for user_id in expired_keys:
             del self._fallback_cache[user_id]
-            
+
         if expired_keys:
-            logger.debug(f"Cleaned up {len(expired_keys)} expired entries from fallback cache")
+            logger.debug(
+                f"Cleaned up {len(expired_keys)} expired entries from fallback cache"
+            )
 
     def start_cache_invalidation_listener(self):
         """
         Start background worker to listen for admin role changes and invalidate cache.
         This method should be called once during application startup.
-        
+
         Requires:
         - ENABLE_CACHE_INVALIDATION_LISTENER=true
         - POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT environment variables
@@ -420,46 +454,61 @@ class SupabaseRoleManager:
         """
         # Check if cache invalidation listener is enabled
         if os.getenv("ENABLE_CACHE_INVALIDATION_LISTENER", "false").lower() != "true":
-            logger.info("Cache invalidation listener disabled by ENABLE_CACHE_INVALIDATION_LISTENER=false")
+            logger.info(
+                "Cache invalidation listener disabled by ENABLE_CACHE_INVALIDATION_LISTENER=false"
+            )
             return
-        
+
         # Validate required environment variables
-        required_env_vars = ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT"]
+        required_env_vars = [
+            "POSTGRES_DB",
+            "POSTGRES_USER",
+            "POSTGRES_PASSWORD",
+            "POSTGRES_HOST",
+            "POSTGRES_PORT",
+        ]
         missing_vars = [var for var in required_env_vars if not os.getenv(var)]
         if missing_vars:
-            logger.error(f"Cache invalidation listener disabled - missing required environment variables: {missing_vars}")
+            logger.error(
+                f"Cache invalidation listener disabled - missing required environment variables: {missing_vars}"
+            )
             return
-        
+
         try:
             import threading
             import psycopg2
             from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-            
+
             def listen_for_changes():
                 """Background thread to listen for PostgreSQL notifications."""
                 try:
                     # Connect to PostgreSQL with notification support using dedicated read-only role
                     # Use POSTGRES_READONLY_USER if available, otherwise fall back to POSTGRES_USER
-                    db_user = os.getenv("POSTGRES_READONLY_USER", os.getenv("POSTGRES_USER", "postgres"))
-                    db_password = os.getenv("POSTGRES_READONLY_PASSWORD", os.getenv("POSTGRES_PASSWORD"))
-                    
+                    db_user = os.getenv(
+                        "POSTGRES_READONLY_USER", os.getenv("POSTGRES_USER", "postgres")
+                    )
+                    db_password = os.getenv(
+                        "POSTGRES_READONLY_PASSWORD", os.getenv("POSTGRES_PASSWORD")
+                    )
+
                     conn = psycopg2.connect(
                         dbname=os.getenv("POSTGRES_DB", "postgres"),
                         user=db_user,
                         password=db_password,
                         host=os.getenv("POSTGRES_HOST", "localhost"),
-                        port=os.getenv("POSTGRES_PORT", "5432")
+                        port=os.getenv("POSTGRES_PORT", "5432"),
                     )
                     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
                     cur = conn.cursor()
-                    
+
                     # Listen for admin role change notifications
                     cur.execute("LISTEN admin_roles_changed;")
                     logger.info("Started listening for admin role changes")
-                    
+
                     while True:
                         # Wait for notifications with blocking select
                         import select
+
                         if select.select([conn], [], [], 10) == ([], [], []):
                             continue
                         conn.poll()
@@ -467,31 +516,37 @@ class SupabaseRoleManager:
                             notify = conn.notifies.pop()
                             user_id = notify.payload
                             if user_id:
-                                logger.info(f"Received admin role change notification for user {user_id}")
+                                logger.info(
+                                    f"Received admin role change notification for user {user_id}"
+                                )
                                 self.invalidate_user_role(user_id)
-                                
+
                 except Exception as e:
                     logger.error(f"Cache invalidation listener error: {e}")
                     # Log additional context for debugging
-                    logger.error(f"Cache invalidation listener failed - check database connectivity and permissions")
+                    logger.error(
+                        "Cache invalidation listener failed - check database connectivity and permissions"
+                    )
                 finally:
                     try:
                         cur.close()
                         conn.close()
                     except Exception as cleanup_error:
-                        logger.warning(f"Error cleaning up cache invalidation listener connection: {cleanup_error}")
-            
+                        logger.warning(
+                            f"Error cleaning up cache invalidation listener connection: {cleanup_error}"
+                        )
+
             # Start listener in background thread
             listener_thread = threading.Thread(
-                target=listen_for_changes,
-                daemon=True,
-                name="AdminRoleCacheInvalidator"
+                target=listen_for_changes, daemon=True, name="AdminRoleCacheInvalidator"
             )
             listener_thread.start()
             logger.info("Admin role cache invalidation listener started")
-            
+
         except ImportError:
-            logger.warning("psycopg2 not available - cache invalidation listener not started")
+            logger.warning(
+                "psycopg2 not available - cache invalidation listener not started"
+            )
         except Exception as e:
             logger.error(f"Failed to start cache invalidation listener: {e}")
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 🚀 JewGo Cloud Deployment Script
-# This script automates deployment to Neon, Supabase, Vercel, and Render
+# This script automates deployment to api.jewgo.app Postgres, Supabase, Vercel, and Render
 
 set -e  # Exit on any error
 
@@ -51,7 +51,7 @@ check_env_vars() {
 
 # Run database migration
 run_migration() {
-    print_status "Running database migration on Neon..."
+    print_status "Running database migration on api.jewgo.app..."
     
     cd backend
     

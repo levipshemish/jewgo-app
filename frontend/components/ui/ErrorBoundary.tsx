@@ -3,7 +3,7 @@
 // Temporarily disable Sentry to fix module resolution issues
 // import * as Sentry from '@sentry/nextjs';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component as ReactComponent, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -17,7 +17,7 @@ interface State {
   errorInfo?: ErrorInfo;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends ReactComponent<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
@@ -196,7 +196,7 @@ export function useErrorHandler() {
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>, 
   fallback?: ReactNode, 
-  onError?: (error: Error, errorInfo: ErrorInfo) => void
+  onError?: (caughtError: Error, errorInfo: ErrorInfo) => void
 ): React.ComponentType<P> {
   const WrappedComponent = (props: P): JSX.Element => (
     <ErrorBoundary fallback={fallback} onError={onError}>
@@ -249,7 +249,7 @@ export function AsyncErrorBoundary({
 
   return (
     <ErrorBoundary
-      onError={(error) => setError(error)}
+      onError={(caughtError) => setError(caughtError)}
       fallback={
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
           <div className="flex items-center">

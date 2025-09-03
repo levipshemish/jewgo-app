@@ -191,7 +191,6 @@ export function CategoryNav({
   // Roving focus hook with proper key handling
   const {
     focusedIndex,
-    setFocusedIndex,
     handleKeyDown,
     handleItemFocus: rovingHandleItemFocus,
     handleItemBlur: rovingHandleItemBlur,
@@ -240,7 +239,7 @@ export function CategoryNav({
                   inline: 'nearest',
                 });
               }
-            } catch (err) {
+            } catch (_err) {
               // Fallback to manual scroll
               scrollItemIntoViewX(scrollerRef.current, selectedElement);
             }
@@ -275,7 +274,7 @@ export function CategoryNav({
                 inline: 'nearest',
               });
             }
-          } catch (err) {
+          } catch (_err) {
             // Fallback to manual scroll
             scrollItemIntoViewX(scrollerRef.current, focusedElement);
           }
@@ -286,12 +285,12 @@ export function CategoryNav({
   }, [actualSelectedId, focusedIndex, memoizedItems, isInitialized]);
 
   // Manual scroll handlers with fallback
-  const scrollTo = useCallback((direction: 'left' | 'right') => {
+  const scrollTo = useCallback((scrollDirection: 'left' | 'right') => {
     const scroller = scrollerRef.current;
     if (!scroller) {return;}
 
     const scrollAmount = scroller.clientWidth * 0.8;
-    const targetScroll = direction === 'left' 
+    const targetScroll = scrollDirection === 'left' 
       ? Math.max(0, scroller.scrollLeft - scrollAmount)
       : Math.min(scroller.scrollWidth - scroller.clientWidth, scroller.scrollLeft + scrollAmount);
 
@@ -302,7 +301,7 @@ export function CategoryNav({
         left: targetScroll,
         behavior: prefersReducedMotion ? 'auto' : 'smooth',
       });
-    } catch (error) {
+    } catch (_error) {
       // Fallback to manual scroll
       scroller.scrollLeft = targetScroll;
     }

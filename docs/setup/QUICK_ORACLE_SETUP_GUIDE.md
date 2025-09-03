@@ -84,7 +84,7 @@ Once the connection works:
 
 2. **Run migration**:
    ```bash
-   python migrate_neon_to_oracle.py
+   python migrate_api_jewgo_app_to_oracle.py
    ```
 
 3. **Update Render DATABASE_URL** to use Oracle Cloud

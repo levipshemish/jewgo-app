@@ -238,9 +238,9 @@ class Analytics {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(event),
       });
-    } catch (error) {
+    } catch (_error) {
       // Silently handle analytics errors to prevent breaking the app
-      // console.error('[Analytics] Failed to send event:', error);
+      // console.error('[Analytics] Failed to send event:', _error);
     }
   }
 }

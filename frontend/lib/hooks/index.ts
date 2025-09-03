@@ -1,9 +1,69 @@
+export { useSearchInput } from './useSearchInput';
 export { useSearchSuggestions } from './useSearchSuggestions';
 export { useRecentSearches } from './useRecentSearches';
-export { useSearchInput } from './useSearchInput';
 export { useIsMobile } from './useIsMobile';
 export { useInfiniteScroll } from './useInfiniteScroll';
+export { useFeatureFlags } from './useFeatureFlags';
 export { useScrollDetection } from './useScrollDetection';
-export { useCaptcha } from '../../hooks/useCaptcha';
-export { usePerformanceMonitor } from './usePerformanceMonitor';
-export { useBackgroundPrefetch } from './useBackgroundPrefetch'; 
+export { useMobileTouch } from './useMobileTouch';
+export { useTouchFeedback } from './useTouchFeedback';
+export { usePrefersReducedMotion } from './usePrefersReducedMotion';
+
+// New consolidated hooks
+export { 
+  useDeviceDetection,
+  useIsMobile as useIsMobileNew,
+  useIsTablet,
+  useIsDesktop,
+  useIsTouch,
+  useOrientation,
+  useScreenSize,
+  type DeviceInfo,
+  type UseDeviceDetectionOptions
+} from './useDeviceDetection';
+
+export { 
+  useTheme,
+  ThemeProvider,
+  type Theme,
+  type ThemeContextType,
+  getThemeColor,
+  isDarkMode
+} from '../contexts/ThemeContext';
+
+export { 
+  useKeyboardNavigation,
+  useTabNavigation,
+  useListNavigation,
+  useGridNavigation,
+  type UseKeyboardNavigationOptions,
+  type UseKeyboardNavigationReturn
+} from './useKeyboardNavigation';
+
+export { 
+  useNavigationItems,
+  createNavigationItems,
+  DEFAULT_NAVIGATION_ITEMS,
+  DASHBOARD_NAVIGATION_ITEMS,
+  CATEGORY_NAVIGATION_ITEMS,
+  type NavigationItem,
+  type NavigationGroup,
+  type UseNavigationItemsOptions,
+  type UseNavigationItemsReturn
+} from './useNavigationItems';
+
+export { 
+  useAnimationConfig,
+  useFastAnimation,
+  useNormalAnimation,
+  useSlowAnimation,
+  useSpringAnimation,
+  useBounceAnimation,
+  useElasticAnimation,
+  createStaggeredAnimation,
+  createEntranceAnimation,
+  type AnimationConfig,
+  type AnimationPresets,
+  type UseAnimationConfigOptions,
+  type UseAnimationConfigReturn
+} from './useAnimationConfig'; 

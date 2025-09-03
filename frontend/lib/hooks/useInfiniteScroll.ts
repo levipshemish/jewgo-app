@@ -99,6 +99,12 @@ export function useInfiniteScroll(
         }
 
         if (entry.isIntersecting && !isLoadingMore && hasMore) {
+          console.log('🎯 Intersection observer triggered load more', {
+            isIntersecting: entry.isIntersecting,
+            isLoadingMore,
+            hasMore,
+            target: entry.target
+          });
           if (DEBUG) { debugLog('Infinite scroll: Triggering load more'); }
           loadMore();
         }
@@ -116,13 +122,16 @@ export function useInfiniteScroll(
     const checkAndObserve = () => {
       if (loadingRef.current) {
         observer.observe(loadingRef.current);
+        console.log('👁️ Intersection observer attached to element', loadingRef.current);
         if (DEBUG) { debugLog('Infinite scroll: Observer attached to element'); }
       } else {
+        console.log('❌ No loading ref element found, retrying...');
         if (DEBUG) { debugLog('Infinite scroll: No loading ref element found, retrying...'); }
         // Retry after a short delay
         setTimeout(() => {
           if (loadingRef.current && observerRef.current) {
             observerRef.current.observe(loadingRef.current);
+            console.log('👁️ Intersection observer attached to element (retry)', loadingRef.current);
             if (DEBUG) { debugLog('Infinite scroll: Observer attached to element (retry)'); }
           }
         }, 100);

@@ -65,7 +65,7 @@ backend/
 │   ├── performance_indexes.sql # SQL for performance indexes
 │   ├── search_manager.py # Manages search functionality
 │   ├── setup_database.py # Sets up the database
-│   ├── setup_neon.py    # Sets up Neon database
+│   ├── setup_api_database.py    # Sets up api.jewgo.app database
 │   ├── repositories/    # Data access layer
 │   ├── migrations/      # Database migrations
 │   └── init.sql/        # SQL initialization scripts
@@ -130,7 +130,7 @@ backend/
 │   ├── validation.py    # Validation utilities
 │   ├── validators.py    # Validators
 │   ├── ai/              # AI-related utilities
-│   ├── kosher_miami/    # Utilities for Kosher Miami data
+│   ├── /    # Utilities for Kosher Miami data
 │   ├── ml/              # Machine learning utilities
 │   └── search/          # Search-related utilities
 │
@@ -350,8 +350,8 @@ deployment/
 ```
 backend/data/
 ├── florida_shuls_full_20250807_171818.csv
-├── kosher_miami_establishments.csv
-└── kosher_miami_establishments.json
+├── _establishments.csv
+└── _establishments.json
 ```
 
 ## 🛠️ **Scripts Structure**

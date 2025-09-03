@@ -14,6 +14,7 @@ export async function getUserWithRolesServer(userToken: string): Promise<{
     // No absolute base configured: fail gracefully
     return null;
   }
+  // Use absolute URL for server-side requests to prevent ERR_INVALID_URL
   const url = `${base}/api/auth/user-with-roles`;
   const res = await fetch(url, {
     method: 'GET',
@@ -85,7 +86,7 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
 /**
  * Attempt to link anonymous identity with authenticated user
  */
-export async function attemptIdentityLinking(anonymousToken: string, userToken: string): Promise<{
+export async function attemptIdentityLinking(_anonymousToken: string, _userToken: string): Promise<{
   success: boolean;
   requiresReAuth?: boolean;
   error?: string;

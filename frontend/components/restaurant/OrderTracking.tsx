@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Package, Clock, CheckCircle, AlertCircle, Truck, MapPin } from 'lucide-react';
+import { Search, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
 import { orderAPI } from '@/lib/api/orders';
 import { OrderDetails } from '@/lib/api/orders';
 import { useAnalytics } from '@/lib/hooks/useAnalytics';
@@ -58,24 +58,24 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ onClose }) => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-blue-500" />;
-      case 'preparing':
-        return <Package className="w-5 h-5 text-orange-500" />;
-      case 'ready':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'delivered':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'cancelled':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <Package className="w-5 h-5 text-gray-500" />;
-    }
-  };
+  // const getStatusIcon = (status: string) => {
+  //   switch (status.toLowerCase()) {
+  //     case 'pending':
+  //       return <Clock className="w-5 h-5 text-yellow-500" />;
+  //     case 'confirmed':
+  //       return <CheckCircle className="w-5 h-5 text-blue-500" />;
+  //     case 'preparing':
+  //       return <Package className="w-5 h-5 text-orange-500" />;
+  //     case 'ready':
+  //       return <CheckCircle className="w-5 h-5 text-green-500" />;
+  //     case 'delivered':
+  //       return <CheckCircle className="w-5 h-5 text-green-600" />;
+  //     case 'cancelled':
+  //       return <AlertCircle className="w-5 h-5 text-red-500" />;
+  //     default:
+  //       return <Package className="w-5 h-5 text-yellow-500" />;
+  //   }
+  // };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

@@ -46,7 +46,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
       text: options.text || options.html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
     }
 
-    const info = await transporter.sendMail(mailOptions)
+    const _info = await transporter.sendMail(mailOptions)
     } catch {
     // console.error('Failed to send email:', error)
     throw new Error('Failed to send email')

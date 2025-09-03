@@ -300,74 +300,77 @@ class UserServiceV4(BaseService):
         role: str,
         assigned_by_user_id: str,
         expires_at: Optional[str] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Assign an admin role to a user.
-        
+
         Args:
             target_user_id: ID of the user to assign role to
             role: Role to assign (moderator, data_admin, system_admin, super_admin)
             assigned_by_user_id: ID of the admin user making the assignment
             expires_at: Optional expiration date for the role
             notes: Optional notes about the assignment
-            
+
         Returns:
             Dict: { success: boolean, error?: string, error_type?: string, status_code?: number }
         """
         self.log_operation("assign_user_role")
         try:
             # Validate role
-            allowed_roles = ['moderator', 'data_admin', 'system_admin', 'super_admin']
+            allowed_roles = ["moderator", "data_admin", "system_admin", "super_admin"]
             if role not in allowed_roles:
-                raise ValidationError(f"Invalid role. Must be one of: {', '.join(allowed_roles)}")
-            
+                raise ValidationError(
+                    f"Invalid role. Must be one of: {', '.join(allowed_roles)}"
+                )
+
             # Call database manager to assign role via Supabase RPC
             result = self.db_manager.assign_admin_role(
                 target_user_id=target_user_id,
                 role=role,
                 assigned_by_user_id=assigned_by_user_id,
                 expires_at=expires_at,
-                notes=notes
+                notes=notes,
             )
-            normalized = result if isinstance(result, dict) else { 'success': False, 'error': 'Unknown result' }
-            if normalized.get('success'):
+            normalized = (
+                result
+                if isinstance(result, dict)
+                else {"success": False, "error": "Unknown result"}
+            )
+            if normalized.get("success"):
                 self.logger.info(
                     "Successfully assigned admin role",
                     target_user_id=target_user_id,
                     role=role,
-                    assigned_by=assigned_by_user_id
+                    assigned_by=assigned_by_user_id,
                 )
             else:
                 self.logger.warning(
                     "Failed to assign admin role",
                     target_user_id=target_user_id,
                     role=role,
-                    assigned_by=assigned_by_user_id
+                    assigned_by=assigned_by_user_id,
                 )
             return normalized
-            
+
         except Exception as e:
             self.logger.exception(
                 "Error assigning admin role",
                 error=str(e),
                 target_user_id=target_user_id,
-                role=role
+                role=role,
             )
             raise
 
     def revoke_user_role(
-        self,
-        target_user_id: str,
-        role: str,
-        removed_by_user_id: str
+        self, target_user_id: str, role: str, removed_by_user_id: str
     ) -> Dict[str, Any]:
         """Revoke an admin role from a user.
-        
+
         Args:
             target_user_id: ID of the user to revoke role from
             role: Role to revoke
             removed_by_user_id: ID of the admin user making the revocation
-            
+
         Returns:
             Dict: { success: boolean, error?: string, error_type?: string, status_code?: number }
         """
@@ -377,31 +380,35 @@ class UserServiceV4(BaseService):
             result = self.db_manager.remove_admin_role(
                 target_user_id=target_user_id,
                 role=role,
-                removed_by_user_id=removed_by_user_id
+                removed_by_user_id=removed_by_user_id,
             )
-            normalized = result if isinstance(result, dict) else { 'success': False, 'error': 'Unknown result' }
-            if normalized.get('success'):
+            normalized = (
+                result
+                if isinstance(result, dict)
+                else {"success": False, "error": "Unknown result"}
+            )
+            if normalized.get("success"):
                 self.logger.info(
                     "Successfully revoked admin role",
                     target_user_id=target_user_id,
                     role=role,
-                    removed_by=removed_by_user_id
+                    removed_by=removed_by_user_id,
                 )
             else:
                 self.logger.warning(
                     "Failed to revoke admin role",
                     target_user_id=target_user_id,
                     role=role,
-                    removed_by=removed_by_user_id
+                    removed_by=removed_by_user_id,
                 )
             return normalized
-            
+
         except Exception as e:
             self.logger.exception(
                 "Error revoking admin role",
                 error=str(e),
                 target_user_id=target_user_id,
-                role=role
+                role=role,
             )
             raise
 
@@ -413,10 +420,10 @@ class UserServiceV4(BaseService):
         search: str = "",
         role_filter: Optional[str] = None,
         include_all: bool = False,
-        include_expired: bool = False
+        include_expired: bool = False,
     ) -> Dict[str, Any]:
         """Get users with their admin roles.
-        
+
         Args:
             user_id: Optional specific user ID to get roles for
             page: Page number for pagination
@@ -425,14 +432,14 @@ class UserServiceV4(BaseService):
             role_filter: Filter by specific role
             include_all: Whether to include all users or just those with roles
             include_expired: Whether to include expired roles
-            
+
         Returns:
             Dict containing users with roles and pagination info
         """
         self.log_operation("get_user_roles")
         try:
             offset = (page - 1) * limit
-            
+
             # Call database manager to get admin roles
             result = self.db_manager.get_admin_roles(
                 user_id=user_id,
@@ -441,30 +448,27 @@ class UserServiceV4(BaseService):
                 search=search,
                 role_filter=role_filter,
                 include_all=include_all,
-                include_expired=include_expired
+                include_expired=include_expired,
             )
-            
+
             self.logger.info(
                 "Successfully retrieved user roles",
-                count=len(result.get('users', [])),
+                count=len(result.get("users", [])),
                 page=page,
-                limit=limit
+                limit=limit,
             )
-            
+
             return result
-            
+
         except Exception as e:
             self.logger.exception(
-                "Error retrieving user roles",
-                error=str(e),
-                user_id=user_id,
-                page=page
+                "Error retrieving user roles", error=str(e), user_id=user_id, page=page
             )
             raise
 
     def get_available_roles(self) -> List[Dict[str, Any]]:
         """Get list of available admin roles and their descriptions.
-        
+
         Returns:
             List of role definitions with descriptions and permissions
         """
@@ -472,52 +476,44 @@ class UserServiceV4(BaseService):
         try:
             roles = [
                 {
-                    'name': 'moderator',
-                    'level': 1,
-                    'description': 'Can moderate content and manage basic user issues',
-                    'permissions': [
-                        'content:moderate',
-                        'user:view',
-                        'review:moderate'
-                    ]
+                    "name": "moderator",
+                    "level": 1,
+                    "description": "Can moderate content and manage basic user issues",
+                    "permissions": ["content:moderate", "user:view", "review:moderate"],
                 },
                 {
-                    'name': 'data_admin',
-                    'level': 2,
-                    'description': 'Can manage data, run reports, and access analytics',
-                    'permissions': [
-                        'data:view',
-                        'data:export',
-                        'analytics:view',
-                        'report:generate'
-                    ]
+                    "name": "data_admin",
+                    "level": 2,
+                    "description": "Can manage data, run reports, and access analytics",
+                    "permissions": [
+                        "data:view",
+                        "data:export",
+                        "analytics:view",
+                        "report:generate",
+                    ],
                 },
                 {
-                    'name': 'system_admin',
-                    'level': 3,
-                    'description': 'Can manage system settings, users, and core functionality',
-                    'permissions': [
-                        'user:manage',
-                        'system:configure',
-                        'admin:manage',
-                        'security:manage'
-                    ]
+                    "name": "system_admin",
+                    "level": 3,
+                    "description": "Can manage system settings, users, and core functionality",
+                    "permissions": [
+                        "user:manage",
+                        "system:configure",
+                        "admin:manage",
+                        "security:manage",
+                    ],
                 },
                 {
-                    'name': 'super_admin',
-                    'level': 4,
-                    'description': 'Full system access including role management',
-                    'permissions': [
-                        'role:manage',
-                        'admin:all',
-                        'system:all'
-                    ]
-                }
+                    "name": "super_admin",
+                    "level": 4,
+                    "description": "Full system access including role management",
+                    "permissions": ["role:manage", "admin:all", "system:all"],
+                },
             ]
-            
+
             self.logger.info("Successfully retrieved available roles", count=len(roles))
             return roles
-            
+
         except Exception as e:
             self.logger.exception("Error retrieving available roles", error=str(e))
             raise
@@ -526,7 +522,7 @@ class UserServiceV4(BaseService):
         """Return precise count of active super_admin roles."""
         try:
             count = 0
-            if hasattr(self.db_manager, 'get_active_super_admin_count'):
+            if hasattr(self.db_manager, "get_active_super_admin_count"):
                 count = self.db_manager.get_active_super_admin_count()
             self.logger.info("Retrieved active super_admin count", count=count)
             return count

@@ -5,7 +5,7 @@ export async function GET(_request: NextRequest) {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
     
     // Fetch business types from backend
-    const response = await fetch(`${backendUrl}/api/restaurants/business-types`, {
+    const response = await fetch(`${backendUrl}/api/v4/restaurants/business-types`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

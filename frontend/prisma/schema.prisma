@@ -181,6 +181,95 @@ model FloridaSynagogue {
   @@schema("public")
 }
 
+/// New comprehensive synagogues table
+model Shul {
+  id                   Int       @id @default(autoincrement())
+  name                 String    @db.VarChar(255)
+  description          String?
+  address              String?
+  city                 String?   @db.VarChar(100)
+  state                String?   @db.VarChar(50)
+  zip_code             String?   @db.VarChar(20)
+  country              String?   @db.VarChar(50) @default("USA")
+  latitude             Decimal?  @db.Decimal(10, 8)
+  longitude            Decimal?  @db.Decimal(11, 8)
+  phone_number         String?   @db.VarChar(50)
+  website              String?   @db.VarChar(500)
+  email                String?   @db.VarChar(255)
+  
+  // Shul specific fields
+  shul_type            String?   @db.VarChar(100) // orthodox, conservative, reform, etc.
+  shul_category        String?   @db.VarChar(100) // ashkenazi, sephardic, chabad, etc.
+  denomination         String?   @db.VarChar(100) // orthodox, conservative, reform, etc.
+  business_hours       String?
+  hours_parsed         Boolean   @default(false)
+  timezone             String?   @db.VarChar(50)
+  
+  // Services and minyanim
+  has_daily_minyan     Boolean   @default(false)
+  has_shabbat_services Boolean   @default(true)
+  has_holiday_services Boolean   @default(true)
+  has_women_section    Boolean   @default(true)
+  has_mechitza         Boolean   @default(true)
+  has_separate_entrance Boolean  @default(false)
+  
+  // Location and distance
+  distance             String?   @db.VarChar(50)
+  distance_miles       Decimal?  @db.Decimal(8, 2)
+  
+  // Ratings and reviews
+  rating               Decimal?  @db.Decimal(3, 2)
+  review_count         Int       @default(0)
+  star_rating          Decimal?  @db.Decimal(3, 2)
+  google_rating        Decimal?  @db.Decimal(3, 2)
+  
+  // Images and media
+  image_url            String?
+  logo_url             String?
+  
+  // Shul facilities and features
+  has_parking          Boolean   @default(false)
+  has_disabled_access  Boolean   @default(false)
+  has_kiddush_facilities Boolean @default(false)
+  has_social_hall      Boolean   @default(false)
+  has_library          Boolean   @default(false)
+  has_hebrew_school    Boolean   @default(false)
+  has_adult_education  Boolean   @default(false)
+  has_youth_programs   Boolean   @default(false)
+  has_senior_programs  Boolean   @default(false)
+  
+  // Religious and cultural
+  rabbi_name           String?   @db.VarChar(255)
+  rabbi_phone          String?   @db.VarChar(50)
+  rabbi_email          String?   @db.VarChar(255)
+  religious_authority  String?   @db.VarChar(255)
+  community_affiliation String?  @db.VarChar(255)
+  kosher_certification String?   @db.VarChar(255)
+  
+  // Membership and fees
+  membership_required  Boolean   @default(false)
+  membership_fee       Decimal?  @db.Decimal(10, 2)
+  fee_currency         String?   @db.VarChar(3) @default("USD")
+  accepts_visitors     Boolean   @default(true)
+  visitor_policy       String?
+  
+  // Status and metadata
+  is_active            Boolean   @default(true)
+  is_verified          Boolean   @default(false)
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  
+  // Search and filtering
+  search_vector        Unsupported("tsvector")?
+  tags                 String[]
+  admin_notes          String?
+  specials             String?
+  listing_type         String?   @db.VarChar(100) @default("shul")
+
+  @@map("shuls")
+  @@schema("public")
+}
+
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model User {
   id            String      @id @db.VarChar(50)

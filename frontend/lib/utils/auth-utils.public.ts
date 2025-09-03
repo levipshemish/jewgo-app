@@ -37,7 +37,7 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     }
     // Allow exact matches or subpaths under specific prefixes
     const allowedPrefixes = ['/profile', '/favorites', '/auth'];
-    const isAllowed = allowedPaths.has(path) || allowedPrefixes.some((p) => path.startsWith(p + '/'));
+    const isAllowed = allowedPaths.has(path) || allowedPrefixes.some((p) => path.startsWith(`${p}/`));
     if (!isAllowed) {
       return '/';
     }

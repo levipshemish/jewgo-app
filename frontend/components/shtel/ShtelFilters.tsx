@@ -7,11 +7,11 @@ import { createPortal } from 'react-dom';
 interface ShtelFiltersProps {
   isOpen: boolean;
   onClose: () => void;
-  onFiltersChange: (filters: ShtelFilters) => void;
-  currentFilters: ShtelFilters;
+  onFiltersChange: (filters: ShtelFilterValues) => void;
+  currentFilters: ShtelFilterValues;
 }
 
-export interface ShtelFilters {
+export interface ShtelFilterValues {
   transaction_type?: 'sale' | 'gemach' | 'trade' | 'donation' | '';
   category?: string;
   subcategory?: string;
@@ -89,7 +89,7 @@ const FLORIDA_CITIES = [
 ];
 
 export default function ShtelFilters({ isOpen, onClose, onFiltersChange, currentFilters }: ShtelFiltersProps) {
-  const [localFilters, setLocalFilters] = useState<ShtelFilters>(currentFilters);
+  const [localFilters, setLocalFilters] = useState<ShtelFilterValues>(currentFilters);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
 
@@ -112,7 +112,7 @@ export default function ShtelFilters({ isOpen, onClose, onFiltersChange, current
     }
   }, [selectedCategory]);
 
-  const handleFilterChange = (key: keyof ShtelFilters, value: any) => {
+  const handleFilterChange = (key: keyof ShtelFilterValues, value: any) => {
     setLocalFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -122,7 +122,7 @@ export default function ShtelFilters({ isOpen, onClose, onFiltersChange, current
   };
 
   const handleClearFilters = () => {
-    const clearedFilters: ShtelFilters = {};
+    const clearedFilters: ShtelFilterValues = {} as ShtelFilterValues;
     setLocalFilters(clearedFilters);
     setSelectedCategory('');
     setAvailableSubcategories([]);

@@ -185,7 +185,7 @@ setup_cursor_config() {
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "args": ["-y", "@upstash/context7-mcp@latest", "--api-key", "ctx7sk-da8970d7-5744-405b-8fdb-5cdca26ae96b"]
     },
     "ts-next-strict": {
       "command": "node",

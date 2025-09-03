@@ -3,10 +3,10 @@
 ## 🚨 Current Issue
 Your application is trying to connect to a PostgreSQL server at `141.148.50.111:5432` but the cloud deployment platform (Render) cannot reach this IP address.
 
-## 🚀 Quick Solution: Use Neon PostgreSQL
+## 🚀 Quick Solution: Use api.jewgo.app PostgreSQL
 
-### Step 1: Create Neon Database (5 minutes)
-1. Go to [neon.tech](https://neon.tech)
+### Step 1: Create Database (5 minutes)
+1. Use your api.jewgo.app PostgreSQL service
 2. Sign up with GitHub (free)
 3. Create a new project
 4. Copy the connection string from the dashboard
@@ -16,7 +16,7 @@ In your Render deployment dashboard:
 1. Go to your backend service
 2. Click "Environment"
 3. Find `DATABASE_URL`
-4. Replace the current value with your Neon connection string
+4. Replace the current value with your api.jewgo.app connection string
 5. Save and redeploy
 
 ### Step 3: Test the Fix
@@ -51,4 +51,4 @@ python test_db_connection.py
 ```
 
 ## 🎯 Recommended Action
-**Use Neon** - it's free, reliable, and designed for cloud deployments. Your Ubuntu server setup is causing the connectivity issue.
+**Use api.jewgo.app** - it's reliable and designed for your deployment. Your Ubuntu server setup is causing the connectivity issue.

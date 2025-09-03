@@ -1,36 +1,36 @@
-# 🚀 **Cloud Deployment Guide: Neon + Supabase + Vercel + Render**
+# 🚀 **Cloud Deployment Guide: api.jewgo.app + Supabase + Vercel + Render**
 
 ## 📋 **Infrastructure Overview**
 
 Your JewGo app uses a modern cloud-native stack:
 
-- **🟢 Neon**: PostgreSQL database (serverless, auto-scaling)
+- **🟢 api.jewgo.app**: PostgreSQL database (managed)
 - **🟣 Supabase**: Backend-as-a-Service (auth, real-time, storage)
 - **🟠 Vercel**: Frontend hosting (Next.js)
 - **🔵 Render**: Backend API hosting (Flask + WebSocket)
 
-## 🔧 **Step 1: Neon Database Setup**
+## 🔧 **Step 1: api.jewgo.app Database Setup**
 
-### **1.1 Create Neon Database**
-1. Go to [neon.tech](https://neon.tech)
+### **1.1 Create Database**
+1. Use your api.jewgo.app PostgreSQL service
 2. Create a new project
 3. Note your connection details:
    ```
-   Host: [your-host].neon.tech
+   Host: api.jewgo.app
    Database: [your-database]
    Username: [your-username]
    Password: [your-password]
    ```
 
-### **1.2 Configure Neon Connection**
+### **1.2 Configure Connection**
 ```bash
 # Update your DATABASE_URL in config.env
 DATABASE_URL=postgresql://[username]:[password]@[host]/[database]?sslmode=require
 ```
 
-### **1.3 Run Database Migration on Neon**
+### **1.3 Run Database Migration on api.jewgo.app**
 ```bash
-# Connect to Neon and run migration
+# Connect to api.jewgo.app and run migration
 cd backend
 export DATABASE_URL="postgresql://[username]:[password]@[host]/[database]?sslmode=require"
 python scripts/run_distance_migration.py
@@ -75,7 +75,7 @@ services:
     startCommand: gunicorn -w 2 -k gevent -b 0.0.0.0:$PORT wsgi:app
     envVars:
       - key: DATABASE_URL
-        value: postgresql://[neon-connection-string]
+        value: postgresql://[api-jewgo-app-connection-string]
       - key: REDIS_URL
         value: redis://[render-redis-url]
       - key: ENVIRONMENT
@@ -91,7 +91,7 @@ services:
 ### **3.4 Environment Variables for Render**
 ```bash
 # Required environment variables
-DATABASE_URL=postgresql://[neon-connection-string]
+DATABASE_URL=postgresql://[api-jewgo-app-connection-string]
 REDIS_URL=redis://[render-redis-url]
 ENVIRONMENT=production
 SUPABASE_SERVICE_ROLE_KEY=[your-supabase-service-role-key]
@@ -131,12 +131,12 @@ NEXT_PUBLIC_VERCEL_URL=https://[your-vercel-app].vercel.app
 
 ## 🔧 **Step 5: Database Migration for Cloud**
 
-### **5.1 Update Migration Script for Neon**
+### **5.1 Update Migration Script for api.jewgo.app**
 ```python
 # backend/scripts/run_cloud_migration.py
 #!/usr/bin/env python3
 """
-Cloud migration script for Neon PostgreSQL.
+Cloud migration script for api.jewgo.app PostgreSQL.
 """
 
 import os
@@ -145,7 +145,7 @@ import psycopg2
 from pathlib import Path
 
 def run_cloud_migration():
-    """Run migration on Neon database."""
+    """Run migration on api.jewgo.app database."""
     try:
         # Get database URL from environment
         database_url = os.environ.get('DATABASE_URL')
@@ -153,9 +153,9 @@ def run_cloud_migration():
             print("❌ DATABASE_URL environment variable not set")
             return False
         
-        print("🔗 Connecting to Neon database...")
+        print("🔗 Connecting to api.jewgo.app database...")
         
-        # Connect to Neon
+        # Connect to api.jewgo.app
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
         
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 ### **5.2 Run Cloud Migration**
 ```bash
 # Set environment variables
-export DATABASE_URL="postgresql://[neon-connection-string]"
+export DATABASE_URL="postgresql://[api-jewgo-app-connection-string]"
 
 # Run migration
 cd backend
@@ -214,7 +214,7 @@ Environment policy:
 ### **6.1 Production Environment File**
 ```bash
 # backend/.env.production
-DATABASE_URL=postgresql://[neon-connection-string]
+DATABASE_URL=postgresql://[api-jewgo-app-connection-string]
 REDIS_URL=redis://[render-redis-url]
 ENVIRONMENT=production
 SUPABASE_SERVICE_ROLE_KEY=[your-supabase-service-role-key]
@@ -257,11 +257,11 @@ git commit -m "Deploy frontend with cloud configuration"
 git push origin main
 ```
 
-### **7.3 Database Migration (Neon)**
+### **7.3 Database Migration (api.jewgo.app)**
 ```bash
-# Run migration on Neon
+# Run migration on api.jewgo.app
 cd backend
-export DATABASE_URL="postgresql://[neon-connection-string]"
+export DATABASE_URL="postgresql://[api-jewgo-app-connection-string]"
 python scripts/run_cloud_migration.py
 ```
 
@@ -269,8 +269,8 @@ python scripts/run_cloud_migration.py
 
 ### **8.1 Test Database Connection**
 ```bash
-# Test Neon connection
-psql "postgresql://[neon-connection-string]"
+# Test api.jewgo.app connection
+psql "postgresql://[api-jewgo-app-connection-string]"
 ```
 
 ### **8.2 Test Backend API**
@@ -311,7 +311,7 @@ curl https://[render-backend-url]/api/health
 ### **9.3 Logs & Debugging**
 - **Render**: View logs in Render dashboard
 - **Vercel**: View logs in Vercel dashboard
-- **Neon**: Monitor database performance
+- **api.jewgo.app**: Monitor database performance
 - **Supabase**: View real-time logs
 
 ## 🎯 **Production Checklist**
@@ -330,7 +330,7 @@ curl https://[render-backend-url]/api/health
 - [ ] Mobile optimization enabled
 - [ ] Performance monitoring active
 
-### **✅ Database (Neon)**
+### **✅ Database (api.jewgo.app)**
 - [ ] Spatial extensions installed
 - [ ] Indexes created
 - [ ] Connection string configured
@@ -348,7 +348,7 @@ curl https://[render-backend-url]/api/health
 
 ```bash
 # 1. Set up environment
-export DATABASE_URL="postgresql://[neon-connection-string]"
+export DATABASE_URL="postgresql://[api-jewgo-app-connection-string]"
 export REDIS_URL="redis://[render-redis-url]"
 
 # 2. Run database migration
@@ -371,4 +371,4 @@ curl https://[your-vercel-app].vercel.app
 
 ---
 
-**🎉 Your JewGo app is now ready for cloud deployment with Neon, Supabase, Vercel, and Render!**
+**🎉 Your JewGo app is now ready for cloud deployment with api.jewgo.app, Supabase, Vercel, and Render!**

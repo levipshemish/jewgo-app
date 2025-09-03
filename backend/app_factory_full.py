@@ -202,12 +202,7 @@ def _validate_supabase_config() -> None:
         else:
             logger.info("Supabase authentication configuration validated successfully")
             
-        # Check for deprecated ADMIN_TOKEN usage
-        if os.environ.get('ADMIN_TOKEN'):
-            logger.warning(
-                "DEPRECATED: ADMIN_TOKEN environment variable detected. "
-                "Please migrate to Supabase role-based authentication."
-            )
+        # Legacy admin token check removed - feature has been deprecated
             
     except Exception as e:
         logger.error(f"Error validating Supabase configuration: {e}")
@@ -933,7 +928,7 @@ def create_app(config_class=None):
                 "DATABASE_URL",
                 "REDIS_URL",
                 "REDIS_PASSWORD",
-                # "ADMIN_TOKEN", # DEPRECATED: Removed in favor of Supabase auth
+                # ADMIN_TOKEN removed - legacy auth deprecated
                 "SCRAPER_TOKEN",
                 "SECRET_KEY",
             ]

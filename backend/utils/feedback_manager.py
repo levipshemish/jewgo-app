@@ -119,7 +119,7 @@ class FeedbackManager:
                 if feedback.get("attachments"):
                     try:
                         feedback["attachments"] = json.loads(feedback["attachments"])
-                    except:
+                    except (json.JSONDecodeError, TypeError, ValueError):
                         feedback["attachments"] = []
                 else:
                     feedback["attachments"] = []
@@ -144,7 +144,7 @@ class FeedbackManager:
                 if feedback.get("attachments"):
                     try:
                         feedback["attachments"] = json.loads(feedback["attachments"])
-                    except:
+                    except (json.JSONDecodeError, TypeError, ValueError):
                         feedback["attachments"] = []
                 else:
                     feedback["attachments"] = []

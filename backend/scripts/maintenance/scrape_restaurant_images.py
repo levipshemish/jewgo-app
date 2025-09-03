@@ -17,7 +17,6 @@ from utils.google_places_image_scraper import GooglePlacesImageScraper
 # Add current directory to Python path
 sys.path.append(".")
 
-
 def scrape_restaurant_images() -> None:
     """Scrape restaurant images from Google Places and upload to Cloudinary."""
     # Set environment variables (placeholders; configure via environment in production)
@@ -29,7 +28,7 @@ def scrape_restaurant_images() -> None:
         # Import the required modules
         # Load the Kosher Miami data
         data_file = (
-            Path(__file__).parent.parent / "data" / "kosher_miami_establishments.json"
+            Path(__file__).parent.parent / "data" / "_establishments.json"
         )
         if not data_file.exists():
             return
@@ -75,7 +74,6 @@ def scrape_restaurant_images() -> None:
         pass
     except Exception as e:
         pass
-
 
 if __name__ == "__main__":
     scrape_restaurant_images()

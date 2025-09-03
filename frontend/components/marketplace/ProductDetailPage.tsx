@@ -102,7 +102,7 @@ export default function ProductDetailPage() {
             <p className="text-gray-600">Loading product...</p>
           </div>
         </div>
-        <BottomNavigation />
+        <BottomNavigation size="compact" showLabels="active-only" />
       </div>
     );
   }
@@ -124,7 +124,7 @@ export default function ProductDetailPage() {
             </button>
           </div>
         </div>
-        <BottomNavigation />
+        <BottomNavigation size="compact" showLabels="active-only" />
       </div>
     );
   }
@@ -358,7 +358,7 @@ export default function ProductDetailPage() {
         </div>
       </div> */}
 
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
     </div>
   );
 }

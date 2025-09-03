@@ -113,7 +113,7 @@ class DatabaseConnectionManager:
                 and (not is_local)
                 and ("sslmode=" not in (parsed.query or ""))
             ):
-                # Use sslmode=prefer for better compatibility with Neon and other providers
+                # Use sslmode=prefer for better compatibility across providers
                 new_query = (
                     f"{parsed.query}&sslmode=prefer"
                     if parsed.query
@@ -151,11 +151,11 @@ class DatabaseConnectionManager:
         # Optional certificate pinning
         if os.environ.get("PGSSLROOTCERT"):
             connect_args["sslrootcert"] = os.environ.get("PGSSLROOTCERT")
-        # Detect Neon and remove unsupported startup options
+        # Detect api.jewgo.app and remove unsupported startup options if necessary
         parsed = urlparse(self.database_url)
         hostname = (parsed.hostname or "").lower()
-        is_neon = "neon.tech" in hostname
-        if is_neon:
+        is_api_host = "api.jewgo.app" in hostname
+        if is_api_host:
             connect_args.pop("options", None)
         self.engine = create_engine(
             self.database_url,
@@ -167,14 +167,14 @@ class DatabaseConnectionManager:
             pool_pre_ping=True,
             connect_args=connect_args,
         )
-        # Set per-connection timeouts for Neon
-        if is_neon:
-            self._setup_neon_timeouts(statement_timeout, idle_tx_timeout)
+        # Set per-connection timeouts for api.jewgo.app
+        if is_api_host:
+            self._setup_api_timeouts(statement_timeout, idle_tx_timeout)
 
-    def _setup_neon_timeouts(
+    def _setup_api_timeouts(
         self, statement_timeout: str, idle_tx_timeout: str
     ) -> None:
-        """Setup per-connection timeouts for Neon database."""
+        """Setup per-connection timeouts for api.jewgo.app database."""
         try:
 
             @event.listens_for(self.engine, "connect")
@@ -186,13 +186,13 @@ class DatabaseConnectionManager:
                             f"SET idle_in_transaction_session_timeout = {idle_tx_timeout}"
                         )
                         logger.debug(
-                            "Successfully set Neon timeouts",
+                            "Successfully set api.jewgo.app timeouts",
                             statement_timeout=statement_timeout,
                             idle_tx_timeout=idle_tx_timeout,
                         )
                 except Exception as e:
                     logger.warning(
-                        "Failed to set Neon timeouts on connection",
+                        "Failed to set api.jewgo.app timeouts on connection",
                         error=str(e),
                         error_type=type(e).__name__,
                         statement_timeout=statement_timeout,
@@ -202,7 +202,7 @@ class DatabaseConnectionManager:
 
         except Exception as e:
             logger.warning(
-                "Failed to setup Neon timeout event listener",
+                "Failed to setup api.jewgo.app timeout event listener",
                 error=str(e),
                 error_type=type(e).__name__,
             )

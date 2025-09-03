@@ -7,7 +7,12 @@ the backend. These endpoints require Supabase authentication.
 from flask import Blueprint, request, jsonify
 from utils.logging_config import get_logger
 from utils.limiter import limiter
-from utils.supabase_auth import require_user_auth, get_current_user, get_user_id, optional_user_auth
+from utils.supabase_auth import (
+    require_user_auth,
+    get_current_user,
+    get_user_id,
+    optional_user_auth,
+)
 from utils.error_handler import ValidationError, NotFoundError
 from utils.config_manager import config_manager
 
@@ -481,91 +486,121 @@ def get_user_role():
     """
     Get user role information from Supabase admin role system.
     This endpoint accepts both authenticated and anonymous tokens.
-    
+
     Returns:
         JSON with role data or 401 for anonymous users
     """
     try:
         # Get user from request context (set by optional_user_auth decorator)
-        user = getattr(request, 'user', None)
-        
+        user = getattr(request, "user", None)
+
         # If no user (anonymous or invalid token), return 401
         if not user:
             logger.debug("No user found in request - returning 401 for anonymous user")
-            return jsonify({
-                "success": False,
-                "error": "Unauthorized",
-                "message": "Anonymous users do not have admin roles"
-            }), 401
-        
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Unauthorized",
+                        "message": "Anonymous users do not have admin roles",
+                    }
+                ),
+                401,
+            )
+
         # Check if user is anonymous
-        app_metadata = user.get('app_metadata', {})
-        if app_metadata.get('provider') == 'anonymous':
+        app_metadata = user.get("app_metadata", {})
+        if app_metadata.get("provider") == "anonymous":
             logger.debug(f"Anonymous user {user.get('id')} - returning 401")
-            return jsonify({
-                "success": False,
-                "error": "Unauthorized",
-                "message": "Anonymous users do not have admin roles"
-            }), 401
-        
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Unauthorized",
+                        "message": "Anonymous users do not have admin roles",
+                    }
+                ),
+                401,
+            )
+
         # Get the access token from the Authorization header
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
             logger.warning("No valid Authorization header found")
-            return jsonify({
-                "success": False,
-                "error": "Unauthorized",
-                "message": "Valid Authorization header required"
-            }), 401
-        
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Unauthorized",
+                        "message": "Valid Authorization header required",
+                    }
+                ),
+                401,
+            )
+
         access_token = auth_header[7:]  # Remove 'Bearer ' prefix
-        
+
         # Get role manager and fetch admin role
         try:
             from utils.supabase_role_manager import get_role_manager
+
             role_manager = get_role_manager()
             role_data = role_manager.get_user_admin_role(access_token)
-            
+
             if role_data:
-                role = role_data.get('role')
-                level = role_data.get('level', 0)
-                
+                role = role_data.get("role")
+                level = role_data.get("level", 0)
+
                 # Return role data in expected format
-                return jsonify({
-                    "success": True,
-                    "role": role,
-                    "level": level,
-                    "permissions": []  # Permissions are handled on frontend based on role
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "role": role,
+                        "level": level,
+                        "permissions": [],  # Permissions are handled on frontend based on role
+                    }
+                )
             else:
                 # No admin role found - return default values
                 logger.debug(f"No admin role found for user {user.get('id')}")
-                return jsonify({
-                    "success": True,
-                    "role": None,
-                    "level": 0,
-                    "permissions": []
-                })
-                
+                return jsonify(
+                    {"success": True, "role": None, "level": 0, "permissions": []}
+                )
+
         except ImportError:
             logger.error("SupabaseRoleManager not available")
-            return jsonify({
-                "success": False,
-                "error": "Service unavailable",
-                "message": "Role management system not available"
-            }), 503
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Service unavailable",
+                        "message": "Role management system not available",
+                    }
+                ),
+                503,
+            )
         except Exception as e:
             logger.error(f"Error fetching user role: {e}")
-            return jsonify({
-                "success": False,
-                "error": "Internal server error",
-                "message": "Failed to fetch user role"
-            }), 500
-            
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Internal server error",
+                        "message": "Failed to fetch user role",
+                    }
+                ),
+                500,
+            )
+
     except Exception as e:
         logger.error(f"Unexpected error in get_user_role: {e}")
-        return jsonify({
-            "success": False,
-            "error": "Internal server error",
-            "message": "An unexpected error occurred"
-        }), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Internal server error",
+                    "message": "An unexpected error occurred",
+                }
+            ),
+            500,
+        )

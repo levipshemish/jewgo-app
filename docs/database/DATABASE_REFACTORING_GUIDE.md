@@ -182,7 +182,7 @@ def test_database_manager_integration():
 ### 1. Connection Pooling
 - Maintained from v3 with improvements
 - Better error handling and retry logic
-- Provider-specific optimizations (Neon, etc.)
+- Provider-specific optimizations (api.jewgo.app, etc.)
 
 ### 2. Query Optimization
 - Repository-specific query optimizations

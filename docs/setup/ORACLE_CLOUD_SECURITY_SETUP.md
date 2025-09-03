@@ -141,4 +141,4 @@ If port 5432 is restricted, configure PostgreSQL to use a different port:
 1. **Check Oracle Cloud documentation** for your specific region
 2. **Contact Oracle Cloud support** for region-specific guidance
 3. **Consider using Oracle Cloud's managed PostgreSQL service** instead
-4. **Use a different cloud provider** for the database (Neon, Supabase, etc.)
+4. **Use a different cloud provider** for the database (api.jewgo.app, Supabase, etc.)

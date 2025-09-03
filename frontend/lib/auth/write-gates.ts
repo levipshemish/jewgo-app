@@ -202,8 +202,8 @@ export class WriteGates {
         userId: user.id
       };
 
-    } catch (error) {
-      // console.error(`[Write Gates] Error getting permissions (${_correlationId})`, error);
+    } catch (_error) {
+      // console.error(`[Write Gates] Error getting permissions (${_correlationId})`, _error);
       return {
         canWrite: false,
         canCreateReviews: false,

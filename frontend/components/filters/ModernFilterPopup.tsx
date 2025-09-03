@@ -167,8 +167,10 @@ export function ModernFilterPopup({
   if (!isOpen) {return null;}
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center sm:justify-center p-2 sm:p-4">
-      <div className="w-full max-w-md mx-auto bg-white border-0 rounded-t-3xl sm:rounded-3xl shadow-xl max-h-[70vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[1100] bg-black/50 flex items-end sm:items-center sm:justify-center p-2 sm:p-4">
+      {/* Responsive container: bottom sheet on mobile, centered modal on larger screens.
+          Width scales by device: full on mobile, then sm→lg→xl breakpoints. */}
+      <div className="w-full mx-auto bg-white border-0 rounded-t-3xl sm:rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[80vh] md:max-h-[85vh] sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl">
         {/* Header - Fixed */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -361,7 +363,7 @@ export function ModernFilterPopup({
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
-        <div className="flex gap-3 p-4 sm:p-6 border-t border-gray-200 flex-shrink-0 bg-white">
+        <div className="flex gap-3 p-4 sm:p-6 border-t border-gray-200 flex-shrink-0 bg-white" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <button
             onClick={handleClearAll}
             className="flex-1 bg-white text-black border border-gray-300 hover:bg-gray-50 rounded-full py-2.5 sm:py-3 px-4 font-medium transition-colors text-sm"

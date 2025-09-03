@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 
 export function useAnalytics() {
   const { user } = useAuth();
-  const router = useRouter();
+  const _router = useRouter();
   const lastPageRef = useRef<string>('');
 
   // Track page views automatically

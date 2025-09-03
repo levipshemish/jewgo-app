@@ -131,15 +131,15 @@ export default function MarketplaceSearch({
   );
 }
 
-// Debounce utility function
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
+// Debounce utility function - removed as it's not being used
+// function debounce<T extends (...args: any[]) => any>(
+//   func: T,
+//   wait: number
+// ): (...args: Parameters<T>) => void {
+//   let timeout: NodeJS.Timeout;
+//   
+//   return (...args: Parameters<T>) => {
+//     clearTimeout(timeout);
+//     timeout = setTimeout(() => func(...args), wait);
+//   };
+// }

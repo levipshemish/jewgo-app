@@ -337,7 +337,7 @@ def main() -> None:
             pass
         else:
             pass
-    except Exception as e:
+    except Exception:
         pass
 
 

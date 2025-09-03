@@ -2,7 +2,7 @@
 """Import Kosher Miami CSV into restaurants table.
 
 Usage:
-  python scripts/maintenance/import_km_csv.py /absolute/path/to/kosher_miami_establishments.csv
+  python scripts/maintenance/import_km_csv.py /absolute/path/to/_establishments.csv
 
 Requirements:
   - DATABASE_URL must be set in the environment
@@ -16,7 +16,6 @@ import csv
 import os
 import sys
 from typing import Any, Dict, Optional
-
 
 def determine_kosher_category(business_type: str) -> Optional[str]:
     """Map KM Type to one of meat/dairy/pareve; return None to skip non-eateries.
@@ -53,14 +52,12 @@ def determine_kosher_category(business_type: str) -> Optional[str]:
 
     return None
 
-
 def parse_bool_from_text(value: str) -> bool:
     """Return True if the CSV text indicates a positive/available flag."""
     if not value:
         return False
     v = value.strip().lower()
     return any(tok in v for tok in ["all items", "available", "products baked on premises", "yes"]) and not v.startswith("no")
-
 
 def build_restaurant_record(row: Dict[str, str]) -> Optional[Dict[str, Any]]:
     name = (row.get("Name") or "").strip()
@@ -101,10 +98,9 @@ def build_restaurant_record(row: Dict[str, str]) -> Optional[Dict[str, Any]]:
         "cholov_stam": cholov_stam,
     }
 
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Import KM CSV into restaurants table")
-    parser.add_argument("csv_file", help="Path to kosher_miami_establishments.csv")
+    parser.add_argument("csv_file", help="Path to _establishments.csv")
     args = parser.parse_args()
 
     csv_path = os.path.abspath(args.csv_file)
@@ -180,8 +176,5 @@ def main() -> int:
 
     return 0 if failed == 0 else 6
 
-
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

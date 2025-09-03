@@ -99,13 +99,13 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
     },
     {
       id: 'marketplace',
-      label: 'Marketplace',
+      label: 'Shuk',
       icon: Ticket,
       href: '/marketplace'
     },
     {
       id: 'shtel',
-      label: 'Shtel',
+      label: 'Shtetl',
       icon: Shtel,
       href: '/shtel'
     },
@@ -133,7 +133,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   return (
     <div className={`bg-white px-3 sm:px-4 lg:px-6 py-2 lg:py-3 border-b border-gray-100 ${className}`}>
       <div className="max-w-screen-sm sm:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl mx-auto">
-        <div className="flex items-center justify-between space-x-1 lg:space-x-2">
+        <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto hide-scrollbar">
           {categories.map((category) => {
             const Icon = category.icon;
             const isActive = activeTab === category.id;
@@ -158,7 +158,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                 }}
               >
                 <Icon 
-                  size={18} 
+                  size={27} 
                   className={`${isActive ? 'text-white' : 'text-gray-600'} mb-1 lg:w-5 lg:h-5`} 
                 />
                 <span className={`text-xs lg:text-sm font-bold truncate px-1 ${isActive ? 'text-white' : 'text-gray-600'}`}>

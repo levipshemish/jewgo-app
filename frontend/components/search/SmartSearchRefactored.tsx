@@ -28,7 +28,7 @@ interface SmartSearchProps {
 }
 
 export default function SmartSearchRefactored({
-  onSearch, onLocationSelect, placeholder = "Search for kosher restaurants, agencies, or locations...", className = "", showAdvancedFilters = true, useGoogleAPI = false, leftIcon, rightIcon, inputClassName, onVoiceInput: _onVoiceInput, suggestions: _customSuggestions, autoFocus = false, debounceMs = 300, onFilterClick
+  onSearch, placeholder = "Search for kosher restaurants, agencies, or locations...", className = "", showAdvancedFilters = true, useGoogleAPI = false, leftIcon, rightIcon, inputClassName, onVoiceInput: _onVoiceInput, suggestions: _customSuggestions, autoFocus = false, debounceMs = 300, onFilterClick
 }: SmartSearchProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showFilters, setShowFilters] = useState(false);

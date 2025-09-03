@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch filtered data from backend
-    const backendResponse = await fetch(`${backendUrl}/api/restaurants?${backendParams.toString()}`);
+    const backendResponse = await fetch(`${backendUrl}/api/v4/restaurants?${backendParams.toString()}`);
     
     if (!backendResponse.ok) {
       throw new Error(`Backend API error: ${backendResponse.status}`);

@@ -48,197 +48,29 @@ class MarketplaceServiceV4(BaseService):
     ) -> Dict[str, Any]:
         """Get marketplace listings with filtering and pagination."""
         try:
-            # Check if marketplace tables exist
-            if not self.db_manager or not hasattr(
-                self.db_manager, "connection_manager"
-            ):
-                logger.warning("Database manager not available for marketplace")
+            if not self._is_db_available():
                 return self._get_empty_listings_response(limit, offset)
-            # Try to check if marketplace tables exist
-            try:
-                with self.db_manager.connection_manager.get_session_context() as session:
-                    from sqlalchemy import text
-
-                    # Test if marketplace table exists
-                    result = session.execute(
-                        text(
-                            "SELECT 1 FROM information_schema.tables WHERE table_name = 'marketplace'"
-                        )
-                    )
-                    if not result.fetchone():
-                        logger.warning(
-                            "Marketplace tables do not exist, returning empty response"
-                        )
-                        return self._get_empty_listings_response(limit, offset)
-            except Exception as e:
-                logger.warning(f"Could not check marketplace tables: {e}")
+            if not self._marketplace_table_exists():
                 return self._get_empty_listings_response(limit, offset)
-            # Build query for marketplace table with correct column names including images
-            query = """
-                SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state as region, m.zip_code as zip,
-                       m.latitude as lat, m.longitude as lng, m.vendor_id as seller_user_id, m.category as type, m.status as condition,
-                       m.category, m.subcategory, m.status, m.created_at, m.updated_at,
-                       m.product_image, m.additional_images, m.thumbnail
-                FROM marketplace m
-                WHERE m.status = :status
-            """
-            params = {"status": status}
-            # Add filters
-            if search:
-                query += " AND (m.title ILIKE :search1 OR m.description ILIKE :search2)"
-                params["search1"] = f"%{search}%"
-                params["search2"] = f"%{search}%"
-            if category:
-                # For category filtering, we need to join with categories table
-                query += " AND m.category_id IN (SELECT id FROM categories WHERE name ILIKE :category)"
-                params["category"] = f"%{category}%"
-            if subcategory:
-                # For subcategory filtering, we need to join with subcategories table
-                query += " AND m.subcategory_id IN (SELECT id FROM subcategories WHERE name ILIKE :subcategory)"
-                params["subcategory"] = f"%{subcategory}%"
-            if kind:  # Map kind to appropriate marketplace fields
-                if kind == "regular":
-                    query += " AND m.type NOT IN ('vehicle', 'appliance')"
-                elif kind == "vehicle":
-                    query += " AND m.type ILIKE :kind_filter"
-                    params["kind_filter"] = "%vehicle%"
-                elif kind == "appliance":
-                    query += " AND m.type ILIKE :kind_filter"
-                    params["kind_filter"] = "%appliance%"
-            if condition:
-                query += " AND m.condition = :condition"
-                params["condition"] = condition
-            if min_price is not None:
-                query += " AND m.price_cents >= :min_price"
-                params["min_price"] = min_price  # Keep in cents
-            if max_price is not None:
-                query += " AND m.price_cents <= :max_price"
-                params["max_price"] = max_price  # Keep in cents
-            if city:
-                query += " AND m.city ILIKE :city"
-                params["city"] = f"%{city}%"
-            if region:
-                query += " AND m.region ILIKE :region"
-                params["region"] = f"%{region}%"
-            # Location-based filtering
-            if lat and lng and radius:
-                # Convert radius from miles to degrees (approximate)
-                radius_degrees = radius / 69.0
-                query += """
-                    AND m.lat IS NOT NULL
-                    AND m.lng IS NOT NULL
-                    AND m.lat BETWEEN :lat_min AND :lat_max
-                    AND m.lng BETWEEN :lng_min AND :lng_max
-                """
-                params.update(
-                    {
-                        "lat_min": lat - radius_degrees,
-                        "lat_max": lat + radius_degrees,
-                        "lng_min": lng - radius_degrees,
-                        "lng_max": lng + radius_degrees,
-                    }
-                )
-            # Add ordering and pagination
-            query += " ORDER BY m.created_at DESC LIMIT :limit OFFSET :offset"
-            params.update({"limit": limit, "offset": offset})
-            # Execute query using database session (SQLAlchemy way)
-            with self.db_manager.connection_manager.get_session_context() as session:
-                from sqlalchemy import text
-
-                logger.info(f"Executing marketplace query with params: {params}")
-                # Execute main query
-                result = session.execute(text(query), params)
-                listings = result.fetchall()
-                logger.info(f"Found {len(listings)} listings from query")
-                # Get total count for pagination
-                count_query = """
-                    SELECT COUNT(*) as total FROM marketplace m
-                    WHERE m.status = :status
-                """
-                count_result = session.execute(text(count_query), {"status": status})
-                total = count_result.scalar()
-                logger.info(f"Total count: {total}")
-            # Format response for marketplace table
-            formatted_listings = []
-            for listing in listings:
-                # Convert marketplace table structure to expected format
-                # Use dictionary access since SQLAlchemy returns Row objects
-                # Process image fields
-                product_image = (
-                    listing[18] if len(listing) > 18 else None
-                )  # product_image
-                additional_images = (
-                    listing[19] if len(listing) > 19 else None
-                )  # additional_images
-                thumbnail = listing[20] if len(listing) > 20 else None  # thumbnail
-                # Create images array with thumbnail as first image if available
-                images = []
-                if thumbnail:
-                    images.append(thumbnail)
-                elif product_image:
-                    images.append(product_image)
-                # Add additional images if available
-                if additional_images:
-                    if isinstance(additional_images, list):
-                        images.extend(additional_images)
-                    elif isinstance(additional_images, str):
-                        # Handle case where additional_images might be a JSON string
-                        try:
-                            import json
-
-                            parsed_images = json.loads(additional_images)
-                            if isinstance(parsed_images, list):
-                                images.extend(parsed_images)
-                        except (json.JSONDecodeError, TypeError):
-                            # If it's not JSON, treat as single image
-                            images.append(additional_images)
-                # Ensure we have at least one image (use placeholder if none)
-                if not images:
-                    images = ["/images/default-restaurant.webp"]
-                formatted_listing = {
-                    "id": str(listing[0]),  # id
-                    "kind": "regular",  # Default to regular for marketplace items
-                    "txn_type": listing[11] or "sale",  # type (sale, borrow, etc.)
-                    "title": listing[1],  # title
-                    "description": listing[2],  # description
-                    "price_cents": (
-                        int(float(listing[3]) * 100) if listing[3] else 0
-                    ),  # price (convert to cents)
-                    "currency": listing[4] or "USD",  # currency
-                    "condition": listing[12] or "new",  # condition
-                    "category_id": listing[13],  # category
-                    "subcategory_id": listing[14],  # subcategory
-                    "city": listing[5],  # city
-                    "region": listing[6],  # region (state)
-                    "zip": listing[7],  # zip (zip_code)
-                    "country": "US",  # Default country
-                    "lat": float(listing[8]) if listing[8] else None,  # lat (latitude)
-                    "lng": float(listing[9]) if listing[9] else None,  # lng (longitude)
-                    "seller_user_id": listing[10],  # seller_user_id (vendor_id)
-                    "images": images,  # Add images array
-                    "thumbnail": (
-                        thumbnail or product_image or images[0] if images else None
-                    ),  # Add thumbnail
-                    "attributes": {
-                        "type": listing[11],  # type (category)
-                        "condition": listing[12],  # condition (status)
-                        "category_id": listing[13],  # category
-                        "subcategory_id": listing[14],  # subcategory
-                    },
-                    "endorse_up": 0,  # Default values
-                    "endorse_down": 0,  # Default values
-                    "status": listing[15],  # status
-                    "created_at": (
-                        listing[16].isoformat() if listing[16] else None
-                    ),  # created_at
-                    "updated_at": (
-                        listing[17].isoformat() if listing[17] else None
-                    ),  # updated_at
-                    "category_name": listing[13],  # category name
-                    "subcategory_name": listing[14],  # subcategory name
-                    "seller_name": listing[10],  # seller_user_id as seller_name
-                }
-                formatted_listings.append(formatted_listing)
+            query, params = self._build_listings_query(
+                status,
+                search,
+                category,
+                subcategory,
+                kind,
+                condition,
+                min_price,
+                max_price,
+                city,
+                region,
+                lat,
+                lng,
+                radius,
+                limit,
+                offset,
+            )
+            listings, total = self._execute_listings_query(query, params, status)
+            formatted_listings = [self._format_listing_row(row) for row in listings]
             return {
                 "success": True,
                 "data": {
@@ -249,8 +81,9 @@ class MarketplaceServiceV4(BaseService):
                 },
             }
         except Exception as e:
-            logger.exception(f"Error fetching marketplace listings: {str(e)}")
-            logger.error(f"Exception details: {type(e).__name__}: {str(e)}")
+            logger.exception(
+                "Error fetching marketplace listings", extra={"error": str(e)}
+            )
             return self._get_empty_listings_response(limit, offset)
 
     def _get_empty_listings_response(self, limit: int, offset: int) -> Dict[str, Any]:
@@ -293,112 +126,46 @@ class MarketplaceServiceV4(BaseService):
                 return {"success": False, "error": "Listing not found"}
             # Use the existing get_listing method
             return self.get_listing(listing_id)
-        except Exception as e:
+        except Exception:
             logger.exception("Error fetching marketplace listing by ID")
             return {"success": False, "error": "Listing not found"}
 
     def get_listing(self, listing_id: str) -> Dict[str, Any]:
         """Get a specific marketplace listing by ID."""
         try:
-            with self.db_manager.connection_manager.get_session_context() as session:
-                from sqlalchemy import text
-
-                query = """
-                    SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state as region, m.zip_code as zip,
-                           m.latitude as lat, m.longitude as lng, m.vendor_id as seller_user_id, m.category as type, m.status as condition,
-                           m.category, m.subcategory, m.status, m.created_at, m.updated_at,
-                           m.product_image, m.additional_images, m.thumbnail
-                    FROM marketplace m
-                    WHERE m.id = :listing_id
-                """
-                result = session.execute(text(query), {"listing_id": listing_id})
-                listing = result.fetchone()
-                if not listing:
-                    return {"success": False, "error": "Listing not found"}
-                # Process image fields
-                product_image = (
-                    listing[18] if len(listing) > 18 else None
-                )  # product_image
-                additional_images = (
-                    listing[19] if len(listing) > 19 else None
-                )  # additional_images
-                thumbnail = listing[20] if len(listing) > 20 else None  # thumbnail
-                # Create images array with thumbnail as first image if available
-                images = []
-                if thumbnail:
-                    images.append(thumbnail)
-                elif product_image:
-                    images.append(product_image)
-                # Add additional images if available
-                if additional_images:
-                    if isinstance(additional_images, list):
-                        images.extend(additional_images)
-                    elif isinstance(additional_images, str):
-                        # Handle case where additional_images might be a JSON string
-                        try:
-                            import json
-
-                            parsed_images = json.loads(additional_images)
-                            if isinstance(parsed_images, list):
-                                images.extend(parsed_images)
-                        except (json.JSONDecodeError, TypeError):
-                            # If it's not JSON, treat as single image
-                            images.append(additional_images)
-                # Ensure we have at least one image (use placeholder if none)
-                if not images:
-                    images = ["/images/default-restaurant.webp"]
-                # Format response for marketplace table with correct column structure
-                formatted_listing = {
-                    "id": str(listing[0]),  # id
-                    "kind": "regular",  # Default to regular for marketplace items
-                    "txn_type": listing[11] or "sale",  # type (sale, borrow, etc.)
-                    "title": listing[1],  # title
-                    "description": listing[2],  # description
-                    "price_cents": (
-                        int(float(listing[3]) * 100) if listing[3] else 0
-                    ),  # price (convert to cents)
-                    "currency": listing[4] or "USD",  # currency
-                    "condition": listing[12] or "new",  # condition
-                    "category_id": listing[13],  # category
-                    "subcategory_id": listing[14],  # subcategory
-                    "city": listing[5],  # city
-                    "region": listing[6],  # region (state)
-                    "zip": listing[7],  # zip (zip_code)
-                    "country": "US",  # Default country
-                    "lat": float(listing[8]) if listing[8] else None,  # lat (latitude)
-                    "lng": float(listing[9]) if listing[9] else None,  # lng (longitude)
-                    "seller_user_id": listing[10],  # seller_user_id (vendor_id)
-                    "images": images,  # Add images array
-                    "thumbnail": (
-                        thumbnail or product_image or images[0] if images else None
-                    ),  # Add thumbnail
-                    "attributes": {
-                        "type": listing[11],  # type (category)
-                        "condition": listing[12],  # condition (status)
-                        "category_id": listing[13],  # category
-                        "subcategory_id": listing[14],  # subcategory
-                    },
-                    "endorse_up": 0,  # Default values
-                    "endorse_down": 0,  # Default values
-                    "status": listing[15],  # status
-                    "created_at": (
-                        listing[16].isoformat() if listing[16] else None
-                    ),  # created_at
-                    "updated_at": (
-                        listing[17].isoformat() if listing[17] else None
-                    ),  # updated_at
-                    "category_name": listing[13],  # category name
-                    "subcategory_name": listing[14],  # subcategory name
-                    "seller_name": listing[10],  # seller_user_id as seller_name
-                }
-            return {"success": True, "data": formatted_listing}
+            row = self._fetch_listing_row(listing_id)
+            if not row:
+                return {"success": False, "error": "Listing not found"}
+            formatted = self._format_listing_row(row)
+            return {"success": True, "data": formatted}
         except Exception as e:
-            logger.exception("Error fetching marketplace listing")
+            logger.exception(
+                "Error fetching marketplace listing", extra={"error": str(e)}
+            )
             return {
                 "success": False,
                 "error": "Failed to fetch marketplace listing",
                 "details": str(e),
             }
+
+    def _fetch_listing_row(self, listing_id: str):
+        from sqlalchemy import text
+
+        with self.db_manager.connection_manager.get_session_context() as session:
+            query = """
+                SELECT m.id, m.title, m.description, m.price, m.currency, m.city,
+                       m.state as region, m.zip_code as zip,
+                       m.latitude as lat, m.longitude as lng,
+                       m.vendor_id as seller_user_id,
+                       m.category as type, m.status as condition,
+                       m.category, m.subcategory, m.status,
+                       m.created_at, m.updated_at,
+                       m.product_image, m.additional_images, m.thumbnail
+                FROM marketplace m
+                WHERE m.id = :listing_id
+            """
+            result = session.execute(text(query), {"listing_id": listing_id})
+            return result.fetchone()
 
     def create_listing(self, listing_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new marketplace listing."""

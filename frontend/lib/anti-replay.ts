@@ -64,9 +64,9 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
     }
     
     await redis.disconnect();
-  } catch (error) {
-    if (error instanceof Error && error.message === "Replay detected") {
-      throw error;
+  } catch (_error) {
+    if (_error instanceof Error && _error.message === "Replay detected") {
+      throw _error;
     }
     // In development, allow bypassing Redis for testing
     if (process.env.NODE_ENV === 'development') {
@@ -100,7 +100,7 @@ export async function clearReplayTokens(pattern = "captcha:token:*"): Promise<vo
     }
     
     await redis.disconnect();
-  } catch (error) {
-    // console.error('Failed to clear replay tokens:', error);
+  } catch (_error) {
+    // console.error('Failed to clear replay tokens:', _error);
   }
 }

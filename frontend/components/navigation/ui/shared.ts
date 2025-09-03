@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 export interface NavigationItem {
   id: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
   href: string;
   onClick?: () => void;
 }

@@ -9,7 +9,7 @@ This guide covers development setup, architecture, and contributing guidelines f
 ### Prerequisites
 - Node.js 18+
 - Python 3.11
-- PostgreSQL (local or Neon)
+- PostgreSQL (local or api.jewgo.app)
 - Git
 
 ### Quick Start

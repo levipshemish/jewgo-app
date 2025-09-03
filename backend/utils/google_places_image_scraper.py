@@ -251,7 +251,7 @@ def main() -> None:
             photo_bytes, metadata = result
         else:
             pass
-    except Exception as e:
+    except Exception:
         pass
     finally:
         if "scraper" in locals():

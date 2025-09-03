@@ -1,5 +1,9 @@
 # Frontend Docs Changelog
 
+Date: 2025-09-03
+
+- Eatery Filters: Modern filter popup now uses responsive sizing. Bottom sheet on mobile; centered modal on larger screens with width scaling by breakpoint (sm→lg→xl). Improves usability across devices without changing filter behavior. Also raised modal z-index above bottom navigation and added safe-area bottom padding to prevent cutoff on mobile.
+
 Date: 2025-09-02
 
 - **Backend Testing & CI/CD**: Successfully resolved all test authentication issues and created CI-ready test suite. Core functionality verified with 12/12 tests passing, 15% test coverage established, and performance validated (<1s response times). CI/CD pipeline now ready for production deployment. See `backend/CI_READINESS_REPORT.md` for complete details.

@@ -27,7 +27,8 @@ export async function GET(_request: NextRequest) {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
     
     // Fetch filter options from backend API
-    const _backendResponse = await fetch(`${backendUrl}/api/restaurants/filter-options`, {
+    // Use v4 backend route prefix
+    const _backendResponse = await fetch(`${backendUrl}/api/v4/restaurants/filter-options`, {
       headers: {
         'Content-Type': 'application/json',
       },

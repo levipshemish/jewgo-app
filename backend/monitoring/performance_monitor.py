@@ -358,7 +358,7 @@ performance_monitor = PerformanceMonitor()
 def performance_decorator(operation: str):
     """Decorator to automatically record performance metrics."""
 
-    def decorator(func):
+    def performance_decorator_inner(func):
         def wrapper(*args, **kwargs):
             start_time = time.time()
             success = True
@@ -381,4 +381,4 @@ def performance_decorator(operation: str):
 
         return wrapper
 
-    return decorator
+    return performance_decorator_inner

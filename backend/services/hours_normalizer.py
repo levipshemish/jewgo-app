@@ -273,17 +273,11 @@ def _get_day_abbr_from_name(day_name: str) -> Optional[str]:
 def _parse_orb_hours_text(orb_text: str) -> Dict[str, Dict[str, Any]]:
     """Parse ORB hours text into structured format."""
     parsed = {}
-    # Common patterns
-    patterns = [
-        # Mon-Fri: 11AM-9PM, Sat: 12PM-10PM, Sun: Closed
-        r"(\w{3})-(\w{3}):\s*(\d{1,2}[AP]M)-(\d{1,2}[AP]M)",
-        # Mon: 11AM-9PM, Tue: 11AM-9PM
-        r"(\w{3}):\s*(\d{1,2}[AP]M)-(\d{1,2}[AP]M)",
-        # Daily: 11AM-11PM
-        r"Daily:\s*(\d{1,2}[AP]M)-(\d{1,2}[AP]M)",
-        # Closed
-        r"(\w{3}):\s*Closed",
-    ]
+    # Common patterns supported (documentation only):
+    # - (\w{3})-(\w{3}):\s*(\d{1,2}[AP]M)-(\d{1,2}[AP]M)
+    # - (\w{3}):\s*(\d{1,2}[AP]M)-(\d{1,2}[AP]M)
+    # - Daily:\s*(\d{1,2}[AP]M)-(\d{1,2}[AP]M)
+    # - (\w{3}):\s*Closed
     # Parse range patterns (e.g., Mon-Fri: 11AM-9PM)
     range_match = re.search(
         r"(\w{3})-(\w{3}):\s*(\d{1,2}[AP]M)-(\d{1,2}[AP]M)", orb_text

@@ -8,7 +8,7 @@ interface StoreSettingsProps {
   onRefresh: () => void;
 }
 
-interface StoreSettings {
+interface StoreSettingsValues {
   store_name: string;
   store_description: string;
   store_type: string;
@@ -47,8 +47,8 @@ interface StoreSettings {
 }
 
 export default function StoreSettings({ storeData, onRefresh }: StoreSettingsProps) {
-  const [settings, setSettings] = useState<StoreSettings>(storeData);
-  const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState<StoreSettingsValues>(storeData);
+  const [_loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
 
@@ -108,7 +108,7 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
     }
   };
 
-  const updateSetting = (key: keyof StoreSettings, value: any) => {
+  const updateSetting = (key: keyof StoreSettingsValues, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 

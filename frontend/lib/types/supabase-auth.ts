@@ -5,7 +5,7 @@
  * including user management, session handling, and auth state management.
  */
 
-import { User, Session, AuthError, AuthChangeEvent } from '@supabase/supabase-js';
+import { User, Session, AuthError, AuthChangeEvent as _AuthChangeEvent } from '@supabase/supabase-js';
 import type { Permission, Role } from '@/lib/constants/permissions';
 
 // Core Supabase Auth Types

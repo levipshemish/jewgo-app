@@ -196,7 +196,7 @@ def handle_http_exception(error: HTTPException) -> tuple[Dict[str, Any], int]:
 def handle_database_operation(operation_name_or_func=None):
     """Decorator to handle database operations with proper error handling."""
     
-    def decorator(func: Callable) -> Callable:
+    def database_operation_decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             operation_name = getattr(func, '__name__', 'database operation')
@@ -216,16 +216,16 @@ def handle_database_operation(operation_name_or_func=None):
 
     # Handle both @handle_database_operation and @handle_database_operation("name")
     if callable(operation_name_or_func):
-        return decorator(operation_name_or_func)
+        return database_operation_decorator(operation_name_or_func)
     else:
         operation_name = operation_name_or_func or "database operation"
-        return decorator
+        return database_operation_decorator
 
 
 def handle_cache_operation(operation_name: str = "cache operation"):
     """Decorator to handle cache operations with proper error handling."""
 
-    def decorator(func: Callable) -> Callable:
+    def cache_operation_decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             try:
@@ -240,7 +240,7 @@ def handle_cache_operation(operation_name: str = "cache operation"):
 
         return wrapper
 
-    return decorator
+    return cache_operation_decorator
 
 
 def handle_operation_with_fallback(
@@ -248,13 +248,13 @@ def handle_operation_with_fallback(
 ):
     """Decorator to handle operations with fallback values on failure."""
     
-    def decorator(func: Callable) -> Callable:
+    def operation_fallback_decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             operation_name = getattr(func, '__name__', 'operation')
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
+            except Exception:
                 logger.warning(
                     f"Operation failed, using fallback: {operation_name}", exc_info=True
                 )
@@ -264,10 +264,10 @@ def handle_operation_with_fallback(
 
     # Handle both @handle_operation_with_fallback and @handle_operation_with_fallback("name", value)
     if callable(operation_name_or_func):
-        return decorator(operation_name_or_func)
+        return operation_fallback_decorator(operation_name_or_func)
     else:
         operation_name = operation_name_or_func or "operation"
-        return decorator
+        return operation_fallback_decorator
 
 
 def create_error_response(

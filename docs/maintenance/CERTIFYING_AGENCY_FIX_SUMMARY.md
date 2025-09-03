@@ -65,4 +65,4 @@ The kosher Miami data import process created duplicate entries for many restaura
 ---
 *Date: January 2025*  
 *Status: ✅ Completed*  
-*Database: Production (Neon)* 
+*Database: Production (api.jewgo.app)* 

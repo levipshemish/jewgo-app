@@ -26,8 +26,6 @@ interface User {
   updated_at?: string;
 }
 
-
-
 /**
  * Check if user is anonymous based on app_metadata
  */
@@ -46,6 +44,34 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /**
+ * Get base URL for client-side requests
+ */
+function getBaseUrlClient(): string {
+  // Use environment variables available to the client
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                 process.env.NEXT_PUBLIC_APP_URL || 
+                 process.env.NEXTAUTH_URL;
+  
+  if (envUrl) {
+    return envUrl;
+  }
+  
+  // For client-side, try to get from window.location if available
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  
+  // Fallback for development
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000';
+  }
+  
+  // Production fallback - this should be configured
+  console.warn('[AbsoluteURL-Client] No base URL configured, using localhost fallback');
+  return 'http://localhost:3000';
+}
+
+/**
  * Request user data with role information from backend
  * Integrates with the new JWT-based role system
  */
@@ -55,8 +81,16 @@ export async function getUserWithRoles(userToken: string): Promise<{
   permissions: Permission[];
 } | null> {
   try {
+    // Determine if we're running server-side or client-side
+    const isServer = typeof window === 'undefined';
+    
+    // Use absolute URL for server-side requests to prevent ERR_INVALID_URL
+    const url = isServer 
+      ? `${getBaseUrlClient()}/api/auth/user-with-roles`
+      : '/api/auth/user-with-roles';
+    
     // Call backend endpoint that uses the new SupabaseRoleManager
-    const response = await fetch('/api/auth/user-with-roles', {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${userToken}`,
@@ -360,7 +394,7 @@ export function verifyTokenRotation(
     }
     
     return true;
-  } catch (error) {
+  } catch (_error) {
     // Token rotation verification failed - return false as fallback
     return false;
   }

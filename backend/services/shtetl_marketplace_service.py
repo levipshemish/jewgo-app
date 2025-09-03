@@ -47,132 +47,37 @@ class ShtetlMarketplaceService(BaseService):
     ) -> Dict[str, Any]:
         """Get shtetl marketplace listings with community-specific filtering."""
         try:
-            # Check if shtetl_marketplace table exists
-            if not self.db_manager or not hasattr(
-                self.db_manager, "connection_manager"
-            ):
-                logger.warning("Database manager not available for shtetl marketplace")
+            if not self._is_db_available():
                 return self._get_empty_listings_response(limit, offset)
-            # Try to check if shtetl_marketplace table exists
-            try:
-                with self.db_manager.connection_manager.get_session_context() as session:
-                    from sqlalchemy import text
-
-                    # Test if shtetl_marketplace table exists
-                    result = session.execute(
-                        text(
-                            "SELECT 1 FROM information_schema.tables WHERE table_name = 'shtetl_marketplace'"
-                        )
-                    )
-                    if not result.fetchone():
-                        logger.warning(
-                            "Shtetl marketplace table does not exist, returning empty response"
-                        )
-                        return self._get_empty_listings_response(limit, offset)
-            except Exception as e:
-                logger.warning(f"Could not check shtetl_marketplace table: {e}")
+            if not self._shtetl_table_exists():
                 return self._get_empty_listings_response(limit, offset)
-            # Build query for shtetl_marketplace table
-            query = """
-                SELECT s.id, s.title, s.description, s.price_cents, s.currency, s.city, s.state, s.zip_code,
-                       s.latitude as lat, s.longitude as lng, s.seller_name, s.seller_phone, s.seller_email,
-                       s.category_name, s.subcategory, s.status, s.created_at, s.updated_at,
-                       s.thumbnail, s.images, s.kosher_agency, s.kosher_level, s.kosher_verified,
-                       s.rabbi_endorsed, s.community_verified, s.is_gemach, s.gemach_type,
-                       s.holiday_category, s.condition, s.stock_quantity, s.is_available, s.is_featured,
-                       s.rating, s.review_count, s.transaction_type, s.contact_preference, s.notes
-                FROM shtetl_marketplace s
-                WHERE s.status = :status
-            """
-            params = {"status": status}
-            # Add filters
-            if search:
-                query += " AND (s.title ILIKE :search1 OR s.description ILIKE :search2 OR s.keywords ILIKE :search3)"
-                params["search1"] = f"%{search}%"
-                params["search2"] = f"%{search}%"
-                params["search3"] = f"%{search}%"
-            if category:
-                query += " AND s.category_name ILIKE :category"
-                params["category"] = f"%{category}%"
-            if subcategory:
-                query += " AND s.subcategory ILIKE :subcategory"
-                params["subcategory"] = f"%{subcategory}%"
-            if transaction_type:
-                query += " AND s.transaction_type = :transaction_type"
-                params["transaction_type"] = transaction_type
-            if is_gemach is not None:
-                query += " AND s.is_gemach = :is_gemach"
-                params["is_gemach"] = is_gemach
-            if kosher_agency:
-                query += " AND s.kosher_agency ILIKE :kosher_agency"
-                params["kosher_agency"] = f"%{kosher_agency}%"
-            if holiday_category:
-                query += " AND s.holiday_category = :holiday_category"
-                params["holiday_category"] = holiday_category
-            if min_price is not None:
-                query += " AND s.price_cents >= :min_price"
-                params["min_price"] = min_price
-            if max_price is not None:
-                query += " AND s.price_cents <= :max_price"
-                params["max_price"] = max_price
-            if city:
-                query += " AND s.city ILIKE :city"
-                params["city"] = f"%{city}%"
-            if state:
-                query += " AND s.state ILIKE :state"
-                params["state"] = f"%{state}%"
-            # Community-prioritized sorting
-            query += """
-                ORDER BY
-                    s.is_gemach DESC,              -- Gemach items first
-                    s.community_verified DESC,     -- Community verified next
-                    s.rabbi_endorsed DESC,         -- Rabbi endorsed next
-                    s.kosher_verified DESC,        -- Kosher verified next
-                    s.is_featured DESC,            -- Featured items
-                    s.created_at DESC              -- Newest first
-                LIMIT :limit OFFSET :offset
-            """
-            params["limit"] = limit
-            params["offset"] = offset
-            with self.db_manager.connection_manager.get_session_context() as session:
-                from sqlalchemy import text
-
-                result = session.execute(text(query), params)
-                rows = result.fetchall()
-                # Convert rows to dictionaries
-                listings = []
-                for row in rows:
-                    listing = dict(row._mapping)
-                    # Handle JSON fields
-                    if listing.get("images"):
-                        try:
-                            if isinstance(listing["images"], str):
-                                listing["images"] = json.loads(listing["images"])
-                        except (json.JSONDecodeError, TypeError):
-                            listing["images"] = []
-                    listings.append(listing)
-                # Get total count for pagination
-                count_query = query.replace(
-                    "SELECT s.id, s.title, s.description, s.price_cents, s.currency, s.city, s.state, s.zip_code, s.latitude as lat, s.longitude as lng, s.seller_name, s.seller_phone, s.seller_email, s.category_name, s.subcategory, s.status, s.created_at, s.updated_at, s.thumbnail, s.images, s.kosher_agency, s.kosher_level, s.kosher_verified, s.rabbi_endorsed, s.community_verified, s.is_gemach, s.gemach_type, s.holiday_category, s.condition, s.stock_quantity, s.is_available, s.is_featured, s.rating, s.review_count, s.transaction_type, s.contact_preference, s.notes FROM shtetl_marketplace s",
-                    "SELECT COUNT(*) as total FROM shtetl_marketplace s",
-                ).split("ORDER BY")[
-                    0
-                ]  # Remove ORDER BY and LIMIT clauses
-                count_result = session.execute(
-                    text(count_query),
-                    {k: v for k, v in params.items() if k not in ["limit", "offset"]},
-                )
-                total = count_result.fetchone()[0]
-                return {
-                    "success": True,
-                    "data": {
-                        "listings": listings,
-                        "total": total,
-                        "limit": limit,
-                        "offset": offset,
-                        "community_focus": True,  # Indicates this is community-focused data
-                    },
-                }
+            query, params = self._build_shtetl_query(
+                status,
+                search,
+                category,
+                subcategory,
+                transaction_type,
+                is_gemach,
+                kosher_agency,
+                holiday_category,
+                min_price,
+                max_price,
+                city,
+                state,
+                limit,
+                offset,
+            )
+            listings, total = self._execute_shtetl_query(query, params)
+            return {
+                "success": True,
+                "data": {
+                    "listings": listings,
+                    "total": total,
+                    "limit": limit,
+                    "offset": offset,
+                    "community_focus": True,
+                },
+            }
         except Exception as e:
             logger.exception("Error fetching shtetl marketplace listings")
             return {
@@ -187,34 +92,164 @@ class ShtetlMarketplaceService(BaseService):
             if not self.db_manager:
                 logger.warning("Database manager not available")
                 return {"success": False, "error": "Database unavailable"}
-            query = """
-                SELECT s.*,
-                       CASE WHEN s.seller_user_id IS NOT NULL THEN 'registered' ELSE 'guest' END as seller_type
-                FROM shtetl_marketplace s
-                WHERE s.id = :listing_id AND s.status != 'deleted'
-            """
-            with self.db_manager.connection_manager.get_session_context() as session:
-                from sqlalchemy import text
-
-                result = session.execute(text(query), {"listing_id": listing_id})
-                row = result.fetchone()
-                if not row:
-                    return {"success": False, "error": "Shtetl listing not found"}
-                listing = dict(row._mapping)
-                # Handle JSON fields
-                if listing.get("images"):
-                    try:
-                        if isinstance(listing["images"], str):
-                            listing["images"] = json.loads(listing["images"])
-                    except (json.JSONDecodeError, TypeError):
-                        listing["images"] = []
-                return {"success": True, "data": listing}
+            row = self._fetch_shtetl_listing_row(listing_id)
+            if not row:
+                return {"success": False, "error": "Shtetl listing not found"}
+            listing = dict(row._mapping)
+            if listing.get("images"):
+                try:
+                    if isinstance(listing["images"], str):
+                        listing["images"] = json.loads(listing["images"])
+                except (json.JSONDecodeError, TypeError):
+                    listing["images"] = []
+            return {"success": True, "data": listing}
         except Exception as e:
             logger.exception(f"Error fetching shtetl listing {listing_id}")
             return {
                 "success": False,
                 "error": f"Failed to fetch shtetl listing: {str(e)}",
             }
+
+    # Helpers
+    def _is_db_available(self) -> bool:
+        return bool(self.db_manager and hasattr(self.db_manager, "connection_manager"))
+
+    def _shtetl_table_exists(self) -> bool:
+        try:
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+
+                result = session.execute(
+                    text(
+                        "SELECT 1 FROM information_schema.tables WHERE table_name = 'shtetl_marketplace'"
+                    )
+                )
+                return bool(result.fetchone())
+        except Exception as e:
+            logger.warning(
+                "Could not check shtetl_marketplace table", extra={"error": str(e)}
+            )
+            return False
+
+    def _build_shtetl_query(
+        self,
+        status,
+        search,
+        category,
+        subcategory,
+        transaction_type,
+        is_gemach,
+        kosher_agency,
+        holiday_category,
+        min_price,
+        max_price,
+        city,
+        state,
+        limit,
+        offset,
+    ) -> tuple[str, Dict[str, Any]]:
+        query = """
+            SELECT s.id, s.title, s.description, s.price_cents, s.currency, s.city, s.state, s.zip_code,
+                   s.latitude as lat, s.longitude as lng, s.seller_name, s.seller_phone, s.seller_email,
+                   s.category_name, s.subcategory, s.status, s.created_at, s.updated_at,
+                   s.thumbnail, s.images, s.kosher_agency, s.kosher_level, s.kosher_verified,
+                   s.rabbi_endorsed, s.community_verified, s.is_gemach, s.gemach_type,
+                   s.holiday_category, s.condition, s.stock_quantity, s.is_available, s.is_featured,
+                   s.rating, s.review_count, s.transaction_type, s.contact_preference, s.notes
+            FROM shtetl_marketplace s
+            WHERE s.status = :status
+        """
+        params: Dict[str, Any] = {"status": status}
+        if search:
+            query += " AND (s.title ILIKE :search1 OR s.description ILIKE :search2 OR s.keywords ILIKE :search3)"
+            params.update(
+                {
+                    "search1": f"%{search}%",
+                    "search2": f"%{search}%",
+                    "search3": f"%{search}%",
+                }
+            )
+        if category:
+            query += " AND s.category_name ILIKE :category"
+            params["category"] = f"%{category}%"
+        if subcategory:
+            query += " AND s.subcategory ILIKE :subcategory"
+            params["subcategory"] = f"%{subcategory}%"
+        if transaction_type:
+            query += " AND s.transaction_type = :transaction_type"
+            params["transaction_type"] = transaction_type
+        if is_gemach is not None:
+            query += " AND s.is_gemach = :is_gemach"
+            params["is_gemach"] = is_gemach
+        if kosher_agency:
+            query += " AND s.kosher_agency ILIKE :kosher_agency"
+            params["kosher_agency"] = f"%{kosher_agency}%"
+        if holiday_category:
+            query += " AND s.holiday_category = :holiday_category"
+            params["holiday_category"] = holiday_category
+        if min_price is not None:
+            query += " AND s.price_cents >= :min_price"
+            params["min_price"] = min_price
+        if max_price is not None:
+            query += " AND s.price_cents <= :max_price"
+            params["max_price"] = max_price
+        if city:
+            query += " AND s.city ILIKE :city"
+            params["city"] = f"%{city}%"
+        if state:
+            query += " AND s.state ILIKE :state"
+            params["state"] = f"%{state}%"
+        query += """
+            ORDER BY
+                s.is_gemach DESC,
+                s.community_verified DESC,
+                s.rabbi_endorsed DESC,
+                s.kosher_verified DESC,
+                s.is_featured DESC,
+                s.created_at DESC
+            LIMIT :limit OFFSET :offset
+        """
+        params.update({"limit": limit, "offset": offset})
+        return query, params
+
+    def _execute_shtetl_query(self, query: str, params: Dict[str, Any]):
+        from sqlalchemy import text
+
+        with self.db_manager.connection_manager.get_session_context() as session:
+            rows = session.execute(text(query), params).fetchall()
+            listings = []
+            for row in rows:
+                listing = dict(row._mapping)
+                if listing.get("images"):
+                    try:
+                        if isinstance(listing["images"], str):
+                            listing["images"] = json.loads(listing["images"])
+                    except (json.JSONDecodeError, TypeError):
+                        listing["images"] = []
+                listings.append(listing)
+            # Count
+            base_from = "FROM shtetl_marketplace s"
+            after_from = query.split(base_from, 1)[1]
+            count_query = ("SELECT COUNT(*) as total " + base_from + after_from).split(
+                "ORDER BY"
+            )[0]
+            total = session.execute(
+                text(count_query),
+                {k: v for k, v in params.items() if k not in ["limit", "offset"]},
+            ).scalar()
+            return listings, total
+
+    def _fetch_shtetl_listing_row(self, listing_id: str):
+        from sqlalchemy import text
+
+        with self.db_manager.connection_manager.get_session_context() as session:
+            query = """
+                SELECT s.*,
+                       CASE WHEN s.seller_user_id IS NOT NULL THEN 'registered' ELSE 'guest' END as seller_type
+                FROM shtetl_marketplace s
+                WHERE s.id = :listing_id AND s.status != 'deleted'
+            """
+            return session.execute(text(query), {"listing_id": listing_id}).fetchone()
 
     def create_listing(self, listing_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new shtetl marketplace listing."""

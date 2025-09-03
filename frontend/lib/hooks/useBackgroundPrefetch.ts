@@ -153,7 +153,7 @@ class BackgroundPrefetcher {
           sessionStorage.removeItem(cacheKey);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore cache retrieval errors
     }
     
@@ -201,7 +201,7 @@ export function useBackgroundPrefetch(options: PrefetchOptions = {}) {
     enabled = true,
     delay = 1000,
     priority = 'normal',
-    maxConcurrent = 3
+    maxConcurrent: _maxConcurrent = 3
   } = options;
 
   const prefetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);

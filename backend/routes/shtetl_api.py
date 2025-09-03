@@ -12,7 +12,7 @@ from utils.logging_config import get_logger
 from utils.response_helpers import success_response, error_response
 from utils.feature_flags_v4 import require_api_v4_flag
 from utils.supabase_auth import require_supabase_auth, get_current_supabase_user
-from utils.security import require_admin as require_admin_auth
+from utils.security import require_admin, require_admin_auth
 from utils.limiter import limiter
 
 # Service imports
@@ -21,7 +21,7 @@ from services.shtetl_store_service import ShtetlStoreService, StoreData
 
 logger = get_logger(__name__)
 # Create blueprint
-shtetl_bp = Blueprint("shtetl", __name__, url_prefix="/api/v4/shtetl")
+shtetl_bp = Blueprint("shtetl_marketplace", __name__, url_prefix="/api/shtetl")
 
 
 def create_shtetl_service():
@@ -473,20 +473,16 @@ def get_stores():
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-        success, message, result = service.get_stores(
+        result = service.get_stores(
             limit=limit,
             offset=offset,
-            search=search,
-            category=category,
             city=city,
             state=state,
+            store_category=category,
             kosher_agency=kosher_agency,
-            delivery_enabled=delivery_enabled,
-            pickup_enabled=pickup_enabled,
-            status=status,
+            is_active=(status == "active") if status else None,
+            is_approved=True,
         )
-        if not success:
-            return error_response(message, 500)
         return success_response(result)
     except Exception as e:
         logger.exception("Error fetching stores")
@@ -523,22 +519,11 @@ def search_stores():
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-        success, message, result = service.search_stores(
-            query=query,
-            category=category,
-            city=city,
-            state=state,
-            kosher_agency=kosher_agency,
-            delivery_enabled=delivery_enabled,
-            pickup_enabled=pickup_enabled,
-            lat=lat,
-            lng=lng,
-            radius=radius,
+        result = service.search_stores(
+            search_term=query,
             limit=limit,
             offset=offset,
         )
-        if not success:
-            return error_response(message, 500)
         return success_response(result)
     except Exception as e:
         logger.exception("Error searching stores")
@@ -587,15 +572,11 @@ def get_store_products(store_id):
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-        success, message, result = service.get_store_products(
+        result = service.get_store_products(
             store_id=store_id,
             limit=limit,
             offset=offset,
-            category=category,
-            search=search,
         )
-        if not success:
-            return error_response(message, 404)
         return success_response(result)
     except Exception as e:
         logger.exception("Error fetching store products")
@@ -674,12 +655,11 @@ def get_store_messages(store_id):
 def get_plan_limits():
     """Get store plan limits and features."""
     try:
+        plan_type = request.args.get("plan_type", "basic")
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-        success, message, result = service.get_plan_limits()
-        if not success:
-            return error_response(message, 500)
+        result = service.get_plan_limits(plan_type)
         return success_response(result)
     except Exception as e:
         logger.exception("Error fetching plan limits")

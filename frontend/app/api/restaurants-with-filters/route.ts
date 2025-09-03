@@ -76,6 +76,42 @@ export async function GET(request: NextRequest) {
 
       // Handle restaurants response
       if (!restaurantsResponse.ok) {
+        // Graceful handling: if downstream API returns 404 for a deeper page,
+        // treat it as an empty page with no more results rather than erroring.
+        if (restaurantsResponse.status === 404) {
+          const fallbackFilterOptions = filterOptionsResponse.ok
+            ? await filterOptionsResponse.json()
+            : {
+                success: true,
+                data: {
+                  agencies: ['ORB', 'Kosher Miami', 'Other'],
+                  kosherCategories: ['Dairy', 'Meat', 'Pareve'],
+                  listingTypes: ['Restaurant', 'Catering', 'Food Truck'],
+                  priceRanges: ['$', '$$', '$$$', '$$$$'],
+                  cities: [],
+                  states: []
+                }
+              };
+          const payload = {
+            success: true,
+            data: {
+              restaurants: [],
+              total: 0,
+              filterOptions: fallbackFilterOptions.data || fallbackFilterOptions
+            },
+            pagination: {
+              limit,
+              offset,
+              page,
+              totalPages: page,
+              hasMore: false
+            }
+          };
+          const headers = {
+            'Cache-Control': 'no-store'
+          } as Record<string, string>;
+          return { payload, headers };
+        }
         throw new Error(`Restaurants API error: ${restaurantsResponse.status}`);
       }
 
@@ -109,17 +145,31 @@ export async function GET(request: NextRequest) {
       }
 
       // Combine the responses
+      const returnedCount = Array.isArray(restaurantsData?.data)
+        ? restaurantsData.data.length
+        : Array.isArray(restaurantsData)
+        ? restaurantsData.length
+        : 0;
+      const totalFromBackend = Number(restaurantsData.total || restaurantsData.count || 0);
+      // Robust hasMore heuristic:
+      // 1) If backend provides a total, use it strictly.
+      // 2) Otherwise, only assume more on the first page when it's full; subsequent pages
+      //    must return fewer than limit to continue (prevents endless loops when backends repeat pages).
+      const hasMore = totalFromBackend > 0
+        ? (offset + returnedCount) < totalFromBackend
+        : (page === 1 && returnedCount === limit);
       const combinedData = {
         data: {
           restaurants: restaurantsData.data || [],
-          total: restaurantsData.total || 0,
+          total: totalFromBackend,
           filterOptions: filterOptionsData.data || filterOptionsData
         },
         pagination: {
           limit,
           offset,
           page,
-          totalPages: Math.ceil((restaurantsData.total || 0) / limit)
+          totalPages: totalFromBackend > 0 ? Math.ceil(totalFromBackend / limit) : (hasMore ? page + 1 : page),
+          hasMore
         }
       };
 

@@ -115,7 +115,7 @@ class GooglePlacesManager:
         try:
             # Align engine config with main DB manager for reliability
             connect_url = self.database_url
-            if "neon.tech" in connect_url and "sslmode=" not in connect_url:
+            if "api.jewgo.app" in connect_url and "sslmode=" not in connect_url:
                 connect_url = (
                     connect_url
                     + ("&" if "?" in connect_url else "?")

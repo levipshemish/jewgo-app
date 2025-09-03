@@ -12,15 +12,16 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
 import { LocationProvider } from '@/lib/contexts/LocationContext'
-import { SupabaseProvider } from '@/lib/contexts/SupabaseContext'
-import DevNavigation from '@/components/dev/DevNavigation'
+import { AuthProvider } from '@/contexts/AuthContext'
+
 import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
 
-// NextAuth removed - using Supabase only
+// PostgreSQL Authentication - Migration from Supabase
 import { roboto } from './fonts'
 import { CustomHead } from './head'
 import { featureGuard } from '@/lib/feature-guard';
 import { ScrollProvider } from '@/lib/hooks/useScrollDetection';
+import { ThemeProvider } from '@/lib/contexts/ThemeContext';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jewgo.app'),
@@ -96,6 +97,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${roboto.variable} h-full`} data-scroll-behavior="smooth">
       <head>
+        {/* Viewport meta tag for proper mobile layout */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        
         {/* Google Analytics */}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX' && (
           <>
@@ -137,27 +141,29 @@ export default function RootLayout({
       <body className="h-full antialiased font-sans">
         <CustomHead />
         <ErrorBoundary>
-          <SupabaseProvider>
-            <NotificationsProvider>
-              <LocationProvider>
-                <ScrollProvider>
-                  <div 
-                      className="min-h-full flex flex-col"
-                      style={{
-                        WebkitTapHighlightColor: 'transparent',
-                        WebkitTouchCallout: 'none'
-                      }}
-                    >
-                      <RelayEmailBanner />
-                      {children}
-                    </div>
-                  <Analytics />
-                  <ServiceWorkerRegistration />
-                  <DevNavigation />
-                </ScrollProvider>
-              </LocationProvider>
-            </NotificationsProvider>
-          </SupabaseProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <NotificationsProvider>
+                <LocationProvider>
+                  <ScrollProvider>
+                    <div 
+                        className="min-h-full flex flex-col"
+                        style={{
+                          WebkitTapHighlightColor: 'transparent',
+                          WebkitTouchCallout: 'none'
+                        }}
+                      >
+                        <RelayEmailBanner />
+                        {children}
+                      </div>
+                    <Analytics />
+                    <ServiceWorkerRegistration />
+
+                  </ScrollProvider>
+                </LocationProvider>
+              </NotificationsProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

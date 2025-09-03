@@ -257,7 +257,7 @@ class GooglePlacesManager:
                 # Get restaurant info from database
                 # Use resilient engine per backend standards
                 connect_url = self.database_url
-                if "neon.tech" in connect_url and "sslmode=" not in connect_url:
+                if "api.jewgo.app" in connect_url and "sslmode=" not in connect_url:
                     connect_url = (
                         connect_url
                         + ("&" if "?" in connect_url else "?")
@@ -307,7 +307,7 @@ class GooglePlacesManager:
                 return False
             # Update database
             connect_url = self.database_url
-            if "neon.tech" in connect_url and "sslmode=" not in connect_url:
+            if "api.jewgo.app" in connect_url and "sslmode=" not in connect_url:
                 connect_url = (
                     connect_url
                     + ("&" if "?" in connect_url else "?")
@@ -374,7 +374,7 @@ class GooglePlacesManager:
                 logger.error("Database URL not configured")
                 return {"success": False, "error": "Database URL not configured"}
             connect_url = self.database_url
-            if "neon.tech" in connect_url and "sslmode=" not in connect_url:
+            if "api.jewgo.app" in connect_url and "sslmode=" not in connect_url:
                 connect_url = (
                     connect_url
                     + ("&" if "?" in connect_url else "?")
@@ -499,7 +499,7 @@ class GooglePlacesManager:
                 logger.error("Database URL not configured")
                 return False
             connect_url = self.database_url
-            if "neon.tech" in connect_url and "sslmode=" not in connect_url:
+            if "api.jewgo.app" in connect_url and "sslmode=" not in connect_url:
                 connect_url = (
                     connect_url
                     + ("&" if "?" in connect_url else "?")

@@ -403,7 +403,7 @@ class EnhancedDatabaseManager:
                 logger.info(
                     "Fixed database URL format from postgres:// to postgresql://"
                 )
-            # Ensure SSL for all non-local Postgres connections (helps avoid TLS issues on hosts like Neon, RDS, etc.)
+            # Ensure SSL for all non-local Postgres connections (helps avoid TLS issues on various hosts)
             try:
                 parsed = urlparse(self.database_url)
                 hostname = (parsed.hostname or "").lower()
@@ -413,7 +413,7 @@ class EnhancedDatabaseManager:
                     and (not is_local)
                     and ("sslmode=" not in (parsed.query or ""))
                 ):
-                    # Use sslmode=prefer for better compatibility with Neon and other providers
+                    # Use sslmode=prefer for better compatibility across providers
                     new_query = (
                         f"{parsed.query}&sslmode=prefer"
                         if parsed.query
@@ -440,7 +440,6 @@ class EnhancedDatabaseManager:
                 "connect_timeout": 30,
                 "application_name": "jewgo-backend",
                 # Ensure SSL is on but avoid verify-full unless you ship CA certs
-                # If using Neon/Render typical: sslmode=require
                 "sslmode": ConfigManager.get_pg_sslmode(),
                 # TCP keepalives so dead links get detected quickly
                 "keepalives": 1,
@@ -454,12 +453,12 @@ class EnhancedDatabaseManager:
             sslrootcert = ConfigManager.get_pg_sslrootcert()
             if sslrootcert:
                 connect_args["sslrootcert"] = sslrootcert
-            # Some providers (e.g., Neon pooler) reject startup options like statement_timeout.
-            # Detect Neon and remove unsupported startup options, then set timeouts after connect.
+            # Some providers may reject startup options like statement_timeout.
+            # Detect api.jewgo.app and remove unsupported startup options, then set timeouts after connect.
             parsed = urlparse(self.database_url)
             hostname = (parsed.hostname or "").lower()
-            is_neon = "neon.tech" in hostname
-            if is_neon:
+            is_api_host = "api.jewgo.app" in hostname
+            if is_api_host:
                 connect_args.pop("options", None)
             self.engine = create_engine(
                 self.database_url,
@@ -472,7 +471,7 @@ class EnhancedDatabaseManager:
                 connect_args=connect_args,
             )
             # If provider disallowed startup options, set per-connection timeouts
-            if is_neon:
+            if is_api_host:
                 try:
                     @event.listens_for(self.engine, "connect")
                     def _set_timeouts_on_connect(dbapi_connection, connection_record):

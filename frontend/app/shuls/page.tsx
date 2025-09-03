@@ -16,10 +16,11 @@ import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
+import { calculateDistance, formatDistance } from '@/lib/utils/distance';
 
 import { Filters } from '@/lib/filters/schema';
 
-// Mock shul type for now - will be replaced with actual API
+// Real shul type matching the database schema
 interface Shul {
   id: number;
   name: string;
@@ -27,6 +28,10 @@ interface Shul {
   address?: string;
   city?: string;
   state?: string;
+  zip_code?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
   phone_number?: string;
   website?: string;
   email?: string;
@@ -34,6 +39,8 @@ interface Shul {
   shul_category?: string;
   denomination?: string;
   business_hours?: string;
+  hours_parsed?: boolean;
+  timezone?: string;
   has_daily_minyan?: boolean;
   has_shabbat_services?: boolean;
   has_holiday_services?: boolean;
@@ -43,7 +50,7 @@ interface Shul {
   distance?: string;
   distance_miles?: number;
   rating?: number;
-  reviewcount?: number;
+  review_count?: number;
   star_rating?: number;
   google_rating?: number;
   image_url?: string;
@@ -78,155 +85,54 @@ interface Shul {
   listing_type?: string;
 }
 
-// Mock API function for shuls - will be replaced with actual API
-const fetchShuls = async (limit: number, _params?: string, timeoutMs: number = 5000) => {
-  // Simulate network delay for testing timeout functionality
-  if (timeoutMs) {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000)); // Random delay up to 1s
-  }
-  
-  // For now, return mock data
-  const mockShuls: Shul[] = [
-    {
-      id: 1,
-      name: "Young Israel of Miami",
-      description: "Modern Orthodox synagogue with daily minyan and vibrant community",
-      city: "Miami",
-      shul_type: "orthodox",
-      shul_category: "ashkenazi",
-      denomination: "orthodox",
-      rating: 4.7,
-      reviewcount: 234,
-      distance: "0.8 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: true,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: true,
-      has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      rabbi_name: "Rabbi David Cohen",
-      rabbi_phone: "305-555-0123",
-      religious_authority: "OU",
-      accepts_visitors: true,
-      membership_required: false,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 2,
-      name: "Temple Beth Sholom",
-      description: "Conservative synagogue with warm community and excellent programming",
-      city: "Miami",
-      shul_type: "conservative",
-      shul_category: "ashkenazi",
-      denomination: "conservative",
-      rating: 4.5,
-      reviewcount: 189,
-      distance: "1.5 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: false,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: false,
-      has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      has_senior_programs: true,
-      rabbi_name: "Rabbi Sarah Goldstein",
-      rabbi_phone: "305-555-0456",
-      religious_authority: "USCJ",
-      accepts_visitors: true,
-      membership_required: true,
-      membership_fee: 1200.00,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 3,
-      name: "Chabad of Miami Beach",
-      description: "Chabad house with daily services and community outreach",
-      city: "Miami Beach",
-      shul_type: "chabad",
-      shul_category: "chabad",
-      denomination: "orthodox",
-      rating: 4.8,
-      reviewcount: 156,
-      distance: "2.3 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: true,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: true,
-      has_parking: false,
-      has_kiddush_facilities: true,
-      has_social_hall: false,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      rabbi_name: "Rabbi Menachem Mendel",
-      rabbi_phone: "305-555-0789",
-      religious_authority: "Chabad",
-      accepts_visitors: true,
-      membership_required: false,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 4,
-      name: "Temple Emanu-El",
-      description: "Reform synagogue with progressive values and inclusive community",
-      city: "Miami",
-      shul_type: "reform",
-      shul_category: "ashkenazi",
-      denomination: "reform",
-      rating: 4.3,
-      reviewcount: 98,
-      distance: "3.1 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: false,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: false,
-      has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      has_senior_programs: true,
-      rabbi_name: "Rabbi Rachel Green",
-      rabbi_phone: "305-555-0321",
-      religious_authority: "URJ",
-      accepts_visitors: true,
-      membership_required: true,
-      membership_fee: 1000.00,
-      is_active: true,
-      is_verified: true
+// Real API function for synagogues
+const fetchShuls = async (limit: number, params?: string, timeoutMs: number = 5000) => {
+  try {
+    // Build API URL with parameters
+    const apiUrl = new URL('/api/synagogues', window.location.origin);
+    apiUrl.searchParams.set('limit', limit.toString());
+    
+    if (params) {
+      const searchParams = new URLSearchParams(params);
+      searchParams.forEach((value, key) => {
+        if (value && value.trim() !== '') {
+          apiUrl.searchParams.set(key, value);
+        }
+      });
     }
-  ];
-
-  return {
-    shuls: mockShuls,
-    total: mockShuls.length,
-    page: 1,
-    limit
-  };
+    
+    // Add timeout to fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    
+    const response = await fetch(apiUrl.toString(), {
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return {
+      shuls: data.synagogues || [],
+      total: data.total || 0,
+      page: data.page || 1,
+      limit: data.limit || limit
+    };
+    
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    console.error('Error fetching synagogues:', error);
+    throw error;
+  }
 };
 
 // Loading component for Suspense fallback
@@ -332,33 +238,57 @@ function ShulsPageContent() {
 
   // Memoize shul transformation to prevent unnecessary re-renders
   const transformShulToCardData = useCallback((shul: Shul) => {
-    // Enhanced rating logic with better fallbacks
-    const rating = shul.rating || shul.star_rating || shul.google_rating;
-    const ratingText = rating ? rating.toFixed(1) : undefined;
+      // Enhanced rating logic with better fallbacks and type safety
+  const rating = shul.rating || shul.star_rating || shul.google_rating;
+  const ratingText = rating && typeof rating === 'number' ? rating.toFixed(1) : undefined;
     
-    // Enhanced distance logic - ensure we have a valid distance string
-    const distanceText = shul.distance && shul.distance.trim() !== '' ? shul.distance : '';
+    // Distance logic — compute from user location if available; fall back to API string
+    let distanceText = '';
+    if (userLocation && (shul.latitude != null) && (shul.longitude != null)) {
+      // Accept numbers or numeric strings from API
+      const latNum = typeof shul.latitude === 'number' ? shul.latitude : parseFloat(String(shul.latitude));
+      const lngNum = typeof shul.longitude === 'number' ? shul.longitude : parseFloat(String(shul.longitude));
+      if (!Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
+        const km = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          latNum,
+          lngNum
+        );
+        distanceText = formatDistance(km);
+      }
+    } else if (shul.distance && typeof shul.distance === 'string' && shul.distance.trim() !== '') {
+      distanceText = shul.distance;
+    }
     
-    // Shul type as subtitle
-    const shulType = shul.shul_type && shul.shul_type.trim() !== '' ? shul.shul_type : '';
+    // Shul type as subtitle - use denomination if shul_type is not available
+    const shulType = (shul.shul_type && typeof shul.shul_type === 'string' && shul.shul_type.trim() !== '') 
+      ? shul.shul_type 
+      : (shul.denomination && typeof shul.denomination === 'string' && shul.denomination.trim() !== '' ? shul.denomination : '');
+    
+    // Create a meaningful description
+    const denomination = shul.denomination && typeof shul.denomination === 'string' ? shul.denomination : 'Jewish';
+    const city = shul.city && typeof shul.city === 'string' ? shul.city : 'Florida';
+    const description = shul.description && typeof shul.description === 'string' ? shul.description : `${denomination} synagogue in ${city}`;
     
     return {
       id: String(shul.id),
-      imageUrl: shul.image_url,
-      imageTag: shul.denomination,
-      title: shul.name,
+      imageUrl: (shul.image_url && typeof shul.image_url === 'string') ? shul.image_url : (shul.logo_url && typeof shul.logo_url === 'string') ? shul.logo_url : '/api/placeholder/300/200',
+      imageTag: (shul.denomination && typeof shul.denomination === 'string') ? shul.denomination : (shul.shul_type && typeof shul.shul_type === 'string') ? shul.shul_type : 'Synagogue',
+      title: shul.name && typeof shul.name === 'string' ? shul.name : 'Unnamed Synagogue',
       badge: ratingText, // Use the enhanced rating text
       subtitle: shulType,
       additionalText: distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
-      kosherCategory: shul.denomination,
-      rating,
-      reviewCount: shul.reviewcount,
-      city: shul.city,
-      distance: shul.distance,
+      kosherCategory: (shul.denomination && typeof shul.denomination === 'string') ? shul.denomination : (shul.shul_type && typeof shul.shul_type === 'string') ? shul.shul_type : 'Jewish',
+      rating: typeof rating === 'number' ? rating : undefined,
+      reviewCount: typeof shul.review_count === 'number' ? shul.review_count : 0,
+      city: shul.city && typeof shul.city === 'string' ? shul.city : '',
+      distance: shul.distance && typeof shul.distance === 'string' ? shul.distance : '',
+      description,
     };
-  }, []); // Empty dependency array to prevent recreation
+  }, [userLocation]);
 
   // Memoize filter change handlers to prevent unnecessary re-renders
   const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
@@ -831,7 +761,7 @@ function ShulsPageContent() {
       )}
 
       {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup

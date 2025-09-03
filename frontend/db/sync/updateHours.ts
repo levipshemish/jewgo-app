@@ -2,7 +2,7 @@ export async function updateRestaurantHours(restaurantId: number) {
   try {
     // Call the backend API to fetch and update hours
     const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
-    const response = await fetch(`${backendUrl}/api/restaurants/${restaurantId}/fetch-hours`, {
+    const response = await fetch(`${backendUrl}/api/v4/restaurants/${restaurantId}/fetch-hours`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

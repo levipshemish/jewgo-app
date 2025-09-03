@@ -148,10 +148,10 @@ export const handleShowFilters = (
  * Handle filters change
  */
 export const handleFiltersChange = (
-  filters: Record<string, any>,
+  filterValues: Record<string, any>,
   onFiltersChange: (filters: Record<string, any>) => void
 ) => {
-  onFiltersChange(filters);
+  onFiltersChange(filterValues);
 };
 
 /**
@@ -167,15 +167,15 @@ export const handleClearFilters = (
  * Handle search with suggestions
  */
 export const handleSearchWithSuggestions = (
-  query: string,
+  searchQuery: string,
   suggestions: string[],
   onSearch: (query: string) => void,
   onSelectSuggestion?: (suggestion: string) => void
 ) => {
-  if (suggestions.includes(query)) {
-    onSelectSuggestion?.(query);
+  if (suggestions.includes(searchQuery)) {
+    onSelectSuggestion?.(searchQuery);
   } else {
-    onSearch(query);
+    onSearch(searchQuery);
   }
 };
 
@@ -202,7 +202,7 @@ export const handleLoadingState = (
  * Handle error state management
  */
 export const handleErrorState = (
-  error: Error | null,
+  errorState: Error | null,
   onErrorChange: (error: Error | null) => void,
   operation: () => Promise<void>
 ) => {

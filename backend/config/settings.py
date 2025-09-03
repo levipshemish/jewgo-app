@@ -25,7 +25,9 @@ GOOGLE_GEOCODING_API_KEY = os.getenv("GOOGLE_GEOCODING_API_KEY", GOOGLE_MAPS_API
 # External Services
 VERCEL_DEPLOYMENT_URL = os.getenv("VERCEL_DEPLOYMENT_URL")
 RENDER_SERVICE_URL = os.getenv("RENDER_SERVICE_URL")
-NEON_DATABASE_URL = os.getenv("NEON_DATABASE_URL")
+# Deprecated: remove old provider-specific variable; prefer DATABASE_URL
+# If present, allow it to seed DATABASE_URL but log deprecation at startup.
+API_JEWGO_APP_DATABASE_URL = os.getenv("API_JEWGO_APP_DATABASE_URL")
 # Security
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)

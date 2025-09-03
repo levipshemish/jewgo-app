@@ -13,7 +13,7 @@ import 'server-only';
 // Deprecation warning will be shown when functions are called
 
 // Import types (safe for server)
-import type { TransformedUser } from '@/lib/utils/auth-utils';
+import type { TransformedUser as _TransformedUser } from '@/lib/utils/auth-utils';
 
 // Re-export from new server module with deprecation warnings
 export async function isAdmin(...args: any[]) {

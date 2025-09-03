@@ -6,7 +6,7 @@ import {
   type TransformedUser,
   isAdminUser,
   hasMinimumRoleLevel,
-  hasUserPermission 
+  hasUserPermission as _hasUserPermission 
 } from '@/lib/utils/auth-utils';
 import type { AdminUser, AdminRole } from '@/lib/admin/types';
 import type { Permission } from '@/lib/constants/permissions';

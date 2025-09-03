@@ -17,7 +17,7 @@ import {
 import { getRequestId, setRequestId } from './memo';
 
 // Local Permission type definition
-type Permission = string;
+type _Permission = string;
 
 /**
  * Require admin authentication

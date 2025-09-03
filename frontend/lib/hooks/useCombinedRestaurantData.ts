@@ -55,7 +55,8 @@ interface UseCombinedRestaurantDataReturn {
   error: string | null;
   totalRestaurants: number;
   totalPages: number;
-  fetchCombinedData: (page: number, query: string, filters?: AppliedFilters, itemsPerPage?: number) => Promise<void>;
+  serverHasMore: boolean;
+  fetchCombinedData: (page: number, query: string, filters?: AppliedFilters, itemsPerPage?: number, append?: boolean) => Promise<{ received: number; hasMore?: boolean }>;
   buildQueryParams: (page: number, query: string, filters?: AppliedFilters, itemsPerPage?: number) => URLSearchParams;
 }
 
@@ -71,6 +72,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
   const [error, setError] = useState<string | null>(null);
   const [totalRestaurants, setTotalRestaurants] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [serverHasMore, setServerHasMore] = useState(false);
   
   // Collapse duplicate calls with the same params within a short window (dev/StrictMode, hydration)
   const lastKeyRef = useRef<string | null>(null);
@@ -164,8 +166,9 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     page: number = 1,
     query: string = '',
     filters?: AppliedFilters,
-    itemsPerPage: number = 24
-  ) => {
+    itemsPerPage: number = 24,
+    append: boolean = false
+  ): Promise<{ received: number; hasMore?: boolean }> => {
     try {
       // Build the key early to guard duplicate triggers
       const params = buildQueryParams(page, query, filters, itemsPerPage);
@@ -177,7 +180,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
         if (process.env.NODE_ENV === 'development') {
           console.log('🚫 useCombinedRestaurantData: Skipping duplicate request within suppress window');
         }
-        return;
+        return { received: 0, hasMore: false };
       }
       lastKeyRef.current = key;
       lastStartAtRef.current = now;
@@ -187,11 +190,50 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       const url = `/api/restaurants-with-filters?${key}`;
       
       const response: CombinedApiResponse = await deduplicatedFetch(url);
+      let receivedCount = 0;
+      let hasMoreFromServer: boolean | undefined = undefined;
       
       if (response.success && response.data) {
-        setRestaurants(response.data.restaurants);
-        setTotalRestaurants(response.data.total);
-        setTotalPages(response.pagination.totalPages);
+        if (append) {
+          // Append new restaurants to existing ones, avoiding duplicates
+          // Normalize IDs to strings to avoid type-mismatch duplicates (e.g., 123 vs "123")
+          setRestaurants(prev => {
+            const existingIds = new Set(prev.map(r => String(r.id)));
+            const newRestaurants = response.data.restaurants.filter(r => !existingIds.has(String(r.id)));
+            receivedCount = newRestaurants.length;
+            return [...prev, ...newRestaurants];
+          });
+          // Don't update totalRestaurants when appending - keep the original total
+          // This prevents the total from being overwritten with page-specific totals
+        } else {
+          // Replace restaurants (default behavior)
+          setRestaurants(response.data.restaurants);
+          receivedCount = Array.isArray(response.data.restaurants) ? response.data.restaurants.length : 0;
+          // Only update totalRestaurants on initial load, not when appending
+          setTotalRestaurants(response.data.total);
+          // Ensure totalPages is always a valid number
+          const limit = Number((response as any).pagination?.limit) || itemsPerPage;
+          const total = Number(response.data.total) || 0;
+          const serverTotalPages = (response as any).pagination?.totalPages;
+          const computedTotalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
+          const safeTotalPages = Number.isFinite(serverTotalPages) && serverTotalPages > 0
+            ? serverTotalPages
+            : computedTotalPages;
+          setTotalPages(safeTotalPages);
+        }
+        
+        // Track server hasMore if provided
+        if ((response as any).pagination && typeof (response as any).pagination.hasMore === 'boolean') {
+          hasMoreFromServer = (response as any).pagination.hasMore;
+          setServerHasMore(hasMoreFromServer || false);
+        } else {
+          // Fallback: infer hasMore
+          const returned = receivedCount;
+          const { limit = itemsPerPage, offset = (page - 1) * itemsPerPage } = (response as any).pagination || {};
+          const inferred = response.data.total > 0 ? (offset + returned) < response.data.total : (returned >= limit);
+          hasMoreFromServer = inferred;
+          setServerHasMore(inferred);
+        }
         
         // Only update filter options if we got them (they might be cached separately)
         if (response.data.filterOptions) {
@@ -203,7 +245,10 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
         setRestaurants([]);
         setTotalRestaurants(0);
         setTotalPages(1);
+        receivedCount = 0;
+        hasMoreFromServer = false;
       }
+      return { received: receivedCount, hasMore: hasMoreFromServer };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
       setError(errorMessage);
@@ -213,6 +258,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       setRestaurants([]);
       setTotalRestaurants(0);
       setTotalPages(1);
+      return { received: 0, hasMore: false };
     } finally {
       setLoading(false);
     }
@@ -225,6 +271,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     error,
     totalRestaurants,
     totalPages,
+    serverHasMore,
     fetchCombinedData,
     buildQueryParams
   };

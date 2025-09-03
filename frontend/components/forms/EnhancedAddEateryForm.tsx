@@ -328,65 +328,6 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {process.env.NODE_ENV === 'development' && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => console.log('Form state:', watch())}
-                    className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  >
-                    Debug
-                  </button>
-                  <button
-                    onClick={() => {
-
-                      const testData = {
-                        name: 'Test Restaurant',
-                        address: '123 Test St',
-                        city: 'Test City',
-                        state: 'FL',
-                        zip_code: '12345',
-                        phone: '555-1234',
-                        business_email: 'test@test.com',
-                        website: 'https://test.com',
-                        listing_type: 'Restaurant',
-                        kosher_category: 'meat' as const,
-                        certifying_agency: 'Test Agency',
-                        is_cholov_yisroel: false,
-                        is_pas_yisroel: true,
-                        cholov_stam: false,
-                        short_description: 'Test description',
-                        description: 'Test long description',
-                        business_images: ['https://test.com/image1.jpg', 'https://test.com/image2.jpg'],
-                        is_owner_submission: false,
-                        owner_name: '',
-                        owner_email: '',
-                        owner_phone: '',
-                        business_license: '',
-                        tax_id: '',
-                        years_in_business: 1,
-                        seating_capacity: 50,
-                        delivery_available: false,
-                        takeout_available: true,
-                        catering_available: false,
-                        hours_of_operation: 'Mon-Fri 9AM-10PM, Sat-Sun 10AM-11PM',
-                        preferred_contact_method: 'email' as const,
-                        preferred_contact_time: 'afternoon' as const,
-                        contact_notes: '',
-                        submission_status: 'pending_approval',
-                        submission_date: new Date().toISOString(),
-                        phone_number: '555-1234',
-                        image_url: 'https://test.com/image1.jpg',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                      };
-                      onSubmit(testData);
-                    }}
-                    className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                  >
-                    Test Submit
-                  </button>
-                </div>
-              )}
               <button
                 onClick={handleCancel}
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors"

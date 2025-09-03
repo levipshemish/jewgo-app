@@ -93,8 +93,8 @@ export default function ClickableAvatarUpload({
         setError(result.error || "Upload failed");
         setPreviewUrl(currentAvatarUrl || null);
       }
-    } catch (error) {
-      console.error('Upload error:', error);
+    } catch (err) {
+      console.error('Upload error:', err);
       setError("Upload failed. Please try again.");
       setPreviewUrl(currentAvatarUrl || null);
     } finally {

@@ -186,8 +186,8 @@ export class EmailUpgradeFlow {
         correlationId
       };
 
-    } catch (error) {
-      // console.error(`[Email Upgrade] Merge error (${correlationId})`, error);
+    } catch (_error) {
+      // console.error(`[Email Upgrade] Merge error (${correlationId})`, _error);
       return {
         success: false,
         error: 'Unexpected error during account merge',
@@ -219,8 +219,8 @@ export class EmailUpgradeFlow {
 
       return { success: true };
 
-    } catch (error) {
-      // console.error(`[Email Upgrade] Email verification error (${_correlationId})`, error);
+    } catch (_error) {
+      // console.error(`[Email Upgrade] Email verification error (${_correlationId})`, _error);
       return {
         success: false,
         error: 'Unexpected error during email verification'
@@ -250,8 +250,8 @@ export class EmailUpgradeFlow {
 
       return { success: true };
 
-    } catch (error) {
-      // console.error(`[Email Upgrade] Set password error (${_correlationId})`, error);
+    } catch (_error) {
+      // console.error(`[Email Upgrade] Set password error (${_correlationId})`, _error);
       return {
         success: false,
         error: 'Unexpected error while setting password'

@@ -12,7 +12,6 @@ load_dotenv()
 # Add current directory to Python path
 sys.path.insert(0, os.path.dirname(__file__))
 
-
 def import_restaurants() -> bool | None:
     """Import restaurants from Kosher Miami data file."""
     try:
@@ -22,7 +21,7 @@ def import_restaurants() -> bool | None:
             return False
         # Load the Kosher Miami data
         data_file = (
-            Path(__file__).parent.parent / "data" / "kosher_miami_establishments.json"
+            Path(__file__).parent.parent / "data" / "_establishments.json"
         )
         if not data_file.exists():
             return False
@@ -63,7 +62,6 @@ def import_restaurants() -> bool | None:
         return True
     except Exception as e:
         return False
-
 
 if __name__ == "__main__":
     import_restaurants()

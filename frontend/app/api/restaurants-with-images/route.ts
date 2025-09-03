@@ -236,7 +236,8 @@ export async function GET(request: NextRequest) {
     backendUrl = raw && raw.trim().length > 0
       ? raw.replace(/\/+$/, '')
       : 'https://api.jewgo.app';
-    apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
+    // Use v4 backend route prefix
+    apiUrl = `${backendUrl}/api/v4/restaurants?${queryParams.toString()}`;
     
     // Configurable timeout to avoid long hangs in dev; faster fallback improves UX
     const timeoutEnv = process.env.NEXT_PUBLIC_BACKEND_TIMEOUT_MS;
@@ -296,7 +297,8 @@ export async function GET(request: NextRequest) {
 
 
     // Respect pagination even if backend ignores limit/offset
-    const totalAvailable = data.total || data.count || restaurantsWithImages.length;
+    const totalAvailable = data.totalRestaurants || data.total || data.count || restaurantsWithImages.length;
+    const totalPages = data.totalPages || Math.ceil(totalAvailable / limit);
     const needsClientSidePaging = restaurantsWithImages.length > limit;
     const pagedRestaurants = needsClientSidePaging
       ? restaurantsWithImages.slice(calculatedOffset, calculatedOffset + limit)
@@ -306,6 +308,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: pagedRestaurants,
       total: totalAvailable,
+      totalPages: totalPages,
       page,
       limit,
       offset: calculatedOffset,
@@ -338,6 +341,7 @@ export async function GET(request: NextRequest) {
           success: true,
           data: getSampleRestaurantsWithImages(),
           total: 8,
+          totalPages: 1,
           page: 1,
           limit: 50,
           offset: 0,
@@ -353,6 +357,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: getSampleRestaurantsWithImages(),
       total: 8,
+      totalPages: 1,
       page: 1,
       limit: 50,
       offset: 0,

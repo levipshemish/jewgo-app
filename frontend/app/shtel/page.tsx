@@ -7,7 +7,7 @@ import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
-import ShtelFilters, { ShtelFilters as ShtelFiltersType } from '@/components/shtel/ShtelFilters';
+import ShtelFilters, { ShtelFilterValues as ShtelFiltersType } from '@/components/shtel/ShtelFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop } from '@/lib/utils/scrollUtils';
@@ -50,14 +50,14 @@ function ShtelPageContent() {
   const [hasMore, setHasMore] = useState(true);
   
   // Performance monitoring
-  const { trackApiCall, metrics: performanceMetrics } = usePerformanceMonitor({
+  const { trackApiCall, metrics: _performanceMetrics } = usePerformanceMonitor({
     enabled: process.env.NODE_ENV === 'development',
     logToConsole: true,
     componentName: 'ShtelPage'
   });
   
   // Background prefetching for better performance
-  const { prefetch, getStats: prefetchStats } = useBackgroundPrefetch({
+  const { prefetch, getStats: _prefetchStats } = useBackgroundPrefetch({
     enabled: true,
     delay: 2000, // Start prefetching after 2 seconds
     priority: 'low'
@@ -730,34 +730,6 @@ function ShtelPageContent() {
         </div>
       )}
 
-      {/* Performance Metrics (Development Only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="px-4 sm:px-6 py-2 bg-blue-50 border-b border-blue-100 text-xs">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <span className="text-blue-800">
-              API Calls: {performanceMetrics.apiCalls} | 
-              Renders: {performanceMetrics.renderCount} | 
-              Avg Render: {performanceMetrics.averageRenderTime.toFixed(2)}ms |
-              Prefetch: {prefetchStats().completed}/{prefetchStats().total}
-            </span>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => window.location.reload()}
-                className="text-blue-600 hover:text-blue-800 text-xs underline"
-              >
-                Reset Metrics
-              </button>
-              <button
-                onClick={() => cacheInvalidator.clearHistory()}
-                className="text-blue-600 hover:text-blue-800 text-xs underline"
-              >
-                Clear Cache History
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Shtel listings grid */}
       {sortedListings.length === 0 && !loading ? (
         <div className="text-center py-10 px-5" role="status" aria-live="polite">
@@ -855,7 +827,7 @@ function ShtelPageContent() {
       )}
 
       {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
 
       {/* Shtetl Filters */}
       <ShtelFilters

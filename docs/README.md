@@ -3,6 +3,8 @@
 **Last Updated**: December 2024  
 **Status**: Active Documentation Hub
 
+> Task List: The maintained, up-to-date task list lives at `docs/status/TASK_LIST.md`. Legacy snapshots are archived in `docs/status/archive/`.
+
 ---
 
 ## 🗂️ Documentation Structure

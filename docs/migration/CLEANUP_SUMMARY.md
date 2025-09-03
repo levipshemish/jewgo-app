@@ -7,7 +7,7 @@ This document summarizes the cleanup performed after the successful Oracle Cloud
 ## 📁 Files Removed
 
 ### Migration Scripts (Temporary)
-- `migrate_neon_to_oracle.py` - Initial migration attempt
+- `migrate_api_jewgo_app_to_oracle.py` - Initial migration attempt
 - `migrate_restaurants_common_columns.py` - Final restaurants migration
 - `migrate_remaining_restaurants.py` - NULL value fixes
 - `fix_restaurants_migration*.py` - Various migration fix attempts
@@ -23,7 +23,7 @@ This document summarizes the cleanup performed after the successful Oracle Cloud
 - `test_marketplace_categories.py` - Marketplace category tests
 
 ### Data Checking Scripts (Temporary)
-- `check_neon_data.py` - Neon data verification
+- `check_api_jewgo_app_data.py` - api.jewgo.app data verification
 - `check_table_structure.py` - Table structure checks
 - `check_column_differences.py` - Column comparison
 - `check_db_schema.py` - Database schema checks

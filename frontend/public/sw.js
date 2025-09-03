@@ -196,8 +196,19 @@ self.addEventListener('activate', (event) => {
 // Background sync for restaurant data
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync-restaurants') {
+    // Simple in-memory rate limit to avoid frequent syncs if SW stays alive
+    // Limits to at most once every 5 minutes
+    self.__LAST_RESTAURANTS_SYNC__ = self.__LAST_RESTAURANTS_SYNC__ || 0;
+    const now = Date.now();
+    const FIVE_MIN = 5 * 60 * 1000;
+    if (now - self.__LAST_RESTAURANTS_SYNC__ < FIVE_MIN) {
+      return; // Skip if rate-limited
+    }
+    self.__LAST_RESTAURANTS_SYNC__ = now;
+
+    // Fetch a smaller page and mark request as SW-originated
     event.waitUntil(
-      fetch('/api/restaurants')
+      fetch('/api/restaurants?limit=100&offset=0', { headers: { 'x-sw-sync': '1' }, cache: 'no-store' })
         .then((response) => {
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);

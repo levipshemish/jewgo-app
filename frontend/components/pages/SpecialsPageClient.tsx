@@ -16,11 +16,17 @@ export default function SpecialsPageClient() {
     
     // Navigate to different pages based on the selected tab
     switch (tab) {
-              case 'mikvah':
-          router.push('/mikvah');
+      case 'mikvah':
+        router.push('/mikvah');
         break;
       case 'shuls':
         router.push('/shuls');
+        break;
+      case 'marketplace':
+        router.push('/marketplace');
+        break;
+      case 'shtel':
+        router.push('/shtel');
         break;
       case 'specials':
         // Already on specials page, just update the tab
@@ -71,7 +77,7 @@ export default function SpecialsPageClient() {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
     </div>
   );
 } 

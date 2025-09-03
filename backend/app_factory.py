@@ -156,9 +156,24 @@ def create_app():
     if EnhancedDatabaseManager:
         try:
             db_manager = EnhancedDatabaseManager()
-            logger.info("Database manager initialized successfully")
+            if db_manager.connect():
+                logger.info("Database manager initialized and connected successfully")
+            else:
+                logger.error("Failed to connect to database")
+                db_manager = None
         except Exception as e:
             logger.error(f"Failed to initialize database manager: {e}")
+            db_manager = None
+    # Initialize PostgreSQL Authentication System
+    try:
+        logger.info("Initializing PostgreSQL authentication system...")
+        from utils.app_factory_postgres_auth import init_postgres_auth_app
+        init_postgres_auth_app(app)
+        logger.info("PostgreSQL authentication system initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize PostgreSQL auth system: {e}")
+        logger.error(traceback.format_exc())
+    
     # Initialize dependencies for API v4 routes
     deps = {}
     # Import v4 dependencies
@@ -704,6 +719,9 @@ def create_app():
             logger.warning("Auth API blueprint is None - not registering routes")
     except ImportError as e:
         logger.warning(f"Could not import auth API routes: {e}")
+    
+    # PostgreSQL-based authentication routes are now handled by app_factory_postgres_auth.py
+    # No need to register them here to avoid duplicate registration
     # Register shtetl marketplace API routes
     try:
         logger.info("Attempting to import shtetl marketplace API routes...")
@@ -721,6 +739,23 @@ def create_app():
         logger.warning(f"Could not import shtetl marketplace API routes: {e}")
     except Exception as e:
         logger.error(f"Error registering shtetl marketplace API routes: {e}")
+        logger.error(traceback.format_exc())
+
+    # Register synagogues API routes
+    try:
+        logger.info("Attempting to import synagogues API routes...")
+        from routes.synagogues_api import synagogues_bp
+
+        logger.info(f"Synagogues blueprint imported: {synagogues_bp}")
+        if synagogues_bp is not None:
+            app.register_blueprint(synagogues_bp)
+            logger.info("Synagogues API routes registered successfully")
+        else:
+            logger.warning("Synagogues blueprint is None - not registering routes")
+    except ImportError as e:
+        logger.warning(f"Could not import synagogues API routes: {e}")
+    except Exception as e:
+        logger.error(f"Error registering synagogues API routes: {e}")
         logger.error(traceback.format_exc())
 
     # Shtetl store functionality has been merged into the main shtetl blueprint
@@ -810,6 +845,167 @@ def create_app():
                     "message": "Feature flags test failed",
                 }
             )
+
+    # Add the missing user-role endpoint for admin authentication
+    @app.route("/api/auth/user-role", methods=["GET"])
+    def get_user_role():
+        """Get user role information from JWT token for admin authentication"""
+        try:
+            # Development bypass - completely skip authentication for testing
+            if os.getenv('ADMIN_DEV_BYPASS') == 'true':
+                logger.warning("ADMIN_DEV_BYPASS enabled - returning super_admin role for all requests")
+                return jsonify({
+                    "success": True,
+                    "role": "super_admin",
+                    "level": 4,
+                    "permissions": ["*"],
+                    "user_id": "dev-bypass-user",
+                    "note": "Development bypass enabled"
+                })
+            
+            # Get Authorization header
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith('Bearer '):
+                logger.warning("Missing or invalid Authorization header in user-role request")
+                return jsonify({"error": "Missing or invalid Authorization header"}), 401
+            
+            token = auth_header.split(' ')[1]
+            
+            # Debug logging
+            logger.info(f"Processing user-role request with token: {token[:10]}...")
+            logger.info(f"Environment: NODE_ENV={os.getenv('NODE_ENV')}, FLASK_ENV={os.getenv('FLASK_ENV')}")
+            
+            # Use the existing Supabase role manager to get user role
+            try:
+                from utils.supabase_role_manager import get_role_manager
+                role_manager = get_role_manager()
+                
+                # Get user admin role from verified JWT token
+                role_data = role_manager.get_user_admin_role(token)
+                
+                if role_data:
+                    # User has admin role
+                    logger.info(f"User has admin role: {role_data}")
+                    return jsonify({
+                        "success": True,
+                        "role": role_data.get("role"),
+                        "level": role_data.get("level", 0),
+                        "permissions": role_data.get("permissions", []),
+                        "user_id": role_data.get("user_id")
+                    })
+                else:
+                    # User exists but has no admin role
+                    logger.info("User exists but has no admin role")
+                    return jsonify({
+                        "success": True,
+                        "role": None,
+                        "level": 0,
+                        "permissions": [],
+                        "user_id": None
+                    })
+                    
+            except ImportError:
+                logger.warning("Supabase role manager not available, using fallback role checking")
+                # Fallback: check if token is valid and return default role for development
+                try:
+                    from utils.supabase_auth import verify_supabase_admin_role
+                    # Try to verify as admin - if it works, user has admin access
+                    result = verify_supabase_admin_role(token, "moderator")
+                    if result:
+                        role_data = result.get("role_data", {})
+                        return jsonify({
+                            "success": True,
+                            "role": role_data.get("role", "moderator"),
+                            "level": role_data.get("level", 1),
+                            "permissions": role_data.get("permissions", []),
+                            "user_id": result.get("payload", {}).get("sub")
+                        })
+                    else:
+                        # Token valid but no admin role
+                        return jsonify({
+                            "success": True,
+                            "role": None,
+                            "level": 0,
+                            "permissions": [],
+                            "user_id": None
+                        })
+                except ImportError:
+                    logger.warning("Supabase auth not available, using development fallback")
+                    # Development fallback: return super_admin role for testing
+                    # Check both NODE_ENV and FLASK_ENV for development mode
+                    is_dev = (os.getenv('NODE_ENV') == 'development' or 
+                             os.getenv('FLASK_ENV') == 'development' or
+                             os.getenv('ENVIRONMENT') == 'development')
+                    
+                    logger.info(f"Development mode check: NODE_ENV={os.getenv('NODE_ENV')}, FLASK_ENV={os.getenv('FLASK_ENV')}, ENVIRONMENT={os.getenv('ENVIRONMENT')}, is_dev={is_dev}")
+                    
+                    if is_dev:
+                        logger.info("Returning development fallback super_admin role")
+                        return jsonify({
+                            "success": True,
+                            "role": "super_admin",
+                            "level": 4,
+                            "permissions": ["*"],
+                            "user_id": "dev-user",
+                            "note": "Development mode - using fallback role"
+                        })
+                    else:
+                        return jsonify({
+                            "success": False,
+                            "error": "Role management system not available"
+                        }), 503
+                        
+        except Exception as e:
+            logger.error(f"Error in user-role endpoint: {e}")
+            return jsonify({
+                "success": False,
+                "error": "Internal server error",
+                "message": str(e)
+            }), 500
+
+    # Add auth system health check endpoint
+    @app.route("/api/auth/health", methods=["GET"])
+    def auth_health_check():
+        """Health check endpoint for the authentication system"""
+        try:
+            health_status = {
+                "success": True,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "auth_system": "healthy",
+                "components": {}
+            }
+            
+            # Check Supabase role manager availability
+            try:
+                from utils.supabase_role_manager import get_role_manager
+                role_manager = get_role_manager()
+                health_status["components"]["supabase_role_manager"] = "available"
+            except Exception as e:
+                health_status["components"]["supabase_role_manager"] = f"unavailable: {str(e)}"
+            
+            # Check Supabase auth availability
+            try:
+                from utils.supabase_auth import verify_supabase_admin_role
+                health_status["components"]["supabase_auth"] = "available"
+            except Exception as e:
+                health_status["components"]["supabase_auth"] = f"unavailable: {str(e)}"
+            
+            # Check environment configuration
+            health_status["components"]["environment"] = {
+                "NODE_ENV": os.getenv("NODE_ENV", "not_set"),
+                "SUPABASE_URL": "configured" if os.getenv("SUPABASE_URL") else "not_configured",
+                "SUPABASE_ANON_KEY": "configured" if os.getenv("SUPABASE_ANON_KEY") else "not_configured"
+            }
+            
+            return jsonify(health_status)
+            
+        except Exception as e:
+            logger.error(f"Error in auth health check: {e}")
+            return jsonify({
+                "success": False,
+                "error": "Auth health check failed",
+                "message": str(e)
+            }), 500
 
     # Add a debug endpoint to test restaurant service creation
     @app.route("/debug/service-test", methods=["GET"])

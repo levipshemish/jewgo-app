@@ -25,8 +25,8 @@ class Config:
     REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
     REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
     REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
-    REDIS_DB = int(os.environ.get("REDIS_DB", 0))
-    REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
+    REDIS_DB = int(os.getenv("REDIS_DB", 0))
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
     # Cache Configuration
     CACHE_TYPE = os.environ.get("CACHE_TYPE", "redis")
     CACHE_REDIS_URL = REDIS_URL
@@ -39,6 +39,13 @@ class Config:
         "retry_on_timeout": True,
         "max_connections": 20,
     }
+    # Enhanced Redis Configuration
+    CACHE_SOCKET_CONNECT_TIMEOUT_MS = int(os.getenv("CACHE_SOCKET_CONNECT_TIMEOUT_MS", "2000"))
+    CACHE_SOCKET_TIMEOUT_MS = int(os.getenv("CACHE_SOCKET_TIMEOUT_MS", "2000"))
+    CACHE_HEALTH_CHECK_INTERVAL = int(os.getenv("CACHE_HEALTH_CHECK_INTERVAL", "30"))
+    CACHE_MAX_CONNECTIONS = int(os.getenv("CACHE_MAX_CONNECTIONS", "20"))
+    CACHE_MAX_RETRIES = int(os.getenv("CACHE_MAX_RETRIES", "2"))
+    CACHE_RETRY_DELAY = float(os.getenv("CACHE_RETRY_DELAY", "0.1"))
     # Session Configuration
     SESSION_TYPE = os.environ.get("SESSION_TYPE", "redis")
     SESSION_KEY_PREFIX = "jewgo_session:"

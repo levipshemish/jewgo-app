@@ -16,7 +16,6 @@ This service provides consolidated scraping functionality with shared logic,
 improved error handling, and consistent interfaces for all scraping operations.
 """
 
-
 class ScraperService(BaseService):
     """Consolidated service for all scraping operations."""
 
@@ -32,8 +31,16 @@ class ScraperService(BaseService):
         self.request_delay = 1  # seconds between requests
         self.last_request_time = 0
 
+    # Kosher Miami scraping functionality has been moved to standalone package
+    # To use this functionality, install: pip install kosher-miami-utility
+    # Then import: from kosher_miami.scraper import KosherMiamiScraper
+    
     async def scrape_kosher_miami(self, limit: int | None = None) -> dict[str, Any]:
         """Scrape kosher establishment data from koshermiami.org.
+        
+        Note: This functionality has been moved to the standalone kosher-miami-utility package.
+        Install with: pip install kosher-miami-utility
+        
         Args:
             limit: Maximum number of establishments to scrape
         Returns:
@@ -41,89 +48,59 @@ class ScraperService(BaseService):
         """
         try:
             self.log_operation("scrape_kosher_miami_start", limit=limit)
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
-                try:
-                    # Navigate to koshermiami.org
-                    await page.goto(
-                        "https://koshermiami.org/establishments/", timeout=self.timeout
-                    )
-                    # Ensure we're in List View mode
-                    await page.click("text=List View")
-                    await page.wait_for_selector(
-                        "div.row.desctop", timeout=self.timeout
-                    )
-                    # Extract restaurant entries
-                    rows = await page.locator("div.row.desctop").all()
-                    if limit:
-                        rows = rows[:limit]
-                    data = []
-                    for i, row in enumerate(rows):
-                        try:
-                            fields = await row.locator(".value").all_inner_texts()
-                            if len(fields) < 9:
-                                continue  # Skip malformed rows
-                            entry = {
-                                "Name": fields[0].strip(),
-                                "Type": fields[1].strip(),
-                                "Area": fields[2].strip(),
-                                "Address": fields[3].strip(),
-                                "Phone": fields[4].strip(),
-                                "Cholov Yisroel": fields[5].strip(),
-                                "Pas Yisroel": fields[6].strip(),
-                                "Yoshon": fields[7].strip(),
-                                "Bishul Yisroel Tuna": fields[8].strip(),
-                            }
-                            data.append(entry)
-                            if (i + 1) % 10 == 0:
-                                self.log_operation(
-                                    "scrape_progress", processed=i + 1, total=len(rows)
-                                )
-                        except Exception as e:
-                            self.log_operation("row_error", row_index=i, error=str(e))
-                            continue
-                    await browser.close()
-                    # Save data
-                    await self._save_kosher_miami_data(data)
-                    result = {
-                        "success": True,
-                        "total_scraped": len(data),
-                        "output_files": {
-                            "csv": str(
-                                self.output_dir / "kosher_miami_establishments.csv"
-                            ),
-                            "json": str(
-                                self.output_dir / "kosher_miami_establishments.json"
-                            ),
-                        },
-                    }
-                    self.log_operation("scrape_kosher_miami_complete", result=result)
-                    return result
-                except Exception as e:
-                    await browser.close()
-                    raise
+            
+            # Import from standalone package
+            try:
+                from kosher_miami.scraper import KosherMiamiScraper
+                scraper = KosherMiamiScraper()
+                data = await scraper.scrape_data()
+                
+                if limit:
+                    data = data[:limit]
+                
+                # Save data using the scraper's methods
+                await scraper._save_data(data)
+                
+                result = {
+                    "success": True,
+                    "total_scraped": len(data),
+                    "output_files": scraper.get_data_files(),
+                }
+                
+                self.log_operation("scrape_kosher_miami_complete", result=result)
+                return result
+                
+            except ImportError:
+                result = {
+                    "success": False,
+                    "error": "kosher-miami-utility package not installed. Install with: pip install kosher-miami-utility",
+                    "total_scraped": 0,
+                }
+                self.log_operation("scrape_kosher_miami_error", error=result["error"])
+                return result
+                
         except Exception as e:
-            self.log_operation("scrape_kosher_miami_error", error=str(e))
-            return {
+            result = {
                 "success": False,
                 "error": str(e),
                 "total_scraped": 0,
             }
+            self.log_operation("scrape_kosher_miami_error", error=str(e))
+            return result
 
     async def _save_kosher_miami_data(self, data: list[dict]) -> None:
         """Save scraped kosher Miami data to files."""
         if not data:
             return
         # Save as CSV
-        csv_file = self.output_dir / "kosher_miami_establishments.csv"
+        csv_file = self.output_dir / "_establishments.csv"
         with open(csv_file, "w", newline="", encoding="utf-8") as f:
             if data:
                 writer = csv.DictWriter(f, fieldnames=data[0].keys())
                 writer.writeheader()
                 writer.writerows(data)
         # Save as JSON
-        json_file = self.output_dir / "kosher_miami_establishments.json"
+        json_file = self.output_dir / "_establishments.json"
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         self.log_operation(

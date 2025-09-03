@@ -138,11 +138,11 @@ class DatabaseConnectionManager:
             "connect_timeout": 10,
             "application_name": "jewgo_app",
         }
-        # Check if using Neon pooled connection (which doesn't support statement_timeout)
-        is_neon_pooler = (
+        # Check if using provider pooled connection (which may not support statement_timeout)
+        is_api_pooler = (
             "pooler" in parsed_url.hostname if parsed_url.hostname else False
         )
-        if not is_neon_pooler:
+        if not is_api_pooler:
             # Only add statement_timeout for non-pooled connections
             connect_args["options"] = (
                 f"-c statement_timeout={ConfigManager.get_pg_statement_timeout()}"
@@ -150,7 +150,7 @@ class DatabaseConnectionManager:
             )
         else:
             logger.info(
-                "Using Neon pooled connection - skipping statement_timeout parameter"
+                "Using api.jewgo.app pooled connection - skipping statement_timeout parameter"
             )
         # Add SSL configuration if specified
         if ConfigManager.get_pg_sslmode():

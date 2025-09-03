@@ -82,7 +82,7 @@ export function getDebugConfig() {
   const config = getAnalyticsConfig();
   return {
     enabled: config.gaDebugMode && process.env.NODE_ENV === 'development',
-    config: config,
+    config,
   };
 }
 

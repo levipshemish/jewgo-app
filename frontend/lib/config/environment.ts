@@ -226,8 +226,8 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test' && process.
     validateEnvironment();
     
     // Note: Feature validation moved to individual API routes to avoid build issues
-  } catch (error) {
-    // console.warn('Environment validation warning:', error);
+  } catch (_error) {
+    // console.warn('Environment validation warning:', _error);
     // Don't throw during build time, just warn
   }
 }

@@ -181,7 +181,7 @@ def clear_cache_pattern(pattern: str) -> int:
 def cached(ttl: int = 300, key_prefix: str = "cache") -> Callable:
     """Decorator for caching function results."""
 
-    def decorator(func: Callable) -> Callable:
+    def cached_decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Generate cache key
@@ -201,13 +201,13 @@ def cached(ttl: int = 300, key_prefix: str = "cache") -> Callable:
 
         return wrapper
 
-    return decorator
+    return cached_decorator
 
 
 def invalidate_cache(pattern: str) -> Callable:
     """Decorator for invalidating cache after function execution."""
 
-    def decorator(func: Callable) -> Callable:
+    def invalidate_cache_decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
@@ -217,7 +217,7 @@ def invalidate_cache(pattern: str) -> Callable:
 
         return wrapper
 
-    return decorator
+    return invalidate_cache_decorator
 
 
 def get_cache_stats() -> Dict[str, Any]:

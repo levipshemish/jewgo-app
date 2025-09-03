@@ -416,7 +416,7 @@ function MikvahPageContent() {
       setTotalPages(calculatedTotalPages);
       
       // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
+      const _hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
       // Note: setHasMore is not available here due to hook order, will be set by useInfiniteScroll
     } catch (err) {
       appLogger.error('Mikvah fetch error', { error: String(err) });
@@ -475,8 +475,8 @@ function MikvahPageContent() {
           setCurrentPage(nextPage);
           
           // Update hasMore state
-          const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
-          setHasMore(hasMoreContent);
+          const _hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
+          setHasMore(_hasMoreContent);
         } catch (err) {
           appLogger.error('Mikvah fetch more error', { error: String(err) });
         }
@@ -819,7 +819,7 @@ function MikvahPageContent() {
       )}
 
       {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup

@@ -22,7 +22,6 @@ from typing import Optional
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
-
 def setup_environment():
     """Setup environment variables and configuration."""
     try:
@@ -32,7 +31,6 @@ def setup_environment():
         print("✅ Environment variables loaded")
     except ImportError:
         print("⚠️  python-dotenv not available, using system environment")
-
 
 def check_required_env_vars(operation: str):
     """Check for required environment variables based on operation."""
@@ -57,31 +55,26 @@ def check_required_env_vars(operation: str):
 
     return True
 
-
 def print_header(operation: str):
     """Print operation header."""
     print(f"\n🚀 JewGo CLI - {operation.upper()}")
     print(f"Timestamp: {datetime.now().isoformat()}")
     print("=" * 60)
 
-
 def print_success(message: str):
     """Print success message."""
     print(f"✅ {message}")
-
 
 def print_error(message: str):
     """Print error message."""
     print(f"❌ {message}")
 
-
 def print_info(message: str):
     """Print info message."""
     print(f"ℹ️  {message}")
 
-
 # Scraping Operations
-async def scrape_kosher_miami(args):
+async def scrape_(args):
     """Scrape Kosher Miami data."""
     try:
         from services.scraper_service import ScraperService
@@ -95,7 +88,7 @@ async def scrape_kosher_miami(args):
         scraper = ScraperService(db_manager=db_manager)
 
         print_info(f"Scraping Kosher Miami data (limit: {args.limit})")
-        result = await scraper.scrape_kosher_miami(limit=args.limit)
+        result = await scraper.scrape_(limit=args.limit)
 
         if result["success"]:
             print_success(f"Scraped {result['total_scraped']} establishments")
@@ -108,7 +101,6 @@ async def scrape_kosher_miami(args):
     except Exception as e:
         print_error(f"Scraping error: {e}")
         return False
-
 
 def scrape_google_reviews(args):
     """Scrape Google reviews."""
@@ -144,7 +136,6 @@ def scrape_google_reviews(args):
         print_error(f"Scraping error: {e}")
         return False
 
-
 def scrape_images(args):
     """Scrape restaurant images."""
     try:
@@ -179,7 +170,6 @@ def scrape_images(args):
         print_error(f"Image scraping error: {e}")
         return False
 
-
 # Database Operations
 def database_health_check(args):
     """Check database health."""
@@ -206,7 +196,6 @@ def database_health_check(args):
     except Exception as e:
         print_error(f"Database health check error: {e}")
         return False
-
 
 def database_statistics(args):
     """Show database statistics."""
@@ -249,7 +238,6 @@ def database_statistics(args):
         print_error(f"Statistics error: {e}")
         return False
 
-
 def database_cleanup(args):
     """Run database cleanup operations."""
     try:
@@ -281,7 +269,6 @@ def database_cleanup(args):
         print_error(f"Database cleanup error: {e}")
         return False
 
-
 # Monitoring Operations
 def monitor_health(args):
     """Monitor system health."""
@@ -311,7 +298,6 @@ def monitor_health(args):
     except Exception as e:
         print_error(f"Health monitoring error: {e}")
         return False
-
 
 def monitor_performance(args):
     """Monitor system performance."""
@@ -364,7 +350,6 @@ def monitor_performance(args):
         print_error(f"Performance monitoring error: {e}")
         return False
 
-
 # Maintenance Operations
 def maintenance_backup(args):
     """Create database backup."""
@@ -379,7 +364,6 @@ def maintenance_backup(args):
     except Exception as e:
         print_error(f"Backup error: {e}")
         return False
-
 
 def maintenance_cleanup(args):
     """Run maintenance cleanup."""
@@ -404,7 +388,6 @@ def maintenance_cleanup(args):
     except Exception as e:
         print_error(f"Maintenance cleanup error: {e}")
         return False
-
 
 def main():
     """Main CLI function."""
@@ -451,7 +434,7 @@ Examples:
     kosher_parser.add_argument(
         "--limit", type=int, help="Limit number of establishments to scrape"
     )
-    kosher_parser.set_defaults(func=lambda args: asyncio.run(scrape_kosher_miami(args)))
+    kosher_parser.set_defaults(func=lambda args: asyncio.run(scrape_(args)))
 
     # Google Reviews scraping
     reviews_parser = scrape_subparsers.add_parser(
@@ -575,7 +558,6 @@ Examples:
     except Exception as e:
         print_error(f"Unexpected error: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

@@ -86,7 +86,7 @@
 ### **Production Environment**
 - **Frontend (Vercel)**: ✅ Deployed and operational
 - **Backend (Render)**: ✅ Operational
-- **Database (Neon)**: ✅ Operational
+- **Database (api.jewgo.app)**: ✅ Operational
 - **Supabase**: ✅ Operational
 
 ### **Authentication Features**
@@ -94,7 +94,7 @@
 - **Google OAuth**: ✅ Working via Supabase
 - **Magic Links**: ✅ Working
 - **Session Management**: ✅ Auto-refresh tokens
-- **User Sync**: ✅ Real-time with Neon PostgreSQL
+- **User Sync**: ✅ Real-time with api.jewgo.app PostgreSQL
 
 ### **Admin Dashboard**
 - **Migration Dashboard**: `/admin/migration` - ✅ Operational

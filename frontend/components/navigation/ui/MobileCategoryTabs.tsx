@@ -69,7 +69,7 @@ const MobileCategoryTabs: React.FC<MobileCategoryTabsProps> = ({
     },
     {
       id: 'marketplace',
-      label: 'Marketplace',
+      label: 'Shuk',
       icon: Star,
       href: '/marketplace',
     },

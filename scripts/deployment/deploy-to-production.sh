@@ -139,7 +139,7 @@ show_checklist() {
     echo "=================================="
     echo
     echo "Before proceeding, ensure you have:"
-    echo "✅ Set up Neon database account"
+    echo "✅ Set up api.jewgo.app database account"
     echo "✅ Set up Render account for backend"
     echo "✅ Set up Vercel account for frontend"
     echo "✅ Set up Cloudinary account for images"

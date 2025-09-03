@@ -50,6 +50,13 @@ import {
 
 // Eatery variant
 <BottomNavigation variant="eatery" />
+
+// Density and label visibility
+// Compact, labels only for active tab
+<BottomNavigation size="compact" showLabels="active-only" />
+
+// Roomy, icons only
+<BottomNavigation size="roomy" showLabels="never" />
 ```
 
 ### CategoryTabs Usage

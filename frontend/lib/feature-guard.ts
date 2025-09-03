@@ -137,8 +137,11 @@ export class FeatureGuard {
         }
       }
     } catch (sentryError) {
-      // Silently fail if Sentry logging fails
-      console.debug('[FeatureGuard] Sentry logging failed:', sentryError);
+      // Silently fail if Sentry logging fails; only log in development
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug('[FeatureGuard] Sentry logging failed:', sentryError);
+      }
     }
   }
 }

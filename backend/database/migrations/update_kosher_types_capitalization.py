@@ -71,7 +71,7 @@ def get_database_connection():
     database_url = ConfigManager.get_database_url()
     if not database_url:
         raise ValueError("DATABASE_URL environment variable is required")
-    # Configure connection parameters (simplified for Neon pooled connections)
+    # Configure connection parameters (simplified for api.jewgo.app pooled connections)
     connect_args = {
         "keepalives_idle": ConfigManager.get_pg_keepalives_idle(),
         "keepalives_interval": ConfigManager.get_pg_keepalives_interval(),

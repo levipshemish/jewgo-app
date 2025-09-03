@@ -19,7 +19,6 @@ from pathlib import Path
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
-
 def scrape_more_restaurant_images():
     """Scrape restaurant images from Google Places and upload to Cloudinary."""
 
@@ -38,7 +37,7 @@ def scrape_more_restaurant_images():
 
         # Load the Kosher Miami data
         data_file = (
-            Path(__file__).parent.parent / "data" / "kosher_miami_establishments.json"
+            Path(__file__).parent.parent / "data" / "_establishments.json"
         )
 
         if not data_file.exists():
@@ -124,7 +123,6 @@ def scrape_more_restaurant_images():
         print("  pip install cloudinary requests")
     except Exception as e:
         print(f"❌ Error: {e}")
-
 
 if __name__ == "__main__":
     scrape_more_restaurant_images()

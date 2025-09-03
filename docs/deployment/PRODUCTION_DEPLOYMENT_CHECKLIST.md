@@ -61,8 +61,8 @@ FLASK_ENV=production
 
 ### 2. Database Deployment
 
-#### Neon Database Setup
-1. **Create Neon Account** (if not exists)
+#### api.jewgo.app Database Setup
+1. **Create Database Account** (if not exists)
 2. **Create New Project**
 3. **Get Connection String**
 4. **Run Initial Setup**:
@@ -84,7 +84,7 @@ FLASK_ENV=production
 
 #### Environment Variables
 - Add all backend environment variables listed above
-- Ensure `DATABASE_URL` points to your Neon database
+- Ensure `DATABASE_URL` points to your api.jewgo.app database
 
 #### Deploy
 1. Connect GitHub repository to Render
@@ -252,7 +252,7 @@ tar -czf jewgo-backup-$(date +%Y%m%d).tar.gz \
 4. Monitor for stability
 
 ### Database Issues
-1. Check Neon dashboard
+1. Check api.jewgo.app dashboard
 2. Verify connection strings
 3. Run health check scripts
 4. Contact support if needed
@@ -261,7 +261,7 @@ tar -czf jewgo-backup-$(date +%Y%m%d).tar.gz \
 
 - **Render Issues**: Check Render dashboard and logs
 - **Vercel Issues**: Check Vercel dashboard and analytics
-- **Database Issues**: Check Neon dashboard and connection
+- **Database Issues**: Check api.jewgo.app dashboard and connection
 - **General Issues**: Review troubleshooting guide
 
 ---

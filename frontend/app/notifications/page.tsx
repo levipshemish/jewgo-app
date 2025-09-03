@@ -239,7 +239,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
     </div>
   );
 } 

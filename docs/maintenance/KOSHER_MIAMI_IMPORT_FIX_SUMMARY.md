@@ -80,9 +80,9 @@ The original Kosher Miami scraper was incorrectly importing data with:
 
 ## Scripts Created
 
-1. **`remove_kosher_miami_entries.py`** - Removed all previous Kosher Miami entries
-2. **`import_kosher_miami_proper.py`** - Proper import with field mapping
-3. **`verify_kosher_miami_import.py`** - Data quality verification
+1. **`remove__entries.py`** - Removed all previous Kosher Miami entries
+2. **`import__proper.py`** - Proper import with field mapping
+3. **`verify__import.py`** - Data quality verification
 4. **`diagnose_certifying_agency_issues.py`** - Fixed certifying agency problems
 5. **`cleanup_duplicate_restaurants.py`** - Removed duplicate entries
 
@@ -124,5 +124,5 @@ The original Kosher Miami scraper was incorrectly importing data with:
 ---
 *Date: January 2025*  
 *Status: ✅ Completed*  
-*Database: Production (Neon)*  
+*Database: Production (api.jewgo.app)*  
 *Total Restaurants: 212* 

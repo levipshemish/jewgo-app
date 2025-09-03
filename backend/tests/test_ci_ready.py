@@ -101,9 +101,9 @@ class TestCISecurity:
     def test_security_decorators_exist(self):
         """Test that security decorators exist and are callable."""
         try:
-            from utils.security import require_admin_auth, require_super_admin_auth
-            assert callable(require_admin_auth)
-            assert callable(require_super_admin_auth)
+            from utils.security import require_admin
+            assert callable(require_admin)
+            # Legacy decorators have been removed - using modern Supabase auth
         except ImportError as e:
             pytest.skip(f"Security decorators not available: {e}")
     

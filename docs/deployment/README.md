@@ -10,7 +10,7 @@ This guide covers the deployment of the JewGo application, including the Next.js
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │    Backend      │    │   Database      │
 │   (Next.js)     │◄──►│   (Flask)       │◄──►│   (PostgreSQL)  │
-│   Vercel        │    │   Render        │    │   Neon          │
+│   Vercel        │    │   Render        │    │   api.jewgo.app │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          │                       │                       │
@@ -26,7 +26,7 @@ This guide covers the deployment of the JewGo application, including the Next.js
 ### Required Accounts
 - **Vercel** - Frontend hosting
 - **Render** - Backend hosting
-- **Neon** - PostgreSQL database
+- **api.jewgo.app** - PostgreSQL database
 - **Cloudinary** - Image hosting and optimization
 - **Cronitor** - Monitoring and health checks
 
@@ -71,10 +71,10 @@ FLASK_ENV=production
 
 ## Deployment Steps
 
-### 1. Database Setup (Neon)
+### 1. Database Setup (api.jewgo.app)
 
-1. **Create Neon Account**
-   - Sign up at [neon.tech](https://neon.tech)
+1. **Create Database Account**
+   - Use your api.jewgo.app PostgreSQL service
    - Create a new project
 
 2. **Configure Database**
@@ -87,7 +87,7 @@ FLASK_ENV=production
    ```
 
 3. **Get Connection String**
-   - Copy the connection string from Neon dashboard
+   - Copy the connection string from your api.jewgo.app dashboard
    - Format: `postgresql://user:password@host:port/database`
 
 ### 2. Backend Deployment (Render)
@@ -104,7 +104,7 @@ FLASK_ENV=production
 
 3. **Set Environment Variables**
    - Add all backend environment variables listed above
-   - Ensure `DATABASE_URL` points to your Neon database
+   - Ensure `DATABASE_URL` points to your api.jewgo.app database
 
 4. **Deploy**
    - Render will automatically deploy on push to main branch
@@ -397,7 +397,7 @@ tar -czf jewgo-backup-$(date +%Y%m%d).tar.gz \
 ### Horizontal Scaling
 - Frontend: Vercel handles scaling automatically
 - Backend: Render supports multiple instances
-- Database: Neon supports read replicas
+- Database: api.jewgo.app supports read replicas
 
 ### Performance Optimization
 - Implement caching strategies

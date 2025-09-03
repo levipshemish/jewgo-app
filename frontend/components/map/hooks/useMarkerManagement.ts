@@ -68,8 +68,8 @@ export function useMarkerManagement({
     const finalColor = isSelected ? '#FFD700' : markerColor;
     
     // Get rating for bubble display
-    const getRating = (restaurant: Restaurant) => {
-      const rating = restaurant.quality_rating || restaurant.rating || restaurant.star_rating || restaurant.google_rating;
+    const getRating = (restaurantItem: Restaurant) => {
+      const rating = restaurantItem.quality_rating || restaurantItem.rating || restaurantItem.star_rating || restaurantItem.google_rating;
       return rating && rating > 0 ? rating : 0.0;
     };
     

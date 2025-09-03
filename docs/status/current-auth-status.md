@@ -7,14 +7,14 @@
 - **Signin Page**: `/auth/signin` - Email/password and Google OAuth
 - **Signup Page**: `/auth/signup` - User registration with email verification
 - **Registration API**: `/api/auth/register` - Handles user creation with bcrypt password hashing
-- **Database Integration**: Prisma adapter with Neon PostgreSQL
+- **Database Integration**: Prisma adapter with api.jewgo.app PostgreSQL
 - **Session Management**: JWT strategy with proper callbacks
 - **Environment Variables**: All required NextAuth.js variables configured
 
 ### Technical Details
 - **Providers**: Google OAuth + Credentials (email/password)
 - **Session Strategy**: JWT
-- **Database**: Prisma + Neon PostgreSQL
+- **Database**: Prisma + api.jewgo.app PostgreSQL
 - **Password Hashing**: bcryptjs (10 rounds)
 - **Email Verification**: Basic email sending on registration
 

@@ -83,8 +83,8 @@ export class WriteGates {
         correlationId
       };
 
-    } catch (error) {
-      console.error(`[Write Gates] Unexpected error (${correlationId})`, error);
+    } catch (_error) {
+      console.error(`[Write Gates] Unexpected error (${correlationId})`, _error);
       return {
         allowed: false,
         error: 'Unexpected error checking permissions',
@@ -163,7 +163,7 @@ export class WriteGates {
    * Get comprehensive user permissions
    */
   async getUserPermissions(): Promise<UserPermissions> {
-    const correlationId = generateCorrelationId();
+          const _correlationId = generateCorrelationId();
     
     try {
 
@@ -202,8 +202,8 @@ export class WriteGates {
         userId: user.id
       };
 
-    } catch (error) {
-      // console.error(`[Write Gates] Error getting permissions (${correlationId})`, error);
+    } catch (_error) {
+      // console.error(`[Write Gates] Error getting permissions (${_correlationId})`, _error);
       return {
         canWrite: false,
         canCreateReviews: false,

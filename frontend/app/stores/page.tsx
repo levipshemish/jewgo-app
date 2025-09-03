@@ -763,7 +763,7 @@ function StoresPageContent() {
       )}
 
       {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation />
+      <BottomNavigation size="compact" showLabels="active-only" />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup
