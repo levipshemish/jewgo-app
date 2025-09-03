@@ -101,7 +101,12 @@ class SupabaseAuthManager:
             result = self._get_jwks_key_fallback(kid)
             if result is None:
                 try:
-                    req_id = request.headers.get("X-Request-ID", "unknown")
+                    # Check if we're in a Flask request context
+                    from flask import has_request_context
+                    if has_request_context():
+                        req_id = request.headers.get("X-Request-ID", "unknown")
+                    else:
+                        req_id = "no-request-context"
                 except Exception:
                     req_id = "unknown"
                 logger.warning(
@@ -127,7 +132,12 @@ class SupabaseAuthManager:
         result = self._fetch_jwks_with_singleflight(kid)
         if result is None:
             try:
-                req_id = request.headers.get("X-Request-ID", "unknown")
+                # Check if we're in a Flask request context
+                from flask import has_request_context
+                if has_request_context():
+                    req_id = request.headers.get("X-Request-ID", "unknown")
+                else:
+                    req_id = "no-request-context"
             except Exception:
                 req_id = "unknown"
             logger.warning(
@@ -165,7 +175,12 @@ class SupabaseAuthManager:
                         return key
                 # Kid not found in JWKS
                 try:
-                    req_id = request.headers.get("X-Request-ID", "unknown")
+                    # Check if we're in a Flask request context
+                    from flask import has_request_context
+                    if has_request_context():
+                        req_id = request.headers.get("X-Request-ID", "unknown")
+                    else:
+                        req_id = "no-request-context"
                 except Exception:
                     req_id = "unknown"
                 logger.warning(
@@ -177,7 +192,12 @@ class SupabaseAuthManager:
                 return None
             except Exception as e:
                 try:
-                    req_id = request.headers.get("X-Request-ID", "unknown")
+                    # Check if we're in a Flask request context
+                    from flask import has_request_context
+                    if has_request_context():
+                        req_id = request.headers.get("X-Request-ID", "unknown")
+                    else:
+                        req_id = "no-request-context"
                 except Exception:
                     req_id = "unknown"
                 logger.error(
@@ -257,7 +277,12 @@ class SupabaseAuthManager:
                 result = self._jwks_fallback_cache.get(kid, {}).get("key")
                 if result is None:
                     try:
-                        req_id = request.headers.get("X-Request-ID", "unknown")
+                        # Check if we're in a Flask request context
+                        from flask import has_request_context
+                        if has_request_context():
+                            req_id = request.headers.get("X-Request-ID", "unknown")
+                        else:
+                            req_id = "no-request-context"
                     except Exception:
                         req_id = "unknown"
                     logger.warning(
@@ -269,7 +294,12 @@ class SupabaseAuthManager:
                 return result
             except Exception as e:
                 try:
-                    req_id = request.headers.get("X-Request-ID", "unknown")
+                    # Check if we're in a Flask request context
+                    from flask import has_request_context
+                    if has_request_context():
+                        req_id = request.headers.get("X-Request-ID", "unknown")
+                    else:
+                        req_id = "no-request-context"
                 except Exception:
                     req_id = "unknown"
                 logger.error(
