@@ -149,36 +149,22 @@ export default function ShulGrid({
     }
   }
 
-  // Load more items for infinite scroll
+  // Load more items in batches of 6 (exactly like dynamic-card-ts)
   const loadMoreItems = useCallback(async () => {
     if (loading || !hasMore) return
-    
+
     setLoading(true)
+
     try {
       if (useRealData) {
-        // TODO: Implement real API call
-        // const response = await fetch(`/api/shuls?${buildSearchParams()}&page=${page}`)
-        // const data = await response.json()
-        // setShuls(prev => [...prev, ...data.shuls])
-        // setHasMore(data.hasMore)
-        
-        // For now, fallback to mock data
-        const newItems: MockShul[] = []
-        for (let i = 0; i < 6; i++) {
-          const id = page * 6 + i + 1
-          if (id <= 100) {
-            newItems.push(generateMockShuls(1)[0])
-          }
-        }
-        
-        setShuls((prev) => [...prev, ...newItems])
-        setPage((prev) => prev + 1)
-        
-        if (page * 6 + 6 >= 100) {
-          setHasMore(false)
-        }
+        // Use real API
+        const response = await fetchShuls(6, page * 6, buildSearchParams())
+        setShuls((prev) => [...prev, ...response.shuls])
+        setHasMore(response.hasMore)
       } else {
-        // Mock data generation
+        // Use mock data (fallback)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        
         const newItems: MockShul[] = []
         for (let i = 0; i < 6; i++) {
           const id = page * 6 + i + 1
@@ -209,7 +195,7 @@ export default function ShulGrid({
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, page, useRealData])
+  }, [loading, hasMore, page, useRealData, category, searchQuery])
 
   // Build search parameters for API calls
   const buildSearchParams = () => {
@@ -246,7 +232,7 @@ export default function ShulGrid({
     setTimeout(() => {
       if (hasMore) loadMoreItems()
     }, 300)
-  }, [category, searchQuery, useRealData])
+  }, [category, searchQuery, useRealData, loadMoreItems, hasMore])
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
