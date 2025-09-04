@@ -28,13 +28,10 @@ This guide will walk you through deploying your JewGo backend to a VPS server us
 
 ### 1. Configure Your VPS Details
 
-Edit `deploy-to-vps.sh` and update these variables:
-
-```bash
-VPS_USER="root"  # or your VPS username
-VPS_HOST="your-vps-ip-or-domain.com"  # Your VPS IP or domain
-VPS_PATH="/opt/jewgo-backend"  # Path on VPS
-```
+The deployment scripts are already configured for your VPS:
+- **VPS User**: `ubuntu`
+- **VPS Host**: `141.148.50.111`
+- **VPS Path**: `/srv/jewgo-backend`
 
 ### 2. Run the Deployment Script
 
@@ -61,36 +58,43 @@ If you prefer to deploy manually:
 ### 1. SSH to Your VPS
 
 ```bash
-ssh root@your-vps-ip
+ssh ubuntu@141.148.50.111
 ```
 
 ### 2. Install Docker
 
 ```bash
 # Update packages
-apt-get update
+sudo apt-get update
 
 # Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
+sudo sh get-docker.sh
 
 # Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
 # Start Docker
-systemctl start docker
-systemctl enable docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Add ubuntu user to docker group
+sudo usermod -aG docker ubuntu
 ```
 
 ### 3. Create Directory Structure
 
 ```bash
-mkdir -p /opt/jewgo-backend
-mkdir -p /opt/jewgo-backend/logs
-mkdir -p /opt/jewgo-backend/nginx/conf.d
-mkdir -p /opt/jewgo-backend/nginx/ssl
-mkdir -p /opt/jewgo-backend/nginx/logs
+sudo mkdir -p /srv/jewgo-backend
+sudo mkdir -p /srv/jewgo-backend/logs
+sudo mkdir -p /srv/jewgo-backend/nginx/conf.d
+sudo mkdir -p /srv/jewgo-backend/nginx/ssl
+sudo mkdir -p /srv/jewgo-backend/nginx/logs
+
+# Set ownership
+sudo chown -R ubuntu:ubuntu /srv/jewgo-backend
+sudo chmod -R 755 /srv/jewgo-backend
 ```
 
 ### 4. Copy Files to VPS
@@ -103,17 +107,23 @@ rsync -avz --progress \
     --exclude='node_modules' \
     --exclude='.venv' \
     --exclude='__pycache__' \
-    ./ root@your-vps-ip:/opt/jewgo-backend/
+    --exclude='.claude' \
+    --exclude='.gemini' \
+    --exclude='.github' \
+    --exclude='.husky' \
+    --exclude='.serena' \
+    --exclude='.vscode' \
+    ./ ubuntu@141.148.50.111:/srv/jewgo-backend/
 ```
 
 ### 5. Configure Environment
 
 ```bash
 # SSH to VPS
-ssh root@your-vps-ip
+ssh ubuntu@141.148.50.111
 
 # Navigate to project directory
-cd /opt/jewgo-backend
+cd /srv/jewgo-backend
 
 # Copy and edit environment file
 cp env.production.template .env
@@ -157,19 +167,19 @@ docker-compose logs -f backend
 
 ### 1. Point Domain to VPS
 
-Set your domain's A record to your VPS IP address.
+Set your domain's A record to your VPS IP address: `141.148.50.111`
 
 ### 2. Install Certbot for SSL
 
 ```bash
 # Install Certbot
-apt-get install certbot python3-certbot-nginx -y
+sudo apt-get install certbot python3-certbot-nginx -y
 
 # Get SSL certificate
-certbot --nginx -d your-domain.com
+sudo certbot --nginx -d your-domain.com
 
 # Auto-renewal
-crontab -e
+sudo crontab -e
 # Add this line:
 0 12 * * * /usr/bin/certbot renew --quiet
 ```
@@ -207,7 +217,7 @@ server {
 docker-compose ps
 
 # Check health endpoint
-curl http://your-domain.com/api/health
+curl http://141.148.50.111/api/health
 
 # View logs
 docker-compose logs -f backend
@@ -218,12 +228,12 @@ docker-compose logs -f nginx
 
 ```bash
 # Create backup script
-nano /opt/jewgo-backend/backup-db.sh
+nano /srv/jewgo-backend/backup-db.sh
 ```
 
 ```bash
 #!/bin/bash
-BACKUP_DIR="/opt/jewgo-backend/backups"
+BACKUP_DIR="/srv/jewgo-backend/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 mkdir -p $BACKUP_DIR
@@ -239,14 +249,14 @@ chmod +x backup-db.sh
 
 # Add to crontab (daily backup at 2 AM)
 crontab -e
-0 2 * * * /opt/jewgo-backend/backup-db.sh
+0 2 * * * /srv/jewgo-backend/backup-db.sh
 ```
 
 ### Update Application
 
 ```bash
 # Pull latest changes
-cd /opt/jewgo-backend
+cd /srv/jewgo-backend
 git pull origin main
 
 # Rebuild and restart
@@ -264,38 +274,38 @@ docker-compose ps
 
 ```bash
 # Install UFW
-apt-get install ufw -y
+sudo apt-get install ufw -y
 
 # Configure firewall
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow ssh
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw enable
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow ssh
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
 ```
 
 ### 2. SSH Security
 
 ```bash
 # Edit SSH config
-nano /etc/ssh/sshd_config
+sudo nano /etc/ssh/sshd_config
 
 # Change these settings:
 Port 2222  # Change from default 22
 PermitRootLogin no
 PasswordAuthentication no
-AllowUsers your-username
+AllowUsers ubuntu
 
 # Restart SSH
-systemctl restart sshd
+sudo systemctl restart sshd
 ```
 
 ### 3. Regular Updates
 
 ```bash
 # Update system packages
-apt-get update && apt-get upgrade -y
+sudo apt-get update && sudo apt-get upgrade -y
 
 # Update Docker images
 docker-compose pull
@@ -309,7 +319,7 @@ docker-compose up -d
 **1. Port Already in Use**
 ```bash
 # Check what's using the port
-netstat -tulpn | grep :80
+sudo netstat -tulpn | grep :80
 
 # Kill process or change port in docker-compose.yml
 ```

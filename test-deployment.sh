@@ -6,9 +6,9 @@
 set -e
 
 # Configuration
-VPS_USER="root"
-VPS_HOST="your-vps-ip-or-domain.com"
-VPS_PATH="/opt/jewgo-backend"
+VPS_USER="ubuntu"
+VPS_HOST="141.148.50.111"
+VPS_PATH="/srv/jewgo-backend"
 
 # Colors for output
 RED='\033[0;31m'
@@ -38,7 +38,7 @@ test_docker_services() {
     echo -e "${YELLOW}Testing Docker services...${NC}"
     
     ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
-        cd /opt/jewgo-backend
+        cd /srv/jewgo-backend
         
         echo "=== Docker Services Status ==="
         docker-compose ps
@@ -129,7 +129,7 @@ check_logs() {
     echo -e "${YELLOW}Checking recent logs for errors...${NC}"
     
     ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
-        cd /opt/jewgo-backend
+        cd /srv/jewgo-backend
         
         echo "=== Recent Backend Logs ==="
         docker-compose logs --tail=10 backend | grep -i error || echo "No recent errors found"

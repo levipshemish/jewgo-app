@@ -58,16 +58,16 @@ setup_vps_directories() {
     echo -e "${YELLOW}Setting up directory structure on VPS...${NC}"
     
     ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
-        # Create main directory
-        mkdir -p /opt/jewgo-backend
-        mkdir -p /opt/jewgo-backend/logs
-        mkdir -p /opt/jewgo-backend/nginx/conf.d
-        mkdir -p /opt/jewgo-backend/nginx/ssl
-        mkdir -p /opt/jewgo-backend/nginx/logs
+        # Create main directory with sudo
+        sudo mkdir -p /srv/jewgo-backend
+        sudo mkdir -p /srv/jewgo-backend/logs
+        sudo mkdir -p /srv/jewgo-backend/nginx/conf.d
+        sudo mkdir -p /srv/jewgo-backend/nginx/ssl
+        sudo mkdir -p /srv/jewgo-backend/nginx/logs
         
-        # Set proper permissions
-        chown -R root:root /opt/jewgo-backend
-        chmod -R 755 /opt/jewgo-backend
+        # Set proper permissions and ownership
+        sudo chown -R ubuntu:ubuntu /srv/jewgo-backend
+        sudo chmod -R 755 /srv/jewgo-backend
         
         echo "Directory structure created successfully"
 EOF
@@ -79,7 +79,7 @@ EOF
 copy_docker_files() {
     echo -e "${YELLOW}Copying Docker files to VPS...${NC}"
     
-    # Copy main files
+    # Copy main files to the correct path
     rsync -avz --progress \
         --exclude='.git' \
         --exclude='node_modules' \
@@ -90,7 +90,13 @@ copy_docker_files() {
         --exclude='htmlcov' \
         --exclude='coverage.xml' \
         --exclude='.DS_Store' \
-        ${LOCAL_PATH}/ ${VPS_USER}@${VPS_HOST}:${VPS_PATH}/
+        --exclude='.claude' \
+        --exclude='.gemini' \
+        --exclude='.github' \
+        --exclude='.husky' \
+        --exclude='.serena' \
+        --exclude='.vscode' \
+        ${LOCAL_PATH}/ ${VPS_USER}@${VPS_HOST}:/srv/jewgo-backend/
     
     echo -e "${GREEN}✅ Docker files copied successfully${NC}"
 }
@@ -101,31 +107,31 @@ install_docker() {
     
     ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
         # Update package list
-        apt-get update
+        sudo apt-get update
         
         # Install required packages
-        apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
         
         # Add Docker's official GPG key
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
         
         # Add Docker repository
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
         
         # Install Docker
-        apt-get update
-        apt-get install -y docker-ce docker-ce-cli containerd.io
+        sudo apt-get update
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io
         
         # Install Docker Compose
-        curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
         
         # Start and enable Docker
-        systemctl start docker
-        systemctl enable docker
+        sudo systemctl start docker
+        sudo systemctl enable docker
         
-        # Add user to docker group (optional)
-        usermod -aG docker $USER
+        # Add ubuntu user to docker group
+        sudo usermod -aG docker ubuntu
         
         echo "Docker and Docker Compose installed successfully"
 EOF
@@ -140,7 +146,7 @@ setup_environment() {
     if [ -f "env.production.template" ]; then
         echo -e "${BLUE}📝 Please copy env.production.template to .env and configure it:${NC}"
         echo "   ssh ${VPS_USER}@${VPS_HOST}"
-        echo "   cd ${VPS_PATH}"
+        echo "   cd /srv/jewgo-backend"
         echo "   cp env.production.template .env"
         echo "   nano .env"
         echo ""
@@ -155,7 +161,7 @@ start_services() {
     echo -e "${YELLOW}Starting Docker services...${NC}"
     
     ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
-        cd /opt/jewgo-backend
+        cd /srv/jewgo-backend
         
         # Pull latest images
         docker-compose pull
@@ -177,7 +183,7 @@ show_status() {
     echo -e "${YELLOW}Checking deployment status...${NC}"
     
     ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
-        cd /opt/jewgo-backend
+        cd /srv/jewgo-backend
         
         echo "=== Docker Services Status ==="
         docker-compose ps
@@ -210,7 +216,7 @@ main() {
     echo ""
     echo -e "${YELLOW}Next steps:${NC}"
     echo "1. SSH to your VPS: ssh ${VPS_USER}@${VPS_HOST}"
-    echo "2. Navigate to: cd ${VPS_PATH}"
+    echo "2. Navigate to: cd /srv/jewgo-backend"
     echo "3. Configure environment: cp env.production.template .env && nano .env"
     echo "4. Start services: docker-compose up -d"
     echo "5. Check status: docker-compose ps"
