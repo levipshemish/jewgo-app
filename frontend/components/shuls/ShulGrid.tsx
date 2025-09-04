@@ -97,6 +97,7 @@ export default function ShulGrid({
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
+  const [forceMockData, setForceMockData] = useState(false) // Track when we've fallen back to mock data
 
   // Real API function for synagogues with offset-based pagination for infinite scroll
   const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 15000) => {
@@ -171,7 +172,8 @@ export default function ShulGrid({
     setLoading(true)
 
     try {
-      if (useRealData) {
+      // If we've forced mock data mode, always use mock data
+      if (useRealData && !forceMockData) {
         // Use real API with current page state
         const currentPage = page
         const response = await fetchShuls(6, currentPage * 6, buildSearchParams())
@@ -179,7 +181,7 @@ export default function ShulGrid({
         setHasMore(response.hasMore)
         setPage((prev) => prev + 1)
       } else {
-        // Use mock data (fallback)
+        // Use mock data (fallback or forced)
         await new Promise((resolve) => setTimeout(resolve, 1000))
         
         const newItems: MockShul[] = []
@@ -197,9 +199,10 @@ export default function ShulGrid({
     } catch (error) {
       console.error('Error loading more items:', error)
       // Fall back to mock data on error
-      if (useRealData) {
+      if (useRealData && !forceMockData) {
         console.log('Falling back to mock data due to API error')
-        // Reset to mock data mode
+        // Switch to mock data mode permanently for this session
+        setForceMockData(true)
         setShuls([])
         setPage(0)
         setHasMore(true)
@@ -209,11 +212,13 @@ export default function ShulGrid({
         setShuls(mockItems)
         setHasMore(true)
         setPage(1)
+        // Force component to use mock data for remaining interactions
+        // This prevents infinite API calls when backend is down
       }
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, useRealData, fetchShuls, buildSearchParams, page]) // Keep page dependency but handle it properly
+  }, [loading, hasMore, useRealData, forceMockData, fetchShuls, buildSearchParams, page]) // Add forceMockData dependency
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
@@ -221,6 +226,7 @@ export default function ShulGrid({
     setShuls([])
     setPage(0)
     setHasMore(true)
+    setForceMockData(false) // Reset mock data mode when category/search changes
     
     // Load initial batch only once
     const loadInitialItems = async () => {
@@ -228,13 +234,13 @@ export default function ShulGrid({
       
       setLoading(true)
       try {
-        if (useRealData) {
+        if (useRealData && !forceMockData) {
           // Use real API
           const response = await fetchShuls(6, 0, buildSearchParams())
           setShuls(response.shuls)
           setHasMore(response.hasMore)
         } else {
-          // Use mock data (fallback)
+          // Use mock data (fallback or forced)
           await new Promise((resolve) => setTimeout(resolve, 1000))
           const mockItems = generateMockShuls(6)
           setShuls(mockItems)
@@ -244,8 +250,9 @@ export default function ShulGrid({
       } catch (error) {
         console.error('Error loading initial items:', error)
         // Fall back to mock data on error
-        if (useRealData) {
+        if (useRealData && !forceMockData) {
           console.log('Falling back to mock data due to API error')
+          setForceMockData(true)
           const mockItems = generateMockShuls(6)
           setShuls(mockItems)
           setHasMore(true)
@@ -257,7 +264,7 @@ export default function ShulGrid({
     }
     
     loadInitialItems()
-  }, [category, searchQuery, useRealData]) // Remove loadMoreItems dependency
+  }, [category, searchQuery, useRealData, forceMockData]) // Add forceMockData dependency
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
