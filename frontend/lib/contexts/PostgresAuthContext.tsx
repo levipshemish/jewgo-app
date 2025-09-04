@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * PostgreSQL Authentication Context
  * Provides authentication state and functions throughout the application
