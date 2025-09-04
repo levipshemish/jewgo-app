@@ -3,11 +3,10 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-// Force dynamic rendering to avoid SSR issues with Supabase client
+// Force dynamic rendering to avoid SSR issues
 export const dynamic = 'force-dynamic';
 
-import { supabaseClient } from "@/lib/supabase/client-secure";
-// import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
+import { postgresAuth } from "@/lib/auth/postgres-auth";
 
 export default function HomePage() {
   const router = useRouter();
@@ -15,35 +14,16 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-
-        const { data: { user }, error } = await supabaseClient.auth.getUser();
-        
-        if (error) {
-          // console.error('Session check error:', error);
-          // Redirect unauthenticated users to signin page
-          router.push('/auth/signin');
-          return;
-        }
-        
-        // console.log('Session check result:', { 
-        //   hasSession: !!session, 
-        //   hasUser: !!session?.user,
-        //   sessionExpiry: session?.expires_at,
-        //   currentTime: Math.floor(Date.now() / 1000)
-        // });
-        
-        if (user) {
-          // Check if user is anonymous or regular user
-          // const isAnonymous = extractIsAnonymous(session.user);
-
-          // Redirect both anonymous and regular users to eatery page
+        // Check if user is authenticated via PostgreSQL auth
+        if (postgresAuth.isAuthenticated()) {
+          // User is authenticated, redirect to eatery page
           router.push('/eatery');
         } else {
-          // Redirect unauthenticated users to signin page
+          // User is not authenticated, redirect to signin page
           router.push('/auth/signin');
         }
-      } catch (_error) {
-        // console.error('Auth check failed:', error);
+      } catch (error) {
+        console.error('Auth check failed:', error);
         // Redirect unauthenticated users to signin page
         router.push('/auth/signin');
       }
@@ -51,24 +31,21 @@ export default function HomePage() {
 
     checkAuth();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event: string, _session: any) => {
-
-        if (event === 'SIGNED_IN') {
-          const { data: { user } } = await supabaseClient.auth.getUser();
-          if (!user) { return; }
-          // const isAnonymous = extractIsAnonymous(session.user);
-
-          // Redirect to eatery page
-          router.push('/eatery');
-        } else if (event === 'SIGNED_OUT') {
-          // Redirect to signin page when user signs out
-          router.push('/auth/signin');
-        }
+    // Set up auth state listener for PostgreSQL auth
+    const checkAuthState = () => {
+      if (postgresAuth.isAuthenticated()) {
+        router.push('/eatery');
+      } else {
+        router.push('/auth/signin');
       }
-    );
+    };
 
-    return () => subscription.unsubscribe();
+    // Check auth state periodically (since PostgreSQL auth doesn't have built-in listeners)
+    const authCheckInterval = setInterval(checkAuthState, 5000);
+
+    return () => {
+      clearInterval(authCheckInterval);
+    };
   }, [router]);
 
   // Show loading while checking authentication and redirecting

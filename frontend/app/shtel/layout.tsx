@@ -1,11 +1,15 @@
 import React from 'react';
-import { SupabaseProvider } from '@/lib/contexts/SupabaseContext';
+import { PostgresAuthProvider } from '@/lib/contexts/PostgresAuthContext';
 
-export default function ShtelLayout({ children }: { children: React.ReactNode }) {
+export default function ShtelLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <SupabaseProvider>
+    <PostgresAuthProvider>
       {children}
-    </SupabaseProvider>
+    </PostgresAuthProvider>
   );
 }
 

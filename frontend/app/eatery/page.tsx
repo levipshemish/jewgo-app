@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 export const dynamic = 'force-dynamic';
 import EateryPageClient from './EateryPageClient';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Loading component for Suspense fallback
 function EateryPageLoading() {
@@ -14,8 +15,10 @@ function EateryPageLoading() {
 // Main server component
 export default function EateryPage() {
   return (
-    <Suspense fallback={<EateryPageLoading />}>
-      <EateryPageClient />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<EateryPageLoading />}>
+        <EateryPageClient />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

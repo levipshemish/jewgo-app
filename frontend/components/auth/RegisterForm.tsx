@@ -48,9 +48,8 @@ export default function RegisterForm() {
       await register({
         email: formData.email,
         password: formData.password,
-        username: formData.username || undefined,
-        first_name: formData.firstName || undefined,
-        last_name: formData.lastName || undefined,
+        name: formData.firstName && formData.lastName ? `${formData.firstName} ${formData.lastName}` : 
+              formData.firstName || formData.lastName || undefined,
       });
       router.push('/dashboard'); // Redirect to dashboard after registration
     } catch (err: any) {

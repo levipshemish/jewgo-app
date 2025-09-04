@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { supabaseClient } from "@/lib/supabase/client-secure";
+import { postgresAuth } from "@/lib/auth/postgres-auth";
 import LocationAccess from "@/components/location/LocationAccess";
 
 export default function LocationAccessPage() {
@@ -13,8 +13,7 @@ export default function LocationAccessPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
+        if (!postgresAuth.isAuthenticated()) {
           // Redirect to sign in if not authenticated
           router.push('/auth/signin');
           return;

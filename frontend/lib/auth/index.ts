@@ -1,16 +1,17 @@
 /**
- * Unified Authentication Module
- * Consolidates all authentication utilities and types
+ * Authentication Module Exports
+ * =============================
+ * 
+ * This module provides centralized exports for all authentication-related functionality.
+ * Updated to use PostgreSQL authentication instead of Supabase.
  */
 
-// Re-export auth utilities
-export * from '../utils/auth-utils';
-export * from './session';
-export * from './validation';
+// PostgreSQL Authentication (NEW - Migration from Supabase)
+export { postgresAuth, type AuthUser } from './postgres-auth';
 
-// Re-export Supabase clients
-export { createServerSupabaseClient } from '../supabase/server';
-export { supabaseClient } from '../supabase/client-secure';
+// Legacy exports for backward compatibility (will be removed in future versions)
+// export { createServerSupabaseClient } from '../supabase/server';
+// export { supabaseClient } from '../supabase/client-secure';
 
 // Re-export auth types
 export type { TransformedUser } from '../utils/auth-utils';

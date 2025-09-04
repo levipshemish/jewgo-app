@@ -4,10 +4,11 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/layout';
 import { DashboardBottomNavigation } from '@/components/navigation/ui';
-import { useSupabase } from '@/lib/contexts/SupabaseContext';
+
 import { useAuth } from '@/hooks/useAuth';
 import { appLogger } from '@/lib/utils/logger';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 // Dashboard Components
 import StoreOverview from '@/components/shtel/dashboard/StoreOverview';
@@ -81,8 +82,7 @@ function Tab({ label, icon, isActive, onClick, badge }: TabProps) {
 // Main dashboard component
 function ShtelDashboardContent() {
   const router = useRouter();
-  const { session, loading: supaLoading } = useSupabase();
-  const { user: _user, isAdmin } = useAuth();
+  const { user: _user, loading: authLoading } = useAuth();
   const { isMobile } = useMobileOptimization();
   
   // State
@@ -95,6 +95,9 @@ function ShtelDashboardContent() {
     messages: 0,
     products: 0
   });
+
+  // Check if user is admin based on roles
+  const isAdmin = _user?.roles.some(role => role.role === 'admin' || role.role === 'super_admin') || false;
 
   // Initialize admin setup
   const initializeForAdmin = () => {
@@ -123,15 +126,21 @@ function ShtelDashboardContent() {
         return;
       }
       
+      const accessToken = postgresAuth.accessToken;
+      if (!accessToken) {
+        appLogger.error('No access token available for notifications');
+        return;
+      }
+      
       const [ordersRes, messagesRes] = await Promise.all([
         fetch('/api/shtel/orders?status=pending&limit=1', {
           headers: {
-            'Authorization': `Bearer ${session?.access_token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         }),
         fetch('/api/shtel/messages?unread=true&limit=1', {
           headers: {
-            'Authorization': `Bearer ${session?.access_token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         })
       ]);
@@ -147,7 +156,7 @@ function ShtelDashboardContent() {
     } catch (err) {
       appLogger.error('Error loading notifications:', { error: err });
     }
-  }, [isAdmin, session?.access_token]);
+  }, [isAdmin]);
 
   // Load store data
   const loadStoreData = useCallback(async () => {
@@ -160,10 +169,17 @@ function ShtelDashboardContent() {
         return;
       }
       
+      const accessToken = postgresAuth.accessToken;
+      if (!accessToken) {
+        appLogger.error('No access token available for store data');
+        setLoading(false);
+        return;
+      }
+      
       // Get store data for current user
       const response = await fetch('/api/shtel/store', {
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
       
@@ -177,39 +193,33 @@ function ShtelDashboardContent() {
       }
       
       const data = await response.json();
-      setStoreData(data.store);
+      setStoreData(data);
+      setLoading(false);
       
-      // Load notifications
+      // Load notifications after store data is loaded
       loadNotifications();
-      
     } catch (err) {
       appLogger.error('Error loading store data:', { error: err });
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
+      setError('Failed to load store data');
       setLoading(false);
     }
-  }, [isAdmin, session?.access_token, router, loadNotifications]);
+  }, [isAdmin, router, loadNotifications]);
 
   // Check authentication
   useEffect(() => {
-    // Wait for Supabase session to load before making auth decisions
-    if (supaLoading) {
+    // Wait for auth to load before making auth decisions
+    if (authLoading) {
       return;
     }
     
-    if (!session) {
+    if (!_user) {
       router.push('/auth/signin?redirect=/shtel/dashboard');
       return;
     }
     
-    // Check if user is admin using role-based authentication
-    if (isAdmin) {
-      initializeForAdmin();
-      return;
-    }
-    
+    // Load store data
     loadStoreData();
-  }, [session, router, isAdmin, supaLoading, loadStoreData]);
+  }, [authLoading, _user, router, isAdmin, loadStoreData]);
 
 
 

@@ -3,6 +3,7 @@
 import { MapPin, Plus, SlidersHorizontal, Map, Filter } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 interface SubNavProps {
   variant?: 'simple' | 'eatery' | 'complex';
@@ -35,9 +36,8 @@ const SubNav: React.FC<SubNavProps> = ({
             <button
               onClick={onAddEatery || (async () => {
                 try {
-                  const { supabaseClient } = await import('@/lib/supabase/client-secure');
-                  const { data: { user } } = await supabaseClient.auth.getUser();
-                  if (!user) {
+                  // Check if user is authenticated via PostgreSQL auth
+                  if (!postgresAuth.isAuthenticated()) {
                     router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
                     return;
                   }
@@ -85,9 +85,8 @@ const SubNav: React.FC<SubNavProps> = ({
         icon: Plus,
         onClick: async () => {
           try {
-            const { supabaseClient } = await import('@/lib/supabase/client-secure');
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) {
+            // Check if user is authenticated via PostgreSQL auth
+            if (!postgresAuth.isAuthenticated()) {
               router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
               return;
             }
@@ -150,9 +149,8 @@ const SubNav: React.FC<SubNavProps> = ({
           <button
             onClick={onAddEatery || (async () => {
               try {
-                const { supabaseClient } = await import('@/lib/supabase/client-secure');
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) {
+                // Check if user is authenticated via PostgreSQL auth
+                if (!postgresAuth.isAuthenticated()) {
                   router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
                   return;
                 }

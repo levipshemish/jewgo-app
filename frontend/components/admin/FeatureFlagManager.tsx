@@ -5,8 +5,8 @@ import React from 'react';
 import { useState } from 'react';
 
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
-import { useSupabase } from '@/lib/contexts/SupabaseContext';
 import { useAuth } from '@/hooks/useAuth';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
 import { getBackendUrl } from '@/lib/api-config';
 
 interface FeatureFlagFormData {
@@ -21,8 +21,7 @@ interface FeatureFlagFormData {
 
 export default function FeatureFlagManager() {
   const { flags, environment, loading, error, refreshFlags } = useFeatureFlags({ autoRefresh: true });
-  const { session, loading: supaLoading } = useSupabase();
-  const { isAdmin } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [editingFlag, setEditingFlag] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState<FeatureFlagFormData>({
@@ -38,8 +37,11 @@ export default function FeatureFlagManager() {
 
   const environments = ['development', 'staging', 'production'];
 
-  // Show loading state while Supabase session is loading
-  if (supaLoading) {
+  // Check if user is admin based on roles
+  const isAdmin = user?.roles.some(role => role.role === 'admin' || role.role === 'super_admin') || false;
+
+  // Show loading state while auth is loading
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -48,7 +50,7 @@ export default function FeatureFlagManager() {
   }
 
   // Check if user is authenticated and has admin privileges
-  if (!session) {
+  if (!user) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center">
@@ -116,7 +118,7 @@ export default function FeatureFlagManager() {
 
     try {
       const backendUrl = getBackendUrl();
-      const accessToken = session?.access_token;
+      const accessToken = postgresAuth.accessToken;
 
       if (!accessToken) {
         throw new Error('Authentication required');
@@ -163,7 +165,7 @@ export default function FeatureFlagManager() {
 
     try {
       const backendUrl = getBackendUrl();
-      const accessToken = session?.access_token;
+      const accessToken = postgresAuth.accessToken;
 
       if (!accessToken) {
         throw new Error('Authentication required');
@@ -199,7 +201,7 @@ export default function FeatureFlagManager() {
 
     try {
       const backendUrl = getBackendUrl();
-      const accessToken = session?.access_token;
+      const accessToken = postgresAuth.accessToken;
 
       if (!accessToken) {
         throw new Error('Authentication required');

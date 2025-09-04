@@ -13,7 +13,24 @@ type Props = {
 };
 
 export default function RestaurantGrid({ items, loading, toFixedRating, onCardClick }: Props) {
-  if (!items || items.length === 0) return null;
+  if (!items || items.length === 0) {
+    if (loading) {
+      return (
+        <div 
+          className="restaurant-grid px-2 sm:px-4 lg:px-6"
+          role="grid"
+          aria-label="Restaurant listings"
+          aria-busy="true"
+        >
+          <div className="text-center py-12" role="status" aria-live="polite">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4" aria-hidden="true"></div>
+            <p className="text-gray-600">Loading restaurants...</p>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div 
@@ -51,6 +68,13 @@ export default function RestaurantGrid({ items, loading, toFixedRating, onCardCl
           />
         </div>
       ))}
+      
+      {loading && (
+        <div className="col-span-full text-center py-8" role="status" aria-live="polite">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-2" aria-hidden="true"></div>
+          <p className="text-sm text-gray-600">Loading more restaurants...</p>
+        </div>
+      )}
     </div>
   );
 }

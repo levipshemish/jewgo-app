@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
-import { useSupabase } from '@/lib/contexts/SupabaseContext';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 export interface FeatureFlagConfig {
   enabled: boolean;
@@ -29,7 +29,6 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
     onError
   } = options;
 
-  const { session } = useSupabase();
   const [flags, setFlags] = useState<Record<string, FeatureFlagConfig>>({});
   const [environment, setEnvironment] = useState<string>('');
   const [userId, setUserId] = useState<string | undefined>();
@@ -46,9 +45,12 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
         'Content-Type': 'application/json'
       };
       
-      // Include authorization header if session is available
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+      // Include authorization header if user is authenticated
+      if (postgresAuth.isAuthenticated()) {
+        const token = postgresAuth.accessToken;
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
       }
       
       const response = await fetch(`${backendUrl}/api/feature-flags`, {
@@ -71,7 +73,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [session, onError]);
+  }, [onError]);
 
   // Initial fetch
   useEffect(() => {

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/layout';
 import { useLocation } from '@/lib/contexts/LocationContext';
 // Wrapped locally for thinner client
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -22,7 +21,8 @@ import StatusInfo from './components/StatusInfo';
 import ErrorState from './components/ErrorState';
 import EateryFilterModal from './components/EateryFilterModal';
 import EateryLocationPrompt from './components/EateryLocationPrompt';
-import type { LightRestaurant, ApiResponse } from './types';
+import type { LightRestaurant } from './types';
+import { apiResponseSchema } from './schemas';
 
 // Lightweight shared types for the Eatery page live in ./types
 
@@ -142,18 +142,23 @@ export default function EateryPageClient() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: ApiResponse = await response.json();
+      const json = await response.json();
+      const parsed = apiResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        throw new Error(`Invalid API response: ${parsed.error.message}`);
+      }
+      const payload = parsed.data;
       
-      if (data.success) {
+      if (payload.success) {
         // Update total restaurants on first load
         if (offset === 0) {
-          setTotalRestaurants(data.data.total);
-          setRestaurants(data.data.restaurants);
+          setTotalRestaurants(payload.data.total);
+          setRestaurants(payload.data.restaurants as LightRestaurant[]);
         } else {
           // Append new restaurants, avoiding duplicates
           setRestaurants(prev => {
             const existingIds = new Set(prev.map(r => String(r.id)));
-            const newRestaurants = data.data.restaurants.filter(r => !existingIds.has(String(r.id)));
+            const newRestaurants = payload.data.restaurants.filter(r => !existingIds.has(String(r.id)));
             return [...prev, ...newRestaurants];
           });
         }
@@ -165,8 +170,8 @@ export default function EateryPageClient() {
         }
         
         return { 
-          appended: data.data.restaurants.length,
-          hasMore: offset + data.data.restaurants.length < data.data.total
+          appended: payload.data.restaurants.length,
+          hasMore: offset + payload.data.restaurants.length < payload.data.total
         };
       } else {
         throw new Error('Failed to fetch restaurants');
@@ -242,8 +247,8 @@ export default function EateryPageClient() {
         distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
-          Number(restaurant.latitude),
-          Number(restaurant.longitude)
+          restaurant.latitude as number,
+          restaurant.longitude as number
         );
       }
       return {
@@ -253,6 +258,12 @@ export default function EateryPageClient() {
     });
     // FIXED: Removed client-side sorting - backend handles this when sortBy=distance
   }, [restaurants, userLocation, permissionStatus]);
+
+  // Memoize the toFixedRating function to prevent recreation on every render
+  const toFixedRating = useCallback((val: number | string | undefined) => {
+    const n = typeof val === 'number' ? val : Number.parseFloat(String(val ?? ''));
+    return Number.isFinite(n) ? n.toFixed(1) : '';
+  }, []);
 
   // Initial data fetch/reset on query or filters change
   useEffect(() => {
@@ -340,12 +351,6 @@ export default function EateryPageClient() {
     setShowFilters(false);
   }, [setFilter, clearFilter, clearAllFilters, activeFilters]);
 
-  // FIXED: Rating normalization function
-  const toFixedRating = (val: number | string | undefined) => {
-    const n = typeof val === 'number' ? val : Number.parseFloat(String(val ?? ''));
-    return Number.isFinite(n) ? n.toFixed(1) : '';
-  };
-
   if (error) {
     return (
       <ErrorState 
@@ -408,6 +413,7 @@ export default function EateryPageClient() {
             shown={restaurants.length}
             total={totalRestaurants}
             showMoreHint={ENABLE_EATERY_INFINITE_SCROLL && state.hasMore}
+            loading={loading}
           />
         </>
       )}

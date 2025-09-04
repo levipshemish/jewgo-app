@@ -9,7 +9,7 @@ type Props = {
   onClose: () => void;
   onApplyFilters: (filters: AppliedFilters) => void;
   initialFilters: AppliedFilters;
-  userLocation: { latitude: number; longitude: number } | null;
+  userLocation: { latitude: number; longitude: number; timestamp: number } | null;
   locationLoading: boolean;
   onRequestLocation: () => void;
 };

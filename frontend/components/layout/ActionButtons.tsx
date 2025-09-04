@@ -2,6 +2,7 @@
 
 import { Map, Plus, SlidersHorizontal } from 'lucide-react';
 import React from 'react';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 interface ActionButtonsProps {
   onShowFilters: () => void;
@@ -20,10 +21,8 @@ export default function ActionButtons({
 
   const handleAddEateryClick = async () => {
     try {
-      // Dynamically import to avoid SSR issues
-          const { supabaseClient } = await import('@/lib/supabase/client-secure');
-    const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) {
+      // Check if user is authenticated via PostgreSQL auth
+      if (!postgresAuth.isAuthenticated()) {
         window.location.href = `/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`;
         return;
       }

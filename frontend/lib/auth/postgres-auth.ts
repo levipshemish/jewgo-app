@@ -10,6 +10,13 @@ interface AuthUser {
   name: string;
   email: string;
   email_verified: boolean;
+  full_name?: string;
+  username?: string;
+  avatar_url?: string;
+  is_guest?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
+  provider?: string;
   roles: Array<{
     role: string;
     level: number;
@@ -49,7 +56,7 @@ class PostgresAuthError extends Error {
 
 class PostgresAuthClient {
   private baseUrl: string;
-  private accessToken: string | null = null;
+  public accessToken: string | null = null;
   private refreshToken: string | null = null;
 
   constructor() {
@@ -63,7 +70,7 @@ class PostgresAuthClient {
     }
   }
 
-  private async request(
+  public async request(
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<Response> {
@@ -225,6 +232,22 @@ class PostgresAuthClient {
   }
 
   /**
+   * Update user data
+   */
+  async updateUser(data: { full_name?: string; [key: string]: any }): Promise<void> {
+    if (!this.accessToken) {
+      throw new PostgresAuthError('No access token available', 'NOT_AUTHENTICATED', 401);
+    }
+
+    const response = await this.request('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+
+    await this.handleResponse(response);
+  }
+
+  /**
    * Change user password
    */
   async changePassword(data: { current_password: string; new_password: string }): Promise<void> {
@@ -356,6 +379,53 @@ class PostgresAuthClient {
       }
       throw error;
     }
+  }
+
+  /**
+   * Sign out the current user
+   */
+  async signOut(): Promise<void> {
+    try {
+      // Call the backend logout endpoint if we have a token
+      if (this.accessToken) {
+        await this.request('/logout', {
+          method: 'POST',
+        });
+      }
+    } catch (error) {
+      // Even if the backend call fails, we should clear local tokens
+      console.warn('Backend logout failed, but clearing local tokens:', error);
+    } finally {
+      // Always clear local tokens
+      this.clearTokens();
+    }
+  }
+
+  /**
+   * Reset password using reset token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const response = await this.request('/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        reset_token: token,
+        new_password: newPassword,
+      }),
+    });
+
+    await this.handleResponse(response);
+  }
+
+  /**
+   * Request password reset
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const response = await this.request('/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+
+    await this.handleResponse(response);
   }
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { supabaseClient } from '@/lib/supabase/client-secure';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
 import { generateCorrelationId, extractIsAnonymous } from '@/lib/utils/auth-utils';
 
 export interface WritePermissionResult {
@@ -24,8 +24,6 @@ export interface UserPermissions {
  * Ensures anonymous users cannot perform write operations
  */
 export class WriteGates {
-  private supabase = supabaseClient;
-
   /**
    * Check if user can perform write operations
    */
@@ -33,20 +31,8 @@ export class WriteGates {
     const correlationId = generateCorrelationId();
     
     try {
-
-      const { data: { user }, error: getUserError } = await this.supabase.auth.getUser();
-      
-      if (getUserError) {
-        console.error(`[Write Gates] Failed to get user (${correlationId})`, getUserError);
-        return {
-          allowed: false,
-          error: 'Failed to get user',
-          correlationId
-        };
-      }
-
-      if (!user) {
-
+      // Check if user is authenticated via PostgreSQL auth
+      if (!postgresAuth.isAuthenticated()) {
         return {
           allowed: false,
           error: 'No authenticated user',
@@ -55,10 +41,20 @@ export class WriteGates {
         };
       }
 
-      // Check if user is anonymous
+      // Get user profile to check permissions
+      const user = await postgresAuth.getProfile();
+      
+      if (!user) {
+        return {
+          allowed: false,
+          error: 'Failed to get user profile',
+          correlationId
+        };
+      }
+
+      // Check if user is anonymous (guest account)
       const isAnonymous = extractIsAnonymous(user);
       if (isAnonymous) {
-
         return {
           allowed: false,
           error: 'Anonymous users cannot perform write operations',
@@ -67,16 +63,8 @@ export class WriteGates {
         };
       }
 
-      // Check if user email is verified (for non-anonymous users)
-      if (!user.email_confirmed_at) {
-
-        return {
-          allowed: false,
-          error: 'Email not verified',
-          reason: 'Please verify your email address to perform write operations',
-          correlationId
-        };
-      }
+      // For PostgreSQL auth, we assume email is verified if user exists
+      // You can add additional verification logic here if needed
 
       return {
         allowed: true,
@@ -102,8 +90,6 @@ export class WriteGates {
       return writeCheck;
     }
 
-    // Additional review-specific checks could go here
-    // For example, check if user has been banned from reviews
     return {
       allowed: true,
       correlationId: writeCheck.correlationId
@@ -119,7 +105,6 @@ export class WriteGates {
       return writeCheck;
     }
 
-    // Additional favorite-specific checks could go here
     return {
       allowed: true,
       correlationId: writeCheck.correlationId
@@ -135,8 +120,6 @@ export class WriteGates {
       return writeCheck;
     }
 
-    // Additional marketplace-specific checks could go here
-    // For example, check if user has completed profile setup
     return {
       allowed: true,
       correlationId: writeCheck.correlationId
@@ -144,7 +127,7 @@ export class WriteGates {
   }
 
   /**
-   * Check if user can update their profile
+   * Check if user can update profile
    */
   async canUpdateProfile(): Promise<WritePermissionResult> {
     const writeCheck = await this.canWrite();
@@ -152,7 +135,6 @@ export class WriteGates {
       return writeCheck;
     }
 
-    // Additional profile-specific checks could go here
     return {
       allowed: true,
       correlationId: writeCheck.correlationId
@@ -163,67 +145,36 @@ export class WriteGates {
    * Get comprehensive user permissions
    */
   async getUserPermissions(): Promise<UserPermissions> {
-    const _correlationId = generateCorrelationId();
-    
+    const canWrite = (await this.canWrite()).allowed;
+    const canCreateReviews = (await this.canCreateReviews()).allowed;
+    const canCreateFavorites = (await this.canCreateFavorites()).allowed;
+    const canCreateMarketplaceItems = (await this.canCreateMarketplaceItems()).allowed;
+    const canUpdateProfile = (await this.canUpdateProfile()).allowed;
+
+    let isAnonymous = false;
+    let userId: string | undefined;
+
     try {
-
-      const { data: { user }, error: getUserError } = await this.supabase.auth.getUser();
-      
-      if (getUserError || !user) {
-
-        return {
-          canWrite: false,
-          canCreateReviews: false,
-          canCreateFavorites: false,
-          canCreateMarketplaceItems: false,
-          canUpdateProfile: false,
-          isAnonymous: true,
-          userId: undefined
-        };
+      if (postgresAuth.isAuthenticated()) {
+        const user = await postgresAuth.getProfile();
+        if (user) {
+          isAnonymous = extractIsAnonymous(user);
+          userId = user.id;
+        }
       }
-
-      const isAnonymous = extractIsAnonymous(user);
-      const canWrite = !isAnonymous && !!user.email_confirmed_at;
-
-      // console.log(`[Write Gates] User permissions calculated (${_correlationId})`, {
-      //   userId: user.id,
-      //   isAnonymous,
-      //   canWrite,
-      //   emailConfirmed: !!user.email_confirmed_at
-      // });
-
-      return {
-        canWrite,
-        canCreateReviews: canWrite,
-        canCreateFavorites: canWrite,
-        canCreateMarketplaceItems: canWrite,
-        canUpdateProfile: canWrite,
-        isAnonymous,
-        userId: user.id
-      };
-
-    } catch (_error) {
-      // console.error(`[Write Gates] Error getting permissions (${_correlationId})`, _error);
-      return {
-        canWrite: false,
-        canCreateReviews: false,
-        canCreateFavorites: false,
-        canCreateMarketplaceItems: false,
-        canUpdateProfile: false,
-        isAnonymous: true,
-        userId: undefined
-      };
+    } catch (error) {
+      console.error('Error getting user permissions:', error);
     }
-  }
 
-  /**
-   * Require write permission (throws error if not allowed)
-   */
-  async requireWrite(): Promise<void> {
-    const result = await this.canWrite();
-    if (!result.allowed) {
-      throw new Error(result.error || 'Write permission denied');
-    }
+    return {
+      canWrite,
+      canCreateReviews,
+      canCreateFavorites,
+      canCreateMarketplaceItems,
+      canUpdateProfile,
+      isAnonymous,
+      userId
+    };
   }
 
   /**

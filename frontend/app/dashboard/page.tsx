@@ -41,7 +41,7 @@ function DashboardContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Roles</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.roles.join(', ')}</p>
+                <p className="mt-1 text-sm text-gray-900">{user?.roles.map(role => role.role).join(', ')}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Verified</label>

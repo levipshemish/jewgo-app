@@ -30,7 +30,7 @@ export default function ProtectedRoute({
   useEffect(() => {
     if (!loading && user && requiredRoles.length > 0) {
       const hasRequiredRole = requiredRoles.some(role => 
-        user.roles.includes(role)
+        user.roles.some(userRole => userRole.role === role)
       );
       
       if (!hasRequiredRole) {
@@ -60,7 +60,7 @@ export default function ProtectedRoute({
   // Check role requirements
   if (!loading && user && requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => 
-      user.roles.includes(role)
+      user.roles.some(userRole => userRole.role === role)
     );
     
     if (!hasRequiredRole) {

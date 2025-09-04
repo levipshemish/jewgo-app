@@ -4,11 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
-import { Session } from '@supabase/supabase-js';
 
-import { supabaseClient } from '@/lib/supabase/client-secure';
-import { transformSupabaseUserWithRoles } from '@/lib/utils/auth-utils';
-import { type TransformedUser } from '@/lib/types/supabase-auth';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
+import { type AuthUser } from '@/lib/auth/postgres-auth';
 
 interface MarketplaceHeaderProps {
   onSearch?: (query: string) => void;
@@ -16,7 +14,7 @@ interface MarketplaceHeaderProps {
 }
 
 export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) {
-  const [user, setUser] = useState<TransformedUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
@@ -24,14 +22,9 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        
-        if (session?.user) {
-          const transformedUser = await transformSupabaseUserWithRoles(session.user, {
-            includeRoles: !!session?.access_token,
-            userToken: session?.access_token || undefined
-          });
-          setUser(transformedUser);
+        if (postgresAuth.isAuthenticated()) {
+          const profile = await postgresAuth.getProfile();
+          setUser(profile);
         } else {
           setUser(null);
         }
@@ -45,23 +38,10 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
 
     checkAuth();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
-      async (event: string, session: Session | null) => {
-        if (session?.user) {
-          const transformedUser = await transformSupabaseUserWithRoles(session.user, {
-            includeRoles: !!session?.access_token,
-            userToken: session?.access_token || undefined
-          });
-          setUser(transformedUser);
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    );
+    // Set up periodic auth checks since we don't have real-time subscriptions
+    const interval = setInterval(checkAuth, 30000); // Check every 30 seconds
 
-    return () => subscription.unsubscribe();
+    return () => clearInterval(interval);
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {

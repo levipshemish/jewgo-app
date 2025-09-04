@@ -33,7 +33,8 @@ export { handleRestaurantStatusChange, validateRestaurantPermissions } from './s
 // Common Types
 export type { RestaurantStatusChangeParams, StatusChangeResult } from './server/restaurant-status-utils';
 
+// PostgreSQL Authentication (NEW - Migration from Supabase)
+export { postgresAuth, type AuthUser } from './auth/postgres-auth';
+
 // Re-export other commonly used utilities as needed
 export { prisma } from './db/prisma';
-export { supabaseClient } from './supabase/client-secure';
-export { createServerSupabaseClient } from './supabase/server';

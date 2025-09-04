@@ -1,5 +1,4 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Permission } from '@/lib/constants/permissions';
 
 // Mock admin user for testing
 export const mockAdmin = () => {
@@ -9,31 +8,15 @@ export const mockAdmin = () => {
       id: 'test-admin-id',
       email: 'admin@jewgo.com',
       name: 'Admin User',
-      username: 'admin',
-      provider: 'email' as const,
-      avatar_url: null,
-      providerInfo: {
-        name: 'email',
-        icon: '📧',
-        color: '#007bff',
-        displayName: 'Email'
-      },
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-      isEmailVerified: true,
-      isPhoneVerified: false,
-      role: 'admin',
-      permissions: ['restaurant:edit', 'restaurant:delete', 'user:manage'] as Permission[],
-      subscriptionTier: 'admin',
-      adminRole: 'system_admin',
-      roleLevel: 3,
-      isSuperAdmin: true
+      full_name: 'Admin User',
+      email_verified: true,
+      roles: [
+        { role: 'admin', level: 3, granted_at: '2024-01-01T00:00:00Z' }
+      ]
     },
-    isLoading: false,
+    loading: false,
     error: null,
-    isAnonymous: false,
-    isAnonymousLoading: false,
-    isAdmin: true,
+    isAuthenticated: jest.fn(() => true),
     signOut: jest.fn(),
     refreshUser: jest.fn(),
     signInAnonymously: jest.fn(),
@@ -51,31 +34,15 @@ export const mockUser = () => {
       id: 'test-user-id',
       email: 'user@example.com',
       name: 'Regular User',
-      username: 'user',
-      provider: 'email' as const,
-      avatar_url: null,
-      providerInfo: {
-        name: 'email',
-        icon: '📧',
-        color: '#007bff',
-        displayName: 'Email'
-      },
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-      isEmailVerified: true,
-      isPhoneVerified: false,
-      role: 'user',
-      permissions: ['restaurant:view'] as Permission[],
-      subscriptionTier: 'free',
-      adminRole: null,
-      roleLevel: 1,
-      isSuperAdmin: false
+      full_name: 'Regular User',
+      email_verified: true,
+      roles: [
+        { role: 'user', level: 1, granted_at: '2024-01-01T00:00:00Z' }
+      ]
     },
-    isLoading: false,
+    loading: false,
     error: null,
-    isAnonymous: false,
-    isAnonymousLoading: false,
-    isAdmin: false,
+    isAuthenticated: jest.fn(() => true),
     signOut: jest.fn(),
     refreshUser: jest.fn(),
     signInAnonymously: jest.fn(),
@@ -90,49 +57,9 @@ export const mockUnauthenticated = () => {
   const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
   mockUseAuth.mockReturnValue({
     user: null,
-    isLoading: false,
+    loading: false,
     error: null,
-    isAnonymous: false,
-    isAnonymousLoading: false,
-    isAdmin: false,
-    signOut: jest.fn(),
-    refreshUser: jest.fn(),
-    signInAnonymously: jest.fn(),
-    verifyTokenRotationStatus: jest.fn(),
-    hasPermission: jest.fn(() => false),
-    hasMinimumRoleLevel: jest.fn(() => false)
-  });
-};
-
-// Mock loading state for testing
-export const mockLoading = () => {
-  const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
-  mockUseAuth.mockReturnValue({
-    user: null,
-    isLoading: true,
-    error: null,
-    isAnonymous: false,
-    isAnonymousLoading: false,
-    isAdmin: false,
-    signOut: jest.fn(),
-    refreshUser: jest.fn(),
-    signInAnonymously: jest.fn(),
-    verifyTokenRotationStatus: jest.fn(),
-    hasPermission: jest.fn(() => false),
-    hasMinimumRoleLevel: jest.fn(() => false)
-  });
-};
-
-// Reset mock to default state
-export const resetAuthMock = () => {
-  const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
-  mockUseAuth.mockReturnValue({
-    user: null,
-    isLoading: false,
-    error: null,
-    isAnonymous: false,
-    isAnonymousLoading: false,
-    isAdmin: false,
+    isAuthenticated: jest.fn(() => false),
     signOut: jest.fn(),
     refreshUser: jest.fn(),
     signInAnonymously: jest.fn(),

@@ -5,9 +5,16 @@ import { useParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { ListingPage } from '@/components/listing-details-utility/listing-page'
 import { mapEateryToListingData } from '@/utils/eatery-mapping'
-import { EateryDB, UserLocation } from '@/types/listing'
+import { EateryDB } from '@/types/listing'
 import Link from 'next/link'
+import ErrorBoundary from '../components/ErrorBoundary'
 
+// Standardized location interface matching LocationContext
+interface UserLocation {
+  latitude: number;
+  longitude: number;
+  timestamp: number;
+}
 
 /**
  * Parse hours from the backend JSON format into EateryDB format
@@ -52,14 +59,10 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
     }
 
     weekdayText.forEach((dayText: string) => {
-      // eslint-disable-next-line no-console
-      console.log('Parsing day text:', dayText)
       const dayMatch = dayText.match(/^(\w+):\s*(.+)$/i)
       if (dayMatch) {
         const dayName = dayMatch[1].toLowerCase()
         const rawTimeText = dayMatch[2].trim()
-        // eslint-disable-next-line no-console
-        console.log('Day name:', dayName, 'Raw time text:', rawTimeText)
         
         if (dayMap[dayName]) {
           if (rawTimeText.toLowerCase() === 'closed') {
@@ -74,14 +77,9 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
               .replace(/\s+/g, ' ') // normalize multiple spaces
               .trim()
             
-            // eslint-disable-next-line no-console
-            console.log('Normalized time text:', normalizedTimeText)
-            
             // More flexible regex to handle various time formats
             const timeMatch = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
             if (timeMatch) {
-              // eslint-disable-next-line no-console
-              console.log('Time match found:', timeMatch)
               hours[dayMap[dayName]] = {
                 open: `${timeMatch[1]}:${timeMatch[2]} ${timeMatch[3]}`,
                 close: `${timeMatch[4]}:${timeMatch[5]} ${timeMatch[6]}`,
@@ -173,12 +171,10 @@ export default function EateryNamePage() {
   const fetchReviews = async (restaurantId: string, offset: number = 0, limit: number = 10) => {
     try {
       setReviewsLoading(true)
-      console.log('Fetching reviews for restaurant:', restaurantId, 'offset:', offset, 'limit:', limit)
       
       // Use the frontend API route for reviews
       const response = await fetch(`/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
       if (!response.ok) {
-        console.log('No reviews found or error fetching reviews')
         if (offset === 0) {
           setReviews([])
         }
@@ -186,12 +182,8 @@ export default function EateryNamePage() {
       }
       
       const data = await response.json()
-      console.log('Received reviews data:', data)
-      console.log('Response status:', response.status)
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
       
       if (data.success && data.data && data.data.reviews) {
-        console.log('Setting reviews:', data.data.reviews)
         if (offset === 0) {
           // First page - replace all reviews
           setReviews(data.data.reviews)
@@ -203,8 +195,6 @@ export default function EateryNamePage() {
         // Store pagination info
         setReviewsPagination(data.data.pagination)
       } else {
-        console.log('No reviews found in response')
-        console.log('Data structure:', JSON.stringify(data, null, 2))
         if (offset === 0) {
           setReviews([])
         }
@@ -219,32 +209,19 @@ export default function EateryNamePage() {
     }
   }
 
-  console.log('=== EATERY NAME PAGE DEBUG ===')
-  console.log('Page: Eatery Name Page')
-  console.log('Eatery Name:', eateryName)
-  console.log('Loading:', loading)
-  console.log('Error:', error)
-  console.log('Raw eatery data:', eatery)
-  console.log('User location:', userLocation)
-  console.log('Mapped listing data:', eatery ? mapEateryToListingData(eatery, userLocation) : undefined)
-  console.log('==========================')
-
   // Fetch eatery data from backend API
   useEffect(() => {
     const fetchEateryData = async () => {
       try {
-        console.log('Starting to fetch eatery data for:', eateryName)
         setLoading(true)
         setError(null)
 
         // Try to find the restaurant by name first (for URL slug to restaurant mapping)
-        console.log('Fetching restaurants list...')
+        
         // Use the frontend API route which handles the backend connection
         const searchUrl = `/api/restaurants?limit=1000`
-        console.log('Fetching from:', searchUrl)
         
         const searchResponse = await fetch(searchUrl)
-        console.log('Search response status:', searchResponse.status)
         
         if (!searchResponse.ok) {
           const errorText = await searchResponse.text()
@@ -254,11 +231,9 @@ export default function EateryNamePage() {
         
         const searchData = await searchResponse.json()
         const restaurants = searchData.restaurants || []
-        console.log('Found', restaurants.length, 'restaurants')
         
         // Try to find the restaurant by name (case-insensitive, handle apostrophes and hyphens)
         const normalizedEateryName = eateryName.toLowerCase().replace(/['-]/g, '')
-        console.log('Looking for restaurant with normalized name:', normalizedEateryName)
         
         const foundRestaurant = restaurants.find((restaurant: any) => {
           if (!restaurant.name) return false
@@ -277,12 +252,6 @@ export default function EateryNamePage() {
           // Normalize both names for comparison (remove apostrophes and hyphens)
           const normalizedRestaurantName = restaurantName.replace(/['-]/g, '')
           
-          console.log(`Comparing URL slug: "${eateryName}" with restaurant: "${restaurantName}"`)
-          console.log(`  - URL with spaces: "${eateryNameWithSpaces}"`)
-          console.log(`  - URL with apostrophes: "${eateryNameWithApostrophes}"`)
-          console.log(`  - Normalized restaurant name: "${normalizedRestaurantName}"`)
-          console.log(`  - Normalized eatery name: "${normalizedEateryName}"`)
-          
           // Check multiple variations
           return restaurantName === eateryNameWithSpaces ||
                  restaurantName === eateryNameWithApostrophes ||
@@ -297,24 +266,18 @@ export default function EateryNamePage() {
         })
 
         if (!foundRestaurant) {
-          console.log('Restaurant not found. Available restaurants:', restaurants.map((r: any) => r.name))
-          
           // Instead of throwing an error, set a specific "not found" state
           setError('restaurant_not_found')
           setLoading(false)
           return
         }
 
-        console.log('Found restaurant:', foundRestaurant.name, 'with ID:', foundRestaurant.id)
-
         // Now use the backend's ID-based search utility
-        console.log('Fetching restaurant details...')
+        
         // Use the frontend API route for details
         const detailUrl = `/api/restaurants/${foundRestaurant.id}`
-        console.log('Fetching details from:', detailUrl)
         
         const detailResponse = await fetch(detailUrl)
-        console.log('Detail response status:', detailResponse.status)
         
         if (!detailResponse.ok) {
           const errorText = await detailResponse.text()
@@ -323,7 +286,6 @@ export default function EateryNamePage() {
         }
         
         const detailData = await detailResponse.json()
-        console.log('Received restaurant details:', detailData)
         
         // Convert restaurant data to EateryDB format
         const eateryData: EateryDB = {
@@ -396,7 +358,6 @@ export default function EateryNamePage() {
           }
         }
 
-        console.log('Converted eatery data:', eateryData)
         setEatery(eateryData)
         setLoading(false)
         
@@ -442,8 +403,9 @@ export default function EateryNamePage() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          timestamp: Date.now()
         });
         setLocationError(null);
         setLocationPermission('granted');
@@ -507,8 +469,9 @@ export default function EateryNamePage() {
                 (position) => {
                   console.log('Location updated:', position.coords);
                   setUserLocation({
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    timestamp: Date.now()
                   });
                   setLocationError(null);
                 },
@@ -558,19 +521,6 @@ export default function EateryNamePage() {
 
   // Map eatery data to listing format
   const listingData = eatery ? mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission) : undefined
-
-  // Debug logging
-  console.log('=== EATERY NAME PAGE DEBUG ===')
-  console.log('Page: Eatery Name Page')
-  console.log('Eatery Name:', eateryName)
-  console.log('Loading:', loading)
-  console.log('Error:', error)
-  console.log('Raw eatery data:', eatery)
-  console.log('User location:', userLocation)
-  console.log('Location permission:', locationPermission)
-  console.log('Location error:', locationError)
-  console.log('Mapped listing data:', listingData)
-  console.log('==========================')
 
   // Render loading state
   if (loading) {
@@ -656,7 +606,6 @@ export default function EateryNamePage() {
   if (eatery) {
     try {
       const finalListingData = mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission)
-      console.log('Final listing data with reviews:', finalListingData)
       
       // Add pagination and load more props
       const listingDataWithPagination = {

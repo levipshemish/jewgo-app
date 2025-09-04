@@ -6,12 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { supabaseClient } from "@/lib/supabase/client-secure";
-import { 
-  isSupabaseConfigured, 
-  createMockUser
-} from "@/lib/utils/auth-utils-client";
-import { type TransformedUser } from "@/lib/types/supabase-auth";
+import { postgresAuth } from "@/lib/auth/postgres-auth";
+import { type AuthUser } from "@/lib/auth/postgres-auth";
 import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -22,7 +18,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 export const dynamic = 'force-dynamic';
 
 export default function SettingsPage() {
-  const [user, setUser] = useState<TransformedUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("account");
   const router = useRouter();
@@ -34,18 +30,13 @@ export default function SettingsPage() {
       let redirected = false;
       let userAuthenticated = false;
       try {
-        // Use server-side API to get user data instead of client-side Supabase
-        const response = await fetch('/api/auth/sync-user', {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData.user) {
+        // Check if user is authenticated via PostgreSQL auth
+        if (postgresAuth.isAuthenticated()) {
+          const profile = await postgresAuth.getProfile();
+          if (profile) {
             // Check if user is a guest user (no email, provider unknown)
             // Guest users should be redirected to sign in for protected pages
-            const isGuest = !userData.user.email && userData.user.provider === 'unknown';
+            const isGuest = !profile.email || profile.is_guest === true;
             
             if (isGuest) {
               // Guest users should sign in to access settings
@@ -56,23 +47,12 @@ export default function SettingsPage() {
             
             // User is authenticated with email (not a guest)
             if (isMounted) {
-              setUser(userData.user);
+              setUser(profile);
               setIsLoading(false);
               userAuthenticated = true;
             }
             return;
           }
-        }
-
-        // If no user data, check if Supabase is configured for development fallback
-        if (!isSupabaseConfigured()) {
-          // For development, create a mock user
-          if (isMounted) {
-            setUser(createMockUser());
-            setIsLoading(false);
-            userAuthenticated = true;
-          }
-          return;
         }
 
         // No user found, will show access denied
@@ -199,26 +179,22 @@ export default function SettingsPage() {
   );
 }
 
-function AccountSettings({ user }: { user: TransformedUser }) {
+function AccountSettings({ user }: { user: AuthUser }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(user.name || "");
+  const [name, setName] = useState(user.full_name || "");
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { error } = await supabaseClient.auth.updateUser({
-        data: { full_name: name }
+      await postgresAuth.updateUser({
+        full_name: name
       });
-
-      if (error) {
-        throw error;
-      }
 
       setIsEditing(false);
       // Update local state
-      setCurrentUser(prev => ({ ...prev, name }));
+      setCurrentUser(prev => ({ ...prev, full_name: name }));
       // You might want to show a success message here
     } catch (error) {
       appLogger.error('Failed to update profile', { error: String(error) });
@@ -229,7 +205,7 @@ function AccountSettings({ user }: { user: TransformedUser }) {
   };
 
   const handleAvatarChange = (_avatarUrl: string) => {
-    setCurrentUser(prev => ({ ...prev, avatar_url: _avatarUrl || null }));
+    setCurrentUser(prev => ({ ...prev, avatar_url: _avatarUrl || undefined }));
   };
 
   return (
@@ -296,105 +272,71 @@ function AccountSettings({ user }: { user: TransformedUser }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Authentication Provider</label>
-          <p className="mt-1 text-sm text-gray-900 capitalize">{currentUser.provider}</p>
+          <p className="mt-1 text-sm text-gray-900 capitalize">{currentUser.provider || 'PostgreSQL'}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function ProfileSettings({ user }: { user: TransformedUser }) {
+function ProfileSettings({ user }: { user: AuthUser }) {
   return (<div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
-        <p className="text-sm text-gray-500">Update your profile details and preferences.</p>
-      </div>
-      
-      {/* Avatar Upload Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-sm font-medium text-gray-900 mb-4">Profile Picture</h4>
-        <ClickableAvatarUpload 
-          currentAvatarUrl={user.avatar_url}
-          onAvatarChange={(avatarUrl) => {
-            // Handle avatar change - you might want to update the user state here
-            appLogger.info('Avatar changed', { avatarUrl });
-          }}
-          size="lg"
-        />
-      </div>
-      
-      <ProfileEditForm />
-      
-      {/* Public Profile Link */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">Public Profile</h4>
-        <p className="text-sm text-blue-700 mb-3">
-          Share your profile with others. Your public profile will be available at:
-        </p>
-        <div className="flex items-center gap-2">
-          <code className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-            /u/{user.username || 'your-username'}
-          </code>
-          {user.username && (
-            <Link
-              href={`/u/${user.username}`}
-              target="_blank"
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              View Profile →
-            </Link>
-          )}
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
+          <p className="text-sm text-gray-500">Manage your profile details and preferences.</p>
         </div>
-      </div>
-    </div>
-  );
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Display Name</label>
+            <p className="mt-1 text-sm text-gray-900">{user.full_name || "Not set"}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <p className="mt-1 text-sm text-gray-900">{user.username || "Not set"}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Profile Picture</label>
+            <div className="mt-2">
+              <ClickableAvatarUpload
+                currentAvatarUrl={user.avatar_url}
+                onAvatarChange={() => {}}
+                size="md"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <ProfileEditForm />
+        </div>
+      </div>);
 }
 
 function SecuritySettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900">Security</h3>
-        <p className="text-sm text-gray-500">Manage your account security settings.</p>
+        <h3 className="text-lg font-medium text-gray-900">Security Settings</h3>
+        <p className="text-sm text-gray-500">Manage your account security and authentication.</p>
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">Password</h4>
-            <p className="text-sm text-gray-500">Update your password regularly for security</p>
-          </div>
-          <button
-            onClick={() => window.location.href = "/auth/forgot-password"}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Change Password</label>
+          <p className="mt-1 text-sm text-gray-500">Update your password to keep your account secure.</p>
+          <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
             Change Password
           </button>
         </div>
 
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">Two-Factor Authentication</h4>
-            <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
-          </div>
-          <button
-            disabled
-            className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
-          >
-            Coming Soon
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">Active Sessions</h4>
-            <p className="text-sm text-gray-500">Manage your active login sessions</p>
-          </div>
-          <button
-            disabled
-            className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
-          >
-            Coming Soon
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Two-Factor Authentication</label>
+          <p className="mt-1 text-sm text-gray-500">Add an extra layer of security to your account.</p>
+          <button className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+            Enable 2FA
           </button>
         </div>
       </div>
@@ -403,100 +345,70 @@ function SecuritySettings() {
 }
 
 function NotificationSettings() {
-  const [preferences, setPreferences] = useState({
-    specials: true,
-    newRestaurants: true,
-    menuUpdates: true,
-    shabbatReminders: false,
-    certificationUpdates: false,
-  });
-
-  const handlePreferenceChange = (_key: string, _value: boolean) => {
-    setPreferences(prev => ({ ...prev, [_key]: _value }));
-  };
-
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900">Notification Preferences</h3>
-        <p className="text-sm text-gray-500">Choose what notifications you want to receive.</p>
+        <p className="text-sm text-gray-500">Choose how and when you want to be notified.</p>
       </div>
 
       <div className="space-y-4">
-        {Object.entries(preferences).map(([key, value]) => (
-          <div key={key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div>
-              <h4 className="text-sm font-medium text-gray-900">
-                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-              </h4>
-              <p className="text-sm text-gray-500">
-                {key === 'specials' && 'Get notified about special offers and deals'}
-                {key === 'newRestaurants' && 'Be informed when new restaurants are added'}
-                {key === 'menuUpdates' && 'Receive updates when restaurant menus change'}
-                {key === 'shabbatReminders' && 'Get reminders about Shabbat hours'}
-                {key === 'certificationUpdates' && 'Stay updated on kosher certification changes'}
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={value}
-                onChange={(e) => handlePreferenceChange(key, e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-medium text-gray-700">Email Notifications</label>
+            <p className="text-sm text-gray-500">Receive updates via email</p>
           </div>
-        ))}
-      </div>
+          <input type="checkbox" className="rounded" defaultChecked />
+        </div>
 
-      <div className="pt-4">
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Save Preferences
-        </button>
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-medium text-gray-700">Push Notifications</label>
+            <p className="text-sm text-gray-500">Receive updates in real-time</p>
+          </div>
+          <input type="checkbox" className="rounded" />
+        </div>
       </div>
     </div>
   );
 }
 
-function PrivacySettings({ user: _user }: { user: TransformedUser }) {
+function PrivacySettings({ user: _user }: { user: AuthUser }) {
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900">Privacy Settings</h3>
-        <p className="text-sm text-gray-500">Control your privacy and data settings.</p>
+        <p className="text-sm text-gray-500">Control your privacy and data sharing preferences.</p>
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">Data Export</h4>
-            <p className="text-sm text-gray-500">Download a copy of your personal data</p>
-          </div>
-          <button
-            disabled
-            className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
-          >
-            Coming Soon
-          </button>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Profile Visibility</label>
+          <p className="mt-1 text-sm text-gray-500">Choose who can see your profile information.</p>
+          <select className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+            <option>Public</option>
+            <option>Friends Only</option>
+            <option>Private</option>
+          </select>
         </div>
 
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">Delete Account</h4>
-            <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
-          </div>
-          <button
-            disabled
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
-          >
-            Coming Soon
-          </button>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Profile URL</label>
+          <p className="mt-1 text-sm text-gray-900">
+            /u/{_user.username || 'your-username'}
+          </p>
+          {_user.username && (
+            <p className="mt-1 text-xs text-gray-500">
+              <a
+                href={`/u/${_user.username}`}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                View your public profile
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>
   );
 }
-/* eslint-disable no-console */

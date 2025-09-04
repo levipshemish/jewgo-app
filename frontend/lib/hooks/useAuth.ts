@@ -1,116 +1,97 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabaseClient } from '@/lib/supabase/client-secure';
-import { User } from '@supabase/supabase-js';
+/**
+ * Custom hook for authentication state management using PostgreSQL authentication
+ * Replaces Supabase authentication with PostgreSQL-based system
+ */
 
-export type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 export interface UseAuthReturn {
-  authState: AuthState;
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
   error: Error | null;
+  isAnonymous: boolean;
   signOut: () => Promise<void>;
+  signInAnonymously: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
+type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
+
 export function useAuth(): UseAuthReturn {
   const [authState, setAuthState] = useState<AuthState>('loading');
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const router = useRouter();
+  const mountedRef = useRef(true);
 
-  const checkAuth = useCallback(async () => {
+  const refreshUser = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data: { user: authUser }, error: authError } = await supabaseClient.auth.getUser();
-      
-      if (authError) {
-        throw authError;
+      if (postgresAuth.isAuthenticated()) {
+        const userProfile = await postgresAuth.getProfile();
+        setUser(userProfile);
+        setAuthState('authenticated');
+        setIsAnonymous(false);
+      } else {
+        setUser(null);
+        setAuthState('unauthenticated');
+        setIsAnonymous(false);
       }
-      
-      setUser(authUser);
-      setAuthState(authUser ? 'authenticated' : 'unauthenticated');
     } catch (err) {
-      const authError = err instanceof Error ? err : new Error('Authentication check failed');
-      setError(authError);
+      console.error('Failed to refresh user:', err);
+      setUser(null);
       setAuthState('unauthenticated');
-    } finally {
-      setIsLoading(false);
+      setIsAnonymous(false);
     }
   }, []);
 
   const signOut = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { error: signOutError } = await supabaseClient.auth.signOut();
-      
-      if (signOutError) {
-        throw signOutError;
-      }
-      
+      await postgresAuth.signOut();
       setUser(null);
       setAuthState('unauthenticated');
+      setIsAnonymous(false);
+      router.push('/auth/signin');
     } catch (err) {
-      const signOutError = err instanceof Error ? err : new Error('Sign out failed');
-      setError(signOutError);
-    } finally {
-      setIsLoading(false);
+      console.error('Sign out failed:', err);
+      // Still clear local state even if backend call fails
+      setUser(null);
+      setAuthState('unauthenticated');
+      setIsAnonymous(false);
+      router.push('/auth/signin');
     }
-  }, []);
+  }, [router]);
 
-  const refreshUser = useCallback(async () => {
-    await checkAuth();
-  }, [checkAuth]);
+  const signInAnonymously = useCallback(async () => {
+    try {
+      // For PostgreSQL auth, we'll redirect to signin page
+      // Anonymous sign-in can be implemented later if needed
+      router.push('/auth/signin');
+    } catch (err) {
+      console.error('Anonymous sign-in failed:', err);
+      setError(err as Error);
+    }
+  }, [router]);
 
-  // Initial auth check
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    refreshUser();
+  }, [refreshUser]);
 
-  // Listen for auth state changes
   useEffect(() => {
-    let isMounted = true;
-
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
-      async (event: string, session: { user?: Record<string, unknown> } | null) => {
-        if (!isMounted) {
-          return;
-        }
-
-        try {
-          setError(null);
-          
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            setUser(session?.user as unknown as User || null);
-            setAuthState(session?.user ? 'authenticated' : 'unauthenticated');
-          } else if (event === 'SIGNED_OUT') {
-            setUser(null);
-            setAuthState('unauthenticated');
-          }
-        } catch (err) {
-          const stateChangeError = err instanceof Error ? err : new Error('Auth state change error');
-          setError(stateChangeError);
-          setAuthState('unauthenticated');
-        }
-      }
-    );
-
     return () => {
-      isMounted = false;
-      subscription.unsubscribe();
+      mountedRef.current = false;
     };
   }, []);
 
   return {
-    authState,
     user,
-    isLoading,
+    isLoading: authState === 'loading',
     error,
+    isAnonymous,
     signOut,
+    signInAnonymously,
     refreshUser,
   };
 }

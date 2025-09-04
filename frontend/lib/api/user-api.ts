@@ -3,10 +3,10 @@
  * 
  * This module provides a client-side API for interacting with user-specific
  * backend endpoints. It automatically handles authentication by including
- * the user's JWT token from Supabase.
+ * the user's JWT token from PostgreSQL authentication.
  */
 
-import { supabaseClient } from '@/lib/supabase/client-secure';
+import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 // Base API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
@@ -16,8 +16,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_
  */
 async function getAuthToken(): Promise<string | null> {
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    return session?.access_token || null;
+    return postgresAuth.accessToken || null;
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;
