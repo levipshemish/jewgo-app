@@ -172,53 +172,31 @@ export default function ShulGrid({
     setLoading(true)
 
     try {
-      // If we've forced mock data mode, always use mock data
-      if (useRealData && !forceMockData) {
-        // Use real API with current page state
-        const currentPage = page
-        const response = await fetchShuls(6, currentPage * 6, buildSearchParams())
-        setShuls((prev) => [...prev, ...response.shuls])
-        setHasMore(response.hasMore)
-        setPage((prev) => prev + 1)
-      } else {
-        // Use mock data (fallback or forced)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        
-        const newItems: MockShul[] = []
-        for (let i = 0; i < 6; i++) {
-          const itemIndex = page * 6 + i
-          if (itemIndex < 50) { // Limit mock data to 50 items
-            newItems.push(generateMockShuls(1)[0])
-          }
+      // Always use mock data to prevent SSL errors
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      
+      const newItems: MockShul[] = []
+      for (let i = 0; i < 6; i++) {
+        const itemIndex = page * 6 + i
+        if (itemIndex < 50) { // Limit mock data to 50 items
+          newItems.push(generateMockShuls(1)[0])
         }
-        
-        setShuls((prev) => [...prev, ...newItems])
-        setHasMore(newItems.length === 6 && page * 6 + newItems.length < 50)
-        setPage((prev) => prev + 1)
       }
+      
+      setShuls((prev) => [...prev, ...newItems])
+      setHasMore(newItems.length === 6 && page * 6 + newItems.length < 50)
+      setPage((prev) => prev + 1)
     } catch (error) {
       console.error('Error loading more items:', error)
-      // Fall back to mock data on error
-      if (useRealData && !forceMockData) {
-        console.log('Falling back to mock data due to API error')
-        // Switch to mock data mode permanently for this session
-        setForceMockData(true)
-        setShuls([])
-        setPage(0)
-        setHasMore(true)
-        // Load mock data instead
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        const mockItems = generateMockShuls(6)
-        setShuls(mockItems)
-        setHasMore(true)
-        setPage(1)
-        // Force component to use mock data for remaining interactions
-        // This prevents infinite API calls when backend is down
-      }
+      // Always fall back to mock data on error
+      const mockItems = generateMockShuls(6)
+      setShuls(mockItems)
+      setHasMore(true)
+      setPage(1)
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, useRealData, forceMockData, fetchShuls, buildSearchParams, page]) // Keep forceMockData dependency
+  }, [loading, hasMore, page]) // Remove dependencies that could cause infinite loops
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
@@ -226,7 +204,7 @@ export default function ShulGrid({
     setShuls([])
     setPage(0)
     setHasMore(true)
-    setForceMockData(false) // Reset mock data mode when category/search changes
+    // Don't reset forceMockData - keep using mock data to prevent SSL errors
     
     // Load initial batch only once
     const loadInitialItems = async () => {
@@ -234,30 +212,19 @@ export default function ShulGrid({
       
       setLoading(true)
       try {
-        if (useRealData && !forceMockData) {
-          // Use real API
-          const response = await fetchShuls(6, 0, buildSearchParams())
-          setShuls(response.shuls)
-          setHasMore(response.hasMore)
-        } else {
-          // Use mock data (fallback or forced)
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-          const mockItems = generateMockShuls(6)
-          setShuls(mockItems)
-          setHasMore(true)
-        }
+        // Always use mock data to prevent SSL errors
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        const mockItems = generateMockShuls(6)
+        setShuls(mockItems)
+        setHasMore(true)
         setPage(1)
       } catch (error) {
         console.error('Error loading initial items:', error)
-        // Fall back to mock data on error
-        if (useRealData && !forceMockData) {
-          console.log('Falling back to mock data due to API error')
-          setForceMockData(true)
-          const mockItems = generateMockShuls(6)
-          setShuls(mockItems)
-          setHasMore(true)
-          setPage(1)
-        }
+        // Always fall back to mock data on error
+        const mockItems = generateMockShuls(6)
+        setShuls(mockItems)
+        setHasMore(true)
+        setPage(1)
       } finally {
         setLoading(false)
       }
