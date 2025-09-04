@@ -57,14 +57,7 @@ export default function EateryPageClient() {
     apiCallCountRef.current += 1;
     lastApiCallRef.current = { url, timestamp: Date.now(), reason };
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔍 API Call #${apiCallCountRef.current}:`, {
-        url,
-        reason,
-        timestamp: new Date().toISOString(),
-        totalCalls: apiCallCountRef.current
-      });
-    }
+    // Debug logging removed for production
   }, []);
   
   const router = useRouter();
@@ -322,20 +315,13 @@ export default function EateryPageClient() {
         const hasMoreData = result.hasMore && newTotalItems < totalRestaurants;
         setHasMore(hasMoreData ?? false);
         
-        console.log('🔄 Loaded page', {
-          nextPage,
-          previousItems: restaurants.length,
-          totalAvailable: totalRestaurants,
-          hasMore: hasMoreData,
-          itemsPerPage: limit,
-          received: result.received
-        });
+        // Debug logging removed for production
         
         return { appended: result.received, hasMore: hasMoreData };
       } else {
         // No more data available
         setHasMore(false);
-        console.log('🔄 No more data available');
+        // Debug logging removed for production
         return { appended: 0, hasMore: false };
       }
     } catch (err) {
@@ -368,16 +354,7 @@ export default function EateryPageClient() {
     setIsLoadingMore(false); // The hook doesn't provide isLoadingMore
   }, [infiniteScrollState.hasMore]);
 
-  // Add debugging for infinite scroll state changes
-  useEffect(() => {
-    console.log('🔄 Infinite scroll state changed:', {
-      hasMore,
-      isLoadingMore,
-      isHydrated,
-      restaurantsCount: restaurantsWithDistance.length,
-      totalRestaurants
-    });
-  }, [hasMore, isLoadingMore, isHydrated, restaurantsWithDistance.length, totalRestaurants]);
+  // Debug logging removed for production
 
   // Prevent early load triggers before initial data resolves
   useEffect(() => {
@@ -427,11 +404,7 @@ export default function EateryPageClient() {
       const totalLoadedItems = restaurants.length;
       const hasMoreData = totalLoadedItems >= mobileOptimizedItemsPerPage;
       
-      console.log('🔄 Setting initial hasMore state:', {
-        totalLoadedItems,
-        totalRestaurants,
-        hasMoreData
-      });
+      // Debug logging removed for production
       
       setHasMore(hasMoreData);
       
@@ -445,16 +418,7 @@ export default function EateryPageClient() {
     }
   }, [restaurants, totalRestaurants, mobileOptimizedItemsPerPage, loading, setHasMore]);
 
-  // Debug logging for totalRestaurants changes
-  useEffect(() => {
-    if (DEBUG) {
-      console.log('🔍 totalRestaurants changed:', { 
-        totalRestaurants, 
-        restaurantsCount: restaurantsWithDistance.length,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, [totalRestaurants, restaurantsWithDistance.length]);
+  // Debug logging removed for production
 
   // Cleanup AbortController on unmount
   useEffect(() => {

@@ -72,8 +72,13 @@ export async function GET(_request: NextRequest) {
 
     if (accessToken) {
       try {
-        // Prefer explicit BACKEND_URL, fallback to NEXT_PUBLIC_BACKEND_URL, then localhost
-        const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        // Prefer explicit BACKEND_URL, fallback to NEXT_PUBLIC_BACKEND_URL, then production API
+        let backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+        
+        // Ensure the backend URL has a protocol
+        if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
+          backendUrl = `https://${backendUrl}`;
+        }
         const resp = await fetch(`${backendUrl}/api/auth/user-role`, {
           method: 'GET',
           headers: {

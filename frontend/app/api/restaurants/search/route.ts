@@ -92,7 +92,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the backend API
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+    
+    // Ensure the backend URL has a protocol
+    if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
+      backendUrl = `https://${backendUrl}`;
+    }
     const apiUrl = `${backendUrl}/api/v4/restaurants?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {

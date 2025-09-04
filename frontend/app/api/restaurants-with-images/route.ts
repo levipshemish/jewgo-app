@@ -234,10 +234,16 @@ export async function GET(request: NextRequest) {
     
     // Call the backend API (normalize URL and default to production API)
     const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
-    backendUrl = raw && raw.trim().length > 0
+    let backendUrl = raw && raw.trim().length > 0
       ? raw.replace(/\/+$/, '')
       : getBackendUrl();
-          // Use v4 backend route prefix
+    
+    // Ensure the backend URL has a protocol
+    if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
+      backendUrl = `https://${backendUrl}`;
+    }
+    
+    // Use v4 backend route prefix
     apiUrl = `${backendUrl}/api/v4/restaurants?${queryParams.toString()}`;
     
     // Configurable timeout to avoid long hangs in dev; faster fallback improves UX

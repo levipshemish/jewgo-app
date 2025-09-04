@@ -60,7 +60,12 @@ export async function GET(request: NextRequest) {
     }
     
     // Use the correct backend URL - fallback to production URL if not set
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+    
+    // Ensure the backend URL has a protocol
+    if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
+      backendUrl = `https://${backendUrl}`;
+    }
     const fullBackendUrl = `${backendUrl}/api/v4/synagogues?${queryParams}`;
     
     // Fetch from backend API

@@ -23,7 +23,12 @@ export async function GET(_request: NextRequest) {
     }
 
     // Use production backend URL if environment variable is not set
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+    
+    // Ensure the backend URL has a protocol
+    if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
+      backendUrl = `https://${backendUrl}`;
+    }
     
     // Fetch filter options from backend API
     const backendResponse = await fetch(`${backendUrl}/api/v4/synagogues/filter-options`, {

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(_request: NextRequest) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+    
+    // Ensure the backend URL has a protocol
+    if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
+      backendUrl = `https://${backendUrl}`;
+    }
     
     // Fetch business types from backend
     const response = await fetch(`${backendUrl}/api/v4/restaurants/business-types`, {

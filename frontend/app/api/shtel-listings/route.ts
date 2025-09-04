@@ -12,7 +12,12 @@ import { generateAPIHeaders } from '@/lib/utils/cdnHeaders';
  * - Enhanced Jewish calendar awareness
  */
 
-const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+let BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+
+// Ensure the backend URL has a protocol
+if (BACKEND_BASE_URL && !BACKEND_BASE_URL.startsWith('http://') && !BACKEND_BASE_URL.startsWith('https://')) {
+  BACKEND_BASE_URL = `https://${BACKEND_BASE_URL}`;
+}
 
 // Jewish holiday and community-specific categories
 const JEWISH_COMMUNITY_CATEGORIES = [

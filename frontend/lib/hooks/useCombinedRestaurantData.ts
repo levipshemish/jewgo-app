@@ -252,27 +252,13 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
         JSON.stringify(lastRequestParams.filters) === JSON.stringify(filters);
       
       if (lastKeyRef.current === key && isWithinSuppressWindow && !isDifferentPage) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🚫 useCombinedRestaurantData: Skipping duplicate request within suppress window', {
-            key: `${key.substring(0, 100)}...`,
-            currentOffset,
-            lastOffset,
-            isDifferentPage
-          });
-        }
+        // Debug logging removed for production
         return { received: 0, hasMore: false };
       }
       
       // Additional check for identical request parameters
       if (isIdenticalRequest && isWithinSuppressWindow) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🚫 useCombinedRestaurantData: Skipping identical request within suppress window', {
-            page,
-            query,
-            itemsPerPage,
-            filters: JSON.stringify(filters).substring(0, 100)
-          });
-        }
+        // Debug logging removed for production
         return { received: 0, hasMore: false };
       }
       

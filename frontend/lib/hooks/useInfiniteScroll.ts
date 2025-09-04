@@ -85,18 +85,7 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
       return false;
     }
     
-    // Debug logging for infinite loading detection
-    if (process.env.NODE_ENV === 'development' && shouldRequest) {
-      console.log('🔍 Infinite Scroll Request Check:', {
-        scrollY: window.scrollY,
-        innerHeight: window.innerHeight,
-        scrollHeight: document.documentElement.scrollHeight,
-        remaining,
-        threshold: IS_MIN_REMAINING_VIEWPORT_MULTIPLIER * window.innerHeight,
-        shouldRequest,
-        currentOffset: offset
-      });
-    }
+    // Debug logging removed for production
     
     return shouldRequest;
   };
@@ -127,9 +116,7 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
     // Additional safety: prevent rapid successive requests
     const now = Date.now();
     if (lastAppendAtRef.current && (now - lastAppendAtRef.current) < 500) { // 500ms minimum between requests
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🚫 Skipping request - too soon after last append:', now - lastAppendAtRef.current);
-      }
+      // Debug logging removed for production
       return;
     }
 
