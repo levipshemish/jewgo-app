@@ -99,7 +99,7 @@ export default function ShulGrid({
   const [page, setPage] = useState(0)
 
   // Real API function for synagogues with offset-based pagination for infinite scroll
-  const fetchShuls = async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 15000) => {
+  const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 15000) => {
     try {
       // Build API URL with parameters
       const apiUrl = new URL('/api/synagogues', window.location.origin)
@@ -147,58 +147,10 @@ export default function ShulGrid({
       console.error('Error fetching synagogues:', error)
       throw error
     }
-  }
-
-  // Load more items in batches of 6 (exactly like dynamic-card-ts)
-  const loadMoreItems = useCallback(async () => {
-    if (loading || !hasMore) return
-
-    setLoading(true)
-
-    try {
-      if (useRealData) {
-        // Use real API
-        const response = await fetchShuls(6, page * 6, buildSearchParams())
-        setShuls((prev) => [...prev, ...response.shuls])
-        setHasMore(response.hasMore)
-      } else {
-        // Use mock data (fallback)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        
-        const newItems: MockShul[] = []
-        for (let i = 0; i < 6; i++) {
-          const id = page * 6 + i + 1
-          if (id <= 100) {
-            newItems.push(generateMockShuls(1)[0])
-          }
-        }
-        
-        setShuls((prev) => [...prev, ...newItems])
-        setPage((prev) => prev + 1)
-        
-        if (page * 6 + 6 >= 100) {
-          setHasMore(false)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading items:', error)
-      // Fallback to mock data on error
-      const newItems: MockShul[] = []
-      for (let i = 0; i < 6; i++) {
-        const id = page * 6 + i + 1
-        if (id <= 100) {
-          newItems.push(generateMockShuls(1)[0])
-        }
-      }
-      setShuls((prev) => [...prev, ...newItems])
-      setPage((prev) => prev + 1)
-    } finally {
-      setLoading(false)
-    }
-  }, [loading, hasMore, page, useRealData, category, searchQuery])
+  }, [])
 
   // Build search parameters for API calls
-  const buildSearchParams = () => {
+  const buildSearchParams = useCallback(() => {
     const params = new URLSearchParams()
     
     if (searchQuery && searchQuery.trim() !== '') {
@@ -210,7 +162,58 @@ export default function ShulGrid({
     }
     
     return params.toString()
-  }
+  }, [searchQuery, category])
+
+  // Load more items in batches of 6 (exactly like dynamic-card-ts)
+  const loadMoreItems = useCallback(async () => {
+    if (loading || !hasMore) return
+
+    setLoading(true)
+
+    try {
+      if (useRealData) {
+        // Use real API with current page state
+        const currentPage = page
+        const response = await fetchShuls(6, currentPage * 6, buildSearchParams())
+        setShuls((prev) => [...prev, ...response.shuls])
+        setHasMore(response.hasMore)
+        setPage((prev) => prev + 1)
+      } else {
+        // Use mock data (fallback)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        
+        const newItems: MockShul[] = []
+        for (let i = 0; i < 6; i++) {
+          const itemIndex = page * 6 + i
+          if (itemIndex < 50) { // Limit mock data to 50 items
+            newItems.push(generateMockShuls(1)[0])
+          }
+        }
+        
+        setShuls((prev) => [...prev, ...newItems])
+        setHasMore(newItems.length === 6 && page * 6 + newItems.length < 50)
+        setPage((prev) => prev + 1)
+      }
+    } catch (error) {
+      console.error('Error loading more items:', error)
+      // Fall back to mock data on error
+      if (useRealData) {
+        console.log('Falling back to mock data due to API error')
+        // Reset to mock data mode
+        setShuls([])
+        setPage(0)
+        setHasMore(true)
+        // Load mock data instead
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        const mockItems = generateMockShuls(6)
+        setShuls(mockItems)
+        setHasMore(true)
+        setPage(1)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [loading, hasMore, useRealData, fetchShuls, buildSearchParams, page]) // Keep page dependency but handle it properly
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
@@ -219,20 +222,42 @@ export default function ShulGrid({
     setPage(0)
     setHasMore(true)
     
-    // Load initial batch
-    loadMoreItems()
+    // Load initial batch only once
+    const loadInitialItems = async () => {
+      if (loading) return
+      
+      setLoading(true)
+      try {
+        if (useRealData) {
+          // Use real API
+          const response = await fetchShuls(6, 0, buildSearchParams())
+          setShuls(response.shuls)
+          setHasMore(response.hasMore)
+        } else {
+          // Use mock data (fallback)
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          const mockItems = generateMockShuls(6)
+          setShuls(mockItems)
+          setHasMore(true)
+        }
+        setPage(1)
+      } catch (error) {
+        console.error('Error loading initial items:', error)
+        // Fall back to mock data on error
+        if (useRealData) {
+          console.log('Falling back to mock data due to API error')
+          const mockItems = generateMockShuls(6)
+          setShuls(mockItems)
+          setHasMore(true)
+          setPage(1)
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
     
-    // Load more batches immediately to ensure scrollability
-    setTimeout(() => {
-      if (hasMore) loadMoreItems()
-    }, 100)
-    setTimeout(() => {
-      if (hasMore) loadMoreItems()
-    }, 200)
-    setTimeout(() => {
-      if (hasMore) loadMoreItems()
-    }, 300)
-  }, [category, searchQuery, useRealData, loadMoreItems, hasMore])
+    loadInitialItems()
+  }, [category, searchQuery, useRealData]) // Remove loadMoreItems dependency
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
