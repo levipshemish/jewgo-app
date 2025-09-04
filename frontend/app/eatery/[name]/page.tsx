@@ -1,20 +1,13 @@
-/* eslint-disable no-console */
 "use client"
 
 import { useParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { ListingPage } from '@/components/listing-details-utility/listing-page'
 import { mapEateryToListingData } from '@/utils/eatery-mapping'
-import { EateryDB } from '@/types/listing'
+import { EateryDB, UserLocation } from '@/types/listing'
 import Link from 'next/link'
 import ErrorBoundary from '../components/ErrorBoundary'
 
-// Standardized location interface matching LocationContext
-interface UserLocation {
-  latitude: number;
-  longitude: number;
-  timestamp: number;
-}
 
 /**
  * Parse hours from the backend JSON format into EateryDB format
@@ -26,7 +19,6 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
     
     // Check if there are no hours data at all
     if (!weekdayText || weekdayText.length === 0) {
-      console.log('No hours data available in database')
       return {
         monday: { open: '', close: '', closed: false },
         tuesday: { open: '', close: '', closed: false },
@@ -86,12 +78,9 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
                 closed: false
               }
             } else {
-              // eslint-disable-next-line no-console
-              console.log('No time match for normalized text:', normalizedTimeText)
               // Try alternative format without AM/PM for first time
               const altTimeMatch = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
               if (altTimeMatch) {
-                console.log('Alternative time match found:', altTimeMatch)
                 hours[dayMap[dayName]] = {
                   open: `${altTimeMatch[1]}:${altTimeMatch[2]}`,
                   close: `${altTimeMatch[3]}:${altTimeMatch[4]} ${altTimeMatch[5]}`,
@@ -101,7 +90,6 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
                 // Try format with AM/PM for first time but not second (like "12:00 AM – 8:00")
                 const altTimeMatch2 = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–]\s*(\d{1,2}):(\d{2})/i)
                 if (altTimeMatch2) {
-                  console.log('Alternative time match 2 found:', altTimeMatch2)
                   hours[dayMap[dayName]] = {
                     open: `${altTimeMatch2[1]}:${altTimeMatch2[2]} ${altTimeMatch2[3]}`,
                     close: `${altTimeMatch2[4]}:${altTimeMatch2[5]}`,
@@ -146,6 +134,14 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
 }
 
 export default function EateryNamePage() {
+  return (
+    <ErrorBoundary>
+      <EateryNamePageContent />
+    </ErrorBoundary>
+  );
+}
+
+function EateryNamePageContent() {
   const params = useParams()
   const [eatery, setEatery] = useState<EateryDB | null>(null)
   const [loading, setLoading] = useState(true)
@@ -440,79 +436,82 @@ export default function EateryNamePage() {
   // Monitor location permission changes and set up location watching
   useEffect(() => {
     let watchId: number | null = null;
+    let permissionResult: PermissionStatus | null = null;
 
-    if ('permissions' in navigator) {
-      const permission = navigator.permissions.query({ name: 'geolocation' as PermissionName });
-      
-      permission.then((result) => {
-        const handlePermissionChange = () => {
-          console.log('Location permission changed to:', result.state);
-          setLocationPermission(result.state as 'granted' | 'denied' | 'prompt');
+    const setupLocationWatching = async () => {
+      if ('permissions' in navigator) {
+        try {
+          const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+          permissionResult = permission;
           
-          // If permission was revoked, clear location and stop watching
-          if (result.state === 'denied') {
-            setUserLocation(null);
-            setLocationError('Location access was denied. Please enable location services in your browser settings.');
-            if (watchId) {
-              navigator.geolocation.clearWatch(watchId);
-              watchId = null;
-            }
-          }
-          
-          // If permission was granted, try to get location and start watching
-          if (result.state === 'granted') {
-            handleLocationRequest();
+          const handlePermissionChange = () => {
+            const newState = permission.state;
+            setLocationPermission(newState as 'granted' | 'denied' | 'prompt');
             
-            // Start watching for location changes
-            if (navigator.geolocation && !watchId) {
-              watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                  console.log('Location updated:', position.coords);
-                  setUserLocation({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    timestamp: Date.now()
-                  });
-                  setLocationError(null);
-                },
-                (watchError) => {
-                  console.log('Location watch error:', watchError.message);
-                  if (watchError.code === watchError.PERMISSION_DENIED) {
-                    setLocationPermission('denied');
-                    setUserLocation(null);
-                    setLocationError('Location access was denied. Please enable location services in your browser settings.');
-                  }
-                },
-                {
-                  enableHighAccuracy: true,
-                  timeout: 15000,
-                  maximumAge: 300000, // 5 minutes
-                }
-              );
+            // If permission was revoked, clear location and stop watching
+            if (newState === 'denied') {
+              setUserLocation(null);
+              setLocationError('Location access was denied. Please enable location services in your browser settings.');
+              if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+              }
             }
-          }
-        };
+            
+            // If permission was granted, try to get location and start watching
+            if (newState === 'granted') {
+              handleLocationRequest();
+              
+              // Start watching for location changes
+              if (navigator.geolocation && !watchId) {
+                watchId = navigator.geolocation.watchPosition(
+                  (position) => {
+                    setUserLocation({
+                      latitude: position.coords.latitude,
+                      longitude: position.coords.longitude,
+                      timestamp: Date.now()
+                    });
+                    setLocationError(null);
+                  },
+                  (watchError) => {
+                    if (watchError.code === watchError.PERMISSION_DENIED) {
+                      setLocationPermission('denied');
+                      setUserLocation(null);
+                      setLocationError('Location access was denied. Please enable location services in your browser settings.');
+                    }
+                  },
+                  {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 300000, // 5 minutes
+                  }
+                );
+              }
+            }
+          };
 
-        result.addEventListener('change', handlePermissionChange);
-        
-        // Initial setup
-        if (result.state === 'granted' && !userLocation) {
-          handleLocationRequest();
-        }
-        
-        return () => {
-          result.removeEventListener('change', handlePermissionChange);
-          if (watchId) {
-            navigator.geolocation.clearWatch(watchId);
+          permission.addEventListener('change', handlePermissionChange);
+          
+          // Initial setup
+          if (permission.state === 'granted' && !userLocation) {
+            handleLocationRequest();
           }
-        };
-      });
-    }
+        } catch (error) {
+          // Silently handle permission setup errors
+          console.error('Error setting up location permissions:', error);
+        }
+      }
+    };
+
+    setupLocationWatching();
 
     // Cleanup function
     return () => {
       if (watchId) {
         navigator.geolocation.clearWatch(watchId);
+      }
+      if (permissionResult) {
+        permissionResult.removeEventListener('change', () => {});
       }
     };
   }, [userLocation, handleLocationRequest]);
