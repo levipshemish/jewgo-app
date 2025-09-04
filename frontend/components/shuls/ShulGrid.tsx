@@ -218,7 +218,7 @@ export default function ShulGrid({
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, useRealData, forceMockData, fetchShuls, buildSearchParams, page]) // Add forceMockData dependency
+  }, [loading, hasMore, useRealData, forceMockData, fetchShuls, buildSearchParams, page]) // Keep forceMockData dependency
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
@@ -264,7 +264,7 @@ export default function ShulGrid({
     }
     
     loadInitialItems()
-  }, [category, searchQuery, useRealData, forceMockData]) // Add forceMockData dependency
+  }, [category, searchQuery, useRealData]) // Remove forceMockData dependency to prevent circular dependency
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
