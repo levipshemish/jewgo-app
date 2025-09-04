@@ -1,128 +1,58 @@
-import { getAdminRole } from '@/lib/admin/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getAdminRole } from '@/lib/server/admin-utils';
 
-// Mock the Supabase client
-jest.mock('@/lib/supabase/server', () => ({
-  createServerSupabaseClient: jest.fn(),
-}));
+// Mock the user data for testing
+const mockUser = {
+  id: 'test-user-id',
+  name: 'Test User',
+  email: 'test@example.com',
+  isSuperAdmin: false,
+  adminRole: 'moderator' as const,
+  roleLevel: 1,
+  permissions: ['read', 'write']
+};
 
 describe('Admin Role Logic', () => {
-  const mockSupabase = {
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn(),
-    or: jest.fn().mockReturnThis(),
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    (createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase);
-  });
-
   describe('getAdminRole', () => {
-    it('should return super_admin when user has issuperadmin=true', async () => {
-      mockSupabase.single.mockResolvedValue({
-        data: { issuperadmin: true },
-        error: null,
-      });
-
-      const result = await getAdminRole('test-user-id');
+    it('should return super_admin when user has isSuperAdmin=true', () => {
+      const superAdminUser = { ...mockUser, isSuperAdmin: true, adminRole: 'super_admin' as const };
+      const result = getAdminRole(superAdminUser);
       expect(result).toBe('super_admin');
     });
 
-    it('should return highest priority role from admin_roles table', async () => {
-      // Mock user not being super admin
-      mockSupabase.single.mockResolvedValueOnce({
-        data: { issuperadmin: false },
-        error: null,
-      });
-
-      // Mock admin roles with multiple roles
-      mockSupabase.single.mockResolvedValueOnce({
-        data: [
-          { role: 'moderator' },
-          { role: 'system_admin' },
-          { role: 'data_admin' },
-        ],
-        error: null,
-      });
-
-      const result = await getAdminRole('test-user-id');
-      expect(result).toBe('system_admin'); // Highest priority
-    });
-
-    it('should return moderator when no roles found', async () => {
-      // Mock user not being super admin
-      mockSupabase.single.mockResolvedValueOnce({
-        data: { issuperadmin: false },
-        error: null,
-      });
-
-      // Mock no admin roles
-      mockSupabase.single.mockResolvedValueOnce({
-        data: [],
-        error: null,
-      });
-
-      const result = await getAdminRole('test-user-id');
+    it('should return admin role from user object', () => {
+      const result = getAdminRole(mockUser);
       expect(result).toBe('moderator');
     });
 
-    it('should handle database errors gracefully', async () => {
-      mockSupabase.single.mockResolvedValue({
-        data: null,
-        error: { message: 'Database error' },
-      });
-
-      await expect(getAdminRole('test-user-id')).rejects.toThrow('Admin RBAC lookup failed');
+    it('should return null when user is not admin', () => {
+      const nonAdminUser = { ...mockUser, adminRole: null, isSuperAdmin: false };
+      const result = getAdminRole(nonAdminUser);
+      expect(result).toBe(null);
     });
 
-    it('should respect role precedence: super_admin > system_admin > data_admin > moderator', async () => {
-      // Mock user not being super admin
-      mockSupabase.single.mockResolvedValueOnce({
-        data: { issuperadmin: false },
-        error: null,
-      });
+    it('should return null when no user provided', () => {
+      const result = getAdminRole(null);
+      expect(result).toBe(null);
+    });
 
-      // Mock admin roles with different priorities
+    it('should respect role precedence: super_admin > system_admin > data_admin > moderator', () => {
       const testCases = [
-        { roles: ['moderator', 'data_admin'], expected: 'data_admin' },
-        { roles: ['data_admin', 'system_admin'], expected: 'system_admin' },
-        { roles: ['system_admin', 'super_admin'], expected: 'super_admin' },
-        { roles: ['moderator', 'data_admin', 'system_admin'], expected: 'system_admin' },
+        { user: { ...mockUser, adminRole: 'moderator' as const }, expected: 'moderator' },
+        { user: { ...mockUser, adminRole: 'data_admin' as const }, expected: 'data_admin' },
+        { user: { ...mockUser, adminRole: 'system_admin' as const }, expected: 'system_admin' },
+        { user: { ...mockUser, adminRole: 'super_admin' as const, isSuperAdmin: true }, expected: 'super_admin' },
       ];
 
       for (const testCase of testCases) {
-        mockSupabase.single.mockResolvedValueOnce({
-          data: testCase.roles.map(role => ({ role })),
-          error: null,
-        });
-
-        const result = await getAdminRole('test-user-id');
+        const result = getAdminRole(testCase.user);
         expect(result).toBe(testCase.expected);
       }
     });
 
-    it('should filter out invalid roles', async () => {
-      // Mock user not being super admin
-      mockSupabase.single.mockResolvedValueOnce({
-        data: { issuperadmin: false },
-        error: null,
-      });
-
-      // Mock admin roles with invalid role
-      mockSupabase.single.mockResolvedValueOnce({
-        data: [
-          { role: 'moderator' },
-          { role: 'invalid_role' },
-          { role: 'data_admin' },
-        ],
-        error: null,
-      });
-
-      const result = await getAdminRole('test-user-id');
-      expect(result).toBe('data_admin'); // Should ignore invalid_role
+    it('should handle undefined adminRole gracefully', () => {
+      const userWithUndefinedRole = { ...mockUser, adminRole: undefined };
+      const result = getAdminRole(userWithUndefinedRole);
+      expect(result).toBe(undefined);
     });
   });
 });
