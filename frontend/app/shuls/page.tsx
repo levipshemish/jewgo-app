@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
-import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { ShulFilters } from '@/components/shuls/ShulFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -18,6 +17,7 @@ import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { calculateDistance, formatDistance } from '@/lib/utils/distance';
 import { usePullToRefresh } from '@/lib/hooks/usePullToRefresh';
+import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 
 import { Filters } from '@/lib/filters/schema';
 
@@ -86,12 +86,13 @@ interface Shul {
   listing_type?: string;
 }
 
-// Real API function for synagogues
-const fetchShuls = async (limit: number, params?: string, timeoutMs: number = 15000) => {
+// Real API function for synagogues with offset-based pagination for infinite scroll
+const fetchShuls = async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 15000) => {
   try {
     // Build API URL with parameters
     const apiUrl = new URL('/api/synagogues', window.location.origin);
     apiUrl.searchParams.set('limit', limit.toString());
+    apiUrl.searchParams.set('offset', offset.toString());
     
     if (params) {
       const searchParams = new URLSearchParams(params);
@@ -123,7 +124,7 @@ const fetchShuls = async (limit: number, params?: string, timeoutMs: number = 15
     return {
       shuls: data.synagogues || [],
       total: data.total || 0,
-      page: data.page || 1,
+      hasMore: data.hasNext || false,
       limit: data.limit || limit
     };
     
@@ -152,17 +153,22 @@ function ShulsPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalShuls, setTotalShuls] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Mobile optimization hooks
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
-  // Debug logging
-  console.log('Mobile optimization values:', { isMobile, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection });
+  // Debug logging - only in development
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // Use refs to track what we've already logged to prevent duplicate logging
+  const hasLoggedMobileOpt = useRef(false);
+  const hasLoggedFilters = useRef(false);
+  const hasLoggedItemsPerPage = useRef(false);
+  
+  // Use ref to prevent duplicate initial data fetches
+  const hasInitialFetch = useRef(false);
   
   // Performance optimizations based on device capabilities
   const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
@@ -172,6 +178,15 @@ function ShulsPageContent() {
   // Ensure mobile detection is working correctly
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   
+  // Log mobile optimization values only once on mount
+  useEffect(() => {
+    if (isDevelopment && !hasLoggedMobileOpt.current) {
+      console.log('Mobile optimization values:', { isMobile, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection });
+      hasLoggedMobileOpt.current = true;
+    }
+  }, [isDevelopment, isMobile, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
+  
+  // Mobile detection useEffect
   useEffect(() => {
     const checkMobile = () => {
       setIsMobileDevice(typeof window !== 'undefined' && window.innerWidth <= 768);
@@ -195,18 +210,6 @@ function ShulsPageContent() {
     () => window.scrollTo(0, document.body.scrollHeight) // Swipe down to bottom
   );
   
-  // Pull-to-refresh for mobile
-  const { isRefreshing, pullToRefreshProps } = usePullToRefresh(
-    async () => {
-      // Reset to first page and refresh data
-      setCurrentPage(1);
-      setShuls([]);
-
-      await fetchShulsData();
-    },
-    { enabled: isMobile || isMobileDevice }
-  );
-  
   // WebSocket for real-time updates (currently disabled)
   const { isConnected, sendMessage } = useWebSocket();
   
@@ -219,22 +222,21 @@ function ShulsPageContent() {
     clearAllFilters: _clearAllFilters
   } = useAdvancedFilters();
   
-  // Debug logging
-  console.log('activeFilters:', activeFilters);
-  console.log('hasActiveFilters:', hasActiveFilters);
+  // Log active filters only when they change
+  useEffect(() => {
+    if (isDevelopment && !hasLoggedFilters.current) {
+      console.log('activeFilters:', activeFilters);
+      console.log('hasActiveFilters:', hasActiveFilters);
+      hasLoggedFilters.current = true;
+    }
+  }, [isDevelopment, activeFilters, hasActiveFilters]);
   
   // Location state from context
-  const {
-    userLocation,
-    isLoading: locationLoading,
-    requestLocation: _requestLocation
-  } = useLocation();
+  const { userLocation, isLoading: locationLoading, requestLocation: _requestLocation } = useLocation();
 
   // Location prompt popup state
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
-
-  // Pagination handled by single handlePageChange below
 
   // Responsive grid with maximum 4 rows and up to 8 columns
   const mobileOptimizedItemsPerPage = useMemo(() => {
@@ -259,9 +261,14 @@ function ShulsPageContent() {
     }
   }, [isMobile, isMobileDevice, viewportWidth]);
   
-  // Debug logging
-  console.log('mobileOptimizedItemsPerPage calculated:', mobileOptimizedItemsPerPage);
-
+  // Log mobile optimization calculation only when it changes
+  useEffect(() => {
+    if (isDevelopment && !hasLoggedItemsPerPage.current) {
+      console.log('mobileOptimizedItemsPerPage calculated:', mobileOptimizedItemsPerPage);
+      hasLoggedItemsPerPage.current = true;
+    }
+  }, [isDevelopment, mobileOptimizedItemsPerPage]);
+  
   // Memoize shul transformation to prevent unnecessary re-renders
   const transformShulToCardData = useCallback((shul: Shul) => {
       // Enhanced rating logic with better fallbacks and type safety
@@ -337,16 +344,124 @@ function ShulsPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
+  // Infinite scroll load function
+  const loadMoreShuls = useCallback(async ({ signal, offset, limit }: { signal: AbortSignal; offset: number; limit: number }) => {
+    try {
+      // Build parameters for API call
+      const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
 
+      // Add filter parameters
+      Object.entries(activeFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          params.append(key, String(value));
+        }
+      });
 
+      // Mobile-specific optimizations
+      params.append('mobile_optimized', 'true');
+      
+      if (isLowPowerMode) {
+        params.append('low_power_mode', 'true');
+      }
+      
+      if (isSlowConnection) {
+        params.append('slow_connection', 'true');
+      }
 
+      if (isDevelopment) {
+        console.log('loadMoreShuls: Calling fetchShuls with:', { limit, offset, params: params.toString(), timeout: fetchTimeoutMs });
+      }
+      const response = await fetchShuls(limit, offset, params.toString(), fetchTimeoutMs);
+      
+      // Check if request was aborted
+      if (signal.aborted) {
+        throw new Error('Request aborted');
+      }
+      
+      if (isDevelopment) {
+        console.log('loadMoreShuls: API response:', { 
+          shulsCount: response.shuls.length, 
+          hasMore: response.hasMore, 
+          total: response.total,
+          limit: response.limit 
+        });
+      }
+      
+      return {
+        appended: response.shuls.length,
+        hasMore: response.hasMore
+      };
+      
+    } catch (err) {
+      console.error('Error loading more shuls:', err);
+      throw err;
+    }
+  }, [activeFilters, searchQuery, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
-  // Fetch shuls with mobile optimization and retry logic
-  const fetchShulsData = useCallback(async (filters: Filters = activeFilters, retryCount = 0) => {
-    console.log('fetchShulsData called with filters:', filters, 'retry count:', retryCount);
+  // Initialize infinite scroll
+  const {
+    state: { offset, hasMore, showManualLoad, epoch, consecutiveFailures, backoffUntil },
+    actions: { manualLoad, resetForFilters, attachSentinel }
+  } = useInfiniteScroll(loadMoreShuls, {
+    limit: mobileOptimizedItemsPerPage,
+    initialOffset: 0,
+    reinitOnPageShow: true,
+    onAttempt: ({ offset, epoch }) => {
+      if (isDevelopment) {
+        console.log(`Loading more shuls at offset ${offset} (epoch ${epoch})`);
+      }
+      if (offset === 0) {
+        setLoading(true);
+      }
+    },
+    onSuccess: ({ appended, offset, epoch, durationMs }) => {
+      if (isDevelopment) {
+        console.log(`Successfully loaded ${appended} shuls at offset ${offset} (epoch ${epoch}) in ${durationMs}ms`);
+      }
+      if (offset === 0) {
+        setLoading(false);
+      }
+    },
+    onFailure: ({ error, consecutiveFailures, epoch }) => {
+      console.error(`Failed to load shuls at epoch ${epoch}: ${error} (consecutive failures: ${consecutiveFailures})`);
+      if (offset === 0) {
+        setLoading(false);
+        setError(error);
+      }
+    },
+    onAbort: ({ cause, epoch }) => {
+      if (isDevelopment) {
+        console.log(`Shul loading aborted at epoch ${epoch}: ${cause}`);
+      }
+      if (offset === 0) {
+        setLoading(false);
+      }
+    }
+  });
+
+  // Debug logging for infinite scroll state
+  useEffect(() => {
+    if (isDevelopment) {
+      console.log('Infinite scroll state update:', { offset, hasMore, showManualLoad, epoch, consecutiveFailures });
+    }
+  }, [offset, hasMore, showManualLoad, epoch, consecutiveFailures]);
+
+  // Fetch initial shuls data
+  const fetchInitialShulsData = useCallback(async (filters: Filters = activeFilters, retryCount = 0) => {
+    if (isDevelopment) {
+      console.log('fetchInitialShulsData called with filters:', filters, 'retry count:', retryCount);
+    }
     try {
       setLoading(true);
       setError(null);
+
+      // Reset infinite scroll state
+      resetForFilters();
 
       // Mobile-optimized parameters
       const params = new URLSearchParams();
@@ -375,97 +490,46 @@ function ShulsPageContent() {
         params.append('slow_connection', 'true');
       }
 
-      console.log('fetchShulsData: Calling fetchShuls with:', { limit: mobileOptimizedItemsPerPage, params: params.toString(), timeout: fetchTimeoutMs });
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
+      if (isDevelopment) {
+        console.log('fetchInitialShulsData: Calling fetchShuls with:', { limit: mobileOptimizedItemsPerPage, params: params.toString(), timeout: fetchTimeoutMs });
+      }
+      const response = await fetchShuls(mobileOptimizedItemsPerPage, 0, params.toString(), fetchTimeoutMs);
       
       setShuls(response.shuls);
-      setCurrentPage(1);
-      
-      // Update pagination state
-      const total = response.total || response.shuls.length;
-      setTotalShuls(total);
-      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
-      setTotalPages(calculatedTotalPages);
-      
+      setLoading(false);
 
     } catch (err) {
-      console.error('Error fetching shuls:', err);
-      
-      // Retry logic for timeout errors
-      if (err instanceof Error && err.message.includes('timed out') && retryCount < 2) {
-        console.log(`Retrying fetch (attempt ${retryCount + 1})...`);
-        setIsRetrying(true);
-        // Wait a bit before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-        setIsRetrying(false);
-        return fetchShulsData(filters, retryCount + 1);
-      }
-      
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Unable to load synagogues. Please try again later.');
-      }
-      setShuls([]); // Clear any existing shuls
-    } finally {
+      console.error('Error loading more shuls:', err);
       setLoading(false);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
     }
-  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
+  }, [activeFilters, searchQuery, isLowPowerMode, isSlowConnection, fetchTimeoutMs, mobileOptimizedItemsPerPage, resetForFilters]);
 
-
-
-
+  // Pull-to-refresh for mobile
+  const { isRefreshing, pullToRefreshProps } = usePullToRefresh(
+    async () => {
+      // Reset infinite scroll and refresh data
+      resetForFilters();
+      setShuls([]);
+      await fetchInitialShulsData();
+    },
+    { enabled: isMobile || isMobileDevice }
+  );
 
   // Handle search functionality
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    setCurrentPage(1);
-    // Trigger data fetch with search query
+    // Reset infinite scroll and fetch new data
+    resetForFilters();
+    setShuls([]);
     startTransition(() => {
-      fetchShulsData();
+      fetchInitialShulsData();
     });
-  }, [setSearchQuery, setCurrentPage, fetchShulsData]);
+  }, [setSearchQuery, resetForFilters, fetchInitialShulsData]);
 
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(false); // Filters start hidden
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
-
-  // Handle page changes for desktop pagination
-  const handlePageChange = async (page: number) => {
-    if (page === currentPage || loading) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
-      }
-      
-      // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-
-      params.append('page', page.toString());
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-      
-      setShuls(response.shuls);
-      setCurrentPage(page);
-    } catch (err) {
-      console.error('Error fetching page:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Handle location changes and update filters
   useEffect(() => {
@@ -519,20 +583,29 @@ function ShulsPageContent() {
     }
   }, [isConnected, sendMessage]);
 
-  // Initial data fetch
+  // Initial data fetch useEffect
   useEffect(() => {
-    console.log('Initial data fetch useEffect triggered');
-    fetchShulsData();
-  }, [fetchShulsData]);
+    if (!hasInitialFetch.current) {
+      console.log('Initial data fetch useEffect triggered');
+      hasInitialFetch.current = true;
+      fetchInitialShulsData();
+    }
+  }, [fetchInitialShulsData]);
 
-  // Mobile-optimized filter changes
+  // Mobile-optimized filter changes - only run when filters actually change
   useEffect(() => {
     if (hasActiveFilters) {
-      startTransition(() => {
-        fetchShulsData();
-      });
+      // Debounce filter changes to prevent rapid API calls
+      const timeoutId = setTimeout(() => {
+        startTransition(() => {
+          fetchInitialShulsData();
+        });
+      }, 300); // 300ms debounce
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [activeFilters, hasActiveFilters, fetchShulsData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasActiveFilters]); // Only depend on hasActiveFilters, not the entire activeFilters object
 
   // Mobile-specific effects
   useEffect(() => {
@@ -600,7 +673,7 @@ function ShulsPageContent() {
             <button
               onClick={() => {
                 setError(null);
-                fetchShulsData();
+                fetchInitialShulsData();
               }}
               className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
             >
@@ -610,7 +683,7 @@ function ShulsPageContent() {
               <button
                 onClick={() => {
                   setError(null);
-                  fetchShulsData(activeFilters, 0);
+                  fetchInitialShulsData(activeFilters, 0);
                 }}
                 className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
               >
@@ -732,21 +805,45 @@ function ShulsPageContent() {
         </div>
       )}
 
-
-
-      {/* Pagination - show on all devices */}
-      {totalPages > 1 && (
-        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            isLoading={loading}
-            className="mb-4"
+      {/* Infinite scroll sentinel and load more button */}
+      {hasMore && (
+        <div className="mt-8 infinite-scroll-container" role="navigation" aria-label="Load more synagogues">
+          {/* Intersection observer sentinel for automatic loading */}
+          <div 
+            ref={attachSentinel}
+            className="h-4 w-full infinite-scroll-sentinel"
+            aria-hidden="true"
           />
-          <div className="text-center text-sm text-gray-600">
-            Showing {shuls.length} of {totalShuls} synagogues
-          </div>
+          
+          {/* Manual load more button (shown when automatic loading fails) */}
+          {showManualLoad && (
+            <div className="text-center">
+              <button
+                onClick={manualLoad}
+                disabled={loading}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  loading 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-[#4ade80] text-white hover:bg-[#22c55e] active:scale-95'
+                }`}
+                style={responsiveStyles.loadMoreButton}
+              >
+                {loading ? 'Loading...' : 'Load More Synagogues'}
+              </button>
+              
+              {consecutiveFailures > 0 && (
+                <p className="text-sm text-amber-600 mt-2">
+                  Previous attempts failed. Please try again.
+                </p>
+              )}
+              
+              {backoffUntil && Date.now() < backoffUntil && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Please wait before trying again...
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -767,10 +864,9 @@ function ShulsPageContent() {
           {/* Refresh button */}
           <button
             onClick={async () => {
-              setCurrentPage(1);
+              resetForFilters();
               setShuls([]);
-
-              await fetchShulsData();
+              await fetchInitialShulsData();
             }}
             className="w-12 h-12 bg-[#4ade80] rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:shadow-xl active:scale-95"
             aria-label="Refresh synagogues"

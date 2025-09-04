@@ -193,10 +193,21 @@ def get_synagogues():
     signal.alarm(10)
     
     try:
-        # Parse query parameters
-        page = int(request.args.get('page', 1))
+        # Parse query parameters - support both offset and page-based pagination
         limit = min(int(request.args.get('limit', 20)), 100)  # Max 100 per page
-        offset = (page - 1) * limit
+        
+        # Check if offset is provided (for infinite scroll) or fall back to page-based
+        offset_param = request.args.get('offset')
+        page_param = request.args.get('page', 1)
+        
+        if offset_param is not None:
+            # Use offset-based pagination (infinite scroll)
+            offset = int(offset_param)
+            page = (offset // limit) + 1
+        else:
+            # Use page-based pagination (traditional)
+            page = int(page_param)
+            offset = (page - 1) * limit
         
         # Parse filters
         filters = {
@@ -357,12 +368,13 @@ def get_synagogues():
             response_data = {
                 'success': True,
                 'synagogues': synagogues,
-                'total': total,
                 'page': page,
                 'limit': limit,
+                'offset': offset,
                 'totalPages': total_pages,
-                'hasNext': page < total_pages,
-                'hasPrev': page > 1,
+                'total': total,
+                'hasNext': (offset + limit) < total,  # Fixed: Use offset-based calculation for infinite scroll
+                'hasPrev': offset > 0,  # Fixed: Use offset-based calculation for infinite scroll
                 'message': f'Retrieved {len(synagogues)} synagogues',
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }

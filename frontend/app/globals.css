@@ -84,9 +84,33 @@ img {
   }
 }
 
+/* Ensure infinite scroll sentinel is properly positioned above bottom navigation */
+.infinite-scroll-sentinel {
+  position: relative;
+  z-index: 1;
+  /* Allow cards to flow naturally under bottom nav */
+  margin-bottom: calc(var(--bottom-nav-height) + 10px);
+}
+
+/* Ensure the sentinel container doesn't get hidden behind bottom nav */
+.infinite-scroll-container {
+  position: relative;
+  z-index: 1;
+  /* Allow natural flow - minimal margin to prevent overlap */
+  margin-bottom: calc(var(--bottom-nav-height) + 15px);
+}
+
 /* Utility class for pages that need bottom padding for fixed navigation */
 .page-with-bottom-nav {
   padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Ensure infinite scroll content can flow under bottom nav */
+.infinite-scroll-content {
+  position: relative;
+  z-index: 1;
+  /* Allow content to flow naturally */
+  margin-bottom: 0;
 }
 
 /* Prevent content from being hidden behind bottom navigation */

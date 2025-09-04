@@ -25,6 +25,9 @@ export type UseInfiniteScrollOpts = {
 export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts) {
   const { limit, initialOffset = 0, reinitOnPageShow, onAttempt, onSuccess, onAbort, onFailure, isBot } = opts;
 
+  // Debug logging - only in development
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   const [offset, setOffset] = useState(initialOffset);
   const [hasMore, setHasMore] = useState(true);
   const [showManualLoad, setShowManualLoad] = useState(false);
@@ -32,7 +35,7 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
   const [backoffUntil, setBackoffUntil] = useState<number | null>(null);
 
   const epochRef = useRef(0);
-  const inFlightRef = useRef<Promise<void> | null>(null);
+  const inFlightRef = useRef<boolean>(false);
   const controllerRef = useRef<AbortController | null>(null);
   const lastAppendAtRef = useRef<number>(performance.now());
   const consecAutoLoadsRef = useRef(0);
@@ -66,126 +69,129 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
     
     // Don't request more if we're already at the bottom
     if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight) {
+      if (isDevelopment) {
+        console.log('Infinite scroll: At bottom of page, skipping request');
+      }
       return false;
     }
     
     const remaining = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
     const shouldRequest = remaining < IS_MIN_REMAINING_VIEWPORT_MULTIPLIER * window.innerHeight;
     
+    if (isDevelopment) {
+      console.log('Infinite scroll: canRequestAnother check - remaining:', remaining, 'shouldRequest:', shouldRequest, 'offset:', offset);
+    }
+    
     // CRITICAL FIX: Add safety check to prevent infinite loading
     // If we've already loaded a lot of content, be more conservative
-    if (offset > 500) { // Reduced from 1000 to be more conservative
-      console.warn('Infinite scroll safety limit reached:', offset);
+    if (offset > 200) { // Reduced from 500 to be more conservative
+      if (isDevelopment) {
+        console.warn('Infinite scroll safety limit reached:', offset);
+      }
       return false;
     }
     
     // Additional safety: if we're very close to the bottom, don't request more
     // This prevents the "always loading" state when user is at the bottom
-    if (remaining < 100) { // 100px threshold
+    // BUT allow more content to load so users can see cards above the nav
+    if (remaining < 10) { // Reduced from 20px to 10px for even more aggressive loading
+      if (isDevelopment) {
+        console.log('Infinite scroll: Too close to bottom, skipping request');
+      }
       return false;
     }
     
-    // Debug logging removed for production
+    // BOTTOM NAVIGATION SAFETY: Allow cards to flow under bottom nav like they do under top nav
+    // Only prevent loading when we're literally at the very bottom
+    const bottomNavHeight = 88; // CSS variable --bottom-nav-height
+    const safeAreaBottom = typeof window !== 'undefined' ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-bottom') || '0') : 0;
+    
+    // Allow loading when there's enough space for at least one row of cards above the bottom nav
+    // This ensures users can see more content while scrolling
+    const minContentSpace = 200; // Minimum space needed to show meaningful content
+    const totalBottomSpace = Math.max(bottomNavHeight + safeAreaBottom + 5, minContentSpace);
+    
+    if (remaining < totalBottomSpace) {
+      if (isDevelopment) {
+        console.log('Infinite scroll: Insufficient space above bottom nav, skipping request. Remaining:', remaining, 'Required:', totalBottomSpace);
+      }
+      return false;
+    }
+    
+    if (isDevelopment) {
+      console.log('Infinite scroll: canRequestAnother returning true - will load more content');
+    }
     
     return shouldRequest;
   };
 
-  const request = useCallback((reason: 'io'|'manual') => {
-    if (!hasMore || isBot) return;
+  const request = useCallback(async (source: string) => {
     if (!canRequestAnother()) return;
-    if (typeof window === 'undefined') return;
     
-    // Additional safety check: if we've already loaded a lot of items, be more conservative
-    if (offset > 1000) { // Arbitrary limit to prevent runaway loading
-      console.warn('Infinite scroll safety limit reached:', offset);
-      setHasMore(false);
-      return;
+    if (isDevelopment) {
+      console.log('Infinite scroll: request() called from source:', source, 'current offset:', offset, 'hasMore:', hasMore);
     }
     
-    // CRITICAL FIX: Add request count safety to prevent infinite loops
-    const requestCount = epochRef.current;
-    if (requestCount > 50) { // Arbitrary limit to prevent infinite requests
-      console.error('Infinite scroll request limit reached:', requestCount);
-      setHasMore(false);
-      return;
-    }
+    inFlightRef.current = true;
+    const epoch = ++epochRef.current;
     
-    // Check if we're in backoff period
-    if (backoffUntil && Date.now() < backoffUntil) return;
-
-    // Additional safety: prevent rapid successive requests
-    const now = Date.now();
-    if (lastAppendAtRef.current && (now - lastAppendAtRef.current) < 500) { // 500ms minimum between requests
-      // Debug logging removed for production
-      return;
-    }
-
-    // momentum guard: require user delta between bursts
-    if (reason === 'io') {
-      const dy = Math.abs(window.scrollY - lastScrollYRef.current);
-      if (dy < IS_USER_SCROLL_DELTA_PX) {
-        if (consecAutoLoadsRef.current >= IS_MAX_CONSEC_AUTOLOADS) return;
-        consecAutoLoadsRef.current += 1;
-      } else {
-        consecAutoLoadsRef.current = 0;
-        lastScrollYRef.current = window.scrollY;
+    try {
+      const startTime = Date.now();
+      const result = await loadMore({ signal: controllerRef.current?.signal || new AbortController().signal, offset, limit });
+      const durationMs = Date.now() - startTime;
+      
+      if (isDevelopment) {
+        console.log('Infinite scroll: loadMore completed successfully. Result:', result, 'epoch:', epoch, 'duration:', durationMs);
       }
-    }
-
-    // enforce ≤1 pending request
-    if (inFlightRef.current) return;
-
-    const start = performance.now();
-    const currentEpoch = epochRef.current;
-    const controller = new AbortController();
-    controllerRef.current = controller;
-
-    onAttempt?.({ offset, epoch: currentEpoch });
-
-    inFlightRef.current = (async () => {
-      try {
-        const { appended, hasMore: hasMoreFromServer } = await loadMore({ signal: controller.signal, offset, limit });
-        const dur = performance.now() - start;
-        lastAppendAtRef.current = performance.now();
-        setOffset(o => o + appended);
-        setHasMore(typeof hasMoreFromServer === 'boolean' ? hasMoreFromServer : false);
-        setShowManualLoad(false);
-        
-        // Reset failure count and backoff on success
-        setConsecutiveFailures(0);
-        setBackoffUntil(null);
-        
-        onSuccess?.({ appended, offset, epoch: currentEpoch, durationMs: dur });
-      } catch (e: any) {
-        if (controller.signal.aborted) {
-          onAbort?.({ cause: String(controller.signal.reason ?? 'aborted'), epoch: currentEpoch });
-        } else {
-          // Track consecutive failures and apply exponential backoff
-          const newFailureCount = consecutiveFailures + 1;
-          setConsecutiveFailures(newFailureCount);
-          
-          // Calculate backoff: 0.5s, 1s, 2s, 4s, 8s (capped at 8s)
-          const backoffMs = Math.min(500 * Math.pow(2, newFailureCount - 1), 8000);
-          const backoffUntilTime = Date.now() + backoffMs;
-          setBackoffUntil(backoffUntilTime);
-          
-          setShowManualLoad(true);
-          onFailure?.({ error: e?.message ?? 'error', consecutiveFailures: newFailureCount, epoch: currentEpoch });
-          onAbort?.({ cause: e?.message ?? 'error', epoch: currentEpoch });
+      
+      // Update state with new data
+      setOffset(prevOffset => {
+        const newOffset = prevOffset + result.appended;
+        if (isDevelopment) {
+          console.log('Infinite scroll: Updating state. Old offset:', prevOffset, 'appended:', result.appended, 'new offset:', newOffset);
         }
-      } finally {
-        inFlightRef.current = null;
+        return newOffset;
+      });
+      setHasMore(result.hasMore || false);
+      setShowManualLoad(false);
+      setConsecutiveFailures(0);
+      setBackoffUntil(null);
+      
+      // Notify success
+      onSuccess?.({ appended: result.appended, offset: offset + result.appended, epoch, durationMs });
+      
+    } catch (error: any) {
+      if (isDevelopment) {
+        console.log('Infinite scroll: loadMore failed. Error:', error, 'epoch:', epoch);
       }
-    })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, limit, hasMore, isBot]);
+      
+      // Handle failure
+      const isAbort = error instanceof Error && error.name === 'AbortError';
+      if (!isAbort) {
+        setConsecutiveFailures(prev => prev + 1);
+        setBackoffUntil(Date.now() + Math.min(1000 * Math.pow(2, Math.min(consecutiveFailures, 5)), 8000)); // Exponential backoff, max 8s
+        setShowManualLoad(true);
+        
+        onFailure?.({ error: error.message ?? 'error', consecutiveFailures: consecutiveFailures + 1, epoch });
+      } else {
+        onAbort?.({ cause: 'abort', epoch });
+      }
+    } finally {
+      inFlightRef.current = false;
+    }
+  }, [canRequestAnother, loadMore, limit, offset, hasMore, onSuccess, onFailure, onAbort, consecutiveFailures]);
 
   const { setTarget } = useIntersectionObserver(
     () => {
       // Only trigger if we actually have more data to load
       if (hasMore && !inFlightRef.current) {
+        if (isDevelopment) {
+          console.log('Infinite scroll: Intersection observer triggered, loading more content. hasMore:', hasMore, 'offset:', offset);
+        }
         queueStarvation();
         request('io');
+      } else if (isDevelopment) {
+        console.log('Infinite scroll: Intersection observer triggered but skipping - hasMore:', hasMore, 'inFlight:', !!inFlightRef.current, 'offset:', offset);
       }
     },
     { reinitOnPageShow, onHiddenAbort: controllerRef.current }
@@ -194,6 +200,18 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
   useEffect(() => {
     // starvation timer lifecycle
     return () => clearStarvation();
+  }, []);
+
+  // Cleanup effect to prevent memory leaks and excessive requests
+  useEffect(() => {
+    return () => {
+      // Abort any pending requests on unmount
+      if (controllerRef.current) {
+        controllerRef.current.abort('component-unmount');
+      }
+      // Clear any pending timeouts
+      clearStarvation();
+    };
   }, []);
 
   // public API

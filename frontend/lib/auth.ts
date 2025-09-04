@@ -1,45 +1,26 @@
 import { redirect } from "next/navigation";
+import { postgresAuth, type AuthUser } from "@/lib/auth/postgres-auth";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { 
-  isSupabaseConfigured, 
-  transformSupabaseUser, 
-  type TransformedUser,
-  isAdminUser
-} from "@/lib/utils/auth-utils";
-import { Permission } from "@/lib/constants/permissions";
-import { hasUserPermission, hasMinimumRoleLevel } from "@/lib/utils/auth-utils";
-
-// Enhanced Supabase authentication system with role integration
-export async function getSessionUser(): Promise<TransformedUser | null> {
+// PostgreSQL-based authentication system
+export async function getSessionUser(): Promise<AuthUser | null> {
   try {
-    // Check if Supabase is configured using centralized utility
-    if (!isSupabaseConfigured()) {
+    // Check if user is authenticated via PostgreSQL auth
+    if (!postgresAuth.isAuthenticated()) {
       return null;
     }
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      // Get session for JWT token
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Transform user with role information
-      return await transformSupabaseUser(user, {
-        includeRoles: !!session?.access_token,
-        userToken: session?.access_token || undefined
-      });
-    }
+    // Get user profile from PostgreSQL auth
+    const user = await postgresAuth.getProfile();
+    return user;
   } catch (error) {
-    console.error('[Auth] Supabase auth check failed:', error);
-    // Supabase auth check failed - silent fail
+    console.error('[Auth] PostgreSQL auth check failed:', error);
+    // PostgreSQL auth check failed - silent fail
   }
 
   return null;
 }
 
-export async function requireUser(): Promise<TransformedUser> {
+export async function requireUser(): Promise<AuthUser> {
   const user = await getSessionUser();
   if (!user) {
     redirect("/auth/signin");
@@ -51,30 +32,16 @@ export async function requireUser(): Promise<TransformedUser> {
  * Get session user with guaranteed role information
  * Useful for admin routes that need role data
  */
-export async function getSessionUserWithRoles(): Promise<TransformedUser | null> {
+export async function getSessionUserWithRoles(): Promise<AuthUser | null> {
   try {
-    if (!isSupabaseConfigured()) {
+    // Check if user is authenticated via PostgreSQL auth
+    if (!postgresAuth.isAuthenticated()) {
       return null;
     }
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        console.warn('[Auth] No session token available for role fetching');
-        // Return user without roles rather than failing
-        return await transformSupabaseUser(user, { includeRoles: false });
-      }
-      
-      // Always fetch roles for this function
-      return await transformSupabaseUser(user, {
-        includeRoles: true,
-        userToken: session.access_token
-      });
-    }
+    // Get user profile with roles from PostgreSQL auth
+    const user = await postgresAuth.getProfile();
+    return user;
   } catch (error) {
     console.error('[Auth] Error getting user with roles:', error);
   }
@@ -86,14 +53,16 @@ export async function getSessionUserWithRoles(): Promise<TransformedUser | null>
  * Require user with admin role
  * Redirects to signin if not authenticated or not admin
  */
-export async function requireAdminUser(): Promise<TransformedUser> {
+export async function requireAdminUser(): Promise<AuthUser> {
   const user = await getSessionUserWithRoles();
   
   if (!user) {
     redirect("/auth/signin");
   }
   
-  if (!isAdminUser(user)) {
+  // Check if user has admin role
+  const isAdmin = await postgresAuth.isAdmin();
+  if (!isAdmin) {
     // Authenticated but not an admin
     redirect("/");
   }
@@ -102,45 +71,77 @@ export async function requireAdminUser(): Promise<TransformedUser> {
 }
 
 /**
- * Check if user has specific permission
+ * Check if current user has specific permission
  */
-export async function checkUserPermission(permission: Permission): Promise<boolean> {
-  const user = await getSessionUserWithRoles();
-  
-  if (!user) {
+export async function hasUserPermission(permission: string): Promise<boolean> {
+  try {
+    const user = await getSessionUser();
+    if (!user) return false;
+    
+    // Check if user has admin role (full permissions)
+    const isAdmin = await postgresAuth.isAdmin();
+    if (isAdmin) return true;
+    
+    // Check specific permission based on user roles
+    // This is a simplified implementation - you can enhance this based on your permission system
+    return user.roles.some(role => role.role === 'admin' || role.role === 'moderator');
+  } catch (error) {
+    console.error('[Auth] Permission check failed:', error);
     return false;
   }
-  
-  return hasUserPermission(user, permission);
 }
 
 /**
- * Check if user has minimum role level
+ * Check if current user has minimum role level
  */
-export async function checkMinimumRoleLevel(minLevel: number): Promise<boolean> {
-  const user = await getSessionUserWithRoles();
-  
-  if (!user) {
+export async function hasMinimumRoleLevel(requiredLevel: number): Promise<boolean> {
+  try {
+    const user = await getSessionUser();
+    if (!user) return false;
+    
+    return await postgresAuth.hasMinimumRoleLevel(requiredLevel);
+  } catch (error) {
+    console.error('[Auth] Role level check failed:', error);
     return false;
   }
-  
-  return hasMinimumRoleLevel(user, minLevel);
 }
 
 /**
- * Assert that user has admin role or throw error
- * For use in API routes where redirects are not appropriate
+ * Get current user ID
  */
-export async function assertAdminOrThrow(): Promise<TransformedUser> {
-  const user = await getSessionUserWithRoles();
-  
-  if (!user) {
-    throw new Error('Authentication required');
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const user = await getSessionUser();
+    return user?.id || null;
+  } catch (error) {
+    console.error('[Auth] Get user ID failed:', error);
+    return null;
   }
-  
-  if (!isAdminUser(user)) {
-    throw new Error('Admin access required');
+}
+
+/**
+ * Check if user is authenticated
+ */
+export async function isAuthenticated(): Promise<boolean> {
+  try {
+    return postgresAuth.isAuthenticated();
+  } catch (error) {
+    console.error('[Auth] Authentication check failed:', error);
+    return false;
   }
-  
-  return user;
+}
+
+/**
+ * Get user profile
+ */
+export async function getUserProfile(): Promise<AuthUser | null> {
+  try {
+    if (!postgresAuth.isAuthenticated()) {
+      return null;
+    }
+    return await postgresAuth.getProfile();
+  } catch (error) {
+    console.error('[Auth] Get profile failed:', error);
+    return null;
+  }
 }

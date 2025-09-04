@@ -4,6 +4,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const page = searchParams.get('page') || '1';
   const limit = searchParams.get('limit') || '20';
+  const offset = searchParams.get('offset');
   
   try {
     const search = searchParams.get('search') || '';
@@ -19,9 +20,15 @@ export async function GET(request: NextRequest) {
     
     // Build query parameters for backend API
     const queryParams = new URLSearchParams({
-      page,
       limit,
     });
+    
+    // Use offset if provided, otherwise fall back to page-based pagination
+    if (offset !== null) {
+      queryParams.set('offset', offset);
+    } else {
+      queryParams.set('page', page);
+    }
     
     // Add search parameter
     if (search) {
@@ -81,7 +88,7 @@ export async function GET(request: NextRequest) {
           success: false,
           synagogues: [],
           total: 0,
-          page: parseInt(page),
+          page: offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page),
           limit: parseInt(limit),
           totalPages: 0,
           hasNext: false,
@@ -96,11 +103,15 @@ export async function GET(request: NextRequest) {
     const backendData = await backendResponse.json();
     
     // Transform the backend response to match frontend expectations
+    const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
+    const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
+    
     const transformedResponse = {
       synagogues: backendData.synagogues || [],
       total: backendData.total || 0,
-      page: backendData.page || parseInt(page),
+      page: currentPage,
       limit: backendData.limit || parseInt(limit),
+      offset: currentOffset,
       totalPages: backendData.totalPages || Math.ceil((backendData.total || 0) / parseInt(limit)),
       hasNext: backendData.hasNext || false,
       hasPrev: backendData.hasPrev || false
@@ -116,12 +127,17 @@ export async function GET(request: NextRequest) {
       error.message.toLowerCase().includes('fetch') ||
       error.message.toLowerCase().includes('network')
     );
+    
+    const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
+    const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
+    
     const payload = {
       success: false,
       synagogues: [],
       total: 0,
-      page: parseInt(page || '1'),
+      page: currentPage,
       limit: parseInt(limit || '20'),
+      offset: currentOffset,
       totalPages: 0,
       hasNext: false,
       hasPrev: false,

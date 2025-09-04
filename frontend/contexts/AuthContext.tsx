@@ -1,13 +1,13 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authService, AuthUser } from '@/lib/auth-service';
+import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { email: string; password: string; username?: string; first_name?: string; last_name?: string }) => Promise<void>;
+  register: (data: { email: string; password: string; name?: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isAuthenticated: () => boolean;
@@ -26,10 +26,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
+      if (postgresAuth.isAuthenticated()) {
+        const currentUser = await postgresAuth.getProfile();
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Auth check error:', error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -37,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await authService.login(email, password);
+      const response = await postgresAuth.login({ email, password });
       setUser(response.user);
     } catch (error) {
       console.error('Login error:', error);
@@ -45,9 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (data: { email: string; password: string; username?: string; first_name?: string; last_name?: string }) => {
+  const register = async (data: { email: string; password: string; name?: string }) => {
     try {
-      const newUser = await authService.register(data);
+      const result = await postgresAuth.register(data);
       // After registration, log the user in
       await login(data.email, data.password);
     } catch (error) {
@@ -58,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await authService.logout();
+      await postgresAuth.logout();
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
@@ -67,8 +72,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
+      if (postgresAuth.isAuthenticated()) {
+        const currentUser = await postgresAuth.getProfile();
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Refresh user error:', error);
       setUser(null);
@@ -76,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isAuthenticated = () => {
-    return !!user;
+    return postgresAuth.isAuthenticated();
   };
 
   const value: AuthContextType = {
