@@ -23,29 +23,37 @@ export async function GET(request: NextRequest) {
     
     // Build cache key for this specific query
     const queryParams = Array.from(searchParams.entries())
+      .filter(([key]) => !key.startsWith('_')) // Exclude cache-busting parameters
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}=${value}`)
       .join('&');
     const cacheKey = `restaurants-with-filters:${queryParams}`;
     
-    // Short sequential suppression before full cache check
-    const recent = recentlyServed.get(cacheKey);
-    if (recent && Date.now() - recent.timestamp < SUPPRESS_WINDOW_MS) {
-      return NextResponse.json(recent.payload, { headers: recent.headers, status: recent.status });
+    // Check if this is a cache-busting request
+    const isCacheBusting = Array.from(searchParams.entries()).some(([key]) => key.startsWith('_'));
+    
+    // Short sequential suppression before full cache check (skip if cache-busting)
+    if (!isCacheBusting) {
+      const recent = recentlyServed.get(cacheKey);
+      if (recent && Date.now() - recent.timestamp < SUPPRESS_WINDOW_MS) {
+        return NextResponse.json(recent.payload, { headers: recent.headers, status: recent.status });
+      }
     }
 
-    // Check cache first
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      const payload = { success: true, ...cached.data, cached: true };
-      const headers = {
-        'Cache-Control': 'public, max-age=180', // 3 minutes browser cache
-        'CDN-Cache-Control': 'public, max-age=180',
-        'Vercel-CDN-Cache-Control': 'public, max-age=180'
-      } as Record<string, string>;
-      // Record as recently served to absorb micro-bursts
-      recentlyServed.set(cacheKey, { payload, headers, status: undefined, timestamp: Date.now() });
-      return NextResponse.json(payload, { headers });
+    // Check cache first (skip if cache-busting)
+    if (!isCacheBusting) {
+      const cached = cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        const payload = { success: true, ...cached.data, cached: true };
+        const headers = {
+          'Cache-Control': 'public, max-age=180', // 3 minutes browser cache
+          'CDN-Cache-Control': 'public, max-age=180',
+          'Vercel-CDN-Cache-Control': 'public, max-age=180'
+        } as Record<string, string>;
+        // Record as recently served to absorb micro-bursts
+        recentlyServed.set(cacheKey, { payload, headers, status: undefined, timestamp: Date.now() });
+        return NextResponse.json(payload, { headers });
+      }
     }
 
     // If an identical request is already being processed, reuse its result
@@ -145,7 +153,9 @@ export async function GET(request: NextRequest) {
       }
 
       // Combine the responses
-      const returnedCount = Array.isArray(restaurantsData?.data)
+      const returnedCount = Array.isArray(restaurantsData?.restaurants)
+        ? restaurantsData.restaurants.length
+        : Array.isArray(restaurantsData?.data)
         ? restaurantsData.data.length
         : Array.isArray(restaurantsData)
         ? restaurantsData.length
@@ -180,7 +190,7 @@ export async function GET(request: NextRequest) {
       
       const combinedData = {
         data: {
-          restaurants: restaurantsData.data || [],
+          restaurants: restaurantsData.restaurants || restaurantsData.data || [],
           total: totalFromBackend,
           filterOptions: filterOptionsData.data || filterOptionsData
         },

@@ -162,6 +162,9 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     params.set('limit', String(limit));
     params.set('offset', String(offset));
     
+    // Add cache-busting timestamp to force fresh data
+    params.set('_cb', String(Date.now()));
+    
     if (query && String(query).trim()) {
       params.set('search', String(query).trim());
     }
