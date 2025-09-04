@@ -27,13 +27,26 @@ shtetl_store_bp = Blueprint(
 def create_shtetl_store_service():
     """Create shtetl store service instance."""
     try:
-        from database.database_manager_v4 import DatabaseManagerV4
+        from flask import current_app
         from utils.cache_manager_v4 import CacheManagerV4
         from utils.config_manager import ConfigManager
 
-        db_manager = DatabaseManagerV4()
-        cache_manager = CacheManagerV4()
-        config = ConfigManager()
+        # Get dependencies from app context
+        deps = current_app.config.get("dependencies", {})
+        # Get database manager v4 (already connected)
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
+            logger.error("Database manager v4 not available")
+            return None
+        
+        cache_manager = deps.get("cache_manager_v4")
+        if not cache_manager:
+            cache_manager = CacheManagerV4()
+        
+        config = deps.get("config_manager")
+        if not config:
+            config = ConfigManager()
+            
         return ShtetlStoreService(
             db_manager=db_manager, cache_manager=cache_manager, config=config
         )

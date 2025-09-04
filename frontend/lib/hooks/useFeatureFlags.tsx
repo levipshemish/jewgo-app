@@ -41,7 +41,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
       setLoading(true);
       setError(null);
 
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://api.jewgo.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };
@@ -91,7 +91,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
     return flag?.enabled ?? defaultEnabled;
   }, [flags]);
 
-  const getFeatureFlag = useCallback((flagName: string): FeatureFlag | undefined => {
+  const getFeatureFlag = useCallback((flagName: string): FeatureFlagConfig | undefined => {
     return flags[flagName];
   }, [flags]);
 
@@ -128,13 +128,13 @@ export function useFeatureFlag(flagName: string, defaultEnabled: boolean = false
 // Feature flag context for global state management
 
 interface FeatureFlagsContextType {
-  flags: Record<string, FeatureFlag>;
+  flags: Record<string, FeatureFlagConfig>;
   environment: string;
   userId?: string;
   loading: boolean;
   error: Error | null;
   isFeatureEnabled: (flagName: string, defaultEnabled?: boolean) => boolean;
-  getFeatureFlag: (flagName: string) => FeatureFlag | undefined;
+  getFeatureFlag: (flagName: string) => FeatureFlagConfig | undefined;
   refreshFlags: () => void;
 }
 

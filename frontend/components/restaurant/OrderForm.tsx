@@ -599,7 +599,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                   <h4 className="font-medium text-gray-900 mb-2">Order Items</h4>
                   <div className="space-y-2">
                     {orderConfirmation.items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100">
+                      <div key={item.id || `${item.name}-${index}` } className="flex justify-between items-center py-2 border-b border-gray-100">
                         <div>
                           <p className="font-medium">{item.name}</p>
                           <p className="text-sm text-gray-600">Qty: {item.quantity}</p>

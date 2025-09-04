@@ -6,18 +6,19 @@ import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { queryAuditLogs, exportAuditLogs } from '@/lib/admin/audit';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
+import { errorResponses } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.AUDIT_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Get query parameters
@@ -71,10 +72,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     adminLogger.error('Audit log query error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to fetch audit logs' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -89,12 +87,12 @@ export async function POST(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token via header only
@@ -133,12 +131,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ error: 'Unsupported format' }, { status: 400 });
+    return errorResponses.badRequest();
   } catch (error) {
     adminLogger.error('Audit log export error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to export audit logs' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

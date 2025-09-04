@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import styles from './GenericPageLayout.module.css';
 
 interface GenericPageLayoutProps<T> {
@@ -6,14 +6,15 @@ interface GenericPageLayoutProps<T> {
   renderItem: (item: T, index: number) => React.ReactNode;
   getItemKey?: (item: T, index: number) => React.Key;
   pageTitle?: string;
-  enableInfiniteScroll?: boolean;
-  hasNextPage?: boolean;
+
+
+
   gridClassName?: string;
   minColumnWidth?: string;
   isLoading?: boolean;
-  isLoadingMore?: boolean;
+
   listLabel?: string;
-  sentinelRef?: React.RefObject<HTMLDivElement>;
+
   emptyRenderer?: () => React.ReactNode;
   header?: React.ReactNode;
   navigation?: React.ReactNode;
@@ -34,14 +35,15 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
     renderItem,
     getItemKey,
     pageTitle,
-    enableInfiniteScroll,
-    hasNextPage,
+
+
+
     gridClassName,
     minColumnWidth = '150px',
     isLoading = false,
-    isLoadingMore = false,
+
     listLabel,
-    sentinelRef,
+
     emptyRenderer,
     header,
     navigation,
@@ -56,8 +58,7 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
     ariaRowCount,
   } = props;
 
-  const internalSentinelRef = useRef<HTMLDivElement | null>(null);
-  const mergedRef = sentinelRef ?? internalSentinelRef;
+
 
   return (
     <Wrapper className={containerClassName ?? ''}>
@@ -80,7 +81,7 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
             style={{ ['--min-col' as any]: minColumnWidth }}
             data-testid="gpl-grid"
             role="grid"
-            aria-busy={isLoading || isLoadingMore}
+            aria-busy={isLoading}
             aria-label={listLabel || pageTitle}
             aria-colcount={ariaColCount}
             aria-rowcount={ariaRowCount}
@@ -101,25 +102,14 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
           emptyRenderer ? emptyRenderer() : null
         )}
 
-        {enableInfiniteScroll && hasNextPage && (
-          <div ref={mergedRef} className={styles.sentinel} data-testid="gpl-sentinel">
-            {isLoadingMore && (
-              <div className={styles.loadingIndicator}>
-                <div className={styles.spinner} />
-                <span>Loading more...</span>
-              </div>
-            )}
-          </div>
-        )}
+
 
         {afterItems}
       </div>
 
       {footer}
 
-      <div className={styles.srOnly} aria-live="polite">
-        {isLoadingMore ? 'Loading more…' : ''}
-      </div>
+
     </Wrapper>
   );
 }

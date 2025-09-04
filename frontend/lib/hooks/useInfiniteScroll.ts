@@ -1,304 +1,232 @@
-/// <reference types="node" />
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { DEBUG, debugLog } from '@/lib/utils/debug';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIntersectionObserver } from '@/lib/hooks/useIntersectionObserver';
+import {
+  IS_MIN_REMAINING_VIEWPORT_MULTIPLIER,
+  IS_STARVATION_MS,
+  IS_MAX_CONSEC_AUTOLOADS,
+  IS_USER_SCROLL_DELTA_PX,
+} from '@/lib/config/infiniteScroll.constants';
 
-export interface InfiniteScrollOptions {
-  threshold?: number;
-  rootMargin?: string;
-  root?: Element | null;
-  disabled?: boolean;
-}
+export type LoadMoreArgs = { signal: AbortSignal; offset: number; limit: number };
+export type LoadResult = { appended: number; hasMore?: boolean };
+export type LoadFn = (args: LoadMoreArgs) => Promise<LoadResult>;
 
-export interface UseInfiniteScrollReturn {
-  loadMore: () => void;
-  hasMore: boolean;
-  isLoadingMore: boolean;
-  loadingRef: React.RefObject<HTMLDivElement>;
-  setHasMore: (hasMore: boolean) => void;
-  setIsLoadingMore: (loading: boolean) => void;
-}
+export type UseInfiniteScrollOpts = {
+  limit: number;
+  initialOffset?: number;
+  reinitOnPageShow?: boolean;
+  onAttempt?: (meta: { offset: number; epoch: number }) => void;
+  onSuccess?: (meta: { appended: number; offset: number; epoch: number; durationMs: number }) => void;
+  onAbort?: (meta: { cause: string; epoch: number }) => void;
+  onFailure?: (meta: { error: string; consecutiveFailures: number; epoch: number }) => void;
+  isBot?: boolean;
+};
 
-export function useInfiniteScroll(
-  onLoadMore: () => void | Promise<void>,
-  options: InfiniteScrollOptions = {}
-): UseInfiniteScrollReturn {
-  const {
-    threshold = 0.1,
-    rootMargin = '100px',
-    root = null,
-    disabled = false
-  } = options;
+export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts) {
+  const { limit, initialOffset = 0, reinitOnPageShow, onAttempt, onSuccess, onAbort, onFailure, isBot } = opts;
 
+  const [offset, setOffset] = useState(initialOffset);
   const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const loadingRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const lastLoadTimeRef = useRef<number>(0);
+  const [showManualLoad, setShowManualLoad] = useState(false);
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0);
+  const [backoffUntil, setBackoffUntil] = useState<number | null>(null);
 
-  // Load more function with loading state management
-  const loadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore || disabled) {
-      if (DEBUG) { debugLog('Infinite scroll: Load more blocked', { isLoadingMore, hasMore, disabled }); }
+  const epochRef = useRef(0);
+  const inFlightRef = useRef<Promise<void> | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+  const lastAppendAtRef = useRef<number>(performance.now());
+  const consecAutoLoadsRef = useRef(0);
+  const lastScrollYRef = useRef<number>(0);
+  const starvationTimerRef = useRef<number | null>(null);
+
+  // Initialize scroll position on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      lastScrollYRef.current = window.scrollY;
+    }
+  }, []);
+
+  const clearStarvation = () => {
+    if (typeof window !== 'undefined' && starvationTimerRef.current) {
+      window.clearTimeout(starvationTimerRef.current);
+      starvationTimerRef.current = null;
+    }
+  };
+
+  const queueStarvation = () => {
+    if (typeof window === 'undefined') return;
+    clearStarvation();
+    starvationTimerRef.current = window.setTimeout(() => {
+      setShowManualLoad(true);
+    }, IS_STARVATION_MS);
+  };
+
+  const canRequestAnother = () => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+    
+    // Don't request more if we're already at the bottom
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight) {
+      return false;
+    }
+    
+    const remaining = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+    const shouldRequest = remaining < IS_MIN_REMAINING_VIEWPORT_MULTIPLIER * window.innerHeight;
+    
+    // CRITICAL FIX: Add safety check to prevent infinite loading
+    // If we've already loaded a lot of content, be more conservative
+    if (offset > 500) { // Reduced from 1000 to be more conservative
+      console.warn('Infinite scroll safety limit reached:', offset);
+      return false;
+    }
+    
+    // Additional safety: if we're very close to the bottom, don't request more
+    // This prevents the "always loading" state when user is at the bottom
+    if (remaining < 100) { // 100px threshold
+      return false;
+    }
+    
+    // Debug logging for infinite loading detection
+    if (process.env.NODE_ENV === 'development' && shouldRequest) {
+      console.log('🔍 Infinite Scroll Request Check:', {
+        scrollY: window.scrollY,
+        innerHeight: window.innerHeight,
+        scrollHeight: document.documentElement.scrollHeight,
+        remaining,
+        threshold: IS_MIN_REMAINING_VIEWPORT_MULTIPLIER * window.innerHeight,
+        shouldRequest,
+        currentOffset: offset
+      });
+    }
+    
+    return shouldRequest;
+  };
+
+  const request = useCallback((reason: 'io'|'manual') => {
+    if (!hasMore || isBot) return;
+    if (!canRequestAnother()) return;
+    if (typeof window === 'undefined') return;
+    
+    // Additional safety check: if we've already loaded a lot of items, be more conservative
+    if (offset > 1000) { // Arbitrary limit to prevent runaway loading
+      console.warn('Infinite scroll safety limit reached:', offset);
+      setHasMore(false);
       return;
     }
+    
+    // CRITICAL FIX: Add request count safety to prevent infinite loops
+    const requestCount = epochRef.current;
+    if (requestCount > 50) { // Arbitrary limit to prevent infinite requests
+      console.error('Infinite scroll request limit reached:', requestCount);
+      setHasMore(false);
+      return;
+    }
+    
+    // Check if we're in backoff period
+    if (backoffUntil && Date.now() < backoffUntil) return;
 
-    // Prevent rapid-fire loading with a minimum delay
+    // Additional safety: prevent rapid successive requests
     const now = Date.now();
-    const timeSinceLastLoad = now - lastLoadTimeRef.current;
-    if (timeSinceLastLoad < 300) { // Minimum 300ms between loads
-      if (DEBUG) { debugLog('Infinite scroll: Load more blocked - too soon', { timeSinceLastLoad }); }
-      return;
-    }
-
-    if (DEBUG) { debugLog('Infinite scroll: Starting load more'); }
-
-    lastLoadTimeRef.current = now;
-    setIsLoadingMore(true);
-    
-    try {
-      await onLoadMore();
-    } catch (error) {
-      console.error('Error in infinite scroll load more:', error);
-    } finally {
-      setIsLoadingMore(false);
-      if (DEBUG) { debugLog('Infinite scroll: Load more completed'); }
-    }
-  }, [onLoadMore, isLoadingMore, hasMore, disabled]);
-
-  // Set up intersection observer
-  const prevDisabledRef = useRef(disabled);
-  const prevHasMoreRef = useRef(hasMore);
-
-  useEffect(() => {
-    if (DEBUG && (prevDisabledRef.current !== disabled || prevHasMoreRef.current !== hasMore)) {
-      debugLog('Infinite scroll: Disabled or no more items', { disabled, hasMore });
-      prevDisabledRef.current = disabled;
-      prevHasMoreRef.current = hasMore;
-    }
-    if (disabled || !hasMore) {
-      return;
-    }
-
-    // Clean up existing observer
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-
-        if (DEBUG) {
-          debugLog('Infinite scroll: Intersection observed', { 
-            isIntersecting: entry.isIntersecting, 
-            isLoadingMore, 
-            hasMore,
-            target: entry.target
-          });
-        }
-
-        if (entry.isIntersecting && !isLoadingMore && hasMore) {
-          console.log('🎯 Intersection observer triggered load more', {
-            isIntersecting: entry.isIntersecting,
-            isLoadingMore,
-            hasMore,
-            target: entry.target
-          });
-          if (DEBUG) { debugLog('Infinite scroll: Triggering load more'); }
-          loadMore();
-        }
-      },
-      {
-        threshold,
-        rootMargin,
-        root
+    if (lastAppendAtRef.current && (now - lastAppendAtRef.current) < 500) { // 500ms minimum between requests
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚫 Skipping request - too soon after last append:', now - lastAppendAtRef.current);
       }
-    );
+      return;
+    }
 
-    observerRef.current = observer;
-
-    // Re-check for the element after a short delay if not found initially
-    const checkAndObserve = () => {
-      if (loadingRef.current) {
-        observer.observe(loadingRef.current);
-        console.log('👁️ Intersection observer attached to element', loadingRef.current);
-        if (DEBUG) { debugLog('Infinite scroll: Observer attached to element'); }
+    // momentum guard: require user delta between bursts
+    if (reason === 'io') {
+      const dy = Math.abs(window.scrollY - lastScrollYRef.current);
+      if (dy < IS_USER_SCROLL_DELTA_PX) {
+        if (consecAutoLoadsRef.current >= IS_MAX_CONSEC_AUTOLOADS) return;
+        consecAutoLoadsRef.current += 1;
       } else {
-        console.log('❌ No loading ref element found, retrying...');
-        if (DEBUG) { debugLog('Infinite scroll: No loading ref element found, retrying...'); }
-        // Retry after a short delay
-        setTimeout(() => {
-          if (loadingRef.current && observerRef.current) {
-            observerRef.current.observe(loadingRef.current);
-            console.log('👁️ Intersection observer attached to element (retry)', loadingRef.current);
-            if (DEBUG) { debugLog('Infinite scroll: Observer attached to element (retry)'); }
-          }
-        }, 100);
+        consecAutoLoadsRef.current = 0;
+        lastScrollYRef.current = window.scrollY;
       }
-    };
+    }
 
-    checkAndObserve();
+    // enforce ≤1 pending request
+    if (inFlightRef.current) return;
 
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
+    const start = performance.now();
+    const currentEpoch = epochRef.current;
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    onAttempt?.({ offset, epoch: currentEpoch });
+
+    inFlightRef.current = (async () => {
+      try {
+        const { appended, hasMore: hasMoreFromServer } = await loadMore({ signal: controller.signal, offset, limit });
+        const dur = performance.now() - start;
+        lastAppendAtRef.current = performance.now();
+        setOffset(o => o + appended);
+        setHasMore(typeof hasMoreFromServer === 'boolean' ? hasMoreFromServer : false);
+        setShowManualLoad(false);
+        
+        // Reset failure count and backoff on success
+        setConsecutiveFailures(0);
+        setBackoffUntil(null);
+        
+        onSuccess?.({ appended, offset, epoch: currentEpoch, durationMs: dur });
+      } catch (e: any) {
+        if (controller.signal.aborted) {
+          onAbort?.({ cause: String(controller.signal.reason ?? 'aborted'), epoch: currentEpoch });
+        } else {
+          // Track consecutive failures and apply exponential backoff
+          const newFailureCount = consecutiveFailures + 1;
+          setConsecutiveFailures(newFailureCount);
+          
+          // Calculate backoff: 0.5s, 1s, 2s, 4s, 8s (capped at 8s)
+          const backoffMs = Math.min(500 * Math.pow(2, newFailureCount - 1), 8000);
+          const backoffUntilTime = Date.now() + backoffMs;
+          setBackoffUntil(backoffUntilTime);
+          
+          setShowManualLoad(true);
+          onFailure?.({ error: e?.message ?? 'error', consecutiveFailures: newFailureCount, epoch: currentEpoch });
+          onAbort?.({ cause: e?.message ?? 'error', epoch: currentEpoch });
+        }
+      } finally {
+        inFlightRef.current = null;
       }
-    };
-  }, [threshold, rootMargin, root, disabled, hasMore, loadMore, isLoadingMore]); // Include loadMore in dependencies
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, limit, hasMore, isBot]);
 
-
-
-  return {
-    loadMore,
-    hasMore,
-    isLoadingMore,
-    loadingRef,
-    setHasMore,
-    setIsLoadingMore
-  };
-}
-
-// Hook for manual infinite scroll with scroll event
-export function useScrollInfiniteScroll(
-  onLoadMore: () => void | Promise<void>,
-  options: InfiniteScrollOptions & { scrollThreshold?: number } = {}
-): UseInfiniteScrollReturn {
-  const {
-    scrollThreshold = 100,
-    disabled = false
-  } = options;
-
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const loadingRef = useRef<HTMLDivElement>(null);
-
-  const loadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore || disabled) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    
-    try {
-      await onLoadMore();
-    } catch (error) {
-      console.error('Error in scroll infinite scroll load more:', error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [onLoadMore, isLoadingMore, hasMore, disabled]);
-
-  // Handle scroll events
-  useEffect(() => {
-    if (disabled || !hasMore) {
-      return;
-    }
-
-    const handleScroll = () => {
-      if (isLoadingMore) {
-        return;
+  const { setTarget } = useIntersectionObserver(
+    () => {
+      // Only trigger if we actually have more data to load
+      if (hasMore && !inFlightRef.current) {
+        queueStarvation();
+        request('io');
       }
-
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-
-      if (scrollTop + windowHeight >= documentHeight - scrollThreshold) {
-        loadMore();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [disabled, hasMore, isLoadingMore, scrollThreshold, loadMore]);
-
-  return {
-    loadMore,
-    hasMore,
-    isLoadingMore,
-    loadingRef,
-    setHasMore,
-    setIsLoadingMore
-  };
-}
-
-// Hook for virtualized infinite scroll (for large lists)
-export function useVirtualizedInfiniteScroll(
-  onLoadMore: () => void | Promise<void>,
-  options: InfiniteScrollOptions & { 
-    itemHeight: number;
-    containerHeight: number;
-    overscan?: number;
-  }
-): UseInfiniteScrollReturn & {
-  virtualItems: Array<{
-    index: number;
-    start: number;
-    end: number;
-    size: number;
-  }>;
-  totalHeight: number;
-} {
-  const {
-    itemHeight,
-    containerHeight,
-    overscan = 5,
-    disabled = false
-  } = options;
-
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [itemCount, setItemCount] = useState(0);
-  const loadingRef = useRef<HTMLDivElement>(null);
-
-  const loadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore || disabled) {
-      return;
-    }
-
-    setIsLoadingMore(true);
-    
-    try {
-      await onLoadMore();
-      setItemCount(prev => prev + 1); // Increment item count
-    } catch (error) {
-      console.error('Error in virtualized infinite scroll load more:', error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [onLoadMore, isLoadingMore, hasMore, disabled]);
-
-  // Calculate virtual items
-  const virtualItems = [];
-  const totalHeight = itemCount * itemHeight;
-  
-  const startIndex = Math.max(0, Math.floor(0 / itemHeight) - overscan);
-  const endIndex = Math.min(
-    itemCount - 1,
-    Math.ceil((containerHeight || 0) / itemHeight) + overscan
+    },
+    { reinitOnPageShow, onHiddenAbort: controllerRef.current }
   );
 
-  for (let i = startIndex; i <= endIndex; i++) {
-    virtualItems.push({
-      index: i,
-      start: i * itemHeight,
-      end: (i + 1) * itemHeight,
-      size: itemHeight
-    });
-  }
+  useEffect(() => {
+    // starvation timer lifecycle
+    return () => clearStarvation();
+  }, []);
+
+  // public API
+  const manualLoad = () => { request('manual'); };
+  const resetForFilters = () => {
+    epochRef.current += 1;
+    controllerRef.current?.abort('filter-change');
+    consecAutoLoadsRef.current = 0;
+    setShowManualLoad(false);
+    setOffset(0);
+    setHasMore(true);
+    setConsecutiveFailures(0);
+    setBackoffUntil(null);
+    // URL replace handled by caller (>=500ms throttle)
+  };
+
+  const attachSentinel = (el: HTMLElement | null) => setTarget?.(el ?? null);
 
   return {
-    loadMore,
-    hasMore,
-    isLoadingMore,
-    loadingRef,
-    setHasMore,
-    setIsLoadingMore,
-    virtualItems,
-    totalHeight
+    state: { offset, hasMore, showManualLoad, epoch: epochRef.current, consecutiveFailures, backoffUntil },
+    actions: { manualLoad, resetForFilters, attachSentinel },
   };
 }

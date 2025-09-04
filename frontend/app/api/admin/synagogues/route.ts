@@ -3,11 +3,13 @@ import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, ENTITY_TYPES, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 import { safeOrderExpr } from '@/lib/admin/sql';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
+import { validationUtils } from '@/lib/admin/validation';
+import { errorResponses } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,12 +22,12 @@ export async function GET(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYNAGOGUE_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Get query parameters
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
     // Validate pagination
     const rawPage = parseInt(searchParams.get('page') || '1');
     const rawPageSize = parseInt(searchParams.get('pageSize') || '20');
-    const { page, pageSize } = (await import('@/lib/admin/validation')).validationUtils.validatePagination({ page: rawPage, pageSize: rawPageSize });
+    const { page, pageSize } = validationUtils.validatePagination({ page: rawPage, pageSize: rawPageSize });
     const search = searchParams.get('search') || '';
     const city = searchParams.get('city') || '';
     const state = searchParams.get('state') || '';
@@ -105,9 +107,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     adminLogger.error('Synagogue list error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to fetch synagogues' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

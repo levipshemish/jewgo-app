@@ -68,7 +68,7 @@ async function testAdminAccess(email: string): Promise<void> {
     
     // Test the get_user_admin_role function
     try {
-      const { data: role, error: roleError } = await supabase.rpc('get_user_admin_role', {
+      const { data: _role, error: roleError } = await supabase.rpc('get_user_admin_role', {
         user_id_param: user.id
       });
       
@@ -127,7 +127,7 @@ async function testAdminEndpoints(): Promise<void> {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const _data = await response.json();
 
       } else {
 

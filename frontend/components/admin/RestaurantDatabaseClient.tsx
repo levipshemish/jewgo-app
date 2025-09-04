@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import DataTable, { Column } from '@/components/admin/DataTable';
+import DataTable, { Column } from './DataTable';
 // Local hook and fetch function to avoid restricted imports
 const useAdminCsrf = () => {
   return {
@@ -18,7 +18,7 @@ const adminFetch = async (url: string, csrfToken: string, options?: RequestInit)
   return response;
 };
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/lib/ui/toast';
+import { useToast } from '../ui/Toast';
 
 interface Restaurant {
   id: number;
@@ -65,7 +65,7 @@ export default function RestaurantDatabaseClient({
 
   // Controlled state derived from URL params
   const page = Number(searchParams.get('page') || '1');
-  const { DEFAULT_PAGE_SIZE } = require('@/lib/config/pagination');
+  const { DEFAULT_PAGE_SIZE } = require('../../lib/config/pagination');
   const pageSize = Number(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE));
   const search = searchParams.get('search') || '';
   const sortBy = searchParams.get('sortBy') || 'created_at';

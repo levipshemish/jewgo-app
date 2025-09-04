@@ -323,7 +323,7 @@ export default function SearchBar({ onSearch, placeholder: _placeholder = "Searc
                 <div className="space-y-1">
                   {filteredSuggestions.map((suggestion, index) => (
                     <button
-                      key={index}
+                      key={suggestion.value || suggestion.label || `suggestion-${index}`}
                       onClick={() => handleSuggestionClick(suggestion.value)}
                       className="w-full text-left px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 rounded-lg transition-colors duration-200 flex items-center space-x-3"
                     >
@@ -349,7 +349,7 @@ export default function SearchBar({ onSearch, placeholder: _placeholder = "Searc
                 <div className="text-xs text-neutral-500 px-3 py-1">Popular searches</div>
                 {searchSuggestions.slice(0, 5).map((suggestion, index) => (
                   <button
-                    key={index}
+                    key={suggestion.value || suggestion.label || `popular-${index}`}
                     onClick={() => handleSuggestionClick(suggestion.value)}
                     className="w-full text-left px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 rounded-lg transition-colors duration-200 flex items-center space-x-3"
                   >

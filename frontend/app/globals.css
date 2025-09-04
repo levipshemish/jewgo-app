@@ -28,6 +28,7 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
+
 /* Disable transitions during scroll to prevent flickering */
 .scrolling * {
   transition: none !important;
@@ -97,9 +98,39 @@ img {
 .fixed.bottom-0 {
   position: fixed !important;
   bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: var(--z-bottom-nav) !important;
+}
+
+/* Pull-to-refresh visual feedback */
+.pull-to-refresh {
+  transition: transform 0.2s ease-out;
+}
+
+.pull-to-refresh[data-pulling="true"] {
+  transform: translateY(var(--pull-distance, 0px));
+}
+
+
+@media (max-width: 768px) {
+  .shuls-page {
+    /* Optimize scrolling performance on mobile */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  .shuls-page .fade-in {
+    animation: fadeInUp 0.3s ease-out;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 /* Force bottom navigation to be above all content */
@@ -293,6 +324,12 @@ html {
   /* Responsive grid columns */
   grid-template-columns: repeat(2, 1fr); /* Mobile: 2 columns */
   gap: 0.25rem; /* gap-1 - minimal spacing */
+}
+
+/* Infinite scroll modifier - removes row and height constraints */
+.restaurant-grid.infinite-scroll {
+  grid-template-rows: none !important;
+  max-height: none !important;
 }
 
 /* Responsive breakpoints for restaurant grid - reduced spacing */

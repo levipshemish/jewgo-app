@@ -24,7 +24,7 @@ function formatDistance(distance: number): string {
   }
 }
 
-function openDirections(location: { latitude: number; longitude: number }) {
+function _openDirections(location: { latitude: number; longitude: number }) {
   const url = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`
   window.open(url, '_blank')
 }
@@ -42,7 +42,7 @@ function handleFavorite(eateryId: string) {
   console.log('Toggling favorite for:', eateryId)
 }
 
-function handleShare() {
+function _handleShare() {
   if (navigator.share) {
     navigator.share({
       title: 'Check out this restaurant!',
@@ -65,7 +65,7 @@ function handleEmail(email?: string) {
   }
 }
 
-function handleTagClick(tag: string) {
+function _handleTagClick(tag: string) {
   console.log('Tag clicked:', tag)
 }
 

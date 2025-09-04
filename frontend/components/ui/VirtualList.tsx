@@ -12,10 +12,11 @@ interface VirtualListProps<T> {
   onScroll?: (scrollTop: number) => void;
   onEndReached?: () => void;
   endReachedThreshold?: number;
+  getKey?: (item: T, index: number) => string | number;
 }
 
 export function VirtualList<T>({
-  items, height, itemHeight, renderItem, overscan = 5, className = '', onScroll, onEndReached, endReachedThreshold = 0.8
+  items, height, itemHeight, renderItem, overscan = 5, className = '', onScroll, onEndReached, endReachedThreshold = 0.8, getKey
 }: VirtualListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,7 +114,7 @@ export function VirtualList<T>({
           >
             {visibleItems.map(({ item, index }) => (
               <div
-                key={index}
+                key={getKey ? getKey(item, index) : index}
                 className="virtual-list-item"
                 style={{
                   height: itemHeight,
@@ -168,6 +169,7 @@ export function VirtualRestaurantList({
         height={height}
         itemHeight={itemHeight}
         renderItem={renderRestaurant}
+        getKey={(r) => r.id}
         overscan={10}
         onEndReached={handleEndReached}
         endReachedThreshold={0.9}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     
     // Get query parameters
     const { searchParams } = new URL(request.url);

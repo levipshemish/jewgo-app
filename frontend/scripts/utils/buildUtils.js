@@ -43,7 +43,7 @@ const ENV_TEMPLATES = {
     GOOGLE_CLIENT_SECRET: 'your-google-client-secret',
     
     // Backend URL
-    NEXT_PUBLIC_BACKEND_URL: 'https://jewgo-app-oyoh.onrender.com',
+    NEXT_PUBLIC_BACKEND_URL: getBackendUrl(),
     
     // Google Maps
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'your-google-maps-api-key',
@@ -70,7 +70,7 @@ const ENV_TEMPLATES = {
     
     // Application URLs
     FRONTEND_URL: 'https://jewgo-app.vercel.app',
-    BACKEND_URL: 'https://jewgo-app-oyoh.onrender.com',
+    BACKEND_URL: getBackendUrl(),
     
     // Redis Configuration
     REDIS_URL: 'redis://user:password@host:6379',
@@ -433,8 +433,8 @@ function deployApplication(platform = 'VERCEL') {
 function runHealthChecks() {
 
   const healthChecks = [
-    { name: 'Frontend', url: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000' },
-    { name: 'Backend', url: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000' }
+    { name: 'Frontend', url: process.env.NEXT_PUBLIC_URL || getFrontendAppUrl() },
+    { name: 'Backend', url: process.env.NEXT_PUBLIC_BACKEND_URL || getBackendUrl() }
   ];
   
   const results = [];

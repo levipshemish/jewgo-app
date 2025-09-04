@@ -4,6 +4,11 @@
  */
 
 import { getAnalyticsConfig, isGoogleAnalyticsConfigured, isAnalyticsEnabled } from '@/lib/utils/analytics-config';
+import {
+  IS_ANALYTICS_MAX_EVENTS,
+  IS_ANALYTICS_MAX_ERRORS,
+  IS_MAX_RETRY_EPISODES_PER_SESSION,
+} from '@/lib/config/infiniteScroll.constants';
 
 export interface AnalyticsEvent {
   event: string;
@@ -455,3 +460,102 @@ class AnalyticsService {
 
 // Export singleton instance
 export const analyticsService = new AnalyticsService();
+
+// Infinite Scroll Analytics
+type InfiniteLoadAttempt = { reason: 'io'|'manual'; offset?: number; epoch: number };
+type InfiniteLoadSuccess = { durationMs: number; appended: number; offset?: number; epoch: number };
+type InfiniteLoadAbort = { cause: string; epoch: number };
+type RestoreScroll = { mode: 'offset'|'cursor'|'anchorId'|'none'; restoredY?: number; dataVersionMatch?: boolean };
+type RateLimitHit = { retryAfterMs?: number; episode: number };
+
+let eventCount = 0, errorCount = 0, retryEpisodes = 0;
+
+export const ISAnalytics = {
+  resetBudgets() { eventCount = errorCount = retryEpisodes = 0; },
+
+  trackAttempt(payload: InfiniteLoadAttempt) {
+    if (eventCount >= IS_ANALYTICS_MAX_EVENTS) return;
+    eventCount++;
+    analyticsService.trackEvent('infinite_scroll_load_attempt', {
+      reason: payload.reason,
+      offset: payload.offset,
+      epoch: payload.epoch,
+      category: 'infinite_scroll',
+    });
+  },
+
+  trackSuccess(payload: InfiniteLoadSuccess) {
+    if (eventCount >= IS_ANALYTICS_MAX_EVENTS) return;
+    eventCount++;
+    analyticsService.trackEvent('infinite_scroll_load_success', {
+      duration_ms: payload.durationMs,
+      appended: payload.appended,
+      offset: payload.offset,
+      epoch: payload.epoch,
+      category: 'infinite_scroll',
+    });
+  },
+
+  trackAbort(payload: InfiniteLoadAbort) {
+    if (errorCount >= IS_ANALYTICS_MAX_ERRORS) return;
+    errorCount++;
+    analyticsService.trackEvent('infinite_scroll_load_abort', {
+      cause: payload.cause,
+      epoch: payload.epoch,
+      category: 'infinite_scroll',
+    });
+  },
+
+  trackRestore(payload: RestoreScroll) {
+    if (eventCount >= IS_ANALYTICS_MAX_EVENTS) return;
+    eventCount++;
+    analyticsService.trackEvent('infinite_scroll_restore', {
+      mode: payload.mode,
+      restored_y: payload.restoredY,
+      data_version_match: payload.dataVersionMatch,
+      category: 'infinite_scroll',
+    });
+  },
+
+  trackRateLimit(payload: RateLimitHit) {
+    if (retryEpisodes >= IS_MAX_RETRY_EPISODES_PER_SESSION) return;
+    retryEpisodes++;
+    analyticsService.trackEvent('infinite_scroll_rate_limit', {
+      retry_after_ms: payload.retryAfterMs,
+      episode: payload.episode,
+      category: 'infinite_scroll',
+    });
+  },
+};
+
+// Virtualization Analytics
+type VirtualInit = { enabled: boolean; overscan: number; estimatePx: number };
+type VirtualMeasure = { measureErrorPx: number; estimatePx: number };
+type VirtualMemory = { usedMB?: number; totalMB?: number; jsHeap?: { totalJSHeapSize?: number; usedJSHeapSize?: number; jsHeapSizeLimit?: number }; t: number };
+
+export const ISVirtualAnalytics = {
+  trackEnabled(payload: VirtualInit) {
+    analyticsService.trackEvent('is.virtual.enabled', {
+      enabled: payload.enabled,
+      overscan: payload.overscan,
+      estimate_px: payload.estimatePx,
+      category: 'infinite_scroll',
+    });
+  },
+  trackMeasure(payload: VirtualMeasure) {
+    analyticsService.trackEvent('is.virtual.measure', {
+      error_px: payload.measureErrorPx,
+      estimate_px: payload.estimatePx,
+      category: 'infinite_scroll',
+    });
+  },
+  trackMemory(payload: VirtualMemory) {
+    analyticsService.trackEvent('is.virtual.memory', {
+      used_mb: payload.usedMB,
+      total_mb: payload.totalMB,
+      js_heap: payload.jsHeap,
+      t_ms: payload.t,
+      category: 'infinite_scroll',
+    });
+  },
+};

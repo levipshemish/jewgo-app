@@ -22,7 +22,7 @@ sys.path.insert(0, str(backend_dir))
 from utils.postgres_auth import PostgresAuthManager, PasswordSecurity, TokenManager
 from utils.rbac import RoleBasedAccessControl
 from utils.error_handler import ValidationError, AuthenticationError
-from database.database_manager_v4 import DatabaseManagerV4
+from database.database_manager_v4 import DatabaseManager
 
 
 class TestPasswordSecurity:
@@ -200,10 +200,140 @@ class TestRoleBasedAccessControl:
 
 
 @pytest.fixture
-def auth_manager():
-    """Create PostgreSQL auth manager for testing."""
-    db_manager = DatabaseManagerV4()
-    return PostgresAuthManager(db_manager)
+def auth_manager(monkeypatch):
+    """Create a PostgresAuthManager backed by an in-memory store (no real DB).
+
+    This converts DB-coupled tests into fast unit tests by patching the
+    PostgresAuthManager methods that would otherwise require a live database.
+    """
+    # Ensure JWT secret for TokenManager
+    os.environ.setdefault('JWT_SECRET', 'test-secret-key')
+
+    mgr = PostgresAuthManager(db_manager=object())  # dummy
+
+    store = {
+        'users_by_email': {},  # email -> user dict
+        'users_by_id': {},     # id -> user dict
+    }
+
+    def _create_user(email: str, password: str, name: str = None):
+        if not email or '@' not in email:
+            raise ValidationError("Valid email address is required")
+        email = email.lower().strip()
+        if email in store['users_by_email']:
+            raise ValidationError("Email address is already registered")
+        # Validate and hash password using real helpers
+        if not mgr.password_security.validate_password_strength(password)['is_valid']:
+            raise ValidationError("Password requirements not met")
+        pwd_hash = mgr.password_security.hash_password(password)
+        import secrets
+        user_id = secrets.token_hex(16)
+        verification_token = secrets.token_urlsafe(32)
+        user = {
+            'user_id': user_id,
+            'email': email,
+            'name': name,
+            'password_hash': pwd_hash,
+            'email_verified': False,
+            'verification_token': verification_token,
+            'roles': [{'role': 'user', 'level': 1}],
+            'failed_login_attempts': 0,
+            'locked_until': None,
+        }
+        store['users_by_email'][email] = user
+        store['users_by_id'][user_id] = user
+        return {
+            'user_id': user_id,
+            'email': email,
+            'name': name,
+            'email_verified': False,
+            'verification_token': verification_token,
+            'created_at': datetime.utcnow().isoformat(),
+        }
+
+    def _authenticate_user(email: str, password: str, ip_address: str = None):
+        email = (email or '').lower().strip()
+        user = store['users_by_email'].get(email)
+        if not user:
+            return None
+        # lock check
+        if user['locked_until'] and user['locked_until'] > datetime.utcnow():
+            return None
+        if not mgr.password_security.verify_password(password, user['password_hash']):
+            user['failed_login_attempts'] = (user.get('failed_login_attempts') or 0) + 1
+            if user['failed_login_attempts'] >= int(os.getenv('MAX_FAILED_LOGIN_ATTEMPTS', '5')):
+                user['locked_until'] = datetime.utcnow() + timedelta(minutes=int(os.getenv('ACCOUNT_LOCKOUT_MINUTES', '15')))
+            return None
+        # success
+        user['failed_login_attempts'] = 0
+        user['locked_until'] = None
+        return {
+            'user_id': user['user_id'],
+            'name': user['name'],
+            'email': user['email'],
+            'email_verified': user['email_verified'],
+            'roles': list(user['roles']),
+            'last_login': datetime.utcnow().isoformat(),
+        }
+
+    def _get_user_roles(user_id: str):
+        user = store['users_by_id'].get(user_id)
+        return list(user['roles']) if user else []
+
+    def _assign_user_role(user_id: str, role: str, level: int, granted_by: str = None, expires_at=None):
+        user = store['users_by_id'].get(user_id)
+        if not user:
+            return False
+        if not any(r['role'] == role for r in user['roles']):
+            user['roles'].append({'role': role, 'level': level})
+        return True
+
+    def _revoke_user_role(user_id: str, role: str) -> bool:
+        user = store['users_by_id'].get(user_id)
+        if not user:
+            return False
+        user['roles'] = [r for r in user['roles'] if r['role'] != role]
+        return True
+
+    def _verify_access_token(token: str):
+        payload = mgr.token_manager.verify_token(token, 'access')
+        if not payload:
+            return None
+        user = store['users_by_id'].get(payload['user_id'])
+        if not user:
+            return None
+        return {
+            'user_id': user['user_id'],
+            'name': user['name'],
+            'email': user['email'],
+            'email_verified': user['email_verified'],
+            'roles': list(user['roles']),
+            'token_payload': payload,
+        }
+
+    def _refresh_access_token(refresh_token: str):
+        payload = mgr.token_manager.verify_token(refresh_token, 'refresh')
+        if not payload:
+            return None
+        user = store['users_by_id'].get(payload['user_id'])
+        if not user:
+            return None
+        new_access = mgr.token_manager.generate_access_token(user['user_id'], user['email'], user['roles'])
+        return {
+            'access_token': new_access,
+            'token_type': 'Bearer',
+        }
+
+    # Monkeypatch methods on instance
+    monkeypatch.setattr(mgr, 'create_user', _create_user)
+    monkeypatch.setattr(mgr, 'authenticate_user', _authenticate_user)
+    monkeypatch.setattr(mgr, 'get_user_roles', _get_user_roles)
+    monkeypatch.setattr(mgr, 'assign_user_role', _assign_user_role)
+    monkeypatch.setattr(mgr, 'revoke_user_role', _revoke_user_role)
+    monkeypatch.setattr(mgr, 'verify_access_token', _verify_access_token)
+    monkeypatch.setattr(mgr, 'refresh_access_token', _refresh_access_token)
+
+    return mgr
 
 
 @pytest.fixture
@@ -377,7 +507,7 @@ def run_integration_tests():
     
     try:
         # Test database connection
-        db_manager = DatabaseManagerV4()
+        db_manager = DatabaseManager()
         with db_manager.get_db_connection() as conn:
             result = conn.execute("SELECT 1").fetchone()
             assert result[0] == 1

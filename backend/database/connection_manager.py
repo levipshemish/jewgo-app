@@ -14,7 +14,7 @@ from utils.logging_config import get_logger
 logger = get_logger(__name__)
 # Import ConfigManager at module level
 try:
-    from utils.unified_database_config import ConfigManager
+    from utils.unified_database_config import UnifiedDatabaseConfig as ConfigManager
 except ImportError:
     # Fallback for when utils module is not available
     import os
@@ -185,12 +185,20 @@ class DatabaseConnectionManager:
 
         @event.listens_for(engine, "connect")
         def set_postgresql_optimizations(dbapi_connection, connection_record):
-            """Set PostgreSQL optimizations for better performance."""
+            """Set PostgreSQL optimizations for better performance.
+            Wrapped in try/except for pooled providers (e.g., Neon) that may reject SETs.
+            """
             if engine.dialect.name == "postgresql":
-                cursor = dbapi_connection.cursor()
-                cursor.execute("SET statement_timeout = 30000")  # 30 seconds
-                cursor.execute("SET idle_in_transaction_session_timeout = 60000")  # 60 seconds
-                cursor.close()
+                try:
+                    cursor = dbapi_connection.cursor()
+                    cursor.execute("SET statement_timeout = 30000")  # 30 seconds
+                    cursor.execute(
+                        "SET idle_in_transaction_session_timeout = 60000"
+                    )  # 60 seconds
+                    cursor.close()
+                except Exception:
+                    # Non-fatal: leave default settings if SET fails
+                    pass
 
         @event.listens_for(engine, "checkout")
         def receive_checkout(dbapi_connection, connection_record, connection_proxy):
@@ -229,6 +237,10 @@ class DatabaseConnectionManager:
             logger.info("Database connection closed")
         self._is_connected = False
         self._session_factory = None
+
+    def disconnect(self):
+        """Disconnect from the database (alias for close)."""
+        self.close()
 
     def is_connected(self) -> bool:
         """Check if database is connected."""

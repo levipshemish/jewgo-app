@@ -1,42 +1,21 @@
 {
-  "name": "Jewgo - Find Your Kosher Eatery",
-  "short_name": "Jewgo",
-  "description": "Discover the best kosher restaurants, synagogues, and Jewish businesses in your area.",
+  "name": "JewGo - Kosher Restaurant Finder",
+  "short_name": "JewGo",
+  "description": "Find and discover kosher restaurants near you",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#74E1A0",
-  "theme_color": "#74E1A0",
-  "orientation": "portrait-primary",
-  "scope": "/",
-  "lang": "en",
-  "categories": ["food", "lifestyle", "travel"],
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "any",
-      "type": "image/x-icon",
-      "purpose": "any"
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "/icon.webp",
-      "sizes": "810x810",
-      "type": "image/webp",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/logo.webp",
-      "sizes": "810x810",
-      "type": "image/webp",
-      "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/logo.webp",
-      "sizes": "810x810",
-      "type": "image/webp",
-      "form_factor": "wide",
-      "label": "Jewgo App Screenshot"
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 } 

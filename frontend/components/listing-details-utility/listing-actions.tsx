@@ -134,7 +134,7 @@ export function ListingActions({
               {secondaryActions.map((action, index) => (
                 action.label && action.onClick && (
                   <Button
-                    key={index}
+                    key={action.label}
                     variant="secondary"
                     onClick={action.onClick}
                     className="bg-black hover:bg-gray-800 hover:scale-105 active:scale-95 text-white rounded-full px-3 sm:px-4 py-1 text-sm transition-all flex-1"
@@ -202,7 +202,7 @@ export function ListingActions({
 
                 return (
                   <Button
-                    key={index}
+                    key={`tag-${tag}`}
                     variant="secondary"
                     onClick={handleTagClick}
                     className={`${getKosherTagColor(tag)} hover:scale-105 active:scale-95 rounded-full px-3 sm:px-4 py-1 text-sm transition-all ${
@@ -259,7 +259,7 @@ export function ListingActions({
               <div className="space-y-2">
                 {bottomAction.hoursInfo.hours.map((item, index) => (
                   <div
-                    key={index}
+                    key={`hours-${item.day}-${item.time}`}
                     className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-b-0"
                   >
                     <span className="text-gray-600 font-medium text-sm">{item.day}</span>

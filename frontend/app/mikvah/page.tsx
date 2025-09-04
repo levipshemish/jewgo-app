@@ -10,7 +10,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { MikvahFilters } from '@/components/mikvah/MikvahFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
-import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+
 import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
@@ -415,9 +415,7 @@ function MikvahPageContent() {
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
-      // Update hasMore state for infinite scroll (mobile only)
-      const _hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
-      // Note: setHasMore is not available here due to hook order, will be set by useInfiniteScroll
+
     } catch (err) {
       appLogger.error('Mikvah fetch error', { error: String(err) });
       if (err instanceof Error) {
@@ -440,62 +438,15 @@ function MikvahPageContent() {
     });
   }, [setSearchQuery, setCurrentPage, fetchMikvahData]);
 
-  // Infinite scroll with proper mobile detection
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => {
-      // Define fetchMoreMikvah inline to avoid dependency issues
-      const fetchMoreMikvah = async () => {
-        if (isLoadingMore || !hasMore) {
-          return;
-        }
 
-        try {
-          const nextPage = currentPage + 1;
-          const params = new URLSearchParams();
-          
-          // Add search query if present
-          if (searchQuery && searchQuery.trim() !== '') {
-            params.append('search', searchQuery.trim());
-          }
-          
-          // Add current filters
-          Object.entries(activeFilters).forEach(([key, value]) => {
-            if (value !== undefined && value !== '' && value !== null) {
-              params.append(key, String(value));
-            }
-          });
-
-          params.append('page', nextPage.toString());
-          params.append('limit', mobileOptimizedItemsPerPage.toString());
-          params.append('mobile_optimized', 'true');
-
-          const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-          
-          setMikvah(prev => [...prev, ...response.mikvah]);
-          setCurrentPage(nextPage);
-          
-          // Update hasMore state
-          const _hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
-          setHasMore(_hasMoreContent);
-        } catch (err) {
-          appLogger.error('Mikvah fetch more error', { error: String(err) });
-        }
-      };
-      
-      return fetchMoreMikvah();
-    },
-    { 
-      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
-    }
-  );
 
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(false); // Filters start hidden
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
-  // Handle page changes for desktop pagination
+  // Pagination handled by single handlePageChange below
+
+  // Handle page changes for pagination
   const handlePageChange = async (page: number) => {
     if (page === currentPage || loading) {
       return;
@@ -777,24 +728,10 @@ function MikvahPageContent() {
         </div>
       )}
 
-      {/* Infinite scroll loading indicator - only show on mobile */}
-      {(isMobile || isMobileDevice) && isLoadingMore && (
-        <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
-        </div>
-      )}
 
-      {/* Infinite scroll trigger element - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
 
-      {/* Desktop pagination - only show on desktop */}
-      {!(isMobile || isMobileDevice) && totalPages > 1 && (
+      {/* Pagination - show on all devices */}
+      {totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
@@ -809,14 +746,7 @@ function MikvahPageContent() {
         </div>
       )}
 
-      {/* Mobile infinite scroll trigger - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
+
 
       {/* Bottom navigation - visible on all screen sizes */}
       <BottomNavigation size="compact" showLabels="active-only" />

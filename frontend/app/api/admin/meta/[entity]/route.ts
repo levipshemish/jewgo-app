@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission } from '@/lib/server/admin-utils';
+import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { AdminDatabaseService } from '@/lib/admin/database';
+import { logAdminAction } from '@/lib/admin/audit';
+import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
+import { errorResponses } from '@/lib';
 
 export async function GET(
   request: NextRequest,
@@ -18,13 +23,13 @@ export async function GET(
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Validate entity type
     const validEntities = ['restaurant', 'review', 'user', 'restaurantImage', 'marketplace'];
     if (!validEntities.includes(entity)) {
-      return NextResponse.json({ error: 'Invalid entity type' }, { status: 400 });
+      return errorResponses.badRequest();
     }
 
     // Get valid sort fields for the entity
@@ -42,9 +47,6 @@ export async function GET(
     });
   } catch (error) {
     console.error('[ADMIN] Meta endpoint error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch entity metadata' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

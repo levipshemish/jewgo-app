@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import { useSupabase } from '@/lib/contexts/SupabaseContext';
 import { useAuth } from '@/hooks/useAuth';
-import { getBackendUrl } from '@/lib/utils/apiRouteUtils';
+import { getBackendUrl } from '@/lib/api-config';
 
 interface FeatureFlagFormData {
   name: string;

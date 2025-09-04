@@ -2,6 +2,7 @@ import { NextRequest, NextResponse} from 'next/server';
 import { createServerClient} from '@supabase/ssr';
 import { cookies} from 'next/headers';
 import { generateCorrelationId, scrubPII} from '@/lib/utils/auth-utils';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 // export const runtime = 'nodejs';
 
@@ -38,18 +39,12 @@ export async function GET(request: NextRequest) {
     
     if (!expectedSecret) {
       console.error(`[Cleanup Cron] CLEANUP_CRON_SECRET not configured (${correlationId})`);
-      return NextResponse.json(
-        { error: 'Cron secret not configured' },
-        { status: 500 }
-      );
+      return errorResponses.internalError();
     }
     
     if (authHeader !== `Bearer ${expectedSecret}`) {
       console.error(`[Cleanup Cron] Invalid authorization (${correlationId})`);
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return errorResponses.unauthorized();
     }
 
     // Create Supabase service role client
@@ -86,22 +81,12 @@ export async function GET(request: NextRequest) {
 
     if (queryError) {
       console.error(`[Cleanup Cron] Failed to query anonymous users (${correlationId})`, queryError);
-      return NextResponse.json(
-        { error: 'Failed to query anonymous users' },
-        { status: 500 }
-      );
+      return errorResponses.internalError();
     }
 
     if (!oldAnonymousUsers || oldAnonymousUsers.length === 0) {
 
-      return NextResponse.json({
-        success: true,
-        message: 'No old anonymous users found',
-        processed: 0,
-        deleted: 0,
-        correlationid: correlationId,
-        dry_run: CLEANUP_CONFIG.DRY_RUN
-      });
+      return createSuccessResponse({ message: 'No anonymous users to clean up' });
     }
 
     // Process users in batches
@@ -177,17 +162,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Anonymous user cleanup completed',
-      processed: results.processed,
-      deleted: results.deleted,
-      errors: results.errors,
-      duration_ms: duration,
-      correlationid: correlationId,
-      dry_run: CLEANUP_CONFIG.DRY_RUN,
-      userids: results.userIds
-    });
+    return createSuccessResponse({ message: 'Anonymous user cleanup completed successfully' });
 
   } catch (_error) {
     // Unexpected error - log for debugging

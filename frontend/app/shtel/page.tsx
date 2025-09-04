@@ -9,7 +9,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import ShtelFilters, { ShtelFilterValues as ShtelFiltersType } from '@/components/shtel/ShtelFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
-import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+
 import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
@@ -47,7 +47,7 @@ function ShtelPageContent() {
   const [totalListings, setTotalListings] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('shtel');
-  const [hasMore, setHasMore] = useState(true);
+  const [_hasMore, setHasMore] = useState(true);
   
   // Performance monitoring
   const { trackApiCall, metrics: _performanceMetrics } = usePerformanceMonitor({
@@ -75,7 +75,7 @@ function ShtelPageContent() {
   
   // Performance optimizations based on device capabilities
   const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
-  const shouldLazyLoad = isSlowConnection;
+  const _shouldLazyLoad = isSlowConnection;
   const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
   
   // Optimize mobile detection to prevent unnecessary re-renders
@@ -286,15 +286,7 @@ function ShtelPageContent() {
     });
   }, [listings, userLocation, calculateDistance]);
 
-  // Infinite scroll with proper mobile detection
-  const { hasMore: _infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
-    () => fetchMoreListings(),
-    { 
-      threshold: (isMobile || _isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || _isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || _isMobileDevice) // Only enable infinite scroll on mobile
-    }
-  );
+
 
   // Mobile-optimized state
   const { isScrolling: _isScrolling } = useScrollDetection({ debounceMs: 100 });
@@ -321,7 +313,7 @@ function ShtelPageContent() {
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
   // Fetch shtel listings with mobile optimization and distance sorting
-  const fetchShtełListingsData = useCallback(async (filters?: Filters) => {
+  const fetchShtełListingsData = useCallback(async (page: number = 1, filters: Filters = activeFilters) => {
     // Prevent API calls when automatically setting location filters
     if (isSettingLocationFilters) {
       return;
@@ -340,7 +332,7 @@ function ShtelPageContent() {
       setError(null);
 
       const currentFilters = filters || activeFilters;
-      const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
+      const params = toSearchParams({ ...currentFilters, page, limit: mobileOptimizedItemsPerPage });
       if (searchQuery && searchQuery.trim() !== '') {
         params.set('search', searchQuery.trim());
       }
@@ -403,7 +395,7 @@ function ShtelPageContent() {
       }
       
       setListings(processedListings);
-      setCurrentPage(1);
+      setCurrentPage(page);
       
       // Update pagination state
       const total = data.data?.total || processedListings.length;
@@ -411,10 +403,10 @@ function ShtelPageContent() {
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
-              // Update hasMore state for infinite scroll (mobile only)
+      
         const hasMoreContent = processedListings.length >= mobileOptimizedItemsPerPage;
         setHasMore(hasMoreContent);
-        setInfiniteScrollHasMore(hasMoreContent);
+
       } catch (fetchErr) {
         if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
           setError('Request timed out. Please try again.');
@@ -450,42 +442,14 @@ function ShtelPageContent() {
     isSettingLocationFilters, 
     userLocation, 
     activeFilters, 
-    setInfiniteScrollHasMore, 
+ 
     calculateDistance, 
     formatDistance, 
     fetchTimeoutMs,
     trackApiCall
   ]);
 
-  const fetchMoreListings = useCallback(async () => {
-    if (isLoadingMore || !hasMore) {
-      return;
-    }
 
-    try {
-      const _nextPage = currentPage + 1;
-      // Implementation for loading more listings with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
-      
-      try {
-        // This would call the API with pagination parameters
-        // For now, just simulate a delay
-        await new Promise(resolve => setTimeout(resolve, 100));
-        clearTimeout(timeoutId);
-      } catch (fetchErr) {
-        if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
-          appLogger.warn('Fetch more listings timed out');
-        } else {
-          throw fetchErr;
-        }
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    } catch (err) {
-      appLogger.error('Error fetching more listings', { error: String(err) });
-    }
-  }, [isLoadingMore, hasMore, currentPage, fetchTimeoutMs]);
 
   // Guard one-time effects under StrictMode
   const didInit = useRef(false);
@@ -791,31 +755,21 @@ function ShtelPageContent() {
         </div>
       )}
 
-      {/* Infinite scroll loading indicator - only show on mobile */}
-      {(isMobile || _isMobileDevice) && isLoadingMore && (
-        <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
-        </div>
-      )}
 
-      {/* Infinite scroll trigger element - only on mobile */}
-      {(isMobile || _isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
 
-      {/* Desktop pagination - only show on desktop */}
-      {!(isMobile || _isMobileDevice) && totalPages > 1 && (
+      {/* Pagination - show on all devices */}
+      {totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={(page) => {
+              if (page === currentPage || loading) return;
               setCurrentPage(page);
-              // Implementation for page change
+              fetchShtełListingsData(page);
+              if (typeof window !== 'undefined') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
             }}
             isLoading={loading}
             className="mb-4"

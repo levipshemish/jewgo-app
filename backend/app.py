@@ -19,6 +19,6 @@ if __name__ == "__main__":
     environment_name = config_manager.get("environment.name", "development")
     app.run(
         host="0.0.0.0",
-        port=8082,  # Use port 8082 to avoid conflicts
+        port=8083,  # Use port 8083 to avoid conflicts
         debug=not is_production,  # Debug mode for non-production environments
     )

@@ -64,7 +64,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
       {/* Page numbers */}
       {visiblePages.map((page, index) => (
-        <React.Fragment key={index}>
+        <React.Fragment key={typeof page === 'number' ? `page-${page}` : `dots-${index}`}>
           {page === '...' ? (
             <span className="flex items-center justify-center w-10 h-10 text-gray-500">
               ...

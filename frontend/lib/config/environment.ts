@@ -3,6 +3,8 @@
  * Centralized environment variable management with validation and security documentation
  */
 
+import { getFrontendAppUrl } from '../frontend-url-config';
+
 // Versioned HMAC keys for smooth rotations
 export const MERGE_COOKIE_HMAC_KEY_CURRENT = process.env.MERGE_COOKIE_HMAC_KEY_CURRENT;
 export const MERGE_COOKIE_HMAC_KEY_PREVIOUS = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOUS;
@@ -28,9 +30,9 @@ export const WEBVIEW_MODE_ENABLED = process.env.WEBVIEW_MODE_ENABLED === 'true';
 
 // CORS settings
 export const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  process.env.NEXT_PUBLIC_APP_URL || getFrontendAppUrl(),
   'https://jewgo.app',
-  'https://www.jewgo.app',
+  getFrontendAppUrl(),
   // Add staging/production domains as needed
 ].filter(Boolean);
 
@@ -67,7 +69,7 @@ export const IS_PRODUCTION = NODE_ENV === 'production';
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
 
 // Backend configuration
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || (IS_PRODUCTION ? undefined : 'http://localhost:8000');
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || (IS_PRODUCTION ? undefined : 'https://api.jewgo.app');
 
 /**
  * Validate required environment variables

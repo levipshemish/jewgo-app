@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
-import { NextRequest, NextResponse} from 'next/server';
-import { prisma} from '@/lib/db/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db/prisma';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(_request: NextRequest) {
   try {
@@ -60,7 +61,7 @@ export async function GET(_request: NextRequest) {
       });
       
       const adminUserIds = new Set([
-        ...adminRoleUserIds.map(role => role.userId)
+        ...adminRoleUserIds.map((role: { userId: string }) => role.userId)
       ]);
       
       // Add super admin IDs
@@ -73,7 +74,7 @@ export async function GET(_request: NextRequest) {
         }
       });
       
-      superAdmins.forEach(admin => adminUserIds.add(admin.id));
+      superAdmins.forEach((admin: { id: string }) => adminUserIds.add(admin.id));
       
       result.admin_structure.totaladmins = adminUserIds.size;
 

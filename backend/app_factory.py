@@ -223,6 +223,18 @@ def create_app():
             except Exception as e:
                 logger.exception("Database v4 initialization failed", error=str(e))
                 db_manager_v4_instance = None
+        elif db_manager_v4_instance and not db_manager_v4_instance.connection_manager.is_connected():
+            # If the instance exists but is not connected, try to reconnect
+            try:
+                logger.info("Database v4 instance exists but not connected, attempting to reconnect")
+                if db_manager_v4_instance.connect():
+                    logger.info("Database v4 reconnection successful")
+                else:
+                    logger.error("Database v4 reconnection failed")
+                    db_manager_v4_instance = None
+            except Exception as e:
+                logger.exception("Database v4 reconnection failed", error=str(e))
+                db_manager_v4_instance = None
         return db_manager_v4_instance
 
     def get_cache_manager_v4():
@@ -265,6 +277,16 @@ def create_app():
     deps["config_manager"] = deps.get("ConfigManager", None)
     # Make dependencies available to routes
     app.config["dependencies"] = deps
+
+    # Ensure database v4 is connected on startup
+    try:
+        startup_db_manager = get_db_manager_v4()
+        if startup_db_manager and startup_db_manager.connection_manager.is_connected():
+            logger.info("Database v4 connection verified on startup")
+        else:
+            logger.warning("Database v4 not connected on startup - will connect on first request")
+    except Exception as e:
+        logger.warning(f"Database v4 startup check failed: {e}")
 
     # Health check endpoint
     @app.route("/health", methods=["GET"])
@@ -691,6 +713,23 @@ def create_app():
         logger.error(f"Error registering full API v4 routes: {e}")
         logger.error(traceback.format_exc())
 
+    # Register keyset pagination API routes (Phase 2)
+    try:
+        logger.info("Attempting to import keyset pagination API routes...")
+        from routes.restaurants_keyset_api import restaurants_keyset_api
+        
+        logger.info(f"Keyset API blueprint imported: {restaurants_keyset_api}")
+        if restaurants_keyset_api is not None:
+            app.register_blueprint(restaurants_keyset_api)
+            logger.info("Keyset pagination API routes registered successfully")
+        else:
+            logger.warning("Keyset API blueprint is None - not registering routes")
+    except ImportError as e:
+        logger.warning(f"Could not import keyset pagination API routes: {e}")
+    except Exception as e:
+        logger.error(f"Error registering keyset pagination API routes: {e}")
+        logger.error(traceback.format_exc())
+
     # Note: Original API v4 routes are now handled by api_v4_simple to avoid duplicate endpoints
     # Register user API routes
     try:
@@ -741,21 +780,21 @@ def create_app():
         logger.error(f"Error registering shtetl marketplace API routes: {e}")
         logger.error(traceback.format_exc())
 
-    # Register synagogues API routes
+    # Register synagogues API routes (simplified version)
     try:
-        logger.info("Attempting to import synagogues API routes...")
-        from routes.synagogues_api import synagogues_bp
+        logger.info("Attempting to import simplified synagogues API routes...")
+        from routes.synagogues_simple import synagogues_simple_bp
 
-        logger.info(f"Synagogues blueprint imported: {synagogues_bp}")
-        if synagogues_bp is not None:
-            app.register_blueprint(synagogues_bp)
-            logger.info("Synagogues API routes registered successfully")
+        logger.info(f"Simplified synagogues blueprint imported: {synagogues_simple_bp}")
+        if synagogues_simple_bp is not None:
+            app.register_blueprint(synagogues_simple_bp)
+            logger.info("Simplified synagogues API routes registered successfully")
         else:
-            logger.warning("Synagogues blueprint is None - not registering routes")
+            logger.warning("Simplified synagogues blueprint is None - not registering routes")
     except ImportError as e:
-        logger.warning(f"Could not import synagogues API routes: {e}")
+        logger.warning(f"Could not import simplified synagogues API routes: {e}")
     except Exception as e:
-        logger.error(f"Error registering synagogues API routes: {e}")
+        logger.error(f"Error registering simplified synagogues API routes: {e}")
         logger.error(traceback.format_exc())
 
     # Shtetl store functionality has been merged into the main shtetl blueprint

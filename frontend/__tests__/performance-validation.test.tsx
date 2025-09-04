@@ -1,11 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Mock the fetch function to simulate API calls
 global.fetch = jest.fn();
 
-describe('Infinite Scroll Performance Validation', () => {
+describe('Performance Validation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();

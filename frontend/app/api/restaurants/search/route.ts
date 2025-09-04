@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the backend API
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
     const apiUrl = `${backendUrl}/api/v4/restaurants?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {
@@ -239,24 +240,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: filtered,
-      total: backendTotal,
-      page: filters.page || 1,
-      limit: filters.limit || 50,
-      filters,
-    });
+    return createSuccessResponse(filtered, 'Restaurants retrieved successfully');
 
   } catch (error) {
     console.error('Error in restaurant search:', error);
     
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        message: 'Invalid filter parameters',
-        errors: error.issues
-      }, { status: 400 });
+      return errorResponses.badRequest('Invalid filter parameters', { errors: error.issues });
     }
     
     // Return mock data as fallback when backend is unavailable
@@ -293,14 +283,6 @@ export async function POST(request: NextRequest) {
     
     const sanitizedMockRestaurants = sanitizeRestaurantData(mockRestaurants);
     
-    return NextResponse.json({
-      success: true,
-      data: sanitizedMockRestaurants,
-      total: sanitizedMockRestaurants.length,
-      page: 1,
-      limit: 50,
-      fallback: true,
-      message: 'Using fallback data - backend temporarily unavailable'
-    });
+    return createSuccessResponse(sanitizedMockRestaurants, 'Mock restaurants retrieved successfully');
   }
 } 

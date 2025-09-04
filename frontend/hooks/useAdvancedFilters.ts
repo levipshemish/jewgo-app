@@ -4,7 +4,6 @@
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Filters } from '@/lib/filters/schema';
 
 interface UseAdvancedFiltersOptions {
@@ -17,9 +16,6 @@ export function useAdvancedFilters(options: UseAdvancedFiltersOptions = {}) {
     enableUrlSync = true,
     debounceMs = 300
   } = options;
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
   
   // Initialize filters from URL or defaults
   const [activeFilters, setActiveFilters] = useState<Filters>(() => {

@@ -1404,7 +1404,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                           {getValues('business_images').map((image, index) => (
                             <img
-                              key={index}
+                              key={image || `image-${index}`}
                               src={image}
                               alt={`Preview ${index + 1}`}
                               className="w-full h-20 object-cover rounded"

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export interface Review {
   id: string;
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     
     // Forward the request to the backend with all query parameters
     const queryParams = new URLSearchParams(searchParams);
@@ -97,14 +99,11 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!restaurantId || !rating || !content) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return errorResponses.badRequest();
     }
 
     // Forward review creation to backend API to persist in DB
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/v4/reviews`;
 
     const forwardPayload = {
@@ -137,9 +136,6 @@ export async function POST(request: NextRequest) {
 
   } catch {
     // // console.error('Error creating review:', error);
-    return NextResponse.json(
-      { error: 'Failed to create review' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

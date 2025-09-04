@@ -23,11 +23,13 @@ export async function fetchRestaurants({
   limit = 50,
   filters = {},
   location,
+  signal,
 }: { 
   page?: number; 
   limit?: number;
   filters?: Record<string, any>;
   location?: { latitude: number; longitude: number };
+  signal?: AbortSignal;
 }): Promise<RestaurantsResponse> {
   const u = new URL("/api/restaurants", API_BASE || window.location.origin);
   
@@ -58,6 +60,7 @@ export async function fetchRestaurants({
     headers: {
       'Content-Type': 'application/json',
     },
+    signal,
   });
 
   if (!res.ok) {

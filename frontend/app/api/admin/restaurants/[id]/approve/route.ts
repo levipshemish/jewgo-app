@@ -9,6 +9,7 @@ import { invalidateDashboardMetrics } from '@/lib/server/cache';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';
 import { corsHeaders } from '@/lib/middleware/security';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function POST(
   request: NextRequest,
@@ -69,11 +70,7 @@ export async function POST(
       whitelistFields: AUDIT_FIELD_ALLOWLISTS.RESTAURANT,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Restaurant approved successfully',
-      data: updatedRestaurant 
-    });
+    return createSuccessResponse({ message: 'Restaurant approved successfully' });
 
     // Invalidate dashboard metrics cache (best-effort)
     // Note: follows response to minimize latency

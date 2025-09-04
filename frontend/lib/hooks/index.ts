@@ -2,7 +2,7 @@ export { useSearchInput } from './useSearchInput';
 export { useSearchSuggestions } from './useSearchSuggestions';
 export { useRecentSearches } from './useRecentSearches';
 export { useIsMobile } from './useIsMobile';
-export { useInfiniteScroll } from './useInfiniteScroll';
+
 export { useFeatureFlags } from './useFeatureFlags';
 export { useScrollDetection } from './useScrollDetection';
 export { useMobileTouch } from './useMobileTouch';
@@ -66,4 +66,21 @@ export {
   type AnimationPresets,
   type UseAnimationConfigOptions,
   type UseAnimationConfigReturn
-} from './useAnimationConfig'; 
+} from './useAnimationConfig';
+
+// Phase 2 cursor pagination hooks
+export {
+  useCursorPagination,
+  type UseCursorPaginationReturn
+} from './useCursorPagination';
+
+export {
+  useUrlScrollState,
+  type UseUrlScrollStateReturn
+} from './useUrlScrollState';
+
+export {
+  useHybridRestaurantData,
+  type UseHybridRestaurantDataReturn
+} from './useHybridRestaurantData';
+

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
-import { AdminErrors } from '@/lib/admin/errors';
+import { adminError } from '@/lib/admin/errors';
 import { corsHeaders } from '@/lib/middleware/security';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return AdminErrors.UNAUTHORIZED();
+      return adminError(401, 'UNAUTHORIZED', 'Unauthorized');
     }
 
     // Generate signed CSRF token
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('[ADMIN] CSRF token generation error:', error);
-    return AdminErrors.INTERNAL_ERROR(`Failed to generate CSRF token: ${error instanceof Error ? error.message : String(error)}`);
+    return adminError(500, 'INTERNAL_ERROR', `Failed to generate CSRF token: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

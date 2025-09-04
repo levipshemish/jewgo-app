@@ -3,7 +3,7 @@ import os
 import time
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse, urlunparse
 import pytz
@@ -27,10 +27,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from utils.logging_config import get_logger
 # Import models
-from .models import User
+from .models import User, utc_now
 # Import ConfigManager at module level
 try:
-    from utils.unified_database_config import ConfigManager
+    from utils.unified_database_config import UnifiedDatabaseConfig as ConfigManager
 except ImportError:
     # Fallback for when utils module is not available
     import os
@@ -80,6 +80,11 @@ except ImportError:
         def parse_hours(self, hours_blob):
             return {}
 logger = get_logger(__name__)
+
+def utc_now():
+    """Get current UTC time for SQLAlchemy defaults."""
+    return datetime.now(timezone.utc)
+
 # !/usr/bin/env python3
 """Enhanced Database Manager for JewGo App v3.
 ==========================================
@@ -125,11 +130,11 @@ class Restaurant(Base):
     __tablename__ = "restaurants"
     # 🔒 System-Generated / Controlled
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     )
     current_time_local = Column(DateTime)  # System-generated (local time snapshot)
@@ -453,13 +458,18 @@ class EnhancedDatabaseManager:
             sslrootcert = ConfigManager.get_pg_sslrootcert()
             if sslrootcert:
                 connect_args["sslrootcert"] = sslrootcert
-            # Some providers may reject startup options like statement_timeout.
-            # Detect api.jewgo.app and remove unsupported startup options, then set timeouts after connect.
+            # Some providers (e.g. Neon pooler) reject startup options like statement_timeout.
+            # Detect these hosts and remove unsupported startup options, then set timeouts after connect.
             parsed = urlparse(self.database_url)
             hostname = (parsed.hostname or "").lower()
             is_api_host = "api.jewgo.app" in hostname
-            if is_api_host:
+            is_pooler_host = ("pooler" in hostname) or ("neon.tech" in hostname)
+            if is_api_host or is_pooler_host:
                 connect_args.pop("options", None)
+                logger.info(
+                    "Startup options removed for pooled provider",
+                    hostname=hostname,
+                )
             self.engine = create_engine(
                 self.database_url,
                 echo=False,
@@ -471,7 +481,7 @@ class EnhancedDatabaseManager:
                 connect_args=connect_args,
             )
             # If provider disallowed startup options, set per-connection timeouts
-            if is_api_host:
+            if is_api_host or is_pooler_host:
                 try:
                     @event.listens_for(self.engine, "connect")
                     def _set_timeouts_on_connect(dbapi_connection, connection_record):
@@ -596,8 +606,8 @@ class EnhancedDatabaseManager:
                     return False
             # Set default values for required fields
             restaurant_data.setdefault("certifying_agency", "ORB")
-            restaurant_data.setdefault("created_at", datetime.utcnow())
-            restaurant_data.setdefault("updated_at", datetime.utcnow())
+            restaurant_data.setdefault("created_at", utc_now())
+            restaurant_data.setdefault("updated_at", utc_now())
             restaurant_data.setdefault("hours_parsed", False)
             # Handle specials field (convert to JSON string if it's a list)
             if "specials" in restaurant_data and isinstance(

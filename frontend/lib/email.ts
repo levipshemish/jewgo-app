@@ -55,7 +55,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 
 // Email templates
 export function createVerificationEmail(token: string, name: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const verificationUrl = `${baseUrl}/auth/verify?token=${token}`
   
   return `
@@ -87,7 +87,7 @@ export function createVerificationEmail(token: string, name: string): string {
 }
 
 export function createPasswordResetEmail(token: string, name: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
   
   return `

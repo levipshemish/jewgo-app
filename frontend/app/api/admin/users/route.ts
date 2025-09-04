@@ -5,7 +5,7 @@ import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
+import { logAdminAction, ENTITY_TYPES, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
@@ -13,18 +13,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { mapUsersToApiResponse, mapApiRequestToUser } from '@/lib/admin/dto/user';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Get query parameters
@@ -80,10 +81,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(mappedData);
   } catch (error) {
     adminLogger.error('User list error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -98,12 +96,12 @@ export async function POST(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -171,10 +169,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -189,12 +184,12 @@ export async function PUT(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -208,14 +203,14 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return errorResponses.badRequest();
     }
 
     // Check for role changes and enforce RBAC
     if (data.issuperadmin !== undefined || data.adminRole !== undefined) {
       // Only super admins can change admin roles
       if (!hasPermission(adminUser, ADMIN_PERMISSIONS.ROLE_EDIT) && adminUser.adminRole !== 'super_admin') {
-        return NextResponse.json({ error: 'Insufficient permissions to modify admin roles' }, { status: 403 });
+        return errorResponses.forbidden();
       }
     }
 
@@ -259,17 +254,11 @@ export async function PUT(request: NextRequest) {
         );
       }
       if (error.code === 'P2025') {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
+        return errorResponses.notFound();
       }
     }
 
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -284,12 +273,12 @@ export async function DELETE(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_DELETE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -303,17 +292,14 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return errorResponses.badRequest();
     }
     // eslint-disable-next-line no-console
     console.warn('[DEPRECATED] Use DELETE /api/admin/users/{id} instead of query param id');
 
     // Prevent self-deletion
     if (id === adminUser.id) {
-      return NextResponse.json(
-        { error: 'Cannot delete your own account' },
-        { status: 400 }
-      );
+      return errorResponses.badRequest();
     }
 
     // Delete user (soft delete)
@@ -326,21 +312,15 @@ export async function DELETE(request: NextRequest) {
       true // soft delete
     );
 
-    return NextResponse.json({ message: 'User deleted successfully' });
+    return createSuccessResponse({ message: 'User deleted successfully' });
   } catch (error) {
     adminLogger.error('User delete error', { error: String(error) });
     
     // Handle Prisma not found errors
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return errorResponses.notFound();
     }
 
-    return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

@@ -238,12 +238,12 @@ function createEnvironmentConfigs() {
           ? 'https://jewgo-app.vercel.app'
           : env === 'staging'
           ? 'https://staging.jewgo-app.vercel.app'
-          : 'http://localhost:3000',
+          : getFrontendAppUrl(),
         backend: env === 'production'
           ? 'https://jewgo-app-oyoh.onrender.com'
           : env === 'staging'
           ? 'https://staging.jewgo-app-oyoh.onrender.com'
-          : 'http://localhost:5000',
+          : getBackendUrl(),
       },
       monitoring: {
         enabled: env === 'production',

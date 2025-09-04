@@ -298,92 +298,57 @@ export default function EateryPageClient() {
   // Infinite scroll hook - only enabled on mobile  
   const loadErrorCountRef = useRef(0);
 
-  // Track in-flight page to prevent duplicate fetches for the same page
-  const inFlightPageRef = useRef<number | null>(null);
-
-  // Use refs to avoid circular dependencies in useCallback
-  const hasMoreRef = useRef(false);
-
+  // Simple pagination without infinite scroll to fix infinite loading issue
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadingRef = useRef<HTMLDivElement>(null);
+  
   const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    const nextPage = currentPage + 1;
+    
+    try {
+      // Use the existing fetchCombinedData function
+      const result = await fetchCombinedData(nextPage, searchQuery, activeFilters, mobileOptimizedItemsPerPage, true);
       
-      // Get current values using refs to avoid stale closures
-      const currentItems = restaurants.length; // use raw list
-      const nextPage = currentPage + 1;
-
-      // Prevent duplicate requests for the same page
-      if (inFlightPageRef.current === nextPage) {
-        return;
+      if (result.received > 0) {
+        // Update current page
+        setCurrentPage(nextPage);
+        
+        // Check if we have more data
+        const newTotalItems = restaurants.length + result.received;
+        const hasMoreData = result.hasMore && newTotalItems < totalRestaurants;
+        setHasMore(hasMoreData);
+        
+        console.log('🔄 Loaded page', {
+          nextPage,
+          previousItems: restaurants.length,
+          totalAvailable: totalRestaurants,
+          hasMore: hasMoreData,
+          itemsPerPage: mobileOptimizedItemsPerPage,
+          received: result.received
+        });
+      } else {
+        // No more data available
+        setHasMore(false);
+        console.log('🔄 No more data available');
       }
-
-      console.log('🔄 Infinite scroll: Starting fetch', { 
-        nextPage, 
-        currentItems,
-        totalRestaurants,
-        hasMore: hasMoreRef.current
-      });
-
-      if (DEBUG) { 
-        debugLog('Infinite scroll: Starting fetch', { 
-          nextPage, 
-          currentItems,
-          totalRestaurants,
-          hasMore: hasMoreRef.current
-        }); 
+    } catch (err) {
+      console.error('Error fetching more restaurants:', err);
+      // Back off after repeated failures
+      loadErrorCountRef.current += 1;
+      if (loadErrorCountRef.current >= 2) {
+        setHasMore(false);
       }
-
-      inFlightPageRef.current = nextPage;
-      try {
-          // Use fetchCombinedData directly with append=true instead of separate API calls
-          // This ensures we get consistent data and proper pagination
-          const result = await fetchCombinedData(nextPage, searchQuery, activeFilters, mobileOptimizedItemsPerPage, true);
-          // Update page and hasMore like Shuls: based on received count
-          const received = result?.received ?? 0;
-          const hasMoreContent = received >= mobileOptimizedItemsPerPage;
-          if (setHasMoreRef.current) {
-            setHasMoreRef.current(hasMoreContent);
-          }
-          setCurrentPage(nextPage);
-          
-          // After fetching, prefer server-provided hasMore; then totalPages; else estimate by counts.
-          const hasMoreData = hasMoreContent;
-          
-          console.log('🔄 Infinite scroll: Loaded page', {
-            nextPage,
-            previousItems: currentItems,
-            decidedBy: 'count-estimate',
-            totalAvailable: totalRestaurants,
-            totalPages,
-            hasMore: hasMoreData,
-            itemsPerPage: mobileOptimizedItemsPerPage
-          });
-          
-          // Defer hasMore updates to the data-load effect to avoid stale decisions
-          
-          // Debug logging
-          if (DEBUG) { 
-            debugLog('Infinite scroll: Loaded page', nextPage, 'previous items:', currentItems, 'total available:', totalRestaurants, 'totalPages:', totalPages, 'hasMore:', hasMoreData); 
-          }
-          // Prefetch disabled to reduce duplication and races
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          return; // Request was aborted, ignore
-        }
-        // eslint-disable-next-line no-console
-        console.error('Error fetching more restaurants:', err);
-        // Immediately stop further loads on error to avoid loops
-        if (setHasMoreRef.current) {
-          setHasMoreRef.current(false);
-        }
-        // Back off after repeated failures to avoid infinite loading loop
-        loadErrorCountRef.current += 1;
-        if (DEBUG) { debugLog('Infinite scroll: Error occurred. Failure count =', loadErrorCountRef.current); }
-      } finally {
-        inFlightPageRef.current = null;
-      }
-    }, [currentPage, restaurants.length, mobileOptimizedItemsPerPage, totalRestaurants, fetchCombinedData, searchQuery, activeFilters, totalPages]);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMore, currentPage, restaurants.length, fetchCombinedData, searchQuery, activeFilters, mobileOptimizedItemsPerPage, totalRestaurants]);
 
   // Get infinite scroll hook after handleLoadMore is defined
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+  const { hasMore: infiniteScrollHasMore, isLoadingMore: infiniteScrollIsLoadingMore, loadingRef: infiniteScrollLoadingRef, setHasMore: infiniteScrollSetHasMore } = useInfiniteScroll(
     handleLoadMore,
     {
       // Match Shuls thresholds/rootMargin for consistent triggering
@@ -396,9 +361,10 @@ export default function EateryPageClient() {
 
   // Update refs when infinite scroll state changes
   useEffect(() => {
-    hasMoreRef.current = hasMore;
-    setHasMoreRef.current = setHasMore;
-  }, [hasMore, setHasMore]);
+    setHasMore(infiniteScrollHasMore);
+    setIsLoadingMore(infiniteScrollIsLoadingMore);
+    loadingRef.current = infiniteScrollLoadingRef;
+  }, [infiniteScrollHasMore, infiniteScrollIsLoadingMore, infiniteScrollLoadingRef]);
 
   // Add debugging for infinite scroll state changes
   useEffect(() => {

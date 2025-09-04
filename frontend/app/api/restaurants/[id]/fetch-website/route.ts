@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleRoute } from '@/lib/server/route-helpers';
+import { handleRoute, json } from '@/lib/server/route-helpers';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { errorResponses } from '@/lib';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';
@@ -23,7 +24,7 @@ export async function POST(
       }
 
       // Fetch website data via backend API
-      const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
       const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}/fetch-website`;
       
       if (process.env.NODE_ENV === 'development') {

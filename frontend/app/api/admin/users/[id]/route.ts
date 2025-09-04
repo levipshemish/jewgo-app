@@ -5,6 +5,7 @@ import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function DELETE(
   request: NextRequest,
@@ -13,10 +14,10 @@ export async function DELETE(
   try {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_DELETE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
@@ -25,7 +26,7 @@ export async function DELETE(
     const resolvedParams = await params;
     const id = resolvedParams.id;
     if (!id) {
-      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+      return errorResponses.badRequest();
     }
     await AdminDatabaseService.deleteRecord(
       prisma.user,
@@ -35,12 +36,9 @@ export async function DELETE(
       'user',
       true
     );
-    return NextResponse.json({ message: 'User deleted successfully' });
+    return createSuccessResponse({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('[ADMIN] User delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

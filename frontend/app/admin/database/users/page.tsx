@@ -2,15 +2,16 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import AdvancedUserManagement from '@/components/admin/AdvancedUserManagement';
+import AdvancedUserManagement from '../../../../components/admin/AdvancedUserManagement';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { mapUsersToApiResponse } from '@/lib/admin/dto/user';
 import { prisma } from '@/lib/db/prisma';
+import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';
 
 export default async function UserDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const page = parseInt((params.page as string) || '1');
-  const pageSize = parseInt((params.pageSize as string) || '20');
+  const pageSize = parseInt((params.pageSize as string) || String(DEFAULT_PAGE_SIZE));
   const search = (params.search as string) || '';
   const sortBy = (params.sortBy as string) || AdminDatabaseService.getDefaultSortField('user');
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';

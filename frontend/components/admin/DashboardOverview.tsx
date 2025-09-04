@@ -421,8 +421,8 @@ export default function DashboardOverview({ adminUser }: DashboardOverviewProps)
         <div className="lg:col-span-2">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {quickActions.map((action, index) => (
-              <QuickAction key={index} {...action} />
+            {quickActions.map((action) => (
+              <QuickAction key={action.href || action.title} {...action} />
             ))}
           </div>
         </div>

@@ -7,6 +7,7 @@ import { FeedbackData } from '@/types';
 import { appLogger } from '@/lib/utils/logger';
 import { handleRoute } from '@/lib/server/route-helpers';
 import { requireAdminOrThrow, getAdminUser } from '@/lib/server/admin-auth';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';
@@ -26,26 +27,17 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!type || !category || !description) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return errorResponses.badRequest();
     }
 
     // Validate type
     if (!['correction', 'suggestion', 'general'].includes(type)) {
-      return NextResponse.json(
-        { error: 'Invalid feedback type' },
-        { status: 400 }
-      );
+      return errorResponses.badRequest();
     }
 
     // Validate priority
     if (!['low', 'medium', 'high'].includes(priority)) {
-      return NextResponse.json(
-        { error: 'Invalid priority level' },
-        { status: 400 }
-      );
+      return errorResponses.badRequest();
     }
 
     // Process attachments
@@ -157,17 +149,10 @@ export async function POST(request: NextRequest) {
           feedbackId: feedbackData.id
         });
         
-        return NextResponse.json({ 
-          success: true, 
-          feedbackId: feedbackData.id,
-          message: 'Thank you for your feedback. It has been queued and will be processed shortly.'
-        });
+        return createSuccessResponse({ message: 'Feedback processed successfully' });
       }
       
-      return NextResponse.json(
-        { error: 'Failed to save feedback' },
-        { status: 500 }
-      );
+      return errorResponses.internalError();
     }
 
     // Send notification email if contact email provided
@@ -194,7 +179,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true, feedbackId: feedbackData.id });
+    return createSuccessResponse({ message: 'Feedback processed successfully' });
 
   } catch (error) {
     appLogger.error('Error processing feedback', { 
@@ -214,10 +199,7 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -293,10 +275,7 @@ export async function GET(request: NextRequest) {
       );
 
       if (!backendResponse.ok) {
-        return NextResponse.json(
-          { error: 'Failed to fetch feedback' },
-          { status: 500 }
-        );
+        return errorResponses.internalError();
       }
 
       const data = await backendResponse.json();
@@ -306,10 +285,7 @@ export async function GET(request: NextRequest) {
       appLogger.error('Error fetching feedback', { 
         error: error instanceof Error ? error.message : 'Unknown error'
       });
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
+      return errorResponses.internalError();
     }
   });
 } 

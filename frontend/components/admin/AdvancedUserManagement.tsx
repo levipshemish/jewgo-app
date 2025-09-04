@@ -298,7 +298,7 @@ export default function AdvancedUserManagement({
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {quickStats.map((stat, index) => (
-          <QuickStatsCard key={index} {...stat} />
+          <QuickStatsCard key={stat.title} {...stat} />
         ))}
       </div>
 

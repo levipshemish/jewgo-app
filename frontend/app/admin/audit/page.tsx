@@ -2,9 +2,10 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import DataTable, { Column } from '@/components/admin/DataTable';
+import DataTable, { Column } from '../../../components/admin/DataTable';
 import { User, Calendar, Filter } from 'lucide-react';
 import { useAdminCsrf } from '@/lib/admin/hooks';
+import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';
 
 interface AuditLog {
   id: string;
@@ -34,7 +35,6 @@ function AuditLogContent() {
   const [loading, setLoading] = useState(true);
   const { token: csrfToken } = useAdminCsrf();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const { DEFAULT_PAGE_SIZE } = require('@/lib/config/pagination');
   const [pagination, setPagination] = useState({
     page: parseInt(searchParams.get('page') || '1'),
     pageSize: parseInt(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE)),

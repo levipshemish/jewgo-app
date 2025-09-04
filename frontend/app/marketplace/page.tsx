@@ -12,7 +12,7 @@ import MarketplaceActionBar from '@/components/marketplace/MarketplaceActionBar'
 import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceCategoriesDropdown';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 
-import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+
 import { scrollToTop } from '@/lib/utils/scrollUtils';
 // import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
@@ -334,6 +334,8 @@ function MarketplacePageContent() {
   const [hasMore, setHasMore] = useState(true);
   const [marketplaceAvailable, setMarketplaceAvailable] = useState(true);
   
+
+  
   // Mobile optimization hooks
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
@@ -531,15 +533,7 @@ function MarketplacePageContent() {
     });
   }, [listings, permissionStatus, userLocation, calculateDistance]);
 
-  // Infinite scroll with proper mobile detection
-  const { hasMore: _infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
-    () => fetchMoreListings(),
-    { 
-      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
-    }
-  );
+
 
   // Mobile-optimized state
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
@@ -675,9 +669,7 @@ function MarketplacePageContent() {
           const calculatedTotalPages = Math.ceil(sampleMarketplaceData.length / mobileOptimizedItemsPerPage);
           setTotalPages(calculatedTotalPages);
           
-          // Update hasMore state for infinite scroll (mobile only)
-          const hasMoreContent = sampleListings.length >= mobileOptimizedItemsPerPage;
-          setInfiniteScrollHasMore(hasMoreContent);
+
         } else {
           setMarketplaceAvailable(true);
           if (append) {
@@ -695,9 +687,7 @@ function MarketplacePageContent() {
           const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
           setTotalPages(calculatedTotalPages);
           
-          // Update hasMore state for infinite scroll (mobile only)
-          const hasMoreContent = newListings.length >= mobileOptimizedItemsPerPage;
-          setInfiniteScrollHasMore(hasMoreContent);
+
         }
       } else {
         // Use sample data when API fails or returns no data
@@ -721,9 +711,7 @@ function MarketplacePageContent() {
         const calculatedTotalPages = Math.ceil(sampleMarketplaceData.length / mobileOptimizedItemsPerPage);
         setTotalPages(calculatedTotalPages);
         
-        // Update hasMore state for infinite scroll (mobile only)
-        const hasMoreContent = sampleListings.length >= mobileOptimizedItemsPerPage;
-        setInfiniteScrollHasMore(hasMoreContent);
+
       }
     } catch (err) {
       // Use sample data when API throws an error
@@ -747,26 +735,13 @@ function MarketplacePageContent() {
       const calculatedTotalPages = Math.ceil(sampleMarketplaceData.length / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
-      // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = sampleListings.length >= mobileOptimizedItemsPerPage;
-      setInfiniteScrollHasMore(hasMoreContent);
+      
     } finally {
       setLoading(false);
     }
-  }, [mobileOptimizedItemsPerPage, searchQuery, filters, setInfiniteScrollHasMore]);
+  }, [mobileOptimizedItemsPerPage, searchQuery, filters]);
 
-  const fetchMoreListings = useCallback(async () => {
-    if (isLoadingMore || !hasMore) {
-      return;
-    }
 
-    try {
-      const nextPage = currentPage + 1;
-      await fetchMarketplaceData(nextPage, true);
-    } catch (err) {
-      appLogger.error('Error fetching more listings', { error: String(err) });
-    }
-  }, [isLoadingMore, hasMore, currentPage, fetchMarketplaceData]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -834,6 +809,8 @@ function MarketplacePageContent() {
     fetchMarketplaceData(1, false);
   };
 
+  // Pagination handled by existing async handlePageChange above
+
   // Subscribe to real-time updates
   useEffect(() => {
     if (isConnected) {
@@ -857,11 +834,11 @@ function MarketplacePageContent() {
       setTotalListings(sampleMarketplaceData.length);
       setTotalPages(Math.ceil(sampleMarketplaceData.length / mobileOptimizedItemsPerPage));
       setHasMore(sampleListings.length === mobileOptimizedItemsPerPage);
-      setInfiniteScrollHasMore(sampleListings.length >= mobileOptimizedItemsPerPage);
+      
     } else {
       fetchMarketplaceData();
     }
-  }, [fetchMarketplaceData, mobileOptimizedItemsPerPage, setInfiniteScrollHasMore]);
+  }, [fetchMarketplaceData, mobileOptimizedItemsPerPage]);
 
   // Mobile-specific effects
   useEffect(() => {
@@ -1128,24 +1105,10 @@ function MarketplacePageContent() {
         </div>
       )}
 
-      {/* Infinite scroll loading indicator - only show on mobile */}
-      {(isMobile || isMobileDevice) && isLoadingMore && (
-        <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
-        </div>
-      )}
 
-      {/* Infinite scroll trigger element - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
 
-      {/* Desktop pagination - only show on desktop */}
-      {!(isMobile || isMobileDevice) && totalPages > 1 && (
+      {/* Pagination - show on all devices */}
+      {totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}

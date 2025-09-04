@@ -3,7 +3,7 @@
 This module contains all database models used in the JewGo application.
 Models are separated from business logic to follow single responsibility principle.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Boolean,
     Column,
@@ -18,6 +18,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 # SQLAlchemy Base
 Base = declarative_base()
+
+def utc_now():
+    """Get current UTC time for SQLAlchemy defaults."""
+    return datetime.now(timezone.utc)
+
 class Restaurant(Base):
     """Optimized Restaurant model for SQLAlchemy (consolidated table).
     This model represents the main restaurants table in the JewGo database.
@@ -37,11 +42,11 @@ class Restaurant(Base):
     __tablename__ = "restaurants"
     # 🔒 System-Generated / Controlled
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     )
     current_time_local = Column(DateTime)  # System-generated (local time snapshot)
@@ -104,11 +109,11 @@ class Order(Base):
     __tablename__ = "orders"
     # 🔒 System-Generated / Controlled
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     )
     order_number = Column(
@@ -150,7 +155,7 @@ class OrderItem(Base):
     __tablename__ = "order_items"
     # 🔒 System-Generated / Controlled
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     # 🔗 Order Relationship
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     order = relationship("Order", back_populates="items")
@@ -181,11 +186,11 @@ class Review(Base):
     content = Column(Text, nullable=False)
     images = Column(Text)  # JSON array of image URLs
     status = Column(String(20), nullable=False, default="pending")
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     )
     moderator_notes = Column(Text, nullable=True)
@@ -212,11 +217,11 @@ class GoogleReview(Base):
     time = Column(DateTime, nullable=False)  # Google timestamp
     relative_time_description = Column(String(100), nullable=True)  # "2 weeks ago"
     language = Column(String(10), nullable=True)  # Review language
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     )
 class RestaurantImage(Base):
@@ -230,9 +235,9 @@ class RestaurantImage(Base):
     image_url = Column(String, nullable=True)
     image_order = Column(Integer, nullable=True)
     cloudinary_public_id = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    created_at = Column(DateTime, default=utc_now, nullable=True)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True
+        DateTime, default=utc_now, onupdate=utc_now, nullable=True
     )
 class ReviewFlag(Base):
     """Review flag model for reporting inappropriate reviews.
@@ -244,7 +249,7 @@ class ReviewFlag(Base):
     reason = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
     reported_by = Column(String(50), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     status = Column(String(20), nullable=False, default="pending")
 class User(Base):
     """User model for NextAuth.js integration.
@@ -258,9 +263,9 @@ class User(Base):
     emailVerified = Column(DateTime, nullable=True)
     image = Column(String(500), nullable=True)
     isSuperAdmin = Column(Boolean, default=False, nullable=False)
-    createdAt = Column(DateTime, default=datetime.utcnow, nullable=False)
+    createdAt = Column(DateTime, default=utc_now, nullable=False)
     updatedAt = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
 class Account(Base):
     """Account model for NextAuth.js OAuth providers.

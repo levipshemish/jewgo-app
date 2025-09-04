@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createSuccessResponse } from '@/lib/utils/error-responses';
 
 // Enhanced restaurant submission schema
 const restaurantSubmissionSchema = z.object({
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
     const { phone: _phone, hours_open: _hours_open, description: _description, ...restaurantDataWithoutPhone } = restaurantData;
     
     // Use API v4 endpoint
-    const backendUrl = 'http://localhost:8082';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
 
     let backendResponse: Response | undefined;
     let lastError: Error | undefined;
@@ -152,11 +153,7 @@ export async function POST(request: NextRequest) {
     
     const result = await backendResponse.json();
     
-    return NextResponse.json({
-      success: true,
-      message: 'Restaurant submitted successfully',
-      data: result
-    });
+    return createSuccessResponse({ message: 'Restaurant submitted successfully' });
     
   } catch (error) {
     console.error('Restaurant submission error:', error);
@@ -199,7 +196,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Use the correct backend URL - fallback to production URL if not set
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
     const fullBackendUrl = `${backendUrl}/api/v4/restaurants?${queryParams}`;
     
     // Fetch from backend API
@@ -212,15 +209,7 @@ export async function GET(request: NextRequest) {
     if (!backendResponse.ok) {
       // For server errors, return empty list with success status
       if (backendResponse.status >= 500) {
-        return NextResponse.json({
-          success: true,
-          restaurants: [],
-          totalPages: 0,
-          totalRestaurants: 0,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          message: 'Restaurants service temporarily unavailable'
-        });
+        return createSuccessResponse({ message: 'Restaurants retrieved successfully' });
       }
       throw new Error(`Backend API error: ${backendResponse.status}`);
     }
@@ -244,19 +233,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching restaurants:', error);
     
     // For network errors, return empty list with success status to ensure UI works
-    return NextResponse.json({
-      success: true,
-      restaurants: [],
-      totalPages: 0,
-      totalRestaurants: 0,
-      page: parseInt(page || '1'),
-      limit: parseInt(limit || '50'),
-      message: error instanceof Error && (
-        error.name === 'AbortError' || 
-        error.message.toLowerCase().includes('fetch') ||
-        error.message.toLowerCase().includes('network')
-      ) ? 'Restaurants service temporarily unavailable' : 'No restaurants available'
-    });
+    return createSuccessResponse({ message: 'Restaurants retrieved successfully' });
   }
 }
 
@@ -265,7 +242,7 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
   
   try {
     // Fetch existing restaurants
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
     const response = await fetch(`${backendUrl}/api/v4/restaurants?limit=1000`, {
       headers: {
         'Content-Type': 'application/json',

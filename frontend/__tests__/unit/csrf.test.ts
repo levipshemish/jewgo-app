@@ -1,4 +1,4 @@
-import { generateSignedCSRFToken, validateSignedCSRFToken } from '../../lib/admin/csrf';
+import { generateSignedCSRFToken, validateSignedCSRFToken } from '@/lib/admin/csrf';
 
 describe('CSRF token', () => {
   const OLD_ENV = process.env;

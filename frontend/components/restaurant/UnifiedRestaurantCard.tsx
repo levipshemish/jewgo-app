@@ -18,6 +18,7 @@ import {
   titleCase, 
   getSafeImageUrl
 } from '@/lib/utils/cardUtils';
+import { getFallbackImageUrl } from '@/lib/utils/imageFallback';
 import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
 import { 
   getBusinessTypeDisplayName, 
@@ -108,31 +109,23 @@ export default function UnifiedRestaurantCard({
   };
 
   const getHeroImage = () => {
-    let safeUrl = getSafeImageUrl(restaurant.image_url);
-    
-    // Normalize known broken 'image_1.{ext}' variant
-    safeUrl = safeUrl.replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1');
-    
-    // If we get back the default image, or there's an image error, use category placeholder
-    if (safeUrl === '/images/default-restaurant.webp' || imageError) {
-      return '/images/default-restaurant.webp';
-    }
-    
-    // Additional validation for Cloudinary URLs
-    if (safeUrl.includes('cloudinary.com')) {
-      // Ensure proper Cloudinary URL format
-      if (!safeUrl.includes('/f_auto,q_auto/')) {
-        safeUrl = safeUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
-      }
-    }
-    
-    return safeUrl;
+    // Use the new fallback system to prevent 404 errors
+    return getFallbackImageUrl(
+      restaurant.image_url,
+      restaurant.kosher_category,
+      { enableLogging: process.env.NODE_ENV === 'development' }
+    );
   };
 
   const handleImageLoad = () => setImageLoading(false);
   const handleImageError = () => {
     setImageError(true);
     setImageLoading(false);
+    
+    // Log the error in development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🖼️ Image failed to load:`, restaurant.image_url);
+    }
   };
 
   // Get business type information

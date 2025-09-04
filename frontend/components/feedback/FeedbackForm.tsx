@@ -392,7 +392,7 @@ export default function FeedbackForm({
           {formData.attachments && formData.attachments.length > 0 && (
             <div className="mt-2 space-y-1">
               {formData.attachments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <div key={file.name || `file-${index}`} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span className="text-sm text-gray-700 truncate">{file.name}</span>
                   <button
                     type="button"

@@ -151,12 +151,17 @@ class DatabaseConnectionManager:
         # Optional certificate pinning
         if os.environ.get("PGSSLROOTCERT"):
             connect_args["sslrootcert"] = os.environ.get("PGSSLROOTCERT")
-        # Detect api.jewgo.app and remove unsupported startup options if necessary
+        # Detect providers that reject startup options (e.g., Neon pooler)
         parsed = urlparse(self.database_url)
         hostname = (parsed.hostname or "").lower()
         is_api_host = "api.jewgo.app" in hostname
-        if is_api_host:
+        is_pooler_host = ("pooler" in hostname) or ("neon.tech" in hostname)
+        if is_api_host or is_pooler_host:
             connect_args.pop("options", None)
+            logger.info(
+                "Startup options removed for pooled provider",
+                hostname=hostname,
+            )
         self.engine = create_engine(
             self.database_url,
             echo=False,
@@ -167,8 +172,8 @@ class DatabaseConnectionManager:
             pool_pre_ping=True,
             connect_args=connect_args,
         )
-        # Set per-connection timeouts for api.jewgo.app
-        if is_api_host:
+        # Set per-connection timeouts for pooled providers where startup options are removed
+        if is_api_host or is_pooler_host:
             self._setup_api_timeouts(statement_timeout, idle_tx_timeout)
 
     def _setup_api_timeouts(
@@ -385,6 +390,10 @@ class DatabaseConnectionManager:
             logger.info("Database connections closed")
         except Exception as e:
             logger.error("Error closing database connections", error=str(e))
+
+    def disconnect(self) -> None:
+        """Disconnect from database (alias for close method for backward compatibility)."""
+        self.close()
 
     def __enter__(self):
         """Context manager entry."""

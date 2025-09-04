@@ -7,6 +7,7 @@ import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,13 +16,13 @@ export async function GET(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_VIEW) ||
         !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -90,10 +91,7 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     adminLogger.error('Image export error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to export images' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -101,12 +99,12 @@ export async function POST(request: NextRequest) {
   try {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_VIEW) ||
         !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     const headerToken = request.headers.get('x-csrf-token');
@@ -148,6 +146,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     adminLogger.error('Image export (POST) error', { error: String(error) });
-    return NextResponse.json({ error: 'Failed to export images' }, { status: 500 });
+    return errorResponses.internalError();
   }
 }

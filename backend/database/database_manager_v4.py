@@ -1,7 +1,7 @@
 import ast
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from utils.error_handler import (
     ExternalServiceError,
@@ -18,6 +18,38 @@ from .repositories import (
     ReviewRepository,
     UserRepository,
 )
+
+# Import ConfigManager at module level
+try:
+    from utils.unified_database_config import UnifiedDatabaseConfig as ConfigManager
+except ImportError:
+    # Fallback for when utils module is not available
+    import os
+    class ConfigManager:
+        @staticmethod
+        def get_database_url():
+            return os.getenv("DATABASE_URL")
+        @staticmethod
+        def get_pg_keepalives_idle():
+            return int(os.getenv("PG_KEEPALIVES_IDLE", "60"))
+        @staticmethod
+        def get_pg_keepalives_interval():
+            return int(os.getenv("PG_KEEPALIVES_INTERVAL", "20"))
+        @staticmethod
+        def get_pg_keepalives_count():
+            return int(os.getenv("PG_KEEPALIVES_COUNT", "5"))
+        @staticmethod
+        def get_pg_statement_timeout():
+            return os.getenv("PG_STATEMENT_TIMEOUT", "60000")
+        @staticmethod
+        def get_pg_idle_tx_timeout():
+            return os.getenv("PG_IDLE_TX_TIMEOUT", "120000")
+        @staticmethod
+        def get_pg_sslmode():
+            return os.getenv("PGSSLMODE", "prefer")
+        @staticmethod
+        def get_pg_sslrootcert():
+            return os.getenv("PGSSLROOTCERT")
 
 # Import the dynamic status calculation module
 try:
@@ -110,7 +142,8 @@ class DatabaseManager:
 
     def health_check(self) -> bool:
         """Perform a health check on the database connection."""
-        return self.connection_manager.health_check()
+        health_result = self.connection_manager.health_check()
+        return health_result.get("status") == "healthy"
 
     def test_connection(self) -> bool:
         """Test the database connection (alias for health_check)."""
@@ -137,8 +170,8 @@ class DatabaseManager:
                 return False
         # Set default values
         restaurant_data.setdefault("certifying_agency", "ORB")
-        restaurant_data.setdefault("created_at", datetime.utcnow())
-        restaurant_data.setdefault("updated_at", datetime.utcnow())
+        restaurant_data.setdefault("created_at", datetime.now(timezone.utc))
+        restaurant_data.setdefault("updated_at", datetime.now(timezone.utc))
         restaurant_data.setdefault("hours_parsed", False)
         # Handle specials field
         if "specials" in restaurant_data and isinstance(
@@ -228,7 +261,7 @@ class DatabaseManager:
         self, restaurant_id: int, update_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Update restaurant data."""
-        update_data["updated_at"] = datetime.utcnow()
+        update_data["updated_at"] = datetime.now(timezone.utc)
         return self.restaurant_repo.update(restaurant_id, update_data)
 
     @handle_database_operation
@@ -980,6 +1013,12 @@ class DatabaseManager:
             ),
             "hours_parsed": restaurant.hours_parsed,
             "google_reviews": getattr(restaurant, 'google_reviews', None),
+            # Add missing rating fields with safe getattr fallbacks
+            "rating": getattr(restaurant, 'rating', None),
+            "star_rating": getattr(restaurant, 'star_rating', None),
+            "quality_rating": getattr(restaurant, 'quality_rating', None),
+            "google_rating": getattr(restaurant, 'google_rating', None),
+            "google_review_count": getattr(restaurant, 'google_review_count', None),
             "images": image_dicts,
             "is_open": status_info.get("is_open", False),
             "status_info": status_info,

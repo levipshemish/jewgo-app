@@ -169,6 +169,21 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       };
       
       try {
+        // Only save if the data actually changed to prevent unnecessary localStorage writes
+        const existingData = localStorage.getItem(LOCATION_STORAGE_KEY);
+        if (existingData) {
+          try {
+            const parsed = JSON.parse(existingData);
+            // Check if data is actually different before saving
+            if (JSON.stringify(parsed) === JSON.stringify(locationData)) {
+              if (DEBUG) { debugLog('📍 LocationContext: Skipping save - data unchanged'); }
+              return;
+            }
+          } catch {
+            // If parsing fails, continue with save
+          }
+        }
+        
         localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
         if (DEBUG) { debugLog('📍 LocationContext: Saved location data to localStorage'); }
       } catch (_error) {

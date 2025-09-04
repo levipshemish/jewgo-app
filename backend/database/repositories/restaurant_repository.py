@@ -502,3 +502,246 @@ class RestaurantRepository(BaseRepository[Restaurant]):
             total_images=sum(len(images) for images in restaurant_images_map.values()),
         )
         return restaurant_images_map
+
+    # ========================================
+    # Keyset Pagination Methods (Phase 2)
+    # ========================================
+
+    def get_restaurants_with_keyset_pagination(
+        self,
+        *,
+        cursor_created_at: Optional[datetime] = None,
+        cursor_id: Optional[int] = None,
+        direction: str = 'next',
+        sort_key: str = 'created_at_desc',
+        limit: int = 24,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> List[Restaurant]:
+        """Get restaurants using keyset (cursor-based) pagination.
+        
+        Args:
+            cursor_created_at: Cursor position timestamp
+            cursor_id: Cursor position ID for tie-breaking
+            direction: 'next' or 'prev' for pagination direction
+            sort_key: Sorting strategy (e.g., 'created_at_desc', 'name_asc')
+            limit: Maximum number of results
+            filters: Optional filtering criteria
+            
+        Returns:
+            List of Restaurant objects
+        """
+        try:
+            session = self.connection_manager.get_session()
+            query = session.query(Restaurant)
+            
+            # Apply filters first
+            query = self._apply_restaurant_filters(query, filters)
+            
+            # Apply cursor conditions for keyset pagination
+            if cursor_created_at and cursor_id:
+                if sort_key == 'created_at_desc':
+                    if direction == 'next':
+                        # For descending order, next means older records
+                        query = query.filter(
+                            or_(
+                                Restaurant.created_at < cursor_created_at,
+                                and_(
+                                    Restaurant.created_at == cursor_created_at,
+                                    Restaurant.id < cursor_id
+                                )
+                            )
+                        )
+                    else:  # direction == 'prev'
+                        # For descending order, prev means newer records
+                        query = query.filter(
+                            or_(
+                                Restaurant.created_at > cursor_created_at,
+                                and_(
+                                    Restaurant.created_at == cursor_created_at,
+                                    Restaurant.id > cursor_id
+                                )
+                            )
+                        )
+                elif sort_key == 'created_at_asc':
+                    if direction == 'next':
+                        # For ascending order, next means newer records
+                        query = query.filter(
+                            or_(
+                                Restaurant.created_at > cursor_created_at,
+                                and_(
+                                    Restaurant.created_at == cursor_created_at,
+                                    Restaurant.id > cursor_id
+                                )
+                            )
+                        )
+                    else:  # direction == 'prev'
+                        # For ascending order, prev means older records
+                        query = query.filter(
+                            or_(
+                                Restaurant.created_at < cursor_created_at,
+                                and_(
+                                    Restaurant.created_at == cursor_created_at,
+                                    Restaurant.id < cursor_id
+                                )
+                            )
+                        )
+                elif sort_key == 'name_asc':
+                    # Name-based sorting with ID tie-breaking
+                    if direction == 'next':
+                        query = query.filter(
+                            or_(
+                                Restaurant.name > cursor_created_at,  # Using created_at field for cursor value
+                                and_(
+                                    Restaurant.name == cursor_created_at,
+                                    Restaurant.id > cursor_id
+                                )
+                            )
+                        )
+                    else:  # direction == 'prev'
+                        query = query.filter(
+                            or_(
+                                Restaurant.name < cursor_created_at,
+                                and_(
+                                    Restaurant.name == cursor_created_at,
+                                    Restaurant.id < cursor_id
+                                )
+                            )
+                        )
+                elif sort_key == 'name_desc':
+                    # Name-based descending sorting
+                    if direction == 'next':
+                        query = query.filter(
+                            or_(
+                                Restaurant.name < cursor_created_at,
+                                and_(
+                                    Restaurant.name == cursor_created_at,
+                                    Restaurant.id < cursor_id
+                                )
+                            )
+                        )
+                    else:  # direction == 'prev'
+                        query = query.filter(
+                            or_(
+                                Restaurant.name > cursor_created_at,
+                                and_(
+                                    Restaurant.name == cursor_created_at,
+                                    Restaurant.id > cursor_id
+                                )
+                            )
+                        )
+            
+            # Apply sorting based on sort_key
+            if sort_key == 'created_at_desc':
+                query = query.order_by(Restaurant.created_at.desc(), Restaurant.id.desc())
+            elif sort_key == 'created_at_asc':
+                query = query.order_by(Restaurant.created_at.asc(), Restaurant.id.asc())
+            elif sort_key == 'name_asc':
+                query = query.order_by(Restaurant.name.asc(), Restaurant.id.asc())
+            elif sort_key == 'name_desc':
+                query = query.order_by(Restaurant.name.desc(), Restaurant.id.desc())
+            else:
+                # Default fallback
+                query = query.order_by(Restaurant.created_at.desc(), Restaurant.id.desc())
+            
+            # Apply limit
+            restaurants = query.limit(limit).all()
+            session.close()
+            
+            self.logger.debug("Keyset pagination query executed",
+                            cursor_id=cursor_id,
+                            direction=direction,
+                            sort_key=sort_key,
+                            result_count=len(restaurants))
+            
+            return restaurants
+            
+        except Exception as e:
+            self.logger.exception("Error in keyset pagination", error=str(e))
+            return []
+
+    def _apply_restaurant_filters(self, query, filters: Optional[Dict[str, Any]]):
+        """Apply filtering conditions to a restaurant query.
+        
+        Args:
+            query: SQLAlchemy query object
+            filters: Filter dictionary
+            
+        Returns:
+            Modified query with filters applied
+        """
+        if not filters:
+            return query
+        
+        # Search filter
+        if filters.get("search"):
+            search_term = filters["search"]
+            query = query.filter(
+                or_(
+                    Restaurant.name.ilike(f"%{search_term}%"),
+                    Restaurant.short_description.ilike(f"%{search_term}%"),
+                    Restaurant.address.ilike(f"%{search_term}%")
+                )
+            )
+        
+        # Status filter
+        if filters.get("status"):
+            query = query.filter(Restaurant.status == filters["status"])
+        else:
+            # Default to active restaurants only
+            query = query.filter(Restaurant.status == "active")
+        
+        # Kosher category filter
+        if filters.get("kosher_category"):
+            query = query.filter(Restaurant.kosher_category == filters["kosher_category"])
+        
+        # Business types filter
+        if filters.get("business_types"):
+            business_types = filters["business_types"]
+            if isinstance(business_types, list):
+                query = query.filter(Restaurant.listing_type.in_(business_types))
+            else:
+                query = query.filter(Restaurant.listing_type == business_types)
+        
+        # Certifying agency filter  
+        if filters.get("certifying_agency"):
+            query = query.filter(Restaurant.certifying_agency == filters["certifying_agency"])
+        
+        # City filter
+        if filters.get("city"):
+            query = query.filter(Restaurant.city.ilike(f"%{filters['city']}%"))
+        
+        # State filter
+        if filters.get("state"):
+            query = query.filter(Restaurant.state == filters["state"])
+        
+        # Filter out test data (consistent with existing methods)
+        test_patterns = ['SUCCESS', 'TEST', '🎉', '🏆']
+        for pattern in test_patterns:
+            query = query.filter(~Restaurant.name.ilike(f'%{pattern}%'))
+        
+        return query
+
+    def count_restaurants_with_filters(self, filters: Optional[Dict[str, Any]] = None) -> int:
+        """Count total restaurants matching the given filters.
+        
+        Args:
+            filters: Optional filtering criteria
+            
+        Returns:
+            Total count of matching restaurants
+        """
+        try:
+            session = self.connection_manager.get_session()
+            query = session.query(Restaurant)
+            
+            # Apply the same filters as keyset pagination
+            query = self._apply_restaurant_filters(query, filters)
+            
+            count = query.count()
+            session.close()
+            
+            return count
+            
+        except Exception as e:
+            self.logger.exception("Error counting filtered restaurants", error=str(e))
+            return 0

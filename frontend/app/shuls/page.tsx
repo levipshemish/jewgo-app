@@ -9,7 +9,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { ShulFilters } from '@/components/shuls/ShulFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
-import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+
 import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
@@ -17,6 +17,7 @@ import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { calculateDistance, formatDistance } from '@/lib/utils/distance';
+import { usePullToRefresh } from '@/lib/hooks/usePullToRefresh';
 
 import { Filters } from '@/lib/filters/schema';
 
@@ -86,7 +87,7 @@ interface Shul {
 }
 
 // Real API function for synagogues
-const fetchShuls = async (limit: number, params?: string, timeoutMs: number = 5000) => {
+const fetchShuls = async (limit: number, params?: string, timeoutMs: number = 15000) => {
   try {
     // Build API URL with parameters
     const apiUrl = new URL('/api/synagogues', window.location.origin);
@@ -101,7 +102,7 @@ const fetchShuls = async (limit: number, params?: string, timeoutMs: number = 50
       });
     }
     
-    // Add timeout to fetch
+    // Add timeout to fetch with more generous timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     
@@ -128,7 +129,7 @@ const fetchShuls = async (limit: number, params?: string, timeoutMs: number = 50
     
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timed out');
+      throw new Error('Request timed out - please try again or contact support if the issue persists');
     }
     console.error('Error fetching synagogues:', error);
     throw error;
@@ -150,6 +151,7 @@ function ShulsPageContent() {
   const [shuls, setShuls] = useState<Shul[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalShuls, setTotalShuls] = useState(0);
@@ -159,10 +161,13 @@ function ShulsPageContent() {
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
+  // Debug logging
+  console.log('Mobile optimization values:', { isMobile, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection });
+  
   // Performance optimizations based on device capabilities
   const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
   const shouldLazyLoad = isSlowConnection;
-  const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
+  const fetchTimeoutMs = isSlowConnection ? 20000 : 15000; // More generous timeout for all connections
   
   // Ensure mobile detection is working correctly
   const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -183,11 +188,23 @@ function ShulsPageContent() {
   }, []);
   
   // Mobile gesture support
-  const { onTouchStart, onTouchMove, onTouchEnd } = useMobileGestures(
+  const { /* onTouchStart, onTouchMove, onTouchEnd */ } = useMobileGestures(
     () => router.push('/marketplace'), // Swipe left to marketplace
     () => router.push('/favorites'),   // Swipe right to favorites
     () => scrollToTop(),               // Swipe up to scroll to top
     () => window.scrollTo(0, document.body.scrollHeight) // Swipe down to bottom
+  );
+  
+  // Pull-to-refresh for mobile
+  const { isRefreshing, pullToRefreshProps } = usePullToRefresh(
+    async () => {
+      // Reset to first page and refresh data
+      setCurrentPage(1);
+      setShuls([]);
+
+      await fetchShulsData();
+    },
+    { enabled: isMobile || isMobileDevice }
   );
   
   // WebSocket for real-time updates (currently disabled)
@@ -202,6 +219,10 @@ function ShulsPageContent() {
     clearAllFilters: _clearAllFilters
   } = useAdvancedFilters();
   
+  // Debug logging
+  console.log('activeFilters:', activeFilters);
+  console.log('hasActiveFilters:', hasActiveFilters);
+  
   // Location state from context
   const {
     userLocation,
@@ -212,6 +233,8 @@ function ShulsPageContent() {
   // Location prompt popup state
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
+
+  // Pagination handled by single handlePageChange below
 
   // Responsive grid with maximum 4 rows and up to 8 columns
   const mobileOptimizedItemsPerPage = useMemo(() => {
@@ -235,6 +258,9 @@ function ShulsPageContent() {
       return columnsPerRow * 4; // Always 4 rows
     }
   }, [isMobile, isMobileDevice, viewportWidth]);
+  
+  // Debug logging
+  console.log('mobileOptimizedItemsPerPage calculated:', mobileOptimizedItemsPerPage);
 
   // Memoize shul transformation to prevent unnecessary re-renders
   const transformShulToCardData = useCallback((shul: Shul) => {
@@ -244,7 +270,7 @@ function ShulsPageContent() {
     
     // Distance logic — compute from user location if available; fall back to API string
     let distanceText = '';
-    if (userLocation && (shul.latitude != null) && (shul.longitude != null)) {
+    if (userLocation && (shul.latitude !== null) && (shul.longitude !== null)) {
       // Accept numbers or numeric strings from API
       const latNum = typeof shul.latitude === 'number' ? shul.latitude : parseFloat(String(shul.latitude));
       const lngNum = typeof shul.longitude === 'number' ? shul.longitude : parseFloat(String(shul.longitude));
@@ -315,8 +341,9 @@ function ShulsPageContent() {
 
 
 
-  // Fetch shuls with mobile optimization
-  const fetchShulsData = useCallback(async (filters: Filters = activeFilters) => {
+  // Fetch shuls with mobile optimization and retry logic
+  const fetchShulsData = useCallback(async (filters: Filters = activeFilters, retryCount = 0) => {
+    console.log('fetchShulsData called with filters:', filters, 'retry count:', retryCount);
     try {
       setLoading(true);
       setError(null);
@@ -348,6 +375,7 @@ function ShulsPageContent() {
         params.append('slow_connection', 'true');
       }
 
+      console.log('fetchShulsData: Calling fetchShuls with:', { limit: mobileOptimizedItemsPerPage, params: params.toString(), timeout: fetchTimeoutMs });
       const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setShuls(response.shuls);
@@ -359,10 +387,20 @@ function ShulsPageContent() {
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
-      // Note: hasMore state will be updated by the infinite scroll hook
-      // We don't need to call setHasMore here as it's not available yet
+
     } catch (err) {
       console.error('Error fetching shuls:', err);
+      
+      // Retry logic for timeout errors
+      if (err instanceof Error && err.message.includes('timed out') && retryCount < 2) {
+        console.log(`Retrying fetch (attempt ${retryCount + 1})...`);
+        setIsRetrying(true);
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        setIsRetrying(false);
+        return fetchShulsData(filters, retryCount + 1);
+      }
+      
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -374,64 +412,9 @@ function ShulsPageContent() {
     }
   }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
-  // Infinite scroll with proper mobile detection
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => {
-      // Define fetchMoreShuls inline to avoid dependency issues
-      const fetchMoreShuls = async () => {
-        if (isLoadingMore || !hasMore) {
-          return;
-        }
 
-        try {
-          const nextPage = currentPage + 1;
-          const params = new URLSearchParams();
-          
-          // Add search query if present
-          if (searchQuery && searchQuery.trim() !== '') {
-            params.append('search', searchQuery.trim());
-          }
-          
-          // Add current filters
-          Object.entries(activeFilters).forEach(([key, value]) => {
-            if (value !== undefined && value !== '' && value !== null) {
-              params.append(key, String(value));
-            }
-          });
 
-          params.append('page', nextPage.toString());
-          params.append('limit', mobileOptimizedItemsPerPage.toString());
-          params.append('mobile_optimized', 'true');
 
-          const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-          
-          setShuls(prev => [...prev, ...response.shuls]);
-          setCurrentPage(nextPage);
-          
-          // Update hasMore state
-          const hasMoreContent = response.shuls.length >= mobileOptimizedItemsPerPage;
-          setHasMore(hasMoreContent);
-        } catch (err) {
-          console.error('Error fetching more shuls:', err);
-        }
-      };
-      
-      return fetchMoreShuls();
-    },
-    { 
-      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
-    }
-  );
-
-  // Update hasMore state when shuls data changes
-  useEffect(() => {
-    if (shuls.length > 0) {
-      const hasMoreContent = shuls.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
-    }
-  }, [shuls.length, mobileOptimizedItemsPerPage, setHasMore]);
 
   // Handle search functionality
   const handleSearch = useCallback((query: string) => {
@@ -538,6 +521,7 @@ function ShulsPageContent() {
 
   // Initial data fetch
   useEffect(() => {
+    console.log('Initial data fetch useEffect triggered');
     fetchShulsData();
   }, [fetchShulsData]);
 
@@ -612,15 +596,28 @@ function ShulsPageContent() {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Connection Error</h2>
           <p className="text-gray-600 text-center mb-6 max-w-md">{error}</p>
-          <button
-            onClick={() => {
-              setError(null);
-              fetchShulsData();
-            }}
-            className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
-          >
-            Try Again
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setError(null);
+                fetchShulsData();
+              }}
+              className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
+            >
+              Try Again
+            </button>
+            {error.includes('timed out') && (
+              <button
+                onClick={() => {
+                  setError(null);
+                  fetchShulsData(activeFilters, 0);
+                }}
+                className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+              >
+                Retry with Longer Timeout
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -629,13 +626,24 @@ function ShulsPageContent() {
   return (
     <div 
       className="min-h-screen bg-[#f4f4f4] shuls-page page-with-bottom-nav"
-      style={responsiveStyles.container}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
+      style={{
+        ...responsiveStyles.container,
+        scrollBehavior: 'smooth'
+      }}
+      {...pullToRefreshProps}
       role="main"
       aria-label="Shul listings"
     >
+      {/* Pull-to-refresh indicator */}
+      {(isMobile || isMobileDevice) && isRefreshing && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-[#4ade80] text-white text-center py-2 text-sm font-medium">
+          <div className="inline-flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <span>Refreshing synagogues...</span>
+          </div>
+        </div>
+      )}
+      
       <div className="sticky top-0 z-50 bg-white">
         <Header 
           onSearch={handleSearch}
@@ -716,27 +724,18 @@ function ShulsPageContent() {
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading synagogues{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
+          {isRetrying && (
+            <p className="text-sm text-amber-600 mt-2">
+              Request taking longer than expected, retrying...
+            </p>
+          )}
         </div>
       )}
 
-      {/* Infinite scroll loading indicator - only show on mobile */}
-      {(isMobile || isMobileDevice) && isLoadingMore && (
-        <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
-        </div>
-      )}
 
-      {/* Infinite scroll trigger element - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
 
-      {/* Desktop pagination - only show on desktop */}
-      {!(isMobile || isMobileDevice) && totalPages > 1 && (
+      {/* Pagination - show on all devices */}
+      {totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
@@ -751,13 +750,36 @@ function ShulsPageContent() {
         </div>
       )}
 
-      {/* Mobile infinite scroll trigger - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
+      {/* Mobile floating action buttons */}
+      {(isMobile || isMobileDevice) && (
+        <div className="fixed bottom-20 right-4 z-40 space-y-3">
+          {/* Scroll to top button */}
+          <button
+            onClick={() => scrollToTop()}
+            className="w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:shadow-xl active:scale-95"
+            aria-label="Scroll to top"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+          </button>
+          
+          {/* Refresh button */}
+          <button
+            onClick={async () => {
+              setCurrentPage(1);
+              setShuls([]);
+
+              await fetchShulsData();
+            }}
+            className="w-12 h-12 bg-[#4ade80] rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:shadow-xl active:scale-95"
+            aria-label="Refresh synagogues"
+          >
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
       )}
 
       {/* Bottom navigation - visible on all screen sizes */}

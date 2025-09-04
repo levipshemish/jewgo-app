@@ -416,18 +416,25 @@ def get_restaurants():
             def _project(item: dict) -> dict:
                 return {k: v for k, v in item.items() if k in selected_fields}
             paginated_restaurants = [_project(r) for r in paginated_restaurants]
-        # Calculate total pages for frontend compatibility
+        # Calculate pagination metadata
         total_pages = (total_count + limit - 1) // limit if total_count else 0
-        # Return response in the format expected by frontend
+        current_page = (offset // limit) + 1
+        has_more = offset + limit < total_count
+        
+        # Return response in the format expected by frontend with proper pagination
         return (
             jsonify(
                 {
                     "success": True,
                     "restaurants": paginated_restaurants,
-                    "totalPages": total_pages,
-                    "totalRestaurants": total_count,
-                    "page": (offset // limit) + 1,
-                    "limit": limit,
+                    "pagination": {
+                        "total": total_count,
+                        "limit": limit,
+                        "offset": offset,
+                        "hasMore": has_more,
+                        "currentPage": current_page,
+                        "totalPages": total_pages,
+                    },
                     "message": f"Retrieved {len(paginated_restaurants)} restaurants",
                 }
             ),

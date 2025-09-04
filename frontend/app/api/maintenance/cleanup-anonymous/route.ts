@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { errorResponses, createSuccessResponse } from '@/lib';
 import { 
   generateCorrelationId
 } from '@/lib/utils/auth-utils';
@@ -38,10 +39,7 @@ export async function POST(request: NextRequest) {
         correlationId
       });
       
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return errorResponses.unauthorized();
     }
     
     // Parse request body for configuration overrides
@@ -58,10 +56,7 @@ export async function POST(request: NextRequest) {
           correlationId
         });
         
-        return NextResponse.json(
-          { error: 'Batch size too large' },
-          { status: 400 }
-        );
+        return errorResponses.badRequest();
       }
       
       if (maxAgeDays < 1 || maxAgeDays > 365) {
@@ -70,10 +65,7 @@ export async function POST(request: NextRequest) {
           correlationId
         });
         
-        return NextResponse.json(
-          { error: 'Invalid max age' },
-          { status: 400 }
-        );
+        return errorResponses.badRequest();
       }
     }
     
@@ -118,10 +110,7 @@ export async function POST(request: NextRequest) {
           correlationId
         });
         
-        return NextResponse.json(
-          { error: 'Failed to list users' },
-          { status: 500 }
-        );
+        return errorResponses.internalError();
       }
       
       if (!users || users.length === 0) {

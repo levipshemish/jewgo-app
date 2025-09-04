@@ -8,6 +8,7 @@ import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 import { safeOrderExpr } from '@/lib/admin/sql';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,12 +21,12 @@ export async function GET(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.KOSHER_PLACE_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Get query parameters
@@ -100,9 +101,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     adminLogger.error('Kosher place list error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to fetch kosher places' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

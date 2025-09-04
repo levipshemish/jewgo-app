@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { redirect } from 'next/navigation';
-import { getUserWithRoles } from '../../lib/utils/auth-utils';
+import { getUserWithRoles } from '@/lib/utils/auth-utils';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({

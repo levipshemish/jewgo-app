@@ -1,4 +1,4 @@
-import { safeOrderExpr } from '../../lib/admin/sql';
+import { safeOrderExpr } from '@/lib/admin/sql';
 
 describe('safeOrderExpr', () => {
   const allowed = ['created_at', 'name', 'city'];

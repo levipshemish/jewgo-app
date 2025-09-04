@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import DataTable, { Column } from '@/components/admin/DataTable';
+import DataTable, { Column } from './DataTable';
 // Local hook and fetch function to avoid restricted imports
 const useAdminCsrf = () => {
   return {
@@ -18,7 +18,7 @@ const adminFetch = async (url: string, csrfToken: string, options?: RequestInit)
   return response;
 };
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/lib/ui/toast';
+import { useToast } from '../ui/Toast';
 
 interface RestaurantImage {
   id: number;
@@ -59,14 +59,14 @@ export default function ImageDatabaseClient({
 
   // Controlled state derived from URL params
   const page = Number(searchParams.get('page') || '1');
-  const { DEFAULT_PAGE_SIZE } = require('@/lib/config/pagination');
+  const { DEFAULT_PAGE_SIZE } = require('../../lib/config/pagination');
   const pageSize = Number(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE));
   const search = searchParams.get('search') || '';
   const sortBy = searchParams.get('sortBy') || 'created_at';
   const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
 
   // Fetch server data based on URL params
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -76,12 +76,13 @@ export default function ImageDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await fetch(`/api/admin/images?${params.toString()}`, { cache: 'no-store' });
+      const res = await fetch(`/api/admin/images?${params.toString()}`, { cache: 'no-store', signal });
       if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
       const json = await res.json();
       setRows(json.data || []);
       setPagination(json.pagination);
     } catch (e) {
+      if ((e as any)?.name === 'AbortError') { return; }
       console.error('[ADMIN] load images error:', e);
       showError('Failed to load images');
     } finally {
@@ -90,7 +91,9 @@ export default function ImageDatabaseClient({
   }, [page, pageSize, search, sortBy, sortOrder, showError]);
 
   useEffect(() => {
-    fetchData();
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
   }, [page, pageSize, search, sortBy, sortOrder, fetchData]);
 
   const onPageChange = (nextPage: number) => {

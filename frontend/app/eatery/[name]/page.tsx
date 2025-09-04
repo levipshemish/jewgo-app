@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { ListingPage } from "@/components/listing-details-utility/listing-page"
-import { mapEateryToListingData } from "@/utils/eatery-mapping"
-import { EateryDB, UserLocation } from "@/types/listing"
-
+import { useState, useEffect, useCallback } from 'react'
+import { ListingPage } from '@/components/listing-details-utility/listing-page'
+import { mapEateryToListingData } from '@/utils/eatery-mapping'
+import { EateryDB, UserLocation } from '@/types/listing'
+import Link from 'next/link'
 
 
 /**
@@ -298,7 +298,11 @@ export default function EateryNamePage() {
 
         if (!foundRestaurant) {
           console.log('Restaurant not found. Available restaurants:', restaurants.map((r: any) => r.name))
-          throw new Error(`Restaurant not found: ${eateryName}`)
+          
+          // Instead of throwing an error, set a specific "not found" state
+          setError('restaurant_not_found')
+          setLoading(false)
+          return
         }
 
         console.log('Found restaurant:', foundRestaurant.name, 'with ID:', foundRestaurant.id)
@@ -584,6 +588,49 @@ export default function EateryNamePage() {
 
   // Render error state
   if (error) {
+    // Special handling for restaurant not found
+    if (error === 'restaurant_not_found') {
+      return (
+        <main className="min-h-screen bg-gray-50 p-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold mb-4 text-gray-800">Restaurant Not Found</h1>
+              <p className="text-lg text-gray-600 mb-6">
+                We couldn&apos;t find a restaurant named &quot;{eateryName}&quot;
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <h2 className="text-xl font-semibold mb-3 text-blue-800">Suggestions</h2>
+                <ul className="text-left text-blue-700 space-y-2">
+                  <li>• Check the spelling of the restaurant name</li>
+                  <li>• Try searching for the restaurant on our main page</li>
+                  <li>• The restaurant may have been removed or renamed</li>
+                  <li>• Contact us if you believe this is an error</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-3">
+                <Link 
+                  href="/eatery" 
+                  className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Browse All Restaurants
+                </Link>
+                <br />
+                <Link 
+                  href="/" 
+                  className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Go to Homepage
+                </Link>
+              </div>
+            </div>
+          </div>
+        </main>
+      )
+    }
+    
+    // Generic error handling
     return (
       <main className="min-h-screen bg-gray-50 p-4">
         <div className="flex items-center justify-center">
@@ -591,6 +638,14 @@ export default function EateryNamePage() {
             <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
             <p className="text-gray-600 mb-4">{error}</p>
             <p className="text-gray-600">Eatery: {eateryName}</p>
+            <div className="mt-4">
+              <Link 
+                href="/eatery" 
+                className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </Link>
+            </div>
           </div>
         </div>
       </main>

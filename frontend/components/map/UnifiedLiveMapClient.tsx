@@ -216,7 +216,7 @@ export default function UnifiedLiveMapClient() {
       
       fetchAbortController.current = new AbortController();
       
-      const data = await fetchRestaurants({ limit: 1000 });
+      const data = await fetchRestaurants({ limit: 1000, signal: fetchAbortController.current.signal });
       
       setLoadingStage('processing-data');
       setLoadingProgress(70);

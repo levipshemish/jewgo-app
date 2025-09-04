@@ -1,10 +1,10 @@
-import { NextRequest } from 'next/server';
-
+import { NextRequest, NextResponse } from 'next/server';
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
 import { handleRoute, json, forwardAuthHeader } from '@/lib/server/route-helpers';
-import { getBackendUrl } from '@/lib/utils/apiRouteUtils';
+import { getBackendUrl } from '@/lib';
+import { errorResponses } from '@/lib';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';

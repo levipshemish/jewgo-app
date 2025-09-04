@@ -66,7 +66,7 @@ export function ImageCarouselPopup({ images, onClose }: ImageCarouselPopupProps)
           <div className="flex gap-2 mt-4 overflow-x-auto p-4">
             {images.map((image, index) => (
               <Button
-                key={index}
+                key={image || `thumb-${index}`}
                 onClick={() => setCurrentIndex(index)}
                 className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
                   index === currentIndex ? 'border-blue-500' : 'border-gray-200'

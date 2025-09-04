@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
-import DataTable, { Column } from '@/components/admin/DataTable';
+import DataTable, { Column } from '../../../components/admin/DataTable';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 import { adminFetch } from '@/lib/admin/fetch';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/lib/ui/toast';
+import { useToast } from '../../../components/ui/Toast';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';
 
 interface SubmissionRow {
   id: number;
@@ -27,7 +28,6 @@ function AdminRestaurantsContent() {
 
   const [rows, setRows] = useState<SubmissionRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const { DEFAULT_PAGE_SIZE } = require('@/lib/config/pagination');
   const [pagination, setPagination] = useState({ page: 1, pageSize: DEFAULT_PAGE_SIZE, total: 0, totalPages: 0, hasNext: false, hasPrev: false });
   const [error, setError] = useState<string | null>(null);
 

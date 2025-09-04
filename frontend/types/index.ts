@@ -1,9 +1,9 @@
 // Barrel file for types exports
 // This provides stable entry points for commonly used types
 
-export * from '../lib/types/restaurant';
-export * from '../lib/types/marketplace';
-export * from '../lib/validators/review';
+export * from '@/lib/types/restaurant';
+export * from '@/lib/types/marketplace';
+export * from '@/lib/validators/review';
 
 // Analytics and tracking types
 export interface AnalyticsEvent {

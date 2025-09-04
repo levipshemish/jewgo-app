@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { oauthLogger } from '@/lib/utils/logger';
 import { attemptIdentityLinking } from '@/lib/utils/auth-utils.server';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     
     if (userError || !user) {
       oauthLogger.error('User not authenticated for linking API', { error: userError?.message });
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     const body = await request.json();
@@ -28,16 +29,11 @@ export async function POST(request: NextRequest) {
         const linkingResult = await attemptIdentityLinking(user.id, 'any');
         
         if (linkingResult.success) {
-          return NextResponse.json({ success: true, message: 'No linking needed' });
+          return createSuccessResponse({ message: 'Account linked successfully' });
         }
         
         if (linkingResult.requiresReAuth) {
-          return NextResponse.json({ 
-            success: true, 
-            message: 'Re-authentication required',
-            requiresReAuth: true,
-            providers: user.identities?.map((id: any) => id.provider) || []
-          });
+          return createSuccessResponse({ message: 'Re-authentication required' });
         }
         
         return NextResponse.json({ error: linkingResult.error || 'Linking failed' }, { status: 500 });
@@ -47,7 +43,7 @@ export async function POST(request: NextRequest) {
           errorType: linkError instanceof Error ? linkError.constructor.name : 'Unknown',
           userId: user.id 
         });
-        return NextResponse.json({ error: 'Linking failed' }, { status: 500 });
+        return errorResponses.internalError();
       }
     }
 
@@ -57,7 +53,7 @@ export async function POST(request: NextRequest) {
         const { provider } = body;
         
         if (!provider) {
-          return NextResponse.json({ error: 'Provider required' }, { status: 400 });
+          return errorResponses.badRequest();
         }
 
         // Generate a secure state parameter for the re-authentication
@@ -68,28 +64,24 @@ export async function POST(request: NextRequest) {
         
         const redirectUrl = `${request.nextUrl.origin}/auth/signin?provider=${provider}&reauth=true&state=${state}`;
         
-        return NextResponse.json({ 
-          success: true, 
-          redirectUrl,
-          message: 'Re-authentication initiated'
-        });
+        return createSuccessResponse({ message: 'Re-authentication initiated successfully' });
 
       } catch (reauthError) {
         oauthLogger.error('Re-authentication initiation failed', { 
           errorType: reauthError instanceof Error ? reauthError.constructor.name : 'Unknown',
           userId: user.id 
         });
-        return NextResponse.json({ error: 'Re-authentication failed' }, { status: 500 });
+        return errorResponses.internalError();
       }
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    return errorResponses.badRequest();
 
   } catch (error) {
     oauthLogger.error('Account linking API error', { 
       errorType: error instanceof Error ? error.constructor.name : 'Unknown'
     });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return errorResponses.internalError();
   }
 }
 
@@ -101,7 +93,7 @@ export async function GET(_request: NextRequest) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Return user's current identity information
@@ -116,6 +108,6 @@ export async function GET(_request: NextRequest) {
     oauthLogger.error('Account linking GET error', { 
       errorType: error instanceof Error ? error.constructor.name : 'Unknown'
     });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return errorResponses.internalError();
   }
 }

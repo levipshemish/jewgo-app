@@ -536,7 +536,7 @@ export default function SmartSearch({
                 <div className="space-y-1">
                   {recentSearches.map((search, index) => (
                     <button
-                      key={index}
+                      key={`recent-${search}`}
                       onClick={() => handleSuggestionSelect(search)}
                       className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center space-x-3"
                     >
@@ -560,7 +560,7 @@ export default function SmartSearch({
                 <div className="space-y-1">
                   {popularSearches.map((search, index) => (
                     <button
-                      key={index}
+                      key={`popular-${search.text}`}
                       onClick={() => handleSuggestionSelect(search.text)}
                       className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center space-x-3"
                     >

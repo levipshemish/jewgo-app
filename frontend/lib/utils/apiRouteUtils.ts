@@ -11,13 +11,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib/api-config';
 
-/**
- * Backend URL configuration
- */
-export function getBackendUrl(): string {
-  return process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
-}
+// Backend URL configuration - moved to api-config.ts for centralization
 
 /**
  * Default headers for API requests

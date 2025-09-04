@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     }
 
     const baseUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:3000' 
+      ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       : `https://${request.headers.get('host')}`;
     
     // Create in-flight promise and register before starting network calls
@@ -151,13 +151,33 @@ export async function GET(request: NextRequest) {
         ? restaurantsData.length
         : 0;
       const totalFromBackend = Number(restaurantsData.total || restaurantsData.count || 0);
-      // Robust hasMore heuristic:
-      // 1) If backend provides a total, use it strictly.
-      // 2) Otherwise, only assume more on the first page when it's full; subsequent pages
-      //    must return fewer than limit to continue (prevents endless loops when backends repeat pages).
-      const hasMore = totalFromBackend > 0
-        ? (offset + returnedCount) < totalFromBackend
-        : (page === 1 && returnedCount === limit);
+      
+      // FIXED: Improved hasMore calculation to prevent infinite loops
+      let hasMore: boolean;
+      if (totalFromBackend > 0) {
+        // Case 1: Backend provides total - use strict calculation
+        hasMore = (offset + returnedCount) < totalFromBackend;
+      } else if (returnedCount === 0) {
+        // Case 2: No results returned - definitely no more
+        hasMore = false;
+      } else if (returnedCount < limit) {
+        // Case 3: Partial page returned - no more data
+        hasMore = false;
+      } else if (page === 1 && returnedCount === limit) {
+        // Case 4: First page is full - might have more (but be conservative)
+        // Only assume more if we're on the first page and got exactly the limit
+        hasMore = true;
+      } else {
+        // Case 5: Subsequent pages - be conservative, assume no more unless proven
+        hasMore = false;
+      }
+      
+      // Additional safety: if we've reached a reasonable page limit, stop
+      if (page > 50) { // Arbitrary safety limit
+        hasMore = false;
+        console.warn('API safety limit reached: page', page);
+      }
+      
       const combinedData = {
         data: {
           restaurants: restaurantsData.data || [],
@@ -228,9 +248,10 @@ export async function GET(request: NextRequest) {
         totalPages: 0
       }
     };
-    const headers = {} as Record<string, string>;
+    const headers = { 'Cache-Control': 'no-store' } as Record<string, string>;
     // Briefly suppress repeated failures for the same key
-    recentlyServed.set(`err:${request.url}`, { payload, headers, status: 500, timestamp: Date.now() });
-    return NextResponse.json(payload, { status: 500 });
+    recentlyServed.set(`err:${request.url}`, { payload, headers, status: undefined, timestamp: Date.now() });
+    // Return 200 so clients can show graceful empty state instead of HTTP error
+    return NextResponse.json(payload, { headers });
   }
 }

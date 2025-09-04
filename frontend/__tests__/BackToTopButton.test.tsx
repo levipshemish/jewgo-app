@@ -59,7 +59,7 @@ describe('BackToTopButton', () => {
     
     // Mock the observer callback to set isVisible to true
     let observerCallback: (entries: any[]) => void;
-    mockObserver.observe.mockImplementation((element) => {
+    mockObserver.observe.mockImplementation((_element) => {
       // Simulate the sentinel not intersecting (user has scrolled down)
       setTimeout(() => {
         observerCallback([{ isIntersecting: false }]);
@@ -86,7 +86,7 @@ describe('BackToTopButton', () => {
     mockIntersectionObserver.mockReturnValue(mockObserver);
     
     let observerCallback: (entries: any[]) => void;
-    mockObserver.observe.mockImplementation((element) => {
+    mockObserver.observe.mockImplementation((_element) => {
       setTimeout(() => {
         observerCallback([{ isIntersecting: false }]);
       }, 0);
@@ -129,7 +129,7 @@ describe('BackToTopButton', () => {
     mockIntersectionObserver.mockReturnValue(mockObserver);
     
     let observerCallback: (entries: any[]) => void;
-    mockObserver.observe.mockImplementation((element) => {
+    mockObserver.observe.mockImplementation((_element) => {
       setTimeout(() => {
         observerCallback([{ isIntersecting: false }]);
       }, 0);

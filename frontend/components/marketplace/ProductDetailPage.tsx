@@ -164,7 +164,7 @@ export default function ProductDetailPage() {
                 <div className="flex gap-2 overflow-x-auto">
                   {product.images.map((image, index) => (
                     <button
-                      key={index}
+                      key={image || `thumb-${index}`}
                       onClick={() => setSelectedImage(index)}
                       className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
                         selectedImage === index ? 'border-blue-500' : 'border-gray-200'

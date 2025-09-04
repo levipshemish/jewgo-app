@@ -6,6 +6,7 @@ import { createServerClient } from '@supabase/ssr';
 import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
 import { validateCSRFServer, validateSupabaseFeaturesWithLogging } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit } from '@/lib/rate-limiting';
+import { errorResponses, createSuccessResponse } from '@/lib';
 // Anonymous authentication endpoint - no CAPTCHA required
 
 export const runtime = 'nodejs';

@@ -25,7 +25,7 @@ export const WEBVIEW_MODE_ENABLED = process.env.WEBVIEW_MODE_ENABLED === 'true';
 export const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   'https://jewgo.app',
-  'https://www.jewgo.app',
+  'http://localhost:3000',
   // Add staging/production domains as needed
 ].filter(Boolean);
 

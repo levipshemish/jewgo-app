@@ -44,7 +44,7 @@ export default function RestaurantGrid({
       <div className="container mx-auto px-2 py-2 pb-24">
         <div className="grid grid-cols-2 gap-1">
           {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse min-w-0">
+            <div key={`skeleton-${index}`} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse min-w-0">
               <div className="relative aspect-[5/4] bg-gray-200"></div>
               <div className="p-1 text-sm">
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>

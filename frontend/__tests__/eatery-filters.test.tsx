@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import EateryPageClient from '../app/eatery/EateryPageClient';
 
 // Mock the hooks and components
@@ -39,14 +39,7 @@ jest.mock('@/lib/mobile-optimization', () => ({
   }),
 }));
 
-jest.mock('@/lib/hooks/useInfiniteScroll', () => ({
-  useInfiniteScroll: () => ({
-    hasMore: false,
-    isLoadingMore: false,
-    loadingRef: { current: null },
-    setHasMore: jest.fn(),
-  }),
-}));
+
 
 // Mock fetch
 global.fetch = jest.fn();

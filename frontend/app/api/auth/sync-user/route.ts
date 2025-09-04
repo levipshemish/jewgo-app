@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
 import type { TransformedUser } from '@/lib/types/supabase-auth';
 import { ROLE_PERMISSIONS, normalizeAdminRole, type Permission } from '@/lib/constants/permissions';
 import { validatePermissions } from '@/lib/server/security';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(_request: NextRequest) {
   try {
@@ -73,7 +74,7 @@ export async function GET(_request: NextRequest) {
     if (accessToken) {
       try {
         // Prefer explicit BACKEND_URL, fallback to NEXT_PUBLIC_BACKEND_URL, then localhost
-        const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8082';
+        const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
         const resp = await fetch(`${backendUrl}/api/auth/user-role`, {
           method: 'GET',
           headers: {

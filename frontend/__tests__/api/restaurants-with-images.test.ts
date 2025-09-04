@@ -8,7 +8,7 @@ global.fetch = jest.fn();
 describe('/api/restaurants-with-images', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api.jewgo.app';
+    process.env.NEXT_PUBLIC_BACKEND_URL = getBackendUrl();
   });
 
   afterEach(() => {

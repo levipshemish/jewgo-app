@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib';
 
 export async function GET(
   _request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -10,7 +11,7 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid restaurant ID' }, { status: 400 });
     }
 
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     const response = await fetch(`${backendUrl}/api/v4/restaurants/${restaurantId}/hours`, {
       headers: {
         'Content-Type': 'application/json',

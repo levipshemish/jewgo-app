@@ -59,7 +59,7 @@ export default function AdvancedSearchBox({
     const fetchSuggestions = async () => {
       setIsLoading(true);
       try {
-        const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
         const response = await fetch(
           `${backendUrl}/api/restaurants/autocomplete?q=${encodeURIComponent(debouncedQuery)}&limit=8`
         );
@@ -241,7 +241,7 @@ export default function AdvancedSearchBox({
                 </div>
                 {searchHistory.map((item, index) => (
                   <button
-                    key={index}
+                    key={`history-${item}-${index}`}
                     onClick={() => handleSuggestionClick({ text: item, type: 'restaurant' })}
                     className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-md flex items-center space-x-2"
                   >
@@ -260,7 +260,7 @@ export default function AdvancedSearchBox({
                 </div>
                 {suggestions.map((suggestion, index) => (
                   <button
-                    key={index}
+                    key={`${suggestion.type}-${suggestion.text}-${index}`}
                     onClick={() => handleSuggestionClick(suggestion)}
                     className={`w-full text-left px-3 py-2 rounded-md flex items-center space-x-3 transition-colors ${
                       selectedIndex === index ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'

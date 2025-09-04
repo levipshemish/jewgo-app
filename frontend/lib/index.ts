@@ -1,49 +1,39 @@
-// Barrel file for lib exports
-// This provides stable entry points for commonly used utilities and types
+/**
+ * Barrel Export for Common Utilities
+ * =================================
+ * 
+ * This file provides centralized imports for commonly used utilities
+ * to avoid path resolution issues and simplify imports.
+ */
 
-// API exports
-export * from './api/marketplace';
-export * from './api/adminClient';
-export * from './api/health';
-export * from './api/specials';
+// API Configuration
+export { getBackendUrl, getFrontendUrl, API_CONFIG, API_ENDPOINTS, apiCall, frontendApiCall } from './api-config';
 
-// Auth exports
+// Frontend URL Configuration (NEW)
+export {
+  getFrontendAppUrl,
+  getAlternativeBackendUrl,
+  getCloudinaryUrl,
+  buildFrontendUrl,
+  buildBackendUrl,
+  buildAlternativeBackendUrl,
+  isProduction,
+  isDevelopment,
+  isTest,
+  getEnvironmentConfig,
+  FRONTEND_URL_CONFIG
+} from './frontend-url-config';
 
-// Config exports
-export * from './api-config';
+// Error Response Utilities
+export { errorResponses, createErrorResponse, createSuccessResponse } from './utils/error-responses';
 
-// Filter exports
-export * from './filters/filters.types';
-export * from './filters/urlSync';
+// Restaurant Status Utilities (server-only)
+export { handleRestaurantStatusChange, validateRestaurantPermissions } from './server/restaurant-status-utils';
 
-// Hook exports
-export * from './hooks/useOptimizedFilters';
-export * from './hooks/useFilterOptions';
-export * from './hooks/useCssLoader';
+// Common Types
+export type { RestaurantStatusChangeParams, StatusChangeResult } from './server/restaurant-status-utils';
 
-// Type exports
-export * from './types/restaurant';
-export * from './types/marketplace';
-
-// Utility exports
-export * from './utils/dateUtils';
-export * from './utils/analytics';
-export * from './utils/admin';
-export * from './utils/apiRouteUtils';
-export * from './utils/componentUtils';
-export * from './utils/distance';
-export * from './utils/rateLimiter';
-
-
-// Validator exports
-export * from './validators/review';
-
-// Supabase exports
-export * from './supabase/middleware';
-
-// I18n exports
-export * from './i18n/index';
-
-// Backup exports - temporarily disabled due to missing files
-// export * from './backups/hoursBackup';
-// export * from './backups/websiteBackup';
+// Re-export other commonly used utilities as needed
+export { prisma } from './db/prisma';
+export { supabaseClient } from './supabase/client-secure';
+export { createServerSupabaseClient } from './supabase/server';

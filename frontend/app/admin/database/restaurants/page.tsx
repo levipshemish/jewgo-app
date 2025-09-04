@@ -2,14 +2,15 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import RestaurantDatabaseClient from '@/components/admin/RestaurantDatabaseClient';
+import RestaurantDatabaseClient from '../../../../components/admin/RestaurantDatabaseClient';
+import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';
 // import { AdminDatabaseService } from '@/lib/admin/database';
 // import { prisma } from '@/lib/db/prisma';
 
 export default async function RestaurantDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const page = parseInt((params.page as string) || '1');
-  const pageSize = parseInt((params.pageSize as string) || '20');
+  const pageSize = parseInt((params.pageSize as string) || String(DEFAULT_PAGE_SIZE));
   const _search = (params.search as string) || '';
   const sortBy = 'createdAt'; // AdminDatabaseService.getDefaultSortField('restaurant');
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';

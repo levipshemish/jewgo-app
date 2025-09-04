@@ -24,7 +24,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Use production backend URL if environment variable is not set
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
     
     // Fetch filter options from backend API
     // Use v4 backend route prefix

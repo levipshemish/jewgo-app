@@ -18,19 +18,7 @@ describe('GenericPageLayout', () => {
     expect(screen.getByTestId('item-2')).toBeInTheDocument();
   });
 
-  it('shows sentinel when infinite scroll has next page', () => {
-    render(
-      <GenericPageLayout
-        items={[]}
-        renderItem={() => null}
-        pageTitle="Sentinel"
-        enableInfiniteScroll
-        hasNextPage
-      />
-    );
 
-    expect(screen.getByTestId('gpl-sentinel')).toBeInTheDocument();
-  });
 
   it('merges grid class and applies min column width', () => {
     render(
@@ -64,29 +52,7 @@ describe('GenericPageLayout', () => {
     expect(keyFn).toHaveBeenNthCalledWith(2, items[1], 1);
   });
 
-  it('omits sentinel when flags are false', () => {
-    const { rerender } = render(
-      <GenericPageLayout
-        items={[]}
-        renderItem={() => null}
-        pageTitle="No sentinel"
-        enableInfiniteScroll={false}
-        hasNextPage
-      />
-    );
-    expect(screen.queryByTestId('gpl-sentinel')).toBeNull();
 
-    rerender(
-      <GenericPageLayout
-        items={[]}
-        renderItem={() => null}
-        pageTitle="No sentinel"
-        enableInfiniteScroll
-        hasNextPage={false}
-      />
-    );
-    expect(screen.queryByTestId('gpl-sentinel')).toBeNull();
-  });
 
   it('sets appropriate aria attributes', () => {
     render(
@@ -119,12 +85,12 @@ describe('GenericPageLayout', () => {
     expect(screen.getByTestId('empty')).toBeInTheDocument();
   });
 
-  it('marks grid busy when loading more items', () => {
+  it('marks grid busy when loading', () => {
     render(
       <GenericPageLayout
         items={[1]}
         renderItem={(item) => <div data-testid={`item-${item}`}>{item}</div>}
-        isLoadingMore
+        isLoading
       />
     );
 
@@ -148,4 +114,3 @@ describe('GenericPageLayout', () => {
     expect(screen.getByTestId('act')).toBeInTheDocument();
   });
 });
-

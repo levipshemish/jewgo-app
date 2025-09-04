@@ -7,16 +7,17 @@ import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function POST(request: NextRequest) {
   try {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.BULK_OPERATIONS)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     const body = await request.json();
@@ -61,9 +62,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to perform bulk operation' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

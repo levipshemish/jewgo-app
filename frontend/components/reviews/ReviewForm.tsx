@@ -139,7 +139,7 @@ export default function ReviewForm({
       
       return (
         <button
-          key={index}
+          key={`star-${starValue}`}
           type="button"
           className="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1"
           onClick={() => handleRatingChange(starValue)}
@@ -268,7 +268,7 @@ export default function ReviewForm({
               {formData.images.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {formData.images.map((image, index) => (
-                    <div key={index} className="relative group">
+                    <div key={image.name || `img-${index}`} className="relative group">
                       <img
                         src={URL.createObjectURL(image)}
                         alt={`Review image ${index + 1}`}

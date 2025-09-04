@@ -3,19 +3,37 @@
  * Handles backend URL configuration for development and production
  */
 
-const getApiBaseUrl = (): string => {
+/**
+ * Get the API base URL based on environment
+ */
+export function getApiBaseUrl(): string {
   // In production, use the environment variable or default Render URL
   if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com'
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
   }
   
   // In development, use local backend
-  return 'http://localhost:5000'
+  return process.env.BACKEND_URL || 'http://localhost:5000'
 }
 
-const getFrontendUrl = (): string => {
-  return process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
+/**
+ * Centralized backend URL utility to eliminate duplication across API routes
+ * This replaces the pattern: getBackendUrl()
+ */
+export function getBackendUrl(): string {
+  return process.env.BACKEND_URL || 'https://api.jewgo.app'
 }
+
+export function getBackendUrlForClient(): string {
+  return process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+}
+
+/**
+ * Centralized frontend URL utility
+ */
+export const getFrontendUrl = (): string => {
+  return process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+};
 
 export const API_CONFIG = {
   BASE_URL: getApiBaseUrl(),

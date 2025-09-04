@@ -28,6 +28,10 @@ export class ErrorBoundary extends ReactComponent<Props, State> {
   }
 
   componentDidCatch(caughtError: Error, errorInfo: ErrorInfo): void {
+    // DEBUG: Log when error boundary is triggered
+    console.error('🚨 ErrorBoundary caught error:', caughtError.message);
+    console.error('🚨 ErrorBoundary component stack:', errorInfo.componentStack);
+    
     // Call the onError callback if provided
     this.props.onError?.(caughtError, errorInfo);
     
@@ -69,7 +73,8 @@ export class ErrorBoundary extends ReactComponent<Props, State> {
 
   private handleGoHome = (): void => {
     if (typeof window !== 'undefined') {
-      window.location.href = '/';
+      console.log('ErrorBoundary: Go Home button clicked - but navigation disabled for debugging');
+      // TEMPORARILY DISABLED: window.location.href = '/';
     }
   };
 

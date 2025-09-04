@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleRoute } from '@/lib/server/route-helpers';
+import { handleRoute, json } from '@/lib/server/route-helpers';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';
@@ -16,22 +17,15 @@ export async function PUT(
       const restaurantId = parseInt(id);
       
       if (isNaN(restaurantId)) {
-        return NextResponse.json({
-          success: false,
-          message: 'Invalid restaurant ID'
-        }, { status: 400 });
+        return errorResponses.badRequest('Invalid restaurant ID');
       }
 
       const body = await request.json();
       const { status } = body;
 
-      // Update restaurant status in database via backend API
-      const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+      // Update restaurant status in database via backend API using centralized URL
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
       const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}/approve`;
-      
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        }
       
       const response = await fetch(apiUrl, {
         method: 'PUT',
@@ -48,6 +42,7 @@ export async function PUT(
       }
       
       const result = await response.json();
+      
       // Send notification email to restaurant owner (if email is available)
       if (process.env.NODE_ENV === 'production' && result.data?.owner_email) {
         try {
@@ -60,27 +55,22 @@ export async function PUT(
             }),
           });
         } catch {
-          // eslint-disable-next-line no-console
-          }
+          // Silently fail notification - don't break main operation
+        }
       }
 
-      return NextResponse.json({
-        success: true,
-        message: 'Restaurant approved successfully',
-        data: result.data || {
+      return createSuccessResponse(
+        result.data || {
           id: restaurantId,
           status: 'approved',
           updated_at: new Date().toISOString()
-        }
-      });
+        },
+        'Restaurant approved successfully'
+      );
 
-    } catch {
-      // eslint-disable-next-line no-console
-      // // console.error('Error approving restaurant:', error);
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to approve restaurant'
-      }, { status: 500 });
+    } catch (error) {
+      console.error('Error approving restaurant:', error);
+      return errorResponses.internalError('Failed to approve restaurant');
     }
   });
 } 

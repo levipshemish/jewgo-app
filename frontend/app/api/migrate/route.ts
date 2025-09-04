@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib';
 
 /**
  * API Route: GET /api/migrate
@@ -11,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
+    const backendUrl = getBackendUrl();
     
     // Forward the request to the backend
     const backendResponse = await fetch(
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
+    const backendUrl = getBackendUrl();
     
     // Forward the request to the backend
     const backendResponse = await fetch(

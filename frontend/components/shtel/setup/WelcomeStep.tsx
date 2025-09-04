@@ -219,7 +219,7 @@ export default function WelcomeStep({
 
                 <ul className="space-y-2 mb-4">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center text-sm text-gray-600">
+                    <li key={`feature-${feature}-${index}`} className="flex items-center text-sm text-gray-600">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                       {feature}
                     </li>
@@ -231,7 +231,7 @@ export default function WelcomeStep({
                     <h5 className="text-xs font-medium text-gray-700 mb-2">Limitations:</h5>
                     <ul className="space-y-1">
                       {plan.limitations.map((limitation, index) => (
-                        <li key={index} className="text-xs text-gray-600">
+                        <li key={`limitation-${limitation}-${index}`} className="text-xs text-gray-600">
                           • {limitation}
                         </li>
                       ))}

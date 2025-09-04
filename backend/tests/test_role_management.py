@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch, MagicMock
 from services.user_service_v4 import UserServiceV4
 from database.database_manager_v4 import DatabaseManager
 from utils.error_handler import ValidationError
-from routes.api_v4 import api_v4
+# Note: api_v4 import was unused in this test module and removed
 from app_factory import create_app
 
 
@@ -224,7 +224,7 @@ class TestRoleManagement:
                 include_all=False,
                 include_expired=False
             )
-\n+    def test_prevent_last_super_admin_revocation(self, client):
+    def test_prevent_last_super_admin_revocation(self, client):
         """Ensure revoking the last super_admin returns 409."""
         # Patch auth to bypass and set current user as super_admin
         with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
@@ -236,7 +236,7 @@ class TestRoleManagement:
                 svc = MagicMock()
                 svc.get_active_super_admin_count.return_value = 1
                 mock_service.return_value = svc
-\n+                resp = client.post('/api/v4/admin/roles/revoke', json={
+                resp = client.post('/api/v4/admin/roles/revoke', json={
                     'user_id': 'admin-1',
                     'role': 'super_admin'
                 })

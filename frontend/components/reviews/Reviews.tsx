@@ -185,7 +185,7 @@ export default function Reviews({
               <div className="flex items-center space-x-1">
                 {Array.from({ length: 5 }, (_, index) => (
                   <Star
-                    key={index}
+                    key={`${restaurantId}-avg-star-${index}`}
                     className={cn(
                       'w-4 h-4',
                       index < Math.round(averageRating)

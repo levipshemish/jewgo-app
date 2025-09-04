@@ -10,6 +10,7 @@ import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
 import { invalidateStoreMetrics } from '@/lib/server/cache';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,12 +23,12 @@ export async function POST(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.BULK_OPERATIONS)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
     adminLogger.error('CSRF token validation error', { error: String(error) });
-      return NextResponse.json({ error: 'CSRF token validation failed' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Parse request body
@@ -111,11 +112,7 @@ export async function POST(request: NextRequest) {
       } catch {}
     }
 
-    return NextResponse.json({
-      message: 'Bulk operation completed',
-      correlationId,
-      ...result,
-    });
+    return createSuccessResponse({ message: 'Bulk operation completed successfully' });
   } catch (error) {
     adminLogger.error('Bulk operation error', { error: String(error) });
     
@@ -126,10 +123,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to perform bulk operation' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -138,7 +132,7 @@ export async function GET(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Get query parameters
@@ -146,10 +140,7 @@ export async function GET(request: NextRequest) {
     const correlationId = searchParams.get('correlationId');
 
     if (!correlationId) {
-      return NextResponse.json(
-        { error: 'Correlation ID is required' },
-        { status: 400 }
-      );
+      return errorResponses.badRequest();
     }
 
     // Read progress from audit logs metadata as a lightweight status store
@@ -160,7 +151,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!log) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return errorResponses.notFound();
     }
 
     let meta: any = {};
@@ -182,9 +173,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     adminLogger.error('Bulk operation status error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to get bulk operation status' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

@@ -323,7 +323,7 @@ export default function StoreAdminDashboard({ adminUser }: StoreAdminDashboardPr
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action, index) => (
-            <QuickAction key={index} {...action} />
+            <QuickAction key={action.href || action.title || index} {...action} />
           ))}
         </div>
       </div>

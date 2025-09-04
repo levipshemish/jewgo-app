@@ -1,10 +1,11 @@
-import { NextRequest } from 'next/server';
-import { json } from '@/lib/server/route-helpers';
+import { NextRequest, NextResponse } from 'next/server';
+import { handleRoute, json } from '@/lib/server/route-helpers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
 import { ROLE_PERMISSIONS, normalizeAdminRole } from '@/lib/constants/permissions';
 import { getRoleLevelForRole } from '@/lib/server/admin-constants';
 import { validatePermissions } from '@/lib/server/security';
+import { errorResponses } from '@/lib';
 
 // Force Node.js runtime to support AbortSignal.timeout
 export const runtime = 'nodejs';
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Use environment variable for backend URL
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
     
     // Validate BACKEND_URL in production
     if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {

@@ -14,14 +14,10 @@ import {
 // Ensure we're using the correct backend URL
 const BACKEND_URL = (() => {
   const envUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  
-  // If environment variable is set and looks valid, use it
-  if (envUrl && envUrl.startsWith('http')) {
-    return envUrl;
+  if (envUrl && envUrl.trim().length > 0) {
+    return envUrl.replace(/\/+$/, '');
   }
-  
-  // Default to the correct production URL
-  return 'https://jewgo-app-oyoh.onrender.com';
+  return process.env.BACKEND_URL || 'http://localhost:5000';
 })();
 
 /**

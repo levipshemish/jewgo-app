@@ -9,7 +9,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { StoreFilters } from '@/components/stores/StoreFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
-import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+
 import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
@@ -175,6 +175,9 @@ function StoresPageContent() {
   const [totalStores, setTotalStores] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   
+
+  // Removed hasMore infinite-scroll state; pagination is explicit
+  
   // Mobile optimization hooks
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
@@ -328,56 +331,7 @@ function StoresPageContent() {
     // Note: Data will be refetched via useEffect dependency on searchQuery
   }, [setSearchQuery, setCurrentPage]);
 
-  // Infinite scroll with proper mobile detection
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => {
-      // Define fetchMoreStores inline to avoid dependency issues
-      const fetchMoreStores = async () => {
-        if (isLoadingMore || !hasMore) {
-          return;
-        }
 
-        try {
-          const nextPage = currentPage + 1;
-          const params = new URLSearchParams();
-          
-          // Add search query if present
-          if (searchQuery && searchQuery.trim() !== '') {
-            params.append('search', searchQuery.trim());
-          }
-          
-          // Add current filters
-          Object.entries(activeFilters).forEach(([key, value]) => {
-            if (value !== undefined && value !== '' && value !== null) {
-              params.append(key, String(value));
-            }
-          });
-
-          params.append('page', nextPage.toString());
-          params.append('limit', mobileOptimizedItemsPerPage.toString());
-          params.append('mobile_optimized', 'true');
-
-          const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-          
-          setStores(prev => [...prev, ...response.stores]);
-          setCurrentPage(nextPage);
-          
-          // Update hasMore state
-          const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
-          setHasMore(hasMoreContent);
-        } catch (err) {
-          console.error('Error fetching more stores:', err);
-        }
-      };
-      
-      return fetchMoreStores();
-    },
-    { 
-      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
-    }
-  );
 
   // Fetch stores with mobile optimization
   const fetchStoresData = useCallback(async (filters: Filters = activeFilters) => {
@@ -423,9 +377,7 @@ function StoresPageContent() {
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
-      // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
+
     } catch (err) {
       console.error('Error fetching stores:', err);
       if (err instanceof Error) {
@@ -437,7 +389,7 @@ function StoresPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs, setHasMore]);
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(false); // Filters start hidden
@@ -721,24 +673,10 @@ function StoresPageContent() {
         </div>
       )}
 
-      {/* Infinite scroll loading indicator - only show on mobile */}
-      {(isMobile || isMobileDevice) && isLoadingMore && (
-        <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
-        </div>
-      )}
 
-      {/* Infinite scroll trigger element - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
 
-      {/* Desktop pagination - only show on desktop */}
-      {!(isMobile || isMobileDevice) && totalPages > 1 && (
+      {/* Pagination - show on all devices */}
+      {totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
@@ -753,14 +691,7 @@ function StoresPageContent() {
         </div>
       )}
 
-      {/* Mobile infinite scroll trigger - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
+
 
       {/* Bottom navigation - visible on all screen sizes */}
       <BottomNavigation size="compact" showLabels="active-only" />

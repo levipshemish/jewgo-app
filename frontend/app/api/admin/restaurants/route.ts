@@ -10,6 +10,7 @@ import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors, handlePrismaError } from '@/lib/admin/errors';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -97,12 +98,12 @@ export async function POST(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -149,10 +150,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to create restaurant' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -170,12 +168,12 @@ export async function PUT(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -189,7 +187,7 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Restaurant ID is required' }, { status: 400 });
+      return errorResponses.badRequest();
     }
 
     // Validate data (update operation)
@@ -219,10 +217,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to update restaurant' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -240,12 +235,12 @@ export async function DELETE(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_DELETE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -258,7 +253,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id');
     if (!idParam || isNaN(Number(idParam))) {
-      return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
+      return errorResponses.badRequest();
     }
     // eslint-disable-next-line no-console
     console.warn('[DEPRECATED] Use DELETE /api/admin/restaurants/{id} instead of query param id');
@@ -274,12 +269,9 @@ export async function DELETE(request: NextRequest) {
       true // soft delete
     );
 
-    return NextResponse.json({ message: 'Restaurant deleted successfully' });
+    return createSuccessResponse({ message: 'Restaurant created successfully' });
   } catch (error) {
     console.error('[ADMIN] Restaurant delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete restaurant' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

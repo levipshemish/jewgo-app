@@ -122,7 +122,7 @@ describe('Admin Roles API Routes', () => {
 
     it('should return 429 when rate limit exceeded', async () => {
       // Mock rate limiter to reject
-      const originalFetch = global.fetch;
+      const _originalFetch = global.fetch;
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 429,
@@ -270,7 +270,7 @@ describe('Admin Roles API Routes', () => {
 
     it('should return 429 when rate limit exceeded', async () => {
       // Mock rate limiter to reject
-      const originalFetch = global.fetch;
+      const _originalFetch = global.fetch;
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 429,

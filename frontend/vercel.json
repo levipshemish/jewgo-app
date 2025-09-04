@@ -6,7 +6,7 @@
   "installCommand": "npm ci",
   "framework": "nextjs",
   "env": {
-    "NEXT_PUBLIC_BACKEND_URL": "https://jewgo-app-oyoh.onrender.com"
+    "NEXT_PUBLIC_BACKEND_URL": "https://api.jewgo.app"
   },
   "functions": {
     "app/api/restaurants/[id]/route.ts": {

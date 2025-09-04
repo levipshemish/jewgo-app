@@ -13,7 +13,7 @@ import {
   Crown
 } from 'lucide-react';
 import { AdminUser } from '@/lib/admin/types';
-import { useToast, ToastContainer } from '@/lib/ui/toast';
+import { useToast, ToastContainer } from '../../../components/ui/Toast';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 
 interface SystemStats {
@@ -83,7 +83,7 @@ export default function SystemSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const { toast, showSuccess, showError, clear } = useToast();
+  const { showSuccess, showError } = useToast();
   const { token: csrf } = useAdminCsrf();
 
   // Fetch system data
@@ -284,7 +284,7 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <ToastContainer toast={toast} onDismiss={clear} />
+      <ToastContainer />
       {/* Header */}
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>

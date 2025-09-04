@@ -183,6 +183,15 @@ def build_order_clause(lat: Optional[float], lng: Optional[float],
 @synagogues_bp.route('/', methods=['GET'])
 def get_synagogues():
     """Get synagogues with filtering and pagination."""
+    import signal
+    
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Database query timed out")
+    
+    # Set a 10-second timeout for the entire request
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(10)
+    
     try:
         # Parse query parameters
         page = int(request.args.get('page', 1))
@@ -281,9 +290,9 @@ def get_synagogues():
             count_result = db_manager.execute_query(count_query, where_params)
             total = count_result[0]['total'] if count_result else 0
             
-            # Apply distance filter if location is provided
+            # Apply distance filter if location is provided using optimized Haversine
             if lat is not None and lng is not None and max_distance_mi is not None:
-                distance_filter = f"""
+                distance_filter = """
                     AND (
                         3959 * acos(
                             cos(radians(%s)) * 
@@ -323,7 +332,7 @@ def get_synagogues():
             # Execute query
             synagogues = db_manager.execute_query(data_query, query_params)
             
-            # Calculate distances if location is provided
+            # Calculate distances if location is provided using optimized Python function
             if lat is not None and lng is not None:
                 for shul in synagogues:
                     if shul.get('latitude') and shul.get('longitude'):
@@ -363,7 +372,15 @@ def get_synagogues():
             
         finally:
             db_manager.disconnect()
+            signal.alarm(0)  # Cancel the timeout
             
+    except TimeoutError:
+        logger.error("Database query timed out in get_synagogues")
+        return jsonify({
+            'success': False,
+            'error': 'Request timed out - database query took too long',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 408
     except Exception as e:
         logger.error(f"Error in get_synagogues: {str(e)}", exc_info=True)
         return jsonify({

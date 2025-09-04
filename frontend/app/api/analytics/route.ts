@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAnalyticsConfig, isGoogleAnalyticsConfigured } from '@/lib/utils/analytics-config';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 // Ensure Node.js runtime and no caching for this lightweight endpoint
 export const runtime = 'nodejs';
@@ -23,10 +24,7 @@ export async function POST(request: NextRequest) {
     
     // Validate the request structure
     if (!body || typeof body !== 'object') {
-      return NextResponse.json(
-        { error: 'Invalid request data' },
-        { status: 400 }
-      );
+      return errorResponses.badRequest();
     }
 
     const config = getAnalyticsConfig();
@@ -55,10 +53,7 @@ export async function POST(request: NextRequest) {
       
       // Validate events
       if (!Array.isArray(events) || events.length === 0) {
-        return NextResponse.json(
-          { error: 'Invalid events array' },
-          { status: 400 }
-        );
+        return errorResponses.badRequest();
       }
 
       // Process each event
@@ -79,12 +74,7 @@ export async function POST(request: NextRequest) {
       // 3. Send to a third-party analytics service
       // 4. Process for real-time dashboards
       
-      return NextResponse.json({ 
-        success: true, 
-        processed_events: processedEvents.length,
-        batch_id: timestamp,
-        message: 'Batch events processed successfully'
-      });
+      return createSuccessResponse({ message: 'Analytics events processed successfully' });
     }
 
     // Handle single event (backward compatibility)
@@ -93,10 +83,7 @@ export async function POST(request: NextRequest) {
       
       // Validate the event structure
       if (!event.event || typeof event.event !== 'string') {
-        return NextResponse.json(
-          { error: 'Invalid event data' },
-          { status: 400 }
-        );
+        return errorResponses.badRequest();
       }
       
       // Log analytics event (in production, you'd send this to your analytics service)
@@ -107,10 +94,7 @@ export async function POST(request: NextRequest) {
       // Check if Google Analytics is properly configured
       if (!isGoogleAnalyticsConfigured()) {
         // Analytics not configured, but don't fail the request
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Analytics not configured' 
-        });
+        return createSuccessResponse({ message: 'Analytics event processed successfully' });
       }
 
       // In production, you might want to:
@@ -118,13 +102,10 @@ export async function POST(request: NextRequest) {
       // 2. Store in your database
       // 3. Send to a third-party analytics service
       
-      return NextResponse.json({ success: true });
+      return createSuccessResponse({ message: 'Analytics event processed successfully' });
     }
 
-    return NextResponse.json(
-      { error: 'Invalid request format' },
-      { status: 400 }
-    );
+    return errorResponses.badRequest();
     
   } catch (error) {
     console.error('Analytics API Error:', error);

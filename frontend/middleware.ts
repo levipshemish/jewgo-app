@@ -214,7 +214,7 @@ function isProtectedPath(pathname: string): boolean {
 /**
  * Check if path is allowed for anonymous users
  */
-function isAnonymousAllowedPath(_pathname: string): boolean {
+function _isAnonymousAllowedPath(_pathname: string): boolean {
   // Allow public pages for anonymous users
   // This helper is intentionally unused in middleware runtime but kept for future extension
   return false;

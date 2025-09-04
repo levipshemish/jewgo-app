@@ -147,7 +147,7 @@ export function ListingImage({
                 <div className="flex gap-2 mt-4 overflow-x-auto">
                   {images.map((image, index) => (
                     <Button
-                      key={index}
+                      key={image || `thumb-${index}`}
                       variant="ghost"
                       size="sm"
                       onClick={() => setCurrentImageIndex(index)}

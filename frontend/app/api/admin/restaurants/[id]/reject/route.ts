@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db/prisma';
 import { invalidateDashboardMetrics } from '@/lib/server/cache';
 import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { corsHeaders } from '@/lib/middleware/security';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function POST(
   request: NextRequest,
@@ -16,10 +17,10 @@ export async function POST(
     const { params } = await context;
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
@@ -28,7 +29,7 @@ export async function POST(
     const { id } = await params;
     const restaurantId = Number(id);
     if (!Number.isInteger(restaurantId)) {
-      return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
+      return errorResponses.badRequest();
     }
 
     // Get request body for rejection reason
@@ -36,7 +37,7 @@ export async function POST(
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+      return errorResponses.badRequest();
     }
     const rejectionReason = body.reason || 'Rejected by admin';
 
@@ -64,21 +65,14 @@ export async function POST(
       whitelistFields: AUDIT_FIELD_ALLOWLISTS.RESTAURANT,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Restaurant rejected successfully',
-      data: updatedRestaurant 
-    });
+    return createSuccessResponse({ message: 'Restaurant rejected successfully' });
 
     // Invalidate dashboard metrics cache (best-effort)
     // eslint-disable-next-line no-console
     invalidateDashboardMetrics().catch(() => {});
   } catch (error) {
     console.error('[ADMIN] Restaurant reject error:', error);
-    return NextResponse.json(
-      { error: 'Failed to reject restaurant' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 

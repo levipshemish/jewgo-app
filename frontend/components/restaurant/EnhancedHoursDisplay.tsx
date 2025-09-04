@@ -245,7 +245,7 @@ export default function EnhancedHoursDisplay({
               <div className="space-y-0.5 sm:space-y-1.5">
                 {(hoursStatus.formatted_hours || []).map((dayHours, index) => (
                   <div
-                    key={index}
+                    key={`day-${dayHours.day}`}
                     className={`flex justify-between items-center py-0 px-1.5 sm:py-1 sm:px-3 rounded-full whitespace-nowrap text-[10px] sm:text-sm ${
                       dayHours.is_open ? 'bg-green-50' : 'bg-gray-50'
                     }`}

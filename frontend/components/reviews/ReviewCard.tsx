@@ -50,7 +50,7 @@ export default function ReviewCard({
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
-        key={index}
+        key={`rev-${review.id}-star-${index}`}
         className={cn(
           'w-4 h-4',
           index < rating 
@@ -119,7 +119,7 @@ export default function ReviewCard({
         <div className="flex space-x-2 mb-4 overflow-x-auto">
           {review.images.map((image, index) => (
             <img
-              key={index}
+              key={image || `img-${index}`}
               src={image}
               alt={`Review image ${index + 1}`}
               className="w-20 h-20 object-cover rounded-lg border border-gray-200"

@@ -7,19 +7,20 @@ import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { logAdminAction } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.KOSHER_PLACE_VIEW) ||
         !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -153,9 +154,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     adminLogger.error('Kosher place export error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to export kosher places' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

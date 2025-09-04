@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Build backend API URL with filters
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     const backendParams = new URLSearchParams();
 
     // Add filters to backend request

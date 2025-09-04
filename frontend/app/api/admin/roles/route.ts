@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { handleRoute } from '@/lib/server/route-helpers';
-import { getBackendAuthHeader } from '@/lib/server/admin-auth';
-// import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { handleRoute, json } from '@/lib/server/route-helpers';
+import { getBackendAuthHeader, requireAdminOrThrow } from '@/lib/server/admin-auth';
 import { requireSuperAdmin } from '@/lib/server/rbac-middleware';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export const runtime = 'nodejs';
 
@@ -106,9 +106,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(payload);
       }
       if (payload && typeof payload === 'object' && 'users' in payload) {
-        return NextResponse.json({ success: true, data: payload, message: 'Success' });
+        return createSuccessResponse({ message: 'Admin roles retrieved successfully' });
       }
-      return NextResponse.json({ success: true, data: payload, message: 'Success' });
+      return createSuccessResponse({ message: 'Admin roles retrieved successfully' });
       
           } catch (error) {
         console.error('Error fetching admin roles:', error);

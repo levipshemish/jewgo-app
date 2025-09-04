@@ -7,6 +7,7 @@ import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';
+import { createSuccessResponse } from '@/lib/utils/error-responses';
 
 // CORS headers helper
 const corsHeaders = (request: NextRequest) => {
@@ -111,11 +112,7 @@ export async function PUT(request: NextRequest) {
       metadata: { changedKeys: Object.keys(configUpdates) },
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'System configuration updated successfully',
-      data: updatedConfigs 
-    });
+    return createSuccessResponse({ message: 'System configuration updated successfully' });
 
   } catch (error) {
     console.error('[ADMIN] Update system config error:', error);

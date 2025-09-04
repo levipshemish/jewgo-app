@@ -1,4 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/admin/logger';
+import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -10,6 +12,7 @@ import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 import { handleRoute, json } from '@/lib/server/route-helpers';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { errorResponses } from '@/lib';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';

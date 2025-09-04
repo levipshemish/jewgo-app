@@ -45,7 +45,7 @@ export default function ReviewSnippets({
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
-        key={index}
+        key={`snippet-star-${index}`}
         className={cn(
           'w-3 h-3',
           index < rating 

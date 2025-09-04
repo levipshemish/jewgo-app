@@ -1,4 +1,4 @@
-import { sanitizeData, truncateForAudit } from '../../lib/admin/audit';
+import { sanitizeData, truncateForAudit } from '@/lib/admin/audit';
 
 describe('audit sanitization', () => {
   test('redacts sensitive fields', () => {

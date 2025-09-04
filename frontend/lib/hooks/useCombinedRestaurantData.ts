@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
+import { IS_MEMORY_CAP_ITEMS, IS_MEMORY_COMPACTION_THRESHOLD, IS_MEMORY_MONITORING_INTERVAL_MS } from '@/lib/config/infiniteScroll.constants';
 
 interface Restaurant {
   id: string | number;
@@ -56,8 +57,11 @@ interface UseCombinedRestaurantDataReturn {
   totalRestaurants: number;
   totalPages: number;
   serverHasMore: boolean;
+  // New: page items for infinite scroll management
+  pageItems: Restaurant[];
   fetchCombinedData: (page: number, query: string, filters?: AppliedFilters, itemsPerPage?: number, append?: boolean) => Promise<{ received: number; hasMore?: boolean }>;
   buildQueryParams: (page: number, query: string, filters?: AppliedFilters, itemsPerPage?: number) => URLSearchParams;
+  resetData: () => void;
 }
 
 /**
@@ -73,11 +77,14 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
   const [totalRestaurants, setTotalRestaurants] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [serverHasMore, setServerHasMore] = useState(false);
+  // New: page items for infinite scroll (accumulated across pages)
+  const [pageItems, setPageItems] = useState<Restaurant[]>([]);
   
   // Collapse duplicate calls with the same params within a short window (dev/StrictMode, hydration)
   const lastKeyRef = useRef<string | null>(null);
   const lastStartAtRef = useRef<number>(0);
-  const SUPPRESS_WINDOW_MS = 1500; // Increased from 750ms to 1500ms for better deduplication
+  const lastRequestParamsRef = useRef<{ page: number; query: string; filters: AppliedFilters | undefined; itemsPerPage: number } | null>(null);
+  const SUPPRESS_WINDOW_MS = 3000; // Increased to 3000ms for better deduplication and to prevent excessive calls
 
   // Clean filters utility (copied from EateryPageClient)
   const cleanFilters = useCallback(<T extends Record<string, any>>(raw: T): Partial<T> => {
@@ -95,7 +102,52 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       out[k as keyof T] = v as any;
     }
     return out;
+  }, []); // No dependencies needed - this function is pure
+
+  const resetData = useCallback(() => {
+    setRestaurants([]);
+    setFilterOptions(null);
+    setLoading(false);
+    setError(null);
+    setTotalRestaurants(0);
+    setTotalPages(1);
+    setServerHasMore(false);
+    setPageItems([]);
+    lastKeyRef.current = null;
+    lastStartAtRef.current = 0;
+    lastRequestParamsRef.current = null;
   }, []);
+
+  // Memory management for infinite scroll data
+  useEffect(() => {
+    let mounted = true;
+    const checkMemory = () => {
+      if (!mounted) return;
+      
+      const currentCount = pageItems.length;
+      
+      if (currentCount > IS_MEMORY_COMPACTION_THRESHOLD) {
+        // Trigger compaction: keep only the last N items
+        const itemsToKeep = IS_MEMORY_CAP_ITEMS;
+        const startIndex = Math.max(0, currentCount - itemsToKeep);
+        
+        setPageItems(prev => {
+          const compacted = prev.slice(startIndex);
+          console.info(`Memory compaction: reduced from ${currentCount} to ${compacted.length} items`);
+          return compacted;
+        });
+      }
+    };
+    
+    const intervalId = setInterval(checkMemory, IS_MEMORY_MONITORING_INTERVAL_MS);
+    // Initial check
+    checkMemory();
+    
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+    };
+  }, [pageItems.length]);
 
   const buildQueryParams = useCallback((
     page: number, 
@@ -160,7 +212,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     }
     
     return params;
-  }, [cleanFilters]);
+  }, [cleanFilters]); // cleanFilters is used in this function
 
   const fetchCombinedData = useCallback(async (
     page: number = 1,
@@ -170,20 +222,63 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     append: boolean = false
   ): Promise<{ received: number; hasMore?: boolean }> => {
     try {
+      // CRITICAL FIX: Add safety check to prevent infinite API calls
+      if (page > 100) { // Arbitrary safety limit
+        console.error('API safety limit reached: page', page);
+        return { received: 0, hasMore: false };
+      }
+      
       // Build the key early to guard duplicate triggers
       const params = buildQueryParams(page, query, filters, itemsPerPage);
       const key = params.toString();
       const now = Date.now();
       
       // If an identical request was just started recently, skip it
-      if (lastKeyRef.current === key && (now - lastStartAtRef.current) < SUPPRESS_WINDOW_MS) {
+
+      const currentOffset = params.get('offset');
+      const lastParams = lastKeyRef.current ? new URLSearchParams(lastKeyRef.current) : null;
+      const lastOffset = lastParams?.get('offset');
+      
+      const isDifferentPage = currentOffset !== lastOffset;
+      const isWithinSuppressWindow = (now - lastStartAtRef.current) < SUPPRESS_WINDOW_MS;
+      
+      // Additional deduplication: check if request parameters are identical
+      const currentRequestParams = { page, query, filters, itemsPerPage };
+      const lastRequestParams = lastRequestParamsRef.current;
+      const isIdenticalRequest = lastRequestParams && 
+        lastRequestParams.page === page &&
+        lastRequestParams.query === query &&
+        lastRequestParams.itemsPerPage === itemsPerPage &&
+        JSON.stringify(lastRequestParams.filters) === JSON.stringify(filters);
+      
+      if (lastKeyRef.current === key && isWithinSuppressWindow && !isDifferentPage) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('🚫 useCombinedRestaurantData: Skipping duplicate request within suppress window');
+          console.log('🚫 useCombinedRestaurantData: Skipping duplicate request within suppress window', {
+            key: `${key.substring(0, 100)}...`,
+            currentOffset,
+            lastOffset,
+            isDifferentPage
+          });
         }
         return { received: 0, hasMore: false };
       }
+      
+      // Additional check for identical request parameters
+      if (isIdenticalRequest && isWithinSuppressWindow) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚫 useCombinedRestaurantData: Skipping identical request within suppress window', {
+            page,
+            query,
+            itemsPerPage,
+            filters: JSON.stringify(filters).substring(0, 100)
+          });
+        }
+        return { received: 0, hasMore: false };
+      }
+      
       lastKeyRef.current = key;
       lastStartAtRef.current = now;
+      lastRequestParamsRef.current = currentRequestParams;
       
       setLoading(true);
       setError(null);
@@ -203,12 +298,26 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
             receivedCount = newRestaurants.length;
             return [...prev, ...newRestaurants];
           });
-          // Don't update totalRestaurants when appending - keep the original total
-          // This prevents the total from being overwritten with page-specific totals
+          
+          // Update pageItems for infinite scroll (accumulate across pages)
+          setPageItems(prev => {
+            const existingIds = new Set(prev.map(r => String(r.id)));
+            const newRestaurants = response.data.restaurants.filter(r => !existingIds.has(String(r.id)));
+            return [...prev, ...newRestaurants];
+          });
+          
+          // Update totalRestaurants when appending to maintain accurate count
+          if (response.data.total > 0) {
+            setTotalRestaurants(response.data.total);
+          }
         } else {
           // Replace restaurants (default behavior)
           setRestaurants(response.data.restaurants);
           receivedCount = Array.isArray(response.data.restaurants) ? response.data.restaurants.length : 0;
+          
+          // Reset pageItems on new search/filter
+          setPageItems(response.data.restaurants);
+          
           // Only update totalRestaurants on initial load, not when appending
           setTotalRestaurants(response.data.total);
           // Ensure totalPages is always a valid number
@@ -230,9 +339,27 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
           // Fallback: infer hasMore
           const returned = receivedCount;
           const { limit = itemsPerPage, offset = (page - 1) * itemsPerPage } = (response as any).pagination || {};
-          const inferred = response.data.total > 0 ? (offset + returned) < response.data.total : (returned >= limit);
-          hasMoreFromServer = inferred;
-          setServerHasMore(inferred);
+          const total = Number(response.data.total) || 0;
+          
+          if (total > 0) {
+            // Use the total from the response to calculate hasMore
+            const currentTotal = append ? (restaurants.length + returned) : returned;
+            hasMoreFromServer = (offset + currentTotal) < total;
+          } else {
+            // Fallback: if we got fewer items than requested, we're definitely at the end
+            // If we got exactly the limit, we need to check if there's actually more data
+            hasMoreFromServer = returned > limit || (returned === limit && total > 0 && (offset + returned) < total);
+          }
+          
+          setServerHasMore(hasMoreFromServer);
+        }
+        
+        // CRITICAL FIX: Additional safety check for hasMore
+        // If we received 0 items but hasMore is true, force it to false to prevent infinite loops
+        if (receivedCount === 0 && hasMoreFromServer) {
+          console.warn('API returned 0 items but hasMore=true, forcing to false to prevent infinite loop');
+          hasMoreFromServer = false;
+          setServerHasMore(false);
         }
         
         // Only update filter options if we got them (they might be cached separately)
@@ -262,7 +389,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     } finally {
       setLoading(false);
     }
-  }, [buildQueryParams]);
+  }, [buildQueryParams, restaurants.length]); // buildQueryParams and restaurants.length are used in this function
 
   return {
     restaurants,
@@ -272,7 +399,9 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     totalRestaurants,
     totalPages,
     serverHasMore,
+    pageItems,
     fetchCombinedData,
-    buildQueryParams
+    buildQueryParams,
+    resetData
   };
 }

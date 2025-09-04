@@ -5,6 +5,7 @@ import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function DELETE(
   request: NextRequest,
@@ -14,10 +15,10 @@ export async function DELETE(
     const resolvedParams = await params;
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_DELETE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
@@ -25,7 +26,7 @@ export async function DELETE(
     }
     const id = Number(resolvedParams.id);
     if (!Number.isInteger(id)) {
-      return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
+      return errorResponses.badRequest();
     }
     await AdminDatabaseService.deleteRecord(
       prisma.restaurant,
@@ -35,12 +36,9 @@ export async function DELETE(
       'restaurant',
       true
     );
-    return NextResponse.json({ message: 'Restaurant deleted successfully' });
+    return createSuccessResponse({ message: 'Restaurant updated successfully' });
   } catch (error) {
     console.error('[ADMIN] Restaurant delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete restaurant' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

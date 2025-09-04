@@ -4,6 +4,7 @@ import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { adminLogger } from '@/lib/admin/logger';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       adminLogger.warn('Unauthorized promotion attempt');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions - only super admins can promote users
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
         userId: adminUser.id,
         permissions: adminUser.permissions 
       });
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Parse request body
@@ -31,9 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (!targetUserId && !targetEmail) {
       adminLogger.warn('Missing target user identifier');
-      return NextResponse.json({ 
-        error: 'Must provide either targetUserId or targetEmail' 
-      }, { status: 400 });
+      return errorResponses.badRequest();
     }
 
     // Get Supabase admin client
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
       const { data: user, error } = await supabase.auth.admin.getUserById(targetUserId);
       if (error || !user.user) {
         adminLogger.error('Failed to find user by ID', { targetUserId, error });
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        return errorResponses.notFound();
       }
       targetUser = user.user;
     } else if (targetEmail) {
@@ -54,20 +53,20 @@ export async function POST(request: NextRequest) {
       const { data: users, error } = await supabase.auth.admin.listUsers();
       if (error) {
         adminLogger.error('Failed to list users', { error });
-        return NextResponse.json({ error: 'Failed to search users' }, { status: 500 });
+        return errorResponses.internalError();
       }
       
       const user = users.users.find((u: any) => u.email === targetEmail);
       if (!user) {
         adminLogger.error('User not found by email', { targetEmail });
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        return errorResponses.notFound();
       }
       targetUser = user;
     }
 
     if (!targetUser) {
       adminLogger.error('Target user not found');
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return errorResponses.notFound();
     }
 
     // Check if user is already a super admin

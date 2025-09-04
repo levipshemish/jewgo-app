@@ -30,12 +30,12 @@ export async function getBaseUrl(): Promise<string> {
   
   // Final fallback for development
   if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3000';
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   }
   
   // Production fallback - this should be configured
   console.warn('[AbsoluteURL] No base URL configured, using localhost fallback');
-  return 'http://localhost:3000';
+  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 }
 
 /**

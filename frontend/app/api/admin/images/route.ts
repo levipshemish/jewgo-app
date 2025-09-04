@@ -8,18 +8,19 @@ import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Get query parameters
@@ -71,10 +72,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     adminLogger.error('Image list error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to fetch images' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -83,12 +81,12 @@ export async function POST(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -126,10 +124,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to create image record' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -138,12 +133,12 @@ export async function PUT(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -158,11 +153,11 @@ export async function PUT(request: NextRequest) {
 
     // Validate and coerce ID to integer
     if (id === undefined || id === null || (typeof id === 'string' && id.trim() === '')) {
-      return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
+      return errorResponses.badRequest();
     }
     const coercedId = typeof id === 'string' ? Number(id) : Number(id);
     if (!Number.isInteger(coercedId)) {
-      return NextResponse.json({ error: 'Invalid image ID. Must be an integer.' }, { status: 400 });
+      return errorResponses.badRequest();
     }
 
     // Validate data
@@ -192,10 +187,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to update image record' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }
 
@@ -204,12 +196,12 @@ export async function DELETE(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_DELETE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     // Validate CSRF token
@@ -222,13 +214,13 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id');
     if (idParam === null || idParam.trim() === '') {
-      return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
+      return errorResponses.badRequest();
     }
     // eslint-disable-next-line no-console
     console.warn('[DEPRECATED] Use DELETE /api/admin/images/{id} instead of query param id');
     const coercedId = Number(idParam);
     if (!Number.isInteger(coercedId)) {
-      return NextResponse.json({ error: 'Invalid image ID. Must be an integer.' }, { status: 400 });
+      return errorResponses.badRequest();
     }
 
     // Delete image record (hard delete since restaurantImage doesn't support soft delete)
@@ -241,12 +233,9 @@ export async function DELETE(request: NextRequest) {
       false // hard delete
     );
 
-    return NextResponse.json({ message: 'Image deleted successfully' });
+    return createSuccessResponse({ message: 'Image created successfully' });
   } catch (error) {
     adminLogger.error('Image delete error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to delete image' },
-      { status: 500 }
-    );
+    return errorResponses.internalError();
   }
 }

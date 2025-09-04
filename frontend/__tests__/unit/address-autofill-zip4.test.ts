@@ -14,6 +14,11 @@ describe('AddressAutofill ZIP+4 parsing', () => {
       formatted_address: '123 Main St, Miami, FL 33139-1234',
     };
     const { street, city, state, zipCode } = extractAddressFromPlaceDetails(placeDetails);
+    
+    expect(street).toBe('123 Main St');
+    expect(city).toBe('Miami');
+    expect(state).toBe('FL');
+    expect(zipCode).toBe('33139-1234');
   });
 
   test('extracts plain ZIP when suffix missing', () => {
@@ -28,6 +33,8 @@ describe('AddressAutofill ZIP+4 parsing', () => {
       formatted_address: '456 Ocean Dr, Miami Beach, FL 33139',
     };
     const { zipCode } = extractAddressFromPlaceDetails(placeDetails);
+    
+    expect(zipCode).toBe('33139');
   });
 
   test('parses ZIP+4 from formatted address when components missing', () => {
@@ -36,6 +43,11 @@ describe('AddressAutofill ZIP+4 parsing', () => {
       formatted_address: '789 Lincoln Rd, Miami Beach, FL 33139-9876',
     } as any;
     const { street, city, state, zipCode } = extractAddressFromPlaceDetails(placeDetails);
+    
+    expect(street).toBe('789 Lincoln Rd');
+    expect(city).toBe('Miami Beach');
+    expect(state).toBe('FL');
+    expect(zipCode).toBe('33139-9876');
   });
 });
 

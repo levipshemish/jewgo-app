@@ -1,10 +1,10 @@
 // Re-export from unified Loading component
-export { LoadingSpinner, LoadingOverlay, Skeleton } from './Loading';
+export { LoadingOverlay, Skeleton } from './Loading';
+import { LoadingSpinner } from './Loading';
 
 // Keep the additional components that are specific to this file
 import { RefreshCw } from 'lucide-react';
 import React from 'react';
-import { LoadingSpinner } from './Loading';
 
 // Restaurant card skeleton
 export const RestaurantCardSkeleton: React.FC = () => {
@@ -29,32 +29,10 @@ export const RestaurantGridSkeleton: React.FC<{ count?: number }> = ({ count = 6
     </>
   );
 };
-
-// Infinite scroll loading indicator
-export const InfiniteScrollLoader: React.FC<{ hasMore: boolean; isLoading: boolean }> = ({
-  hasMore, isLoading, }) => {
-  if (!hasMore) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No more restaurants to load</p>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <LoadingSpinner text="Loading more restaurants..." variant="dots" />
-      </div>
-    );
-  }
-
-  return null;
-};
+// Note: Infinite scroll loader removed with pagination changes
 
 // Pull to refresh indicator
-export const PullToRefreshIndicator: React.FC<{ isRefreshing: boolean }> = ({
-  isRefreshing, }) => {
+export const PullToRefreshIndicator: React.FC<{ isRefreshing: boolean }> = ({ isRefreshing }) => {
   if (!isRefreshing) {return null;}
 
   return (

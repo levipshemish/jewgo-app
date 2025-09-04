@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/server/admin-auth';
 import { getSystemHealth } from '@/lib/server/system-health';
 import { cacheGet, cacheSet, keyDashboardMetrics } from '@/lib/server/cache';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,10 +37,7 @@ export async function GET(request: NextRequest) {
     
     // All admin roles can access basic metrics
     if (!admin || !admin.adminRole || admin.roleLevel < 1) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions for dashboard metrics' },
-        { status: 403 }
-      );
+      return errorResponses.forbidden();
     }
 
     const startTime = Date.now();

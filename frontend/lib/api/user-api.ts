@@ -9,7 +9,7 @@
 import { supabaseClient } from '@/lib/supabase/client-secure';
 
 // Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
 
 /**
  * Get the current user's JWT token for API authentication

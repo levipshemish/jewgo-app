@@ -162,7 +162,7 @@ export function Skeleton({ className = '', lines = 1, height = 'h-4' }: Skeleton
     <div className={`space-y-2 ${className}`}>
       {Array.from({ length: lines }).map((_, index) => (
         <div
-          key={index}
+          key={`skeleton-line-${index}`}
           className={`${height} bg-gray-200 rounded animate-pulse`}
         />
       ))}

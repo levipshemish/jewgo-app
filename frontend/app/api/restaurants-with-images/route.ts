@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSuccessResponse, getBackendUrl } from '@/lib';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 
@@ -235,8 +236,8 @@ export async function GET(request: NextRequest) {
     const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
     backendUrl = raw && raw.trim().length > 0
       ? raw.replace(/\/+$/, '')
-      : 'https://api.jewgo.app';
-    // Use v4 backend route prefix
+      : getBackendUrl();
+          // Use v4 backend route prefix
     apiUrl = `${backendUrl}/api/v4/restaurants?${queryParams.toString()}`;
     
     // Configurable timeout to avoid long hangs in dev; faster fallback improves UX
@@ -254,19 +255,22 @@ export async function GET(request: NextRequest) {
     });
     
     if (!response.ok) {
-      // If backend is down, return sample data instead of throwing error
-      if (response.status === 500 || response.status === 503) {
-        // eslint-disable-next-line no-console
-        console.warn(`Backend API unavailable (${response.status}), returning sample data`);
+      if (response.status >= 500) {
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn(`Backend API unavailable (${response.status}), returning sample data (non-prod)`);
+          return createSuccessResponse(getSampleRestaurantsWithImages(), 'Using sample data - backend unavailable');
+        }
+        // In production, return a graceful empty response
         return NextResponse.json({
-          success: true,
-          data: getSampleRestaurantsWithImages(),
-          total: 8,
+          success: false,
+          data: [],
+          total: 0,
           page,
           limit,
           offset: calculatedOffset,
-          message: 'Using sample data - backend unavailable'
-        });
+          message: 'Restaurants service temporarily unavailable'
+        }, { status: 503 });
       }
       throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
     }
@@ -304,15 +308,22 @@ export async function GET(request: NextRequest) {
       ? restaurantsWithImages.slice(calculatedOffset, calculatedOffset + limit)
       : restaurantsWithImages;
     
+    // Calculate pagination metadata
+    const totalCount = totalAvailable;
+    const hasMore = offset + limit < totalCount;
+    
     return NextResponse.json({
       success: true,
-      data: pagedRestaurants,
-      total: totalAvailable,
-      totalPages: totalPages,
-      page,
-      limit,
-      offset: calculatedOffset,
-      message: 'Restaurants with images only'
+      restaurants: pagedRestaurants,
+      pagination: {
+        total: totalCount,
+        limit,
+        offset: calculatedOffset,
+        hasMore,
+        currentPage: Math.floor(calculatedOffset / limit) + 1,
+        totalPages,
+      },
+      message: 'Restaurants with images retrieved successfully',
     });
 
   } catch (error) {
@@ -323,7 +334,7 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line no-console
     console.error('Full API URL:', apiUrl);
     
-    // Handle all network errors gracefully by returning sample data
+    // Handle network errors: sample only in non-prod, otherwise graceful empty
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
       const isNetworkError = error.name === 'AbortError' || 
@@ -335,33 +346,48 @@ export async function GET(request: NextRequest) {
                             errorMessage.includes('econnrefused');
       
       if (isNetworkError) {
-        // eslint-disable-next-line no-console
-        console.warn(`Backend request failed (${error.name || 'Network error'}), returning sample data`);
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn(`Backend request failed (${error.name || 'Network error'}), returning sample data (non-prod)`);
+          return NextResponse.json({
+            success: true,
+            data: getSampleRestaurantsWithImages(),
+            total: 8,
+            totalPages: 1,
+            page: 1,
+            limit: 50,
+            offset: 0,
+            message: `Using sample data - backend ${error.name === 'AbortError' ? 'timeout' : 'unavailable'} (non-prod)`
+          });
+        }
         return NextResponse.json({
-          success: true,
-          data: getSampleRestaurantsWithImages(),
-          total: 8,
-          totalPages: 1,
+          success: false,
+          data: [],
+          total: 0,
+          totalPages: 0,
           page: 1,
           limit: 50,
           offset: 0,
-          message: `Using sample data - backend ${error.name === 'AbortError' ? 'timeout' : 'unavailable'}`
-        });
+          message: 'Restaurants service temporarily unavailable'
+        }, { status: 503 });
       }
     }
     
-    // For any other unexpected errors, still return sample data to ensure the UI works
-    // eslint-disable-next-line no-console
-    console.warn('Unexpected error fetching restaurants, returning sample data as fallback');
+    // Unexpected error: sample in non-prod, graceful empty in prod
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn('Unexpected error fetching restaurants, returning sample data as fallback (non-prod)');
+      return createSuccessResponse(getSampleRestaurantsWithImages(), 'Using sample data as fallback');
+    }
     return NextResponse.json({
-      success: true,
-      data: getSampleRestaurantsWithImages(),
-      total: 8,
-      totalPages: 1,
+      success: false,
+      data: [],
+      total: 0,
+      totalPages: 0,
       page: 1,
       limit: 50,
       offset: 0,
-      message: 'Using sample data - service temporarily unavailable'
-    });
+      message: 'Restaurants service temporarily unavailable'
+    }, { status: 503 });
   }
 }

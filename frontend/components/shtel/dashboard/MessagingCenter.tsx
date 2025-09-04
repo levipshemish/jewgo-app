@@ -58,7 +58,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
   const [showArchived, setShowArchived] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const markMessagesAsRead = useCallback(async (conversationId: string) => {
+  const markMessagesAsRead = useCallback(async (conversationId: string, signal?: AbortSignal) => {
     try {
       // Guard against admin context
       if (storeData.is_admin) {
@@ -66,7 +66,8 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
       }
       
       await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/read`, {
-        method: 'PUT'
+        method: 'PUT',
+        signal
       });
       
       // Update conversation unread count
@@ -82,7 +83,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     }
   }, [storeData.store_id, storeData.is_admin, onRefresh]);
 
-  const loadMessages = useCallback(async (conversationId: string) => {
+  const loadMessages = useCallback(async (conversationId: string, signal?: AbortSignal) => {
     try {
       // Guard against admin context
       if (storeData.is_admin) {
@@ -90,20 +91,22 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
         return;
       }
       
-      const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/messages`);
+      const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/messages`, { signal });
       if (!response.ok) {throw new Error('Failed to load messages');}
       
       const data = await response.json();
       setMessages(data.messages || []);
       
       // Mark messages as read
-      markMessagesAsRead(conversationId);
+      markMessagesAsRead(conversationId, signal);
     } catch (err) {
+      // Ignore abort errors
+      if ((err as any)?.name === 'AbortError') { return; }
       appLogger.error('Error loading messages:', { error: err instanceof Error ? err.message : String(err) });
     }
   }, [storeData.store_id, storeData.is_admin, markMessagesAsRead]);
 
-  const loadConversations = useCallback(async () => {
+  const loadConversations = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       
@@ -120,12 +123,13 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
         archived: showArchived.toString()
       });
       
-      const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations?${params}`);
+      const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations?${params}`, { signal });
       if (!response.ok) {throw new Error('Failed to load conversations');}
       
       const data = await response.json();
       setConversations(data.conversations || []);
     } catch (err) {
+      if ((err as any)?.name === 'AbortError') { return; }
       appLogger.error('Error loading conversations:', { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
@@ -133,12 +137,16 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
   }, [storeData.store_id, filterType, filterPriority, showArchived, storeData.is_admin]);
 
   useEffect(() => {
-    loadConversations();
+    const controller = new AbortController();
+    loadConversations(controller.signal);
+    return () => controller.abort();
   }, [storeData.store_id, filterType, filterPriority, showArchived, loadConversations]);
 
   useEffect(() => {
     if (selectedConversation) {
-      loadMessages(selectedConversation.conversation_id);
+      const controller = new AbortController();
+      loadMessages(selectedConversation.conversation_id, controller.signal);
+      return () => controller.abort();
     }
   }, [selectedConversation, loadMessages]);
 

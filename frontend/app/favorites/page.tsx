@@ -190,7 +190,7 @@ function FavoritesPageContent() {
                             <div className="flex flex-wrap gap-1 mt-2">
                               {restaurant.tags.map((tag, index) => (
                                 <span 
-                                  key={index}
+                                  key={`${restaurant.id}-${tag}`}
                                   className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                                 >
                                   {tag}

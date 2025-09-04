@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const page = searchParams.get('page') || '1';
+  const limit = searchParams.get('limit') || '20';
+  
   try {
-    const { searchParams } = new URL(request.url);
-    const page = searchParams.get('page') || '1';
-    const limit = searchParams.get('limit') || '20';
     const search = searchParams.get('search') || '';
     const city = searchParams.get('city') || '';
     const denomination = searchParams.get('denomination') || '';
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Use the correct backend URL - fallback to production URL if not set
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
     const fullBackendUrl = `${backendUrl}/api/v4/synagogues?${queryParams}`;
     
     // Fetch from backend API
@@ -70,10 +71,9 @@ export async function GET(request: NextRequest) {
     });
     
     if (!backendResponse.ok) {
-      // For server errors, return empty list with success status
       if (backendResponse.status >= 500) {
-        return NextResponse.json({
-          success: true,
+        const payload = {
+          success: false,
           synagogues: [],
           total: 0,
           page: parseInt(page),
@@ -82,7 +82,8 @@ export async function GET(request: NextRequest) {
           hasNext: false,
           hasPrev: false,
           message: 'Synagogues service temporarily unavailable'
-        });
+        };
+        return NextResponse.json(payload);
       }
       throw new Error(`Backend API error: ${backendResponse.status}`);
     }
@@ -105,9 +106,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching synagogues:', error);
     
-    // For network errors, return empty list with success status to ensure UI works
-    return NextResponse.json({
-      success: true,
+    const isNetwork = error instanceof Error && (
+      error.name === 'AbortError' ||
+      error.message.toLowerCase().includes('fetch') ||
+      error.message.toLowerCase().includes('network')
+    );
+    const payload = {
+      success: false,
       synagogues: [],
       total: 0,
       page: parseInt(page || '1'),
@@ -115,11 +120,8 @@ export async function GET(request: NextRequest) {
       totalPages: 0,
       hasNext: false,
       hasPrev: false,
-      message: error instanceof Error && (
-        error.name === 'AbortError' || 
-        error.message.toLowerCase().includes('fetch') ||
-        error.message.toLowerCase().includes('network')
-      ) ? 'Synagogues service temporarily unavailable' : 'No synagogues available'
-    });
+      message: isNetwork ? 'Synagogues service temporarily unavailable' : 'No synagogues available'
+    };
+    return NextResponse.json(payload);
   }
 }

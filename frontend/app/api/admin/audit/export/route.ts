@@ -5,16 +5,17 @@ import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { exportAuditLogs } from '@/lib/admin/audit';
+import { errorResponses } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     const headerToken = request.headers.get('x-csrf-token');
@@ -53,6 +54,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     adminLogger.error('Audit export error', { error: String(error) });
-    return NextResponse.json({ error: 'Failed to export audit logs' }, { status: 500 });
+    return errorResponses.internalError();
   }
 }

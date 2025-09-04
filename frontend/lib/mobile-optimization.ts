@@ -72,23 +72,50 @@ export const useMobileOptimization = () => {
   });
 
   useEffect(() => {
+    // Debounce timeout ref
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    
     const updateMobileState = () => {
-      setIsMobile(isMobileDevice());
-      setIsTouch(isTouchDevice());
-      setPixelRatio(getDevicePixelRatio());
-      setViewportHeight(window.innerHeight);
-      setViewportWidth(window.innerWidth);
+      // Clear existing timeout
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      
+      // Debounce the update to prevent rapid-fire changes during orientation changes
+      debounceTimeout = setTimeout(() => {
+        // Only update if values actually changed to prevent unnecessary re-renders
+        const newIsMobile = isMobileDevice();
+        const newIsTouch = isTouchDevice();
+        const newPixelRatio = getDevicePixelRatio();
+        const newViewportHeight = window.innerHeight;
+        const newViewportWidth = window.innerWidth;
+        
+        // Only update state if values actually changed
+        if (newIsMobile !== isMobile) setIsMobile(newIsMobile);
+        if (newIsTouch !== isTouch) setIsTouch(newIsTouch);
+        if (newPixelRatio !== pixelRatio) setPixelRatio(newPixelRatio);
+        if (newViewportHeight !== viewportHeight) setViewportHeight(newViewportHeight);
+        if (newViewportWidth !== viewportWidth) setViewportWidth(newViewportWidth);
+      }, 300); // Increased debounce from 150ms to 300ms to prevent excessive updates
     };
 
     // Only update if we're in the browser and haven't set initial values
     if (typeof window !== 'undefined') {
       updateMobileState();
-      window.addEventListener('resize', updateMobileState);
+      
+      window.addEventListener('resize', updateMobileState, { passive: true });
       window.addEventListener('orientationchange', updateMobileState);
+      
+      // Also listen for viewport meta changes that might affect mobile detection
+      window.addEventListener('load', updateMobileState);
 
       return () => {
+        if (debounceTimeout) {
+          clearTimeout(debounceTimeout);
+        }
         window.removeEventListener('resize', updateMobileState);
         window.removeEventListener('orientationchange', updateMobileState);
+        window.removeEventListener('load', updateMobileState);
       };
     }
   }, []);

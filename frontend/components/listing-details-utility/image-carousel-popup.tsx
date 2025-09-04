@@ -100,7 +100,7 @@ export function ImageCarouselPopup({
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {images.map((image, index) => (
                   <button
-                    key={index}
+                    key={image || `thumb-${index}`}
                     onClick={() => goToImage(index)}
                     className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                       index === currentIndex

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import React, { useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils/classNames';
+import { getCloudinaryUrl } from '@/lib/frontend-url-config';
 
 interface ImageUploadProps {
   onImageUpload: (imageUrl: string) => void;
@@ -22,7 +23,7 @@ export default function ImageUpload({ onImageUpload, currentImageUrl, className 
     formData.append('upload_preset', 'jewgo_restaurants'); // You'll need to create this upload preset in Cloudinary
     
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env['NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME']}/image/upload`,
+      getCloudinaryUrl(),
       {
         method: 'POST',
         body: formData,

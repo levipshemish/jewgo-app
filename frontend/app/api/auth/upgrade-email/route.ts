@@ -6,16 +6,19 @@ import {
 } from '@/lib/rate-limiting';
 import { 
   validateTrustedIP,
-  generateCorrelationId
+  generateCorrelationId,
+  extractIsAnonymous
 } from '@/lib/utils/auth-utils';
 import { 
   validateCSRFServer,
+  signMergeCookieVersioned,
   hashIPForPrivacy
 } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders
 } from '@/lib/config/environment';
+import { errorResponses } from '@/lib';
 
 export const runtime = 'nodejs';
 

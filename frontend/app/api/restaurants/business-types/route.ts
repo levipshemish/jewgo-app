@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(_request: NextRequest) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
     
     // Fetch business types from backend
     const response = await fetch(`${backendUrl}/api/v4/restaurants/business-types`, {
@@ -18,33 +18,12 @@ export async function GET(_request: NextRequest) {
 
     const data = await response.json();
     
-    return NextResponse.json({
-      success: true,
-      data: data.business_types || []
-    });
+    return NextResponse.json({ success: true, data });
 
   } catch (_error) {
     console.error('Error fetching business types:', _error);
     
     // Return fallback data
-    return NextResponse.json({
-      success: true,
-      data: [
-        'restaurant',
-        'bakery', 
-        'cafe',
-        'pizzeria',
-        'sushi',
-        'steakhouse',
-        'deli',
-        'ice_cream',
-        'bbq',
-        'mediterranean',
-        'asian',
-        'italian',
-        'mexican',
-        'american'
-      ]
-    });
+    return NextResponse.json({ success: true, data: [] });
   }
 }

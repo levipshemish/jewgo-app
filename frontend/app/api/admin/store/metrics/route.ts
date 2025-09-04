@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/server/admin-auth';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { prisma } from '@/lib/db/prisma';
-import { cacheGet, cacheSet, keyStoreMetrics } from '@/lib/server/cache';
+import { invalidateDashboardMetrics, cacheGet, cacheSet, keyStoreMetrics } from '@/lib/server/cache';
+import { errorResponses, createSuccessResponse } from '@/lib';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   try {
     const admin = await requireAdmin(request);
     if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponses.unauthorized();
     }
 
     // Require store analytics permission and store_admin level or above
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
       admin.roleLevel < 2 ||
       !hasPermission(admin.permissions, ADMIN_PERMISSIONS.STORE_ANALYTICS)
     ) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return errorResponses.forbidden();
     }
 
     const url = new URL(request.url);
@@ -52,16 +53,16 @@ export async function GET(request: NextRequest) {
         const mappings = await prisma.vendor_admins.findMany({ where: { user_id: admin.id } });
         if (!vendorId) {
           if (!mappings || mappings.length === 0) {
-            return NextResponse.json({ error: 'No vendor assigned to this admin' }, { status: 403 });
+            return errorResponses.forbidden();
           }
           if (mappings.length > 1) {
-            return NextResponse.json({ error: 'Multiple vendors assigned. Provide vendorId.' }, { status: 400 });
+            return errorResponses.badRequest();
           }
           vendorId = mappings[0].vendor_id;
         } else {
           const allowed = mappings.some((m: any) => m.vendor_id === vendorId);
           if (!allowed) {
-            return NextResponse.json({ error: 'Forbidden: vendor access denied' }, { status: 403 });
+            return errorResponses.forbidden();
           }
         }
       } catch {

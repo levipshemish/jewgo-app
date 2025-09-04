@@ -152,7 +152,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         >
           {allImages.map((image, index) => (
             <div
-              key={index}
+              key={image || `img-${index}`}
               className="flex-none w-full snap-center relative h-full"
               style={{ 
                 minWidth: '100%',

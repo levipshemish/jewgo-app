@@ -118,6 +118,10 @@ This document summarizes the cleanup activities performed on the JewGo codebase.
    - Complete monitoring setup
 
 ## Recommendations
+### Recent Incremental Cleanups (2025-09-04)
+- TypeScript config: exclude generated `.next/**` types to prevent false errors during `npx tsc --noEmit` (G-WF-8).
+- UI exports: remove non-existent `BackToTopButton` export; re-export existing `ScrollToTop` component.
+- Git ignore: add `coverage.xml` to avoid committing coverage artifacts (G-OPS-4).
 
 ### Immediate Actions
 1. **Security Review**
