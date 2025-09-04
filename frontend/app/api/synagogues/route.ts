@@ -75,12 +75,52 @@ export async function GET(request: NextRequest) {
     }
     const fullBackendUrl = `${backendUrl}/api/v4/synagogues?${queryParams}`;
     
-    // Fetch from backend API
-    const backendResponse = await fetch(fullBackendUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Fetch from backend API with better error handling
+    let backendResponse;
+    try {
+      backendResponse = await fetch(fullBackendUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add timeout and better error handling
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+    } catch (fetchError) {
+      console.error('Fetch error:', fetchError);
+      
+      // Handle SSL and network errors gracefully
+      const isSSLError = fetchError instanceof Error && 
+        (fetchError.message.includes('certificate') || 
+         fetchError.message.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY'));
+      
+      const isNetworkError = fetchError instanceof Error && 
+        (fetchError.name === 'AbortError' ||
+         fetchError.message.toLowerCase().includes('fetch') ||
+         fetchError.message.toLowerCase().includes('network') ||
+         fetchError.message.toLowerCase().includes('timeout'));
+      
+      if (isSSLError || isNetworkError) {
+        // Return fallback response for SSL/network issues
+        const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
+        const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
+        
+        const payload = {
+          success: false,
+          synagogues: [],
+          total: 0,
+          page: currentPage,
+          limit: parseInt(limit),
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+          message: 'Synagogues service temporarily unavailable - please try again later'
+        };
+        return NextResponse.json(payload);
+      }
+      
+      // Re-throw other errors
+      throw fetchError;
+    }
     
     if (!backendResponse.ok) {
       if (backendResponse.status >= 500) {
@@ -122,10 +162,16 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching synagogues:', error);
     
+    // Check for SSL and network errors
+    const isSSLError = error instanceof Error && 
+      (error.message.includes('certificate') || 
+       error.message.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY'));
+    
     const isNetwork = error instanceof Error && (
       error.name === 'AbortError' ||
       error.message.toLowerCase().includes('fetch') ||
-      error.message.toLowerCase().includes('network')
+      error.message.toLowerCase().includes('network') ||
+      error.message.toLowerCase().includes('timeout')
     );
     
     const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
@@ -141,7 +187,7 @@ export async function GET(request: NextRequest) {
       totalPages: 0,
       hasNext: false,
       hasPrev: false,
-      message: isNetwork ? 'Synagogues service temporarily unavailable' : 'No synagogues available'
+      message: (isSSLError || isNetwork) ? 'Synagogues service temporarily unavailable - please try again later' : 'No synagogues available'
     };
     return NextResponse.json(payload);
   }
