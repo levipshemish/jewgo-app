@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { adminLogger } from '@/lib/admin/logger';
-import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(_request: NextRequest) {
   try {

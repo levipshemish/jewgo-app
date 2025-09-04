@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/server/admin-auth';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { prisma } from '@/lib/db/prisma';
-import { invalidateDashboardMetrics, cacheGet, cacheSet, keyStoreMetrics } from '@/lib/server/cache';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { cacheGet, cacheSet, keyStoreMetrics } from '@/lib/server/cache';
+import { errorResponses } from '@/lib';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

@@ -43,7 +43,7 @@ export async function POST(
 
     // Update restaurant status
     const now = new Date();
-    const updatedRestaurant = await prisma.restaurant.update({
+    await prisma.restaurant.update({
       where: { id: restaurantId },
       data: {
         submission_status: 'rejected',

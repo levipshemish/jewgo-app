@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendUrl, errorResponses, createSuccessResponse } from '@/lib';
+import { getBackendUrl, errorResponses } from '@/lib';
 
 /**
  * API Route: POST /api/restaurants/fetch-missing-hours

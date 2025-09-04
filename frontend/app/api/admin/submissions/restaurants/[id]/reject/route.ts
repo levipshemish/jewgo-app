@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { handleRestaurantStatusChange, validateRestaurantPermissions } from '@/lib/server/restaurant-status-utils';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { errorResponses } from '@/lib';
 
 export async function POST(
   request: NextRequest,

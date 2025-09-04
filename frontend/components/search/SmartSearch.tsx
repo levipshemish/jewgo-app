@@ -534,7 +534,7 @@ export default function SmartSearch({
                   Recent searches
                 </div>
                 <div className="space-y-1">
-                  {recentSearches.map((search, index) => (
+                  {recentSearches.map((search) => (
                     <button
                       key={`recent-${search}`}
                       onClick={() => handleSuggestionSelect(search)}
@@ -558,7 +558,7 @@ export default function SmartSearch({
                   Popular searches
                 </div>
                 <div className="space-y-1">
-                  {popularSearches.map((search, index) => (
+                  {popularSearches.map((search) => (
                     <button
                       key={`popular-${search.text}`}
                       onClick={() => handleSuggestionSelect(search.text)}
@@ -596,9 +596,9 @@ export default function SmartSearch({
                 { label: 'High Rating', icon: '⭐', color: 'bg-yellow-500' },
                 { label: 'Near Me', icon: '📍', color: 'bg-blue-500' },
                 { label: 'Delivery', icon: '🚚', color: 'bg-purple-500' }
-              ].map((filter, index) => (
+              ].map((filter) => (
                 <button
-                  key={index}
+                  key={filter.label}
                   className="flex items-center space-x-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
                 >
                   <div className={`w-4 h-4 rounded-full ${filter.color} flex items-center justify-center text-white text-xs`}>

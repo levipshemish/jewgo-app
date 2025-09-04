@@ -4,7 +4,6 @@ import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
 import type { TransformedUser } from '@/lib/types/supabase-auth';
 import { ROLE_PERMISSIONS, normalizeAdminRole, type Permission } from '@/lib/constants/permissions';
 import { validatePermissions } from '@/lib/server/security';
-import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(_request: NextRequest) {
   try {

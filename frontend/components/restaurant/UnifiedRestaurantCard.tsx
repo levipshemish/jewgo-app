@@ -12,11 +12,10 @@ import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { cn } from '@/lib/utils/cn';
 import { commonTypography, commonSpacing } from '@/lib/utils/commonStyles';
-import { 
+import {
   formatPriceRange,
   formatPriceDollarSigns, 
-  titleCase, 
-  getSafeImageUrl
+  titleCase
 } from '@/lib/utils/cardUtils';
 import { getFallbackImageUrl } from '@/lib/utils/imageFallback';
 import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
@@ -57,7 +56,6 @@ export default function UnifiedRestaurantCard({
 }: UnifiedRestaurantCardProps) {
   const router = useRouter();
   const { isFavorite } = useFavorites();
-  const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const { handleImmediateTouch } = useMobileTouch();
@@ -119,7 +117,6 @@ export default function UnifiedRestaurantCard({
 
   const handleImageLoad = () => setImageLoading(false);
   const handleImageError = () => {
-    setImageError(true);
     setImageLoading(false);
     
     // Log the error in development mode

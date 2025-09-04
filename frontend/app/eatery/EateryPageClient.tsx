@@ -87,7 +87,7 @@ export default function EateryPageClient() {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
-
+  
   // Safety: ensure page-level scrolling is enabled when this page mounts
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -190,7 +190,7 @@ export default function EateryPageClient() {
   const prefetchAbortRef = useRef<AbortController | null>(null);
   
   // Ref for setHasMore to avoid dependency cycles
-  const setHasMoreRef = useRef<((value: boolean) => void) | null>(null);
+
 
   // Track the last fetched URL to prevent immediate duplicates
   const lastFetchedUrlRef = useRef<string | null>(null);
@@ -303,11 +303,11 @@ export default function EateryPageClient() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadingRef = useRef<HTMLDivElement>(null);
   
-  const handleLoadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return;
+  const handleLoadMore = useCallback(async ({ signal: _signal, offset, limit }: { signal: AbortSignal; offset: number; limit: number }) => {
+    if (isLoadingMore || !hasMore) return { appended: 0, hasMore: false };
     
     setIsLoadingMore(true);
-    const nextPage = currentPage + 1;
+    const nextPage = Math.floor(offset / limit) + 1;
     
     try {
       // Use the existing fetchCombinedData function
@@ -320,20 +320,23 @@ export default function EateryPageClient() {
         // Check if we have more data
         const newTotalItems = restaurants.length + result.received;
         const hasMoreData = result.hasMore && newTotalItems < totalRestaurants;
-        setHasMore(hasMoreData);
+        setHasMore(hasMoreData ?? false);
         
         console.log('🔄 Loaded page', {
           nextPage,
           previousItems: restaurants.length,
           totalAvailable: totalRestaurants,
           hasMore: hasMoreData,
-          itemsPerPage: mobileOptimizedItemsPerPage,
+          itemsPerPage: limit,
           received: result.received
         });
+        
+        return { appended: result.received, hasMore: hasMoreData };
       } else {
         // No more data available
         setHasMore(false);
         console.log('🔄 No more data available');
+        return { appended: 0, hasMore: false };
       }
     } catch (err) {
       console.error('Error fetching more restaurants:', err);
@@ -342,29 +345,28 @@ export default function EateryPageClient() {
       if (loadErrorCountRef.current >= 2) {
         setHasMore(false);
       }
+      return { appended: 0, hasMore: false };
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMore, currentPage, restaurants.length, fetchCombinedData, searchQuery, activeFilters, mobileOptimizedItemsPerPage, totalRestaurants]);
+    
+    // Ensure we always return a value
+    return { appended: 0, hasMore: false };
+  }, [isLoadingMore, hasMore, restaurants.length, fetchCombinedData, searchQuery, activeFilters, mobileOptimizedItemsPerPage, totalRestaurants]);
 
   // Get infinite scroll hook after handleLoadMore is defined
-  const { hasMore: infiniteScrollHasMore, isLoadingMore: infiniteScrollIsLoadingMore, loadingRef: infiniteScrollLoadingRef, setHasMore: infiniteScrollSetHasMore } = useInfiniteScroll(
+  const { state: infiniteScrollState } = useInfiniteScroll(
     handleLoadMore,
     {
-      // Match Shuls thresholds/rootMargin for consistent triggering
-      threshold: 0.2,
-      rootMargin: '200px', // Increased from 100px to match working version
-      // Enable only when hydrated, not loading, and on mobile view (≤768px)
-      disabled: !isHydrated || loading || !isMobileView
+      limit: mobileOptimizedItemsPerPage
     }
   );
 
   // Update refs when infinite scroll state changes
   useEffect(() => {
-    setHasMore(infiniteScrollHasMore);
-    setIsLoadingMore(infiniteScrollIsLoadingMore);
-    loadingRef.current = infiniteScrollLoadingRef;
-  }, [infiniteScrollHasMore, infiniteScrollIsLoadingMore, infiniteScrollLoadingRef]);
+    setHasMore(infiniteScrollState.hasMore ?? false);
+    setIsLoadingMore(false); // The hook doesn't provide isLoadingMore
+  }, [infiniteScrollState.hasMore]);
 
   // Add debugging for infinite scroll state changes
   useEffect(() => {
@@ -516,20 +518,7 @@ export default function EateryPageClient() {
     }
   }, [permissionStatus, userLocation, locationLoading, requestLocation]);
 
-  const displayedRestaurants = useMemo<(Restaurant | null)[]>(() => {
-    const items: (Restaurant | null)[] = [...restaurantsWithDistance];
-    if (isHydrated && isLoadingMore) {
-      items.push(
-        ...Array.from({ length: Math.min(mobileOptimizedItemsPerPage, 8) }).map((): null => null)
-      );
-    }
-    return items;
-  }, [
-    restaurantsWithDistance,
-    isHydrated,
-    isLoadingMore,
-    mobileOptimizedItemsPerPage,
-  ]);
+
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -584,7 +573,7 @@ export default function EateryPageClient() {
       }
     
     // Reset to first page when applying filters
-    setCurrentPage(1);
+      setCurrentPage(1);
     setShowFilters(false);
     // Note: hasMore will be reset when new data is loaded
   }, [setFilter, clearFilter, clearAllFilters, activeFilters]);
@@ -763,8 +752,8 @@ export default function EateryPageClient() {
                   transform: 'translateZ(0)',
                   backfaceVisibility: 'hidden'
                 }}
-              >
-                <UnifiedCard
+                >
+                  <UnifiedCard
                   data={{
                     id: String(restaurant.id),
                     imageUrl: restaurant.image_url,
@@ -793,27 +782,27 @@ export default function EateryPageClient() {
                       .replace(/-+/g, '-')
                       .trim();
                     router.push(`/eatery/${eateryName}`);
-                  }}
-                  priority={index < 4}
-                  className="w-full h-full"
-                />
-              </div>
-            ))}
-          </div>
+                    }}
+                    priority={index < 4}
+                    className="w-full h-full"
+                  />
+                </div>
+              ))}
+            </div>
 
           {/* Loading states with reduced spacing */}
           {loading && (
             <div className="text-center py-3" role="status" aria-live="polite">
               <p>Loading restaurants...</p>
-            </div>
-          )}
+                </div>
+              )}
 
           {/* Infinite scroll loading indicator - only show on mobile */}
           {isMobileView && isLoadingMore && (
             <div className="text-center py-3" role="status" aria-live="polite">
               <p>Loading more...</p>
-            </div>
-          )}
+                </div>
+              )}
 
           {/* Infinite scroll trigger element - only on mobile */}
           {isMobileView && hasMore && (
@@ -826,23 +815,23 @@ export default function EateryPageClient() {
 
           {/* Desktop pagination - only show on desktop */}
           {!isMobileView && totalPages > 1 && (
-            <div className="mt-4 mb-16" role="navigation" aria-label="Pagination">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                isLoading={loading}
-                className="mb-2"
-              />
-              <div className="text-center text-sm text-gray-600">
-                Showing {restaurants.length} of {totalRestaurants} restaurants
-              </div>
-            </div>
+                <div className="mt-4 mb-16" role="navigation" aria-label="Pagination">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    isLoading={loading}
+                    className="mb-2"
+                  />
+                  <div className="text-center text-sm text-gray-600">
+                    Showing {restaurants.length} of {totalRestaurants} restaurants
+                  </div>
+                </div>
+              )}
+
+            </>
           )}
 
-        </>
-      )}
-      
       {/* Loading states with reduced spacing */}
       {loading && (
         <div className="text-center py-3" role="status" aria-live="polite">

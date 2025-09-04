@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/server/admin-auth';
 import { getSystemHealth } from '@/lib/server/system-health';
 import { cacheGet, cacheSet, keyDashboardMetrics } from '@/lib/server/cache';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { errorResponses } from '@/lib';
 
 export const dynamic = 'force-dynamic';
 

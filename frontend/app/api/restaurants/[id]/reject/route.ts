@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { handleRoute, json } from '@/lib/server/route-helpers';
+import { NextRequest } from 'next/server';
+import { handleRoute } from '@/lib/server/route-helpers';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
 import { errorResponses, createSuccessResponse } from '@/lib';
 

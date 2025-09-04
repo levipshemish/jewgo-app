@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/server/admin-auth';
-import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { errorResponses } from '@/lib';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

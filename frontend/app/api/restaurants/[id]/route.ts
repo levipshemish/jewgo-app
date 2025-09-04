@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
-import { handleRoute, json, forwardAuthHeader } from '@/lib/server/route-helpers';
+import { handleRoute, forwardAuthHeader } from '@/lib/server/route-helpers';
 import { getBackendUrl } from '@/lib';
-import { errorResponses } from '@/lib';
+import { createSuccessResponse } from '@/lib';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';
@@ -24,10 +24,10 @@ export async function GET(
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return json({
+      return createSuccessResponse({
         success: false,
         message: 'Invalid restaurant ID'
-      }, 400);
+      }, undefined, 400);
     }
 
     // Fetch restaurant data from backend
@@ -60,7 +60,7 @@ export async function GET(
               
               if (restaurant) {
                 const sanitizedRestaurant = sanitizeRestaurantData([restaurant])[0];
-                return json({
+                return createSuccessResponse({
                   success: true,
                   data: sanitizedRestaurant,
                   fallback: true,
@@ -125,7 +125,7 @@ export async function GET(
         };
 
         const sanitizedMock = sanitizeRestaurantData([mockRestaurant]);
-        return json({
+        return createSuccessResponse({
           success: true,
           data: sanitizedMock[0],
           fallback: true,
@@ -134,10 +134,10 @@ export async function GET(
       }
       
       // For other errors (404, 400), return the error
-      return json({
+      return createSuccessResponse({
         success: false,
         message: `Restaurant not found`
-      }, response.status);
+      }, undefined, response.status);
     }
 
     const data = await response.json();
@@ -154,16 +154,16 @@ export async function GET(
     }
 
     if (!restaurant) {
-      return json({
+      return createSuccessResponse({
         success: false,
         message: 'Invalid restaurant data received'
-      }, 500);
+      }, undefined, 500);
     }
 
     // Sanitize image URLs before returning
     const sanitizedRestaurant = sanitizeRestaurantData([restaurant])[0];
 
-    return json({
+    return createSuccessResponse({
       success: true,
       data: sanitizedRestaurant
     });
@@ -204,12 +204,12 @@ export async function GET(
     };
 
     const sanitizedMock = sanitizeRestaurantData([mockRestaurant]);
-    return json({
+    return createSuccessResponse({
       success: true,
       data: sanitizedMock[0],
       fallback: true,
       message: 'Using fallback data - network error'
-    }, 200);
+    }, undefined, 200);
   }
 }
 
@@ -223,20 +223,20 @@ export async function PUT(
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return json({
+      return createSuccessResponse({
         success: false,
         message: 'Invalid restaurant ID'
-      }, 400);
+      }, undefined, 400);
     }
 
     const body = await request.json();
 
     // Validate required fields - accept both phone and phone_number for compatibility
     if (!body.name || !body.address || (!body.phone && !body.phone_number)) {
-      return json({
+      return createSuccessResponse({
         success: false,
         message: 'Name, address, and phone are required fields'
-      }, 400);
+      }, undefined, 400);
     }
 
     // Normalize phone field to phone_number for backend consistency
@@ -273,15 +273,15 @@ export async function PUT(
 
     if (!response.ok) {
       const errorData = await parseJsonSafe(response);
-      return json({
+      return createSuccessResponse({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
-      }, response.status);
+      }, undefined, response.status);
     }
 
     const result = response.status === 204 ? {} : await parseJsonSafe(response);
 
-    return json({
+    return createSuccessResponse({
       success: true,
       message: 'Restaurant updated successfully',
       data: result.data || {
@@ -303,10 +303,10 @@ export async function DELETE(
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return json({
+      return createSuccessResponse({
         success: false,
         message: 'Invalid restaurant ID'
-      }, 400);
+      }, undefined, 400);
     }
 
     // Delete restaurant via backend API
@@ -326,15 +326,15 @@ export async function DELETE(
 
     if (!response.ok) {
       const errorData = await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
-      return json({
+      return createSuccessResponse({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
-      }, response.status);
+      }, undefined, response.status);
     }
 
     const result = response.status === 204 ? {} : await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
 
-    return json({
+    return createSuccessResponse({
       success: true,
       message: 'Restaurant deleted successfully',
       data: result.data || {
@@ -355,20 +355,20 @@ export async function PATCH(
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return json({
+      return createSuccessResponse({
         success: false,
         message: 'Invalid restaurant ID'
-      }, 400);
+      }, undefined, 400);
     }
 
     const body = await request.json();
 
     // Validate that at least one field is provided
     if (Object.keys(body).length === 0) {
-      return json({
+      return createSuccessResponse({
         success: false,
         message: 'At least one field must be provided for update'
-      }, 400);
+      }, undefined, 400);
     }
 
     // Partial update restaurant data via backend API
@@ -392,15 +392,15 @@ export async function PATCH(
 
     if (!response.ok) {
       const errorData = await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
-      return json({
+      return createSuccessResponse({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
-      }, response.status);
+      }, undefined, response.status);
     }
 
     const result = response.status === 204 ? {} : await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
 
-    return json({
+    return createSuccessResponse({
       success: true,
       message: 'Restaurant partially updated successfully',
       data: result.data || {

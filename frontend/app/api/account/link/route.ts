@@ -56,13 +56,8 @@ export async function POST(request: NextRequest) {
           return errorResponses.badRequest();
         }
 
-        // Generate a secure state parameter for the re-authentication
-        const state = crypto.randomUUID();
-        
         // Store the state in a secure cookie or session
         // For now, we'll redirect to the OAuth flow with a special parameter
-        
-        const redirectUrl = `${request.nextUrl.origin}/auth/signin?provider=${provider}&reauth=true&state=${state}`;
         
         return createSuccessResponse({ message: 'Re-authentication initiated successfully' });
 

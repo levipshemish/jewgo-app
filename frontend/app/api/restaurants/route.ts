@@ -151,8 +151,6 @@ export async function POST(request: NextRequest) {
       }, { status: 503 });
     }
     
-    const result = await backendResponse.json();
-    
     return createSuccessResponse({ message: 'Restaurant submitted successfully' });
     
   } catch (error) {

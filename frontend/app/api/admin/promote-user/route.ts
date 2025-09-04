@@ -4,7 +4,7 @@ import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { adminLogger } from '@/lib/admin/logger';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { errorResponses } from '@/lib';
 
 export async function POST(request: NextRequest) {
   try {

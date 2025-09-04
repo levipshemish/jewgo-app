@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
@@ -124,11 +124,7 @@ export async function POST(request: NextRequest) {
         restaurants = (data as any).data.data;
       }
     }
-    // Try to extract a reliable total from backend meta or fields
-    const backendTotal =
-      (typeof data?.total === 'number' ? data.total : undefined) ??
-      (typeof data?.meta?.total === 'number' ? data.meta.total : undefined) ??
-      (Array.isArray(restaurants) ? restaurants.length : 0);
+
     
     // Sanitize image URLs before returning to frontend
     const sanitizedRestaurants = Array.isArray(restaurants) ? sanitizeRestaurantData(restaurants) : [];

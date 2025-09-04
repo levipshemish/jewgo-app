@@ -118,7 +118,7 @@ export const useMobileOptimization = () => {
         window.removeEventListener('load', updateMobileState);
       };
     }
-  }, []);
+  }, [isMobile, isTouch, pixelRatio, viewportHeight, viewportWidth]);
 
   return {
     isMobile,

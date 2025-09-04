@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleRoute, json } from '@/lib/server/route-helpers';
+import { handleRoute } from '@/lib/server/route-helpers';
 import { requireAdminOrThrow, getBackendAuthHeader } from '@/lib/server/admin-auth';
 import { getBackendUrl } from '@/lib/api-config';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { createSuccessResponse } from '@/lib';
 
 export const runtime = 'nodejs';
 

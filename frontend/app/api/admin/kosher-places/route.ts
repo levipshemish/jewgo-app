@@ -8,7 +8,7 @@ import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 import { safeOrderExpr } from '@/lib/admin/sql';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { errorResponses } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {

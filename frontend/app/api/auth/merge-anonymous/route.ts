@@ -5,13 +5,13 @@ import { cookies} from 'next/headers';
 import { 
   checkRateLimit} from '@/lib/rate-limiting';
 import { 
-  validateTrustedIP, generateCorrelationId, extractIsAnonymous} from '@/lib/utils/auth-utils';
+  validateTrustedIP, generateCorrelationId} from '@/lib/utils/auth-utils';
 import { 
   verifyMergeCookieVersioned, hashIPForPrivacy, validateCSRFServer} from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, getCORSHeaders, FEATURE_FLAGS} from '@/lib/config/environment';
 import { initializeServer} from '@/lib/server-init';
-import { errorResponses, createSuccessResponse } from '@/lib';
+
 
 // export const runtime = 'nodejs';
 
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Verify user is NON-anonymous (current user must be authenticated)
-    if (extractIsAnonymous(user)) {
+    if (user.is_anonymous) {
       // Anonymous user attempted merge - log for security monitoring
       // console.error(`Anonymous user attempted merge for correlation ID: ${correlationId}`, {
       //   userid: user.id,

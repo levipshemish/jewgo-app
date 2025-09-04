@@ -3,7 +3,7 @@ import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
-import { logAdminAction, ENTITY_TYPES, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
+import { logAdminAction } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 import { safeOrderExpr } from '@/lib/admin/sql';

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import { hasPermission } from '@/lib/server/admin-utils';
-import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction } from '@/lib/admin/audit';
-import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { errorResponses } from '@/lib';
 

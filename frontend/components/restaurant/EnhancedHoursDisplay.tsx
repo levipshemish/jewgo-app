@@ -243,7 +243,7 @@ export default function EnhancedHoursDisplay({
               <h4 className="hidden sm:block text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-3">Weekly Hours</h4>
               
               <div className="space-y-0.5 sm:space-y-1.5">
-                {(hoursStatus.formatted_hours || []).map((dayHours, index) => (
+                {(hoursStatus.formatted_hours || []).map((dayHours) => (
                   <div
                     key={`day-${dayHours.day}`}
                     className={`flex justify-between items-center py-0 px-1.5 sm:py-1 sm:px-3 rounded-full whitespace-nowrap text-[10px] sm:text-sm ${

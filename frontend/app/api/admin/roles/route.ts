@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { handleRoute, json } from '@/lib/server/route-helpers';
-import { getBackendAuthHeader, requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { handleRoute } from '@/lib/server/route-helpers';
+import { getBackendAuthHeader } from '@/lib/server/admin-auth';
 import { requireSuperAdmin } from '@/lib/server/rbac-middleware';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { createSuccessResponse } from '@/lib';
 
 export const runtime = 'nodejs';
 

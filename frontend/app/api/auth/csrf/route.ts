@@ -1,8 +1,7 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { generateSignedCSRFToken } from '@/lib/utils/auth-utils.server';
-import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
-import { errorResponses } from '@/lib';
+import { getCORSHeaders } from '@/lib/config/environment';
 
 export const runtime = 'nodejs';
 

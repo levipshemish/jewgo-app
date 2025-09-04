@@ -131,7 +131,7 @@ export function ListingActions({
           {/* Secondary action buttons */}
           {secondaryActions.length > 0 && (
             <Cluster gap={3}>
-              {secondaryActions.map((action, index) => (
+              {secondaryActions.map((action) => (
                 action.label && action.onClick && (
                   <Button
                     key={action.label}
@@ -149,7 +149,7 @@ export function ListingActions({
           {/* Tags */}
           {tags.length > 0 && (
             <Cluster gap={2} className="justify-center">
-              {tags.map((tag, index) => {
+              {tags.map((tag) => {
                 // Determine kosher tag color based on content - matching image tag styling
                 const getKosherTagColor = (tagText: string) => {
                   const lowerTag = tagText.toLowerCase();
@@ -257,7 +257,7 @@ export function ListingActions({
             {/* Hours content */}
             <div className="p-4">
               <div className="space-y-2">
-                {bottomAction.hoursInfo.hours.map((item, index) => (
+                {bottomAction.hoursInfo.hours.map((item) => (
                   <div
                     key={`hours-${item.day}-${item.time}`}
                     className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-b-0"

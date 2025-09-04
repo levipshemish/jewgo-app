@@ -7,7 +7,7 @@ import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { errorResponses } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {

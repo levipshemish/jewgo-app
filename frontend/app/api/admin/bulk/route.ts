@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Perform bulk operation
-    const result = await AdminDatabaseService.bulkOperation({
+    await AdminDatabaseService.bulkOperation({
       operation: validatedData.operation,
       delegate: model,
       modelKey: validatedData.entityType as 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',

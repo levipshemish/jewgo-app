@@ -6,7 +6,7 @@ import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { errorResponses } from '@/lib';
 
 export async function GET(request: NextRequest) {
   try {

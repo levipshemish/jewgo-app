@@ -331,8 +331,8 @@ function MarketplacePageContent() {
   const [activeTab, setActiveTab] = useState('marketplace');
   const [showFilters, setShowFilters] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [marketplaceAvailable, setMarketplaceAvailable] = useState(true);
+  const [_hasMore, setHasMore] = useState(true);
   
 
   

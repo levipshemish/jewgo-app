@@ -9,7 +9,7 @@ import { invalidateDashboardMetrics } from '@/lib/server/cache';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';
 import { corsHeaders } from '@/lib/middleware/security';
-import { errorResponses, createSuccessResponse } from '@/lib';
+import { createSuccessResponse } from '@/lib';
 
 export async function POST(
   request: NextRequest,
@@ -49,7 +49,7 @@ export async function POST(
 
     // Update restaurant status
     const now = new Date();
-    const updatedRestaurant = await prisma.restaurant.update({
+    await prisma.restaurant.update({
       where: { id: restaurantId },
       data: {
         submission_status: 'approved',

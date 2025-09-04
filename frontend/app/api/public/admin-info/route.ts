@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { errorResponses, createSuccessResponse } from '@/lib';
 
 export async function GET(_request: NextRequest) {
   try {

@@ -184,7 +184,7 @@ export default function ReviewStep({
           </h4>
           <div className="space-y-3">
             {storeData.products.map((product, index) => (
-              <div key={product.id || product.name || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={`${product.name}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900">{product.name}</p>
                   <p className="text-sm text-gray-600">{product.category} • {product.condition.replace('_', ' ')}</p>
