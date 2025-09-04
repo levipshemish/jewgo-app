@@ -8,7 +8,7 @@ Author: JewGo Development Team
 Version: 4.1
 Last Updated: 2024
 """
-from app_factory import create_app
+from app_factory_full import create_app
 from utils.config_manager import config_manager
 
 # Create the Flask application instance
