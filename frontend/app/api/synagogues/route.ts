@@ -66,14 +66,26 @@ export async function GET(request: NextRequest) {
       queryParams.append('maxDistanceMi', maxDistanceMi);
     }
     
-    // Use the correct backend URL - fallback to production URL if not set
-    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+    // Use the correct backend URL - prioritize local development
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+    
+    // If no backend URL is set, use local development default
+    if (!backendUrl) {
+      // Check if we're in development mode
+      if (process.env.NODE_ENV === 'development') {
+        backendUrl = 'http://localhost:8082'; // Local development
+      } else {
+        backendUrl = 'https://api.jewgo.app'; // Production fallback
+      }
+    }
     
     // Ensure the backend URL has a protocol
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
-      backendUrl = `https://${backendUrl}`;
+      backendUrl = `http://${backendUrl}`;
     }
     const fullBackendUrl = `${backendUrl}/api/v4/synagogues?${queryParams}`;
+    
+    console.log('Backend URL:', fullBackendUrl); // Debug log
     
     // Fetch from backend API with better error handling
     let backendResponse;

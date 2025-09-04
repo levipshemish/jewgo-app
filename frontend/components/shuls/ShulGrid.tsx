@@ -97,16 +97,17 @@ export default function ShulGrid({
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
-  const [forceMockData, setForceMockData] = useState(false) // Track when we've fallen back to mock data
+  const [backendError, setBackendError] = useState(false) // Track if backend is accessible
+  const [retryCount, setRetryCount] = useState(0) // Track retry attempts
 
   // Real API function for synagogues with offset-based pagination for infinite scroll
-  const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 15000) => {
+  const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 10000) => {
     try {
       // Build API URL with parameters
       const apiUrl = new URL('/api/synagogues', window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('offset', offset.toString())
-      
+
       if (params) {
         const searchParams = new URLSearchParams(params)
         searchParams.forEach((value, key) => {
@@ -115,35 +116,47 @@ export default function ShulGrid({
           }
         })
       }
-      
+
       // Add timeout to fetch
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
-      
+
       const response = await fetch(apiUrl.toString(), {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
         },
       })
-      
+
       clearTimeout(timeoutId)
-      
+
       if (!response.ok) {
+        // Check if it's a server error (5xx) or client error (4xx)
+        if (response.status >= 500) {
+          throw new Error(`Backend server error: ${response.status}`)
+        } else if (response.status >= 400) {
+          throw new Error(`Client error: ${response.status}`)
+        }
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
+
       const data = await response.json()
+      
+      // Check if the response indicates backend is unavailable
+      if (data.success === false && data.message?.includes('temporarily unavailable')) {
+        throw new Error('Backend service unavailable')
+      }
+
       return {
         shuls: data.synagogues || [],
         total: data.total || 0,
         hasMore: data.hasNext || false,
         limit: data.limit || limit
       }
-      
+
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timed out - please try again')
+        throw new Error('Request timed out - backend may be unreachable')
       }
       console.error('Error fetching synagogues:', error)
       throw error
@@ -167,18 +180,54 @@ export default function ShulGrid({
 
   // Load more items in batches of 6 (exactly like dynamic-card-ts)
   const loadMoreItems = useCallback(async () => {
-    if (loading || !hasMore) return
+    if (loading || !hasMore || backendError) return
 
     setLoading(true)
 
     try {
-      // Always use mock data to prevent SSL errors
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (useRealData && !backendError && retryCount < 3) {
+        // Try real API first (with retry limit)
+        const currentPage = page
+        const response = await fetchShuls(6, currentPage * 6, buildSearchParams())
+        setShuls((prev) => [...prev, ...response.shuls])
+        setHasMore(response.hasMore)
+        setPage((prev) => prev + 1)
+        setRetryCount(0) // Reset retry count on success
+      } else {
+        // Use mock data (fallback or after max retries)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        
+        const newItems: MockShul[] = []
+        for (let i = 0; i < 6; i++) {
+          const itemIndex = page * 6 + i
+          if (itemIndex < 50) { // Limit mock data to 50 items
+            newItems.push(generateMockShuls(1)[0])
+          }
+        }
+        
+        setShuls((prev) => [...prev, ...newItems])
+        setHasMore(newItems.length === 6 && page * 6 + newItems.length < 50)
+        setPage((prev) => prev + 1)
+      }
+    } catch (error) {
+      console.error('Error loading more items:', error)
       
+      // Increment retry count
+      setRetryCount((prev) => prev + 1)
+      
+      // If we've exceeded retry limit, switch to mock data permanently
+      if (retryCount >= 2) {
+        console.log('Backend unreachable after 3 attempts, switching to mock data')
+        setBackendError(true)
+        setRetryCount(0)
+      }
+      
+      // Fall back to mock data
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       const newItems: MockShul[] = []
       for (let i = 0; i < 6; i++) {
         const itemIndex = page * 6 + i
-        if (itemIndex < 50) { // Limit mock data to 50 items
+        if (itemIndex < 50) {
           newItems.push(generateMockShuls(1)[0])
         }
       }
@@ -186,17 +235,10 @@ export default function ShulGrid({
       setShuls((prev) => [...prev, ...newItems])
       setHasMore(newItems.length === 6 && page * 6 + newItems.length < 50)
       setPage((prev) => prev + 1)
-    } catch (error) {
-      console.error('Error loading more items:', error)
-      // Always fall back to mock data on error
-      const mockItems = generateMockShuls(6)
-      setShuls(mockItems)
-      setHasMore(true)
-      setPage(1)
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, page]) // Remove dependencies that could cause infinite loops
+  }, [loading, hasMore, page, useRealData, backendError, retryCount, fetchShuls, buildSearchParams])
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
@@ -204,7 +246,8 @@ export default function ShulGrid({
     setShuls([])
     setPage(0)
     setHasMore(true)
-    // Don't reset forceMockData - keep using mock data to prevent SSL errors
+    setBackendError(false) // Reset backend error state
+    setRetryCount(0) // Reset retry count
     
     // Load initial batch only once
     const loadInitialItems = async () => {
@@ -212,14 +255,32 @@ export default function ShulGrid({
       
       setLoading(true)
       try {
-        // Always use mock data to prevent SSL errors
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        const mockItems = generateMockShuls(6)
-        setShuls(mockItems)
-        setHasMore(true)
+        if (useRealData && !backendError && retryCount < 3) {
+          // Try real API first
+          const response = await fetchShuls(6, 0, buildSearchParams())
+          setShuls(response.shuls)
+          setHasMore(response.hasMore)
+          setRetryCount(0) // Reset retry count on success
+        } else {
+          // Use mock data (fallback or after max retries)
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          const mockItems = generateMockShuls(6)
+          setShuls(mockItems)
+          setHasMore(true)
+        }
         setPage(1)
       } catch (error) {
         console.error('Error loading initial items:', error)
+        // Increment retry count
+        setRetryCount((prev) => prev + 1)
+        
+        // If we've exceeded retry limit, switch to mock data permanently
+        if (retryCount >= 2) {
+          console.log('Backend unreachable after 3 attempts, switching to mock data')
+          setBackendError(true)
+          setRetryCount(0)
+        }
+        
         // Always fall back to mock data on error
         const mockItems = generateMockShuls(6)
         setShuls(mockItems)
@@ -359,6 +420,27 @@ export default function ShulGrid({
 
   return (
     <div className="px-4 py-4">
+      {/* Backend Status Indicator */}
+      {backendError && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Backend Service Unavailable
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>Showing sample data. Real synagogue data will appear when the backend is accessible.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Grid Layout - Exactly matching dynamic-card-ts */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {filteredShuls.map((shul, index) => (
