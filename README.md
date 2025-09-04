@@ -616,6 +616,45 @@ This document includes:
 - **Resource Usage**: Memory and CPU monitoring
 - **User Experience**: Core Web Vitals tracking
 
+## 🚀 VPS Deployment
+
+### Overview
+JewGo backend can be deployed to Ubuntu VPS with local PostgreSQL and Redis for production use.
+
+### Quick Deploy
+```bash
+# On your VPS
+cd /srv
+sudo git clone https://github.com/mml555/jewgo-app.git jewgo
+cd jewgo
+sudo ./scripts/deploy-vps.sh
+```
+
+### Manual Setup
+1. **Install Dependencies**: PostgreSQL, Redis, Python 3.12+
+2. **Setup Database**: Create `app_db` and `app_user`
+3. **Configure Services**: Copy systemd service files
+4. **Deploy Application**: Run deployment script
+
+### Service Management
+```bash
+# Check status
+sudo systemctl status jewgo-backend*
+
+# Restart services
+sudo systemctl restart jewgo-backend*
+
+# View logs
+sudo journalctl -u jewgo-backend* -f
+```
+
+### Health Checks
+- **Individual Services**: `http://127.0.0.1:8082/health/lb`
+- **Load Balancer**: `https://api.jewgo.app/health/lb`
+- **Monitoring**: `./monitor-infrastructure.sh`
+
+📖 **Full Documentation**: See [VPS_DEPLOYMENT.md](docs/VPS_DEPLOYMENT.md) for complete setup guide.
+
 ## 📞 Support
 
 ### Getting Help

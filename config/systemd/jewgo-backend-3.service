@@ -1,0 +1,25 @@
+[Unit]
+Description=JewGo Backend API Instance 3
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/jewgo/backend/backend
+Environment=PATH=/srv/jewgo/backend/venv/bin
+Environment=INSTANCE_ID=jewgo-backend-3
+Environment=FLASK_APP=app.py
+Environment=FLASK_ENV=production
+Environment=PORT=8084
+ExecStart=/srv/jewgo/backend/venv/bin/python app.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jewgo-backend-3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,8 +1,7 @@
 // Basic feature checks that can run in the browser
-import { validateSupabaseFeatureSupport } from './utils/auth-utils';
 
 /**
- * Feature Guard - Boot-time validation of critical Supabase features
+ * Feature Guard - Boot-time validation of critical PostgreSQL authentication features
  * This should be called during app initialization to ensure all required features are available
  * Client-safe version that doesn't import server-only modules
  */
@@ -21,7 +20,7 @@ export class FeatureGuard {
   }
 
   /**
-   * Validate Supabase features at boot time
+   * Validate PostgreSQL authentication features at boot time
    * This is a critical check that should be called during app initialization
    */
   async validateFeatures(): Promise<boolean> {
@@ -41,13 +40,13 @@ export class FeatureGuard {
   private async performValidation(): Promise<boolean> {
     try {
       // Basic configuration validation
-      const basicValidation = validateSupabaseFeatureSupport();
+      const basicValidation = this.validatePostgresAuthConfiguration();
       if (!basicValidation) {
-        console.error('🚨 CRITICAL: Supabase configuration validation failed');
+        console.error('🚨 CRITICAL: PostgreSQL authentication configuration validation failed');
         console.error('Application startup failure - check environment variables');
         
         // Log to Sentry if available
-        this.logToSentry('Supabase configuration validation failed', 'error');
+        this.logToSentry('PostgreSQL authentication configuration validation failed', 'error');
         
         return false;
       }
@@ -55,11 +54,11 @@ export class FeatureGuard {
       // Client-side feature validation (limited scope)
       const clientFeatureValidation = this.validateClientFeatures();
       if (!clientFeatureValidation) {
-        console.error('🚨 CRITICAL: Client-side Supabase feature validation failed');
+        console.error('🚨 CRITICAL: Client-side PostgreSQL authentication feature validation failed');
         console.error('Required client features not available');
         
         // Log to Sentry if available
-        this.logToSentry('Client-side Supabase feature validation failed', 'error');
+        this.logToSentry('Client-side PostgreSQL authentication feature validation failed', 'error');
         
         return false;
       }
@@ -69,7 +68,7 @@ export class FeatureGuard {
 
     } catch (error) {
       console.error('🚨 CRITICAL: Feature Guard validation failed:', error);
-      console.error('Application startup failure - Supabase SDK may be corrupted');
+      console.error('Application startup failure - PostgreSQL authentication may be misconfigured');
       
       // Log to Sentry if available
       this.logToSentry('Feature Guard validation failed', 'error', error);
@@ -77,6 +76,26 @@ export class FeatureGuard {
       return false;
     } finally {
       this.validationPromise = null;
+    }
+  }
+
+  /**
+   * Validate PostgreSQL authentication configuration
+   */
+  private validatePostgresAuthConfiguration(): boolean {
+    try {
+      // Check if backend URL is configured
+      const hasBackendUrl = !!process.env.NEXT_PUBLIC_BACKEND_URL;
+      
+      if (!hasBackendUrl) {
+        console.error('[FeatureGuard] Missing PostgreSQL authentication backend URL');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[FeatureGuard] PostgreSQL auth configuration validation failed:', error);
+      return false;
     }
   }
 
@@ -91,11 +110,10 @@ export class FeatureGuard {
       }
 
       // Basic client-side checks
-      const hasSupabaseUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const hasSupabaseAnonKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const hasBackendUrl = !!process.env.NEXT_PUBLIC_BACKEND_URL;
 
-      if (!hasSupabaseUrl || !hasSupabaseAnonKey) {
-        console.error('[FeatureGuard] Missing Supabase environment variables');
+      if (!hasBackendUrl) {
+        console.error('[FeatureGuard] Missing PostgreSQL authentication backend URL');
         return false;
       }
 

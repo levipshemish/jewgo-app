@@ -8,17 +8,24 @@ Author: JewGo Development Team
 Version: 4.1
 Last Updated: 2024
 """
+import os
 from app_factory_full import create_app
 from utils.config_manager import config_manager
 
 # Create the Flask application instance
-app = create_app()
+app, socketio = create_app()  # Unpack the tuple returned by create_app
+
 if __name__ == "__main__":
     # Get environment configuration
     is_production = config_manager.get("environment.production", False)
     environment_name = config_manager.get("environment.name", "development")
+    
+    # Get port from environment variable, fallback to 8082
+    port = int(os.environ.get("PORT", 8082))
+    
+    print(f"Starting JewGo backend on port {port}")
     app.run(
         host="0.0.0.0",
-        port=8083,  # Use port 8083 to avoid conflicts
+        port=port,  # Use environment variable PORT
         debug=not is_production,  # Debug mode for non-production environments
     )

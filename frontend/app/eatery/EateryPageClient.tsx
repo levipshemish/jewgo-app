@@ -3,66 +3,32 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import UnifiedCard from '@/components/ui/UnifiedCard';
-import ActionButtons from '@/components/layout/ActionButtons';
 import { useLocation } from '@/lib/contexts/LocationContext';
-import LocationPromptPopup from '@/components/LocationPromptPopup';
-import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
+// Wrapped locally for thinner client
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
-import { calculateDistance, formatDistance } from '@/lib/utils/distance';
+import { calculateDistance } from '@/lib/utils/distance';
+import { eaterySlug } from '@/lib/utils/slug';
 import BottomNavigation from '@/components/navigation/ui/BottomNavigation';
-import CategoryTabs from '@/components/navigation/ui/CategoryTabs';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
-import { LoadMoreSentinel } from '@/components/ui/LoadMoreSentinel';
 import BackToTopButton from '@/components/common/BackToTopButton';
 import { ENABLE_EATERY_INFINITE_SCROLL, IS_REPLACE_STATE_THROTTLE_MS } from '@/lib/config/infiniteScroll.constants';
+import HeaderBlock from './components/HeaderBlock';
+import LocationBanner from './components/LocationBanner';
+import RestaurantGrid from './components/RestaurantGrid';
+import InfiniteScrollControls from './components/InfiniteScrollControls';
+import StatusInfo from './components/StatusInfo';
+import ErrorState from './components/ErrorState';
+import EateryFilterModal from './components/EateryFilterModal';
+import EateryLocationPrompt from './components/EateryLocationPrompt';
+import type { LightRestaurant, ApiResponse } from './types';
 
-interface Restaurant {
-  id: string | number;
-  name: string;
-  address: string;
-  phone?: string;
-  phone_number?: string;
-  website: string;
-  cuisine?: string;
-  kosher_category?: string;
-  rating?: number | string;
-  google_rating?: number | string;
-  price_range: string;
-  image_url: string;
-  is_open: boolean;
-  distance?: number;
-  latitude?: number;
-  longitude?: number;
-}
-
-interface ApiResponse {
-  success: boolean;
-  data: {
-    restaurants: Restaurant[];
-    total: number;
-    filterOptions: {
-      agencies: string[];
-      kosherCategories: string[];
-      listingTypes: string[];
-      priceRanges: string[];
-      cities: string[];
-      states: string[];
-    };
-  };
-  pagination: {
-    limit: number;
-    offset: number;
-    page: number;
-    totalPages: number;
-  };
-}
+// Lightweight shared types for the Eatery page live in ./types
 
 export default function EateryPageClient() {
   const router = useRouter();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurants, setRestaurants] = useState<LightRestaurant[]>([]);
   // Track loading and error states locally since useInfiniteScroll doesn't provide them
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -382,75 +348,26 @@ export default function EateryPageClient() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 eatery-page">
-        <Header 
-          onSearch={handleSearch}
-          placeholder="Search restaurants..."
-          showFilters={true}
-          onShowFilters={handleShowFilters}
-        />
-        
-        <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
-          <div className="text-red-500 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Restaurants</h2>
-          <p className="text-gray-600 text-center mb-4">{error}</p>
-          <button
-            onClick={() => {
-              setError(null);
-              if (ENABLE_EATERY_INFINITE_SCROLL) {
-                actions.resetForFilters();
-              }
-            }}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
+      <ErrorState 
+        message={error}
+        onSearch={handleSearch}
+        onShowFilters={handleShowFilters}
+        onRetry={() => {
+          setError(null);
+          if (ENABLE_EATERY_INFINITE_SCROLL) {
+            actionsRef.current.resetForFilters();
+          }
+        }}
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 eatery-page">
-      {/* Sticky Navigation Container */}
-      <div className="sticky top-0 z-40 bg-white shadow-sm">
-        <Header 
-          onSearch={handleSearch}
-          placeholder="Search restaurants..."
-          showFilters={true}
-          onShowFilters={handleShowFilters}
-        />
-        
-        <CategoryTabs 
-          activeTab="eatery"
-          onTabChange={() => {}}
-        />
-        
-        <ActionButtons 
-          onShowFilters={handleShowFilters}
-          onShowMap={() => {}}
-          onAddEatery={() => {}}
-        />
-      </div>
+      <HeaderBlock onSearch={handleSearch} onShowFilters={handleShowFilters} />
 
       {/* Location Status Banner */}
-      {userLocation && permissionStatus === 'granted' && (
-        <div className="max-w-7xl mx-auto flex items-center justify-center">
-          <div className="flex items-center space-x-2">
-            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-sm text-green-800 font-medium">
-              Restaurants sorted by distance from you
-            </span>
-          </div>
-        </div>
-      )}
+      <LocationBanner show={!!(userLocation && permissionStatus === 'granted')} />
       
       {loading && restaurants.length === 0 ? (
         <div className="flex justify-center items-center py-12">
@@ -469,84 +386,29 @@ export default function EateryPageClient() {
         </div>
       ) : (
         <>
-          {/* Eatery grid with reduced spacing - always 4 rows */}
-          <div 
-            className="restaurant-grid px-2 sm:px-4 lg:px-6"
-            role="grid"
-            aria-label="Restaurant listings"
-            aria-busy={loading}
-          >
-            {restaurantsWithDistance.map((restaurant: any) => (
-              <div 
-                key={String(restaurant.id)}
-                className="w-full" 
-                role="gridcell"
-              >
-                <UnifiedCard
-                  data={{
-                    id: String(restaurant.id),
-                    imageUrl: restaurant.image_url,
-                    title: restaurant.name,
-                    badge: toFixedRating(restaurant.google_rating),
-                    subtitle: restaurant.price_range || '',
-                    additionalText: restaurant.distance
-                      ? formatDistance(restaurant.distance)
-                      : '',
-                    showHeart: true,
-                    isLiked: false,
-                    kosherCategory: restaurant.kosher_category || restaurant.cuisine || '',
-                    city: restaurant.address,
-                    imageTag: restaurant.kosher_category || '',
-                  }}
-                  showStarInBadge={true}
-                  onCardClick={() => {
-                    const eateryName = restaurant.name
-                      .toLowerCase()
-                      .replace(/[^a-z0-9\s-]/g, '')
-                      .replace(/\s+/g, '-')
-                      .replace(/-+/g, '-')
-                      .trim();
-                    // FIXED: Stable routing with ID to prevent collisions
-                    router.push(`/eatery/${eateryName}-${restaurant.id}`);
-                  }}
-                  priority={false}
-                  className="w-full h-full"
-                />
-              </div>
-            ))}
-          </div>
+          <RestaurantGrid 
+            items={restaurantsWithDistance}
+            loading={loading}
+            toFixedRating={toFixedRating}
+            onCardClick={(restaurant) => {
+              router.push(`/eatery/${eaterySlug(restaurant.name, restaurant.id)}`);
+            }}
+          />
 
-          {/* Infinite Scroll Sentinel */}
-          {ENABLE_EATERY_INFINITE_SCROLL && (
-            <LoadMoreSentinel
-              ref={actions.attachSentinel}
-              hasMore={state.hasMore}
-              isLoading={loading}
-              onRetry={state.showManualLoad ? actions.manualLoad : undefined}
-              aria-label="Load more restaurants"
-            />
-          )}
+          <InfiniteScrollControls 
+            enable={ENABLE_EATERY_INFINITE_SCROLL}
+            hasMore={state.hasMore}
+            loading={loading}
+            showManualLoad={state.showManualLoad}
+            attachSentinel={actions.attachSentinel}
+            onManualLoad={actions.manualLoad}
+          />
 
-          {/* Manual Load More Button (fallback) */}
-          {ENABLE_EATERY_INFINITE_SCROLL && state.showManualLoad && (
-            <div className="flex justify-center py-6">
-              <button
-                onClick={actions.manualLoad}
-                disabled={loading}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              >
-                {loading ? 'Loading...' : 'Load More Restaurants'}
-              </button>
-            </div>
-          )}
-
-          {/* Status Information */}
-          <div className="text-center text-sm text-gray-600 py-4" aria-live="polite">
-            Showing {restaurants.length} of {totalRestaurants} restaurants
-            {ENABLE_EATERY_INFINITE_SCROLL && state.hasMore && (
-              <span className="ml-2">• Scroll to load more</span>
-            )}
-          </div>
+          <StatusInfo 
+            shown={restaurants.length}
+            total={totalRestaurants}
+            showMoreHint={ENABLE_EATERY_INFINITE_SCROLL && state.hasMore}
+          />
         </>
       )}
 
@@ -554,7 +416,7 @@ export default function EateryPageClient() {
       <BottomNavigation size="compact" showLabels="active-only" />
 
       {/* Filter Modal */}
-      <ModernFilterPopup
+      <EateryFilterModal
         isOpen={showFilters}
         onClose={handleCloseFilters}
         onApplyFilters={handleApplyFilters}
@@ -562,16 +424,13 @@ export default function EateryPageClient() {
         userLocation={userLocation}
         locationLoading={locationLoading}
         onRequestLocation={requestLocation}
-        preloadedFilterOptions={null}
       />
 
       {/* Location Prompt Popup */}
-      <LocationPromptPopup
+      <EateryLocationPrompt
         isOpen={showLocationPrompt}
         onClose={() => setShowLocationPrompt(false)}
-        onSkip={() => {
-          setShowLocationPrompt(false);
-        }}
+        onSkip={() => setShowLocationPrompt(false)}
       />
 
       {/* Back to Top Button */}

@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+export const dynamic = 'force-dynamic';
 import EateryPageClient from './EateryPageClient';
 
 // Loading component for Suspense fallback
