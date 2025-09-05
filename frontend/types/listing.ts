@@ -223,3 +223,95 @@ export interface EateryDB {
     review_count?: number
   }
 }
+
+export interface ShulDB {
+  id: string
+  name: string
+  description: string
+  short_description?: string
+  address: string
+  city: string
+  state: string
+  zip_code: string
+  phone_number: string
+  website?: string
+  email?: string
+  denomination: string
+  shul_type?: string
+  rating?: number
+  review_count?: number
+  image_url?: string
+  additional_images?: string[]
+  images: string[]
+  hours_of_operation?: string
+  hours_json?: string
+  hours_last_updated?: string
+  timezone?: string
+  latitude?: number
+  longitude?: number
+  is_active?: boolean
+  listing_type: string
+  status?: string
+  hours: {
+    [day: string]: {
+      open: string
+      close: string
+      closed?: boolean
+    }
+  }
+  contact: {
+    phone?: string
+    email?: string
+    website?: string
+  }
+  location: {
+    latitude: number
+    longitude: number
+  }
+  admin_settings: {
+    show_contact_button?: boolean
+    contact_url?: string
+  }
+  stats: {
+    view_count: number
+    share_count: number
+  }
+  // Shul-specific fields
+  has_daily_minyan?: boolean
+  has_shabbat_services?: boolean
+  has_holiday_services?: boolean
+  has_mechitza?: boolean
+  has_separate_entrance?: boolean
+  has_parking?: boolean
+  has_disabled_access?: boolean
+  has_kiddush_facilities?: boolean
+  has_social_hall?: boolean
+  has_library?: boolean
+  has_hebrew_school?: boolean
+  has_adult_education?: boolean
+  has_youth_programs?: boolean
+  has_senior_programs?: boolean
+  rabbi_name?: string
+  rabbi_phone?: string
+  rabbi_email?: string
+  religious_authority?: string
+  community_affiliation?: string
+  membership_required?: boolean
+  membership_fee?: number
+  fee_currency?: string
+  accepts_visitors?: boolean
+  visitor_policy?: string
+  minyan_times?: {
+    shacharit?: string
+    mincha?: string
+    maariv?: string
+  }
+  services?: string[]
+  features?: string[]
+  reviews?: {
+    google_reviews?: string
+    review_snippets?: string
+    google_review_count?: number
+    review_count?: number
+  }
+}

@@ -164,13 +164,13 @@ export async function GET(request: NextRequest) {
     
     const transformedResponse = {
       synagogues: backendData.synagogues || [],
-      total: total,
+      total,
       page: currentPage,
       limit: backendData.limit || limitNum,
       offset: currentOffset,
       totalPages: backendData.totalPages || Math.ceil(total / limitNum),
-      hasNext: hasNext,
-      hasPrev: hasPrev
+      hasNext,
+      hasPrev
     };
     
     return NextResponse.json(transformedResponse);

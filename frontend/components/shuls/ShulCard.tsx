@@ -98,6 +98,16 @@ export default function ShulCard({
 
   const handleCardClick = (data: any) => {
     console.log("Shul card clicked:", data)
+    // Navigate to shul detail page
+    if (typeof window !== 'undefined') {
+      const shulSlug = shul.name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .trim()
+      
+      window.location.href = `/shuls/${shulSlug}`
+    }
     onClick?.()
   }
 

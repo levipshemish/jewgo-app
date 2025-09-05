@@ -1,14 +1,16 @@
 "use client"
 import { useState, useEffect, useCallback, useRef, RefObject } from "react"
-import ShulCard from "./ShulCard"
+import UnifiedCard from "@/components/ui/UnifiedCard"
 import { Loader2, Search } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 import { AppliedFilters } from "@/lib/filters/filters.types"
+import { eaterySlug } from "@/lib/utils/slug"
+import type { LightRestaurant } from "../types"
 
 // Import the mock data generator (fallback)
-import { generateMockShuls, type MockShul } from "@/lib/mockData/shuls"
+import { generateMockRestaurants, type MockRestaurant } from "@/lib/mockData/restaurants"
 
-interface ShulGridProps {
+interface EateryGridProps {
   category?: string
   searchQuery?: string
   showDistance?: boolean
@@ -18,96 +20,33 @@ interface ShulGridProps {
   userLocation?: { latitude: number; longitude: number } | null
   useRealData?: boolean
   activeFilters?: AppliedFilters
+  onCardClick?: (restaurant: LightRestaurant) => void
 }
 
-// Real shul type matching the database schema
-interface RealShul {
-  id: number
-  name: string
-  description?: string
-  address?: string
-  city?: string
-  state?: string
-  zip_code?: string
-  country?: string
-  latitude?: number
-  longitude?: number
-  phone_number?: string
-  website?: string
-  email?: string
-  shul_type?: string
-  shul_category?: string
-  denomination?: string
-  business_hours?: string
-  hours_parsed?: boolean
-  timezone?: string
-  has_daily_minyan?: boolean
-  has_shabbat_services?: boolean
-  has_holiday_services?: boolean
-  has_women_section?: boolean
-  has_mechitza?: boolean
-  has_separate_entrance?: boolean
-  distance?: string
-  distance_miles?: number
-  rating?: number
-  review_count?: number
-  star_rating?: number
-  google_rating?: number
-  image_url?: string
-  logo_url?: string
-  has_parking?: boolean
-  has_disabled_access?: boolean
-  has_kiddush_facilities?: boolean
-  has_social_hall?: boolean
-  has_library?: boolean
-  has_hebrew_school?: boolean
-  has_adult_education?: boolean
-  has_youth_programs?: boolean
-  has_senior_programs?: boolean
-  rabbi_name?: string
-  rabbi_phone?: string
-  rabbi_email?: string
-  religious_authority?: string
-  community_affiliation?: string
-  kosher_certification?: string
-  membership_required?: boolean
-  membership_fee?: number
-  fee_currency?: string
-  accepts_visitors?: boolean
-  visitor_policy?: string
-  is_active?: boolean
-  is_verified?: boolean
-  created_at?: string
-  updated_at?: string
-  tags?: string[]
-  admin_notes?: string
-  specials?: string
-  listing_type?: string
-}
-
-export default function ShulGrid({ 
+export default function EateryGrid({ 
   category = "all", 
   searchQuery = "",
-  showDistance = true, 
-  showRating = true, 
-  showServices = true,
+  showDistance: _showDistance = true, 
+  showRating: _showRating = true, 
+  showServices: _showServices = true,
   scrollContainerRef,
   userLocation,
-  useRealData = false,
-  activeFilters = {}
-}: ShulGridProps) {
-  const [shuls, setShuls] = useState<Array<RealShul | any>>([])
+  useRealData = true,
+  activeFilters = {},
+  onCardClick
+}: EateryGridProps) {
+  const [restaurants, setRestaurants] = useState<LightRestaurant[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
-  const [backendError, setBackendError] = useState(false) // Track if backend is accessible
-  const isRetryingRef = useRef(false) // Prevent multiple simultaneous retry attempts
+  const [backendError, setBackendError] = useState(false)
+  const isRetryingRef = useRef(false)
 
-  // Real API function for synagogues with offset-based pagination for infinite scroll
-  const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
+  // Real API function for restaurants with offset-based pagination for infinite scroll
+  const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
       // Build API URL with parameters
-      const apiUrl = new URL('/api/synagogues', window.location.origin)
+      const apiUrl = new URL('/api/restaurants-with-filters', window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('offset', offset.toString())
 
@@ -120,7 +59,7 @@ export default function ShulGrid({
         })
       }
 
-      console.log('fetchShuls called with URL:', apiUrl.toString())
+      console.log('fetchRestaurants called with URL:', apiUrl.toString())
 
       // Add timeout to fetch (shorter than API timeout to fail fast)
       const controller = new AbortController()
@@ -138,10 +77,9 @@ export default function ShulGrid({
 
       clearTimeout(timeoutId)
 
-      console.log('fetchShuls response status:', response.status)
+      console.log('fetchRestaurants response status:', response.status)
 
       if (!response.ok) {
-        // Check if it's a server error (5xx) or client error (4xx)
         if (response.status >= 500) {
           throw new Error(`Backend server error: ${response.status}`)
         } else if (response.status >= 400) {
@@ -151,25 +89,53 @@ export default function ShulGrid({
       }
 
       const data = await response.json()
-      console.log('fetchShuls response data:', data)
+      console.log('fetchRestaurants response data:', data)
       
-      // Check if the response indicates backend is unavailable
       if (data.success === false && data.message?.includes('temporarily unavailable')) {
         throw new Error('Backend service unavailable')
       }
 
-      // Calculate hasMore if not provided by backend
-      const total = data.total || 0
+      // Get total from multiple possible locations in the response
+      const total = data.data?.total || data.total || data.pagination?.total || 0
       const currentOffset = offset
-      const hasMoreData = data.hasNext !== undefined ? data.hasNext : (currentOffset + limit) < total
       
-      console.log('fetchShuls calculated hasMore:', hasMoreData, 'total:', total, 'currentOffset:', currentOffset, 'limit:', limit)
+      // Check if backend provides hasMore/hasNext, otherwise calculate it
+      let hasMoreData = data.pagination?.hasMore !== undefined 
+        ? data.pagination.hasMore 
+        : data.hasNext !== undefined 
+        ? data.hasNext 
+        : (currentOffset + limit) < total
+      
+      // Fallback: If we got a full page of results but total is 0 or incorrect,
+      // assume there might be more data (similar to shuls page logic)
+      const restaurantsCount = data.data?.restaurants?.length || 0
+      if (total === 0 && restaurantsCount === limit) {
+        hasMoreData = true
+        console.log('Fallback: total is 0 but got full page, assuming hasMore = true')
+      }
+      
+      // Additional fallback: If API says hasMore is false but we got a full page on first load,
+      // override it to true (API might be too conservative)
+      if (!hasMoreData && offset === 0 && restaurantsCount === limit) {
+        hasMoreData = true
+        console.log('Fallback: API says no more but got full first page, overriding hasMore = true')
+      }
+      
+      console.log('fetchRestaurants calculated hasMore:', hasMoreData, 'total:', total, 'currentOffset:', currentOffset, 'limit:', limit)
+      console.log('API response structure:', {
+        'data.total': data.data?.total,
+        'data.total (top level)': data.total,
+        'pagination.total': data.pagination?.total,
+        'pagination.hasMore': data.pagination?.hasMore,
+        'hasNext': data.hasNext,
+        'restaurants count': data.data?.restaurants?.length
+      })
       
       return {
-        shuls: data.synagogues || [],
+        restaurants: data.data?.restaurants || [],
         total,
         hasMore: hasMoreData,
-        limit: data.limit || limit
+        limit: data.pagination?.limit || limit
       }
 
     } catch (error) {
@@ -181,7 +147,7 @@ export default function ShulGrid({
         console.log('Timeout error detected')
         throw new Error('Request timed out - backend may be unreachable')
       }
-      console.error('Error fetching synagogues:', error)
+      console.error('Error fetching restaurants:', error)
       throw error
     }
   }, [])
@@ -195,7 +161,7 @@ export default function ShulGrid({
     }
     
     if (category && category !== 'all') {
-      params.append('denomination', category)
+      params.append('kosher_category', category)
     }
 
     // Add active filters to search parameters
@@ -211,11 +177,18 @@ export default function ShulGrid({
         }
       }
     }
+
+    // Add distance sorting when location is available
+    if (userLocation) {
+      params.set('sortBy', 'distance');
+      params.set('userLat', userLocation.latitude.toString());
+      params.set('userLng', userLocation.longitude.toString());
+    }
     
     return params.toString()
-  }, [searchQuery, category, activeFilters])
+  }, [searchQuery, category, activeFilters, userLocation])
 
-  // Load more items in batches of 24 (increased from 12 for better UX)
+  // Load more items in batches of 24
   const loadMoreItems = useCallback(async () => {
     console.log('loadMoreItems called - loading:', loading, 'hasMore:', hasMore, 'page:', page);
     if (loading || !hasMore) {
@@ -231,24 +204,24 @@ export default function ShulGrid({
         const currentPage = page;
         const offset = currentPage * 24;
         console.log('Loading more items - page:', currentPage, 'offset:', offset);
-        const response = await fetchShuls(24, offset, buildSearchParams());
-        console.log('API response - hasMore:', response.hasMore, 'shuls count:', response.shuls.length);
-        setShuls((prev) => [...prev, ...response.shuls]);
+        const response = await fetchRestaurants(24, offset, buildSearchParams());
+        console.log('API response - hasMore:', response.hasMore, 'restaurants count:', response.restaurants.length);
+        setRestaurants((prev) => [...prev, ...response.restaurants]);
         setHasMore(response.hasMore);
         setPage((prev) => prev + 1);
       } else {
         // Use mock data (fallback or when backend is in error state)
         await new Promise((resolve) => setTimeout(resolve, 1000));
         
-        const newItems: MockShul[] = [];
+        const newItems: MockRestaurant[] = [];
         for (let i = 0; i < 24; i++) {
           const itemIndex = page * 24 + i;
           if (itemIndex < 50) { // Limit mock data to 50 items
-            newItems.push(generateMockShuls(1)[0]);
+            newItems.push(generateMockRestaurants(1)[0]);
           }
         }
         
-        setShuls((prev) => [...prev, ...newItems]);
+        setRestaurants((prev) => [...prev, ...newItems]);
         setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
         setPage((prev) => prev + 1);
       }
@@ -261,34 +234,32 @@ export default function ShulGrid({
       
       // Fall back to mock data
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const newItems: MockShul[] = [];
+      const newItems: MockRestaurant[] = [];
       for (let i = 0; i < 24; i++) {
         const itemIndex = page * 24 + i;
         if (itemIndex < 50) {
-          newItems.push(generateMockShuls(1)[0]);
+          newItems.push(generateMockRestaurants(1)[0]);
         }
       }
       
-      setShuls((prev) => [...prev, ...newItems]);
+      setRestaurants((prev) => [...prev, ...newItems]);
       setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
       setPage((prev) => prev + 1);
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, page, useRealData, backendError, fetchShuls, buildSearchParams]);
+  }, [loading, hasMore, page, useRealData, backendError, fetchRestaurants, buildSearchParams]);
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
-    // Reset and load initial items when category or search changes
-    setShuls([])
+    setRestaurants([])
     setPage(0)
     setHasMore(true)
-    setBackendError(false) // Reset backend error state
-    isRetryingRef.current = false // Reset retry flag
+    setBackendError(false)
+    isRetryingRef.current = false
     
-    // Load initial batch only once
     const loadInitialItems = async () => {
-      if (isRetryingRef.current) return // Prevent multiple simultaneous attempts
+      if (isRetryingRef.current) return
       
       setLoading(true)
       let currentRetryCount = 0
@@ -297,17 +268,17 @@ export default function ShulGrid({
         try {
           if (useRealData && currentRetryCount < 3) {
             // Try real API first
-            const response = await fetchShuls(24, 0, buildSearchParams())
-            console.log('Initial load - API response - hasMore:', response.hasMore, 'shuls count:', response.shuls.length);
-            setShuls(response.shuls)
+            const response = await fetchRestaurants(24, 0, buildSearchParams())
+            console.log('Initial load - API response - hasMore:', response.hasMore, 'restaurants count:', response.restaurants.length);
+            setRestaurants(response.restaurants)
             setHasMore(response.hasMore)
             isRetryingRef.current = false
             setPage(1)
           } else {
             // Use mock data (fallback or when useRealData is false or max retries reached)
             await new Promise((resolve) => setTimeout(resolve, 1000))
-            const mockItems = generateMockShuls(24)
-            setShuls(mockItems)
+            const mockItems = generateMockRestaurants(24)
+            setRestaurants(mockItems)
             setHasMore(true)
             setPage(1)
             
@@ -331,8 +302,8 @@ export default function ShulGrid({
             console.log('Timeout error detected, switching to mock data after 2 attempts')
             setBackendError(true)
             
-            const mockItems = generateMockShuls(24)
-            setShuls(mockItems)
+            const mockItems = generateMockRestaurants(24)
+            setRestaurants(mockItems)
             setHasMore(true)
             setPage(1)
             return
@@ -350,8 +321,8 @@ export default function ShulGrid({
             console.log('Backend unreachable after 3 attempts, switching to mock data')
             setBackendError(true)
             
-            const mockItems = generateMockShuls(24)
-            setShuls(mockItems)
+            const mockItems = generateMockRestaurants(24)
+            setRestaurants(mockItems)
             setHasMore(true)
             setPage(1)
           }
@@ -363,7 +334,7 @@ export default function ShulGrid({
     }
     
     loadInitialItems()
-  }, [category, searchQuery, useRealData, buildSearchParams, fetchShuls, activeFilters]) // Added activeFilters to dependencies
+  }, [category, searchQuery, useRealData, buildSearchParams, fetchRestaurants, activeFilters])
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
@@ -383,69 +354,31 @@ export default function ShulGrid({
     return () => container.removeEventListener("scroll", handleScroll)
   }, [loadMoreItems, scrollContainerRef])
 
-  // Transform real shul data to match our ShulCard interface
-  const transformRealShul = useCallback((shul: RealShul) => {
-    // Enhanced rating logic with better fallbacks
-    const rating = shul.rating || shul.star_rating || shul.google_rating
-    const _ratingText = rating && typeof rating === 'number' ? rating.toFixed(1) : undefined // TODO: Use rating text
-    
-    // Distance logic — compute from user location if available; fall back to API string
+  // Transform restaurant data for UnifiedCard
+  const transformRestaurant = useCallback((restaurant: LightRestaurant) => {
+    // Calculate distance if user location is available
     let distanceText = ''
-    if (userLocation && (shul.latitude !== null) && (shul.longitude !== null)) {
-      const latNum = typeof shul.latitude === 'number' ? shul.latitude : parseFloat(String(shul.latitude))
-      const lngNum = typeof shul.longitude === 'number' ? shul.longitude : parseFloat(String(shul.longitude))
-      if (!Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
-        const km = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          latNum,
-          lngNum
-        )
-        distanceText = formatDistance(km)
-      }
-    } else if (shul.distance && typeof shul.distance === 'string' && shul.distance.trim() !== '') {
-      distanceText = shul.distance
+    if (userLocation && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        restaurant.latitude,
+        restaurant.longitude
+      )
+      distanceText = formatDistance(distance)
     }
-    
-    // Shul type as subtitle - use denomination if shul_type is not available
-    const _shulType = (shul.shul_type && typeof shul.shul_type === 'string' && shul.shul_type.trim() !== '') 
-      ? shul.shul_type 
-      : (shul.denomination && typeof shul.denomination === 'string' && shul.denomination.trim() !== '' ? shul.denomination : '') // TODO: Use shul type
-    
-    // Create a meaningful description
-    const denomination = shul.denomination && typeof shul.denomination === 'string' ? shul.denomination : 'Jewish'
-    const city = shul.city && typeof shul.city === 'string' ? shul.city : 'Florida'
-    const _description = shul.description && typeof shul.description === 'string' ? shul.description : `${denomination} synagogue in ${city}` // TODO: Use description
-    
+
     return {
-      id: String(shul.id),
-      name: shul.name && typeof shul.name === 'string' ? shul.name : 'Unnamed Synagogue',
-      denomination: shul.denomination || shul.shul_type || 'Jewish',
-      hechsher: shul.kosher_certification ? [shul.kosher_certification] : [],
-      neighborhood: shul.city,
-      city: shul.city,
-      state: shul.state,
-      services: shul.tags || [],
-      rating: typeof rating === 'number' ? rating : undefined,
-      review_count: typeof shul.review_count === 'number' ? shul.review_count : 0,
-      distance: distanceText ? parseFloat(distanceText.replace(/[^\d.]/g, '')) : undefined,
-      is_open_now: shul.is_active,
-      images: shul.image_url ? [{ url: shul.image_url, is_hero: true }] : shul.logo_url ? [{ url: shul.logo_url, is_hero: true }] : [],
-      features: shul.tags || [],
-      contact: {
-        phone: shul.phone_number,
-        email: shul.email,
-        website: shul.website
-      }
+      ...restaurant,
+      distance: distanceText
     }
   }, [userLocation])
 
-  // Filter shuls based on category and search
-  const filteredShuls = shuls.filter(shul => {
+  // Filter restaurants based on category and search
+  const filteredRestaurants = restaurants.filter(restaurant => {
     // Category filter
     if (category !== "all") {
-      const shulDenomination = useRealData ? (shul as RealShul).denomination : shul.denomination
-      if (shulDenomination?.toLowerCase() !== category.toLowerCase()) {
+      if (restaurant.kosher_category?.toLowerCase() !== category.toLowerCase()) {
         return false
       }
     }
@@ -453,18 +386,11 @@ export default function ShulGrid({
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      const shulName = useRealData ? (shul as RealShul).name : shul.name
-      const shulCity = useRealData ? (shul as RealShul).city : shul.city
-      const shulState = useRealData ? (shul as RealShul).state : shul.state
-      const shulDenomination = useRealData ? (shul as RealShul).denomination : shul.denomination
-      const shulTags = useRealData ? (shul as RealShul).tags : shul.services
-      
       return (
-        shulName?.toLowerCase().includes(query) ||
-        shulCity?.toLowerCase().includes(query) ||
-        shulState?.toLowerCase().includes(query) ||
-        shulDenomination?.toLowerCase().includes(query) ||
-        shulTags?.some((tag: string) => tag.toLowerCase().includes(query))
+        restaurant.name?.toLowerCase().includes(query) ||
+        restaurant.address?.toLowerCase().includes(query) ||
+        restaurant.kosher_category?.toLowerCase().includes(query) ||
+        restaurant.cuisine?.toLowerCase().includes(query)
       )
     }
 
@@ -472,16 +398,26 @@ export default function ShulGrid({
   })
 
   // Handle card click
-  const handleCardClick = (shul: any) => {
-    console.log("Shul clicked:", shul)
-    // TODO: Navigate to shul detail page
+  const handleCardClick = (restaurant: LightRestaurant) => {
+    if (onCardClick) {
+      onCardClick(restaurant)
+    } else {
+      // Default navigation
+      window.location.href = `/eatery/${eaterySlug(restaurant.name, restaurant.id)}`
+    }
   }
 
-  if (filteredShuls.length === 0 && !loading) {
+  // Memoize the toFixedRating function
+  const toFixedRating = useCallback((val: number | string | undefined) => {
+    const n = typeof val === 'number' ? val : Number.parseFloat(String(val ?? ''))
+    return Number.isFinite(n) ? n.toFixed(1) : ''
+  }, [])
+
+  if (filteredRestaurants.length === 0 && !loading) {
     return (
       <div className="text-center py-12">
         <Search className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No shuls found</h3>
+        <h3 className="mt-2 text-sm font-medium text-gray-900">No restaurants found</h3>
         <p className="mt-1 text-sm text-gray-500">
           Try adjusting your search or filter criteria.
         </p>
@@ -505,26 +441,41 @@ export default function ShulGrid({
                 Backend Service Unavailable
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                <p>Showing sample data. Real synagogue data will appear when the backend is accessible.</p>
+                <p>Restaurant service is temporarily unavailable. Please try again later.</p>
               </div>
             </div>
           </div>
         </div>
       )}
       
-      {/* Grid Layout - Exactly matching dynamic-card-ts */}
+      {/* Grid Layout - Using ShulGrid's simple Tailwind approach */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {filteredShuls.map((shul, index) => (
-          <div key={`shul-${shul.id}-${index}`}>
-            <ShulCard
-              shul={useRealData ? transformRealShul(shul as RealShul) : shul}
-              showDistance={showDistance}
-              showRating={showRating}
-              showServices={showServices}
-              onClick={() => handleCardClick(shul)}
-            />
-          </div>
-        ))}
+        {filteredRestaurants.map((restaurant, index) => {
+          const transformedRestaurant = transformRestaurant(restaurant)
+          return (
+            <div key={`restaurant-${restaurant.id}-${index}`}>
+              <UnifiedCard
+                data={{
+                  id: String(restaurant.id),
+                  imageUrl: restaurant.image_url,
+                  title: restaurant.name,
+                  badge: toFixedRating(restaurant.google_rating),
+                  subtitle: restaurant.price_range || '',
+                  additionalText: transformedRestaurant.distance,
+                  showHeart: true,
+                  isLiked: false,
+                  kosherCategory: restaurant.kosher_category || restaurant.cuisine || '',
+                  city: restaurant.address,
+                  imageTag: restaurant.kosher_category || '',
+                }}
+                showStarInBadge={true}
+                onCardClick={() => handleCardClick(restaurant)}
+                priority={false}
+                className="w-full h-full"
+              />
+            </div>
+          )
+        })}
       </div>
 
       {/* Loading State */}
@@ -535,21 +486,21 @@ export default function ShulGrid({
       )}
 
       {/* Load More Button */}
-      {hasMore && !loading && filteredShuls.length > 0 && (
+      {hasMore && !loading && filteredRestaurants.length > 0 && (
         <div className="flex justify-center py-8">
           <button
             onClick={loadMoreItems}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
-            Load More Shuls
+            Load More Restaurants
           </button>
         </div>
       )}
 
       {/* End of Results */}
-      {!hasMore && filteredShuls.length > 0 && (
+      {!hasMore && filteredRestaurants.length > 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          Showing all {filteredShuls.length} shuls
+          Showing all {filteredRestaurants.length} restaurants
         </div>
       )}
     </div>
