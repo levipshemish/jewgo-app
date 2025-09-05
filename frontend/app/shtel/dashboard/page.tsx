@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/layout';
-import { DashboardBottomNavigation } from '@/components/navigation/ui';
+import { BottomNavigation } from '@/components/core';
 
 import { useAuth } from '@/hooks/useAuth';
 import { appLogger } from '@/lib/utils/logger';
@@ -362,7 +362,7 @@ function ShtelDashboardContent() {
       </div>
 
       {/* Bottom Navigation */}
-      <DashboardBottomNavigation activeTab={activeTab} />
+      <BottomNavigation size="compact" showLabels="active-only" />
     </div>
   );
 }

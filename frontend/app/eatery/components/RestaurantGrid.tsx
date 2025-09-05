@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import UnifiedCard from '@/components/ui/UnifiedCard';
+import { Card } from '@/components/core';
 import { formatDistance } from '@/lib/utils/distance';
 import type { LightRestaurant } from '../types';
 
@@ -45,7 +45,7 @@ export default function RestaurantGrid({ items, loading, toFixedRating, onCardCl
           className="w-full" 
           role="gridcell"
         >
-          <UnifiedCard
+          <Card
             data={{
               id: String(restaurant.id),
               imageUrl: restaurant.image_url,
