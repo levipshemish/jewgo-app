@@ -1,7 +1,7 @@
 'use client';
 
 import { Map, Plus, SlidersHorizontal } from 'lucide-react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 interface ActionButtonsProps {
@@ -13,7 +13,16 @@ interface ActionButtonsProps {
 
 export default function ActionButtons({
   onShowFilters, onShowMap, onAddEatery, addButtonText = "Add Eatery" }: ActionButtonsProps) {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleMapClick = () => {
     onShowMap();
@@ -53,7 +62,7 @@ export default function ActionButtons({
               WebkitTapHighlightColor: 'transparent',
               touchAction: 'manipulation',
               cursor: 'pointer',
-              ...(isMobile && {
+              ...(mounted && isMobile && {
                 transition: 'all 0.1s ease-out'
               })
             }}
@@ -73,7 +82,7 @@ export default function ActionButtons({
               WebkitTapHighlightColor: 'transparent',
               touchAction: 'manipulation',
               cursor: 'pointer',
-              ...(isMobile && {
+              ...(mounted && isMobile && {
                 transition: 'all 0.1s ease-out'
               })
             }}
@@ -93,7 +102,7 @@ export default function ActionButtons({
               WebkitTapHighlightColor: 'transparent',
               touchAction: 'manipulation',
               cursor: 'pointer',
-              ...(isMobile && {
+              ...(mounted && isMobile && {
                 transition: 'all 0.1s ease-out'
               })
             }}
