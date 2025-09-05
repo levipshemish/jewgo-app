@@ -8,7 +8,7 @@ import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
 import { useLocation } from "@/lib/contexts/LocationContext"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
-import UnifiedCard from "@/components/ui/UnifiedCard"
+import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
 import { generateMockShtetl, type MockShtetl } from "@/lib/mockData/shtetl"
 
@@ -319,7 +319,7 @@ export default function ShtelPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {listings.map((listing, index) => (
               <div key={`shtel-${listing.id}-${index}`}>
-              <UnifiedCard
+              <Card
                   data={transformListingToCardData(listing)}
                 variant="default"
                   showStarInBadge={true}

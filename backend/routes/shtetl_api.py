@@ -11,24 +11,23 @@ from flask import Blueprint, request
 from utils.logging_config import get_logger
 from utils.response_helpers import success_response, error_response
 from utils.feature_flags_v4 import require_api_v4_flag
-# Gate Supabase auth: fall back to PostgreSQL auth if Supabase utils are unavailable
-try:
-    from utils.supabase_auth import require_supabase_auth, get_current_supabase_user  # type: ignore
-except Exception:  # pragma: no cover - fallback path
-    from utils.rbac import require_auth as require_supabase_auth  # reuse PostgreSQL auth
-    def get_current_supabase_user():  # minimal shim
-        try:
-            from flask import g
-            user = getattr(g, 'user', None)
-            if not user:
-                return None
-            return {
-                'id': g.user_id,
-                'email': user.get('email'),
-                'app_metadata': {'provider': 'postgres'},
-            }
-        except Exception:
+# RBAC auth: use PostgreSQL auth and a small user shim
+from utils.rbac import require_auth as require_rbac_auth
+
+
+def get_current_user():
+    try:
+        from flask import g
+        user = getattr(g, 'user', None)
+        if not user:
             return None
+        return {
+            'id': g.user_id,
+            'email': user.get('email'),
+            'app_metadata': {'provider': 'postgres'},
+        }
+    except Exception:
+        return None
 from utils.security import require_admin, require_admin_auth
 from utils.limiter import limiter
 
@@ -202,11 +201,11 @@ def get_shtetl_listing(listing_id):
 @shtetl_bp.route("/listings", methods=["POST"])
 @require_api_v4_flag("shtetl")
 @limiter.limit("120/minute")
-@require_supabase_auth
+@require_rbac_auth
 def create_shtetl_listing():
     """Create a new shtetl marketplace listing."""
     try:
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         data = request.get_json()
@@ -328,12 +327,12 @@ def get_shtetl_stats():
 @shtetl_bp.route("/stores", methods=["POST"])
 @require_api_v4_flag("shtetl")
 @limiter.limit("120/minute")
-@require_supabase_auth
+@require_rbac_auth
 def create_store():
     """Create a new store."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Get request data
@@ -394,11 +393,11 @@ def create_store():
 
 @shtetl_bp.route("/stores/my-store", methods=["GET"])
 @require_api_v4_flag("shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_my_store():
     """Get the current user's store."""
     try:
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         service = create_shtetl_store_service()
@@ -433,11 +432,11 @@ def get_store(store_id):
 @shtetl_bp.route("/stores/<store_id>", methods=["PUT"])
 @require_api_v4_flag("shtetl")
 @limiter.limit("120/minute")
-@require_supabase_auth
+@require_rbac_auth
 def update_store(store_id):
     """Update a store."""
     try:
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         data = request.get_json()
@@ -465,11 +464,11 @@ def update_store(store_id):
 @shtetl_bp.route("/stores/<store_id>", methods=["DELETE"])
 @require_api_v4_flag("shtetl")
 @limiter.limit("120/minute")
-@require_supabase_auth
+@require_rbac_auth
 def delete_store(store_id):
     """Delete a store."""
     try:
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         service = create_shtetl_store_service()
@@ -574,11 +573,11 @@ def search_stores():
 
 @shtetl_bp.route("/stores/<store_id>/analytics", methods=["GET"])
 @require_api_v4_flag("shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_store_analytics(store_id):
     """Get store analytics."""
     try:
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         service = create_shtetl_store_service()
@@ -629,11 +628,11 @@ def get_store_products(store_id):
 
 @shtetl_bp.route("/stores/<store_id>/orders", methods=["GET"])
 @require_api_v4_flag("shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_store_orders(store_id):
     """Get orders for a specific store."""
     try:
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         limit = min(int(request.args.get("limit", 50)), 100)
@@ -661,11 +660,11 @@ def get_store_orders(store_id):
 
 @shtetl_bp.route("/stores/<store_id>/messages", methods=["GET"])
 @require_api_v4_flag("shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_store_messages(store_id):
     """Get messages for a specific store."""
     try:
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         limit = min(int(request.args.get("limit", 50)), 100)

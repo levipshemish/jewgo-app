@@ -8,7 +8,7 @@ import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
 import { useLocation } from "@/lib/contexts/LocationContext"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
-import UnifiedCard from "@/components/ui/UnifiedCard"
+import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
 import { generateMockMikvah, type MockMikvah } from "@/lib/mockData/mikvah"
 
@@ -345,7 +345,7 @@ export default function MikvahPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {mikvah.map((mikvahFacility, index) => (
               <div key={`mikvah-${mikvahFacility.id}-${index}`}>
-                <UnifiedCard
+                <Card
                   data={transformMikvahToCardData(mikvahFacility)}
                   variant="default"
                   showStarInBadge={true}

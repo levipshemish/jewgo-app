@@ -2,7 +2,7 @@
 PostgreSQL-based authentication API endpoints.
 
 This module provides REST API endpoints for user authentication, registration,
-and account management using PostgreSQL instead of Supabase.
+and account management using the PostgreSQL-backed auth system.
 """
 
 from flask import Blueprint, request, jsonify, current_app, make_response, redirect

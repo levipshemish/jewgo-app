@@ -1,18 +1,29 @@
 """
 User API Routes
 This module provides API endpoints for authenticated users to interact with
-the backend. These endpoints require Supabase authentication.
+the backend. These endpoints are not part of the new PostgreSQL auth routes.
 """
 
 from flask import Blueprint, request, jsonify
 from utils.logging_config import get_logger
 from utils.limiter import limiter
-from utils.supabase_auth import (
-    require_user_auth,
-    get_current_user,
-    get_user_id,
-    optional_user_auth,
-)
+from utils.rbac import require_auth as require_user_auth
+from utils.rbac import optional_auth as optional_user_auth
+from flask import g
+
+
+def get_current_user():
+    user = getattr(g, 'user', None)
+    if not user:
+        return None
+    return {
+        'id': getattr(g, 'user_id', None),
+        'email': user.get('email'),
+    }
+
+
+def get_user_id():
+    return getattr(g, 'user_id', None)
 from utils.error_handler import ValidationError, NotFoundError
 from utils.config_manager import config_manager
 

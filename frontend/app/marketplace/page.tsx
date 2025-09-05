@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import { CategoryTabs, ActionButtons, ShulBottomNavigation } from '@/components/navigation/ui';
-import UnifiedCard from '@/components/ui/UnifiedCard';
+import { CategoryTabs } from '@/components/navigation/ui';
+import { ActionButtons } from '@/components/layout';
+import { ShulBottomNavigation } from '@/components/shuls';
+import Card from '@/components/core/cards/Card';
 import { generateMockShtetl, type MockShtetl } from '@/lib/mockData/shtetl';
 
 // Types
@@ -66,29 +68,40 @@ async function fetchMarketplaceListings(limit: number = 50, offset: number = 0):
   }
 }
 
+// Map MockShtetl to MarketplaceListing
+function mapShtetlToMarketplaceListing(shtetl: MockShtetl): MarketplaceListing {
+  return {
+    id: shtetl.id.toString(),
+    title: shtetl.title,
+    description: shtetl.description || '',
+    price_cents: 0, // MockShtetl doesn't have price info
+    currency: 'USD',
+    condition: 'new',
+    category_name: shtetl.category || 'General',
+    city: shtetl.city || '',
+    region: shtetl.state || '',
+    seller_name: 'Community',
+    status: shtetl.is_active ? 'active' : 'inactive',
+    created_at: shtetl.created_at || new Date().toISOString(),
+    updated_at: shtetl.updated_at || new Date().toISOString(),
+    images: shtetl.image_url ? [shtetl.image_url] : [],
+    thumbnail: shtetl.image_url || '',
+    distance: shtetl.distance,
+    distance_miles: shtetl.distance_miles,
+  };
+}
+
 // Map marketplace listing to unified card data
 function mapMarketplaceToListingData(listing: MarketplaceListing) {
   return {
     id: listing.id,
-    name: listing.title,
-    description: listing.description,
-    address: `${listing.city}, ${listing.region}`,
+    title: listing.title,
+    imageUrl: listing.thumbnail || listing.images?.[0] || '/images/default-restaurant.webp',
+    subtitle: listing.description,
+    additionalText: `${listing.city}, ${listing.region}`,
     city: listing.city,
-    state: listing.region,
-    phone: '',
-    website: '',
-    image: listing.thumbnail || listing.images?.[0] || '/images/default-restaurant.webp',
-    rating: 0,
-    reviewCount: 0,
-    distance: listing.distance || '',
-    distanceMiles: listing.distance_miles || 0,
-    isOpen: listing.status === 'active',
-    price: listing.price_cents ? `$${(listing.price_cents / 100).toFixed(2)}` : 'Free',
-    category: listing.category_name,
-    condition: listing.condition,
-    seller: listing.seller_name,
-    createdAt: listing.created_at,
-    updatedAt: listing.updated_at,
+    badge: listing.category_name,
+    kosherCategory: listing.category_name,
   };
 }
 
@@ -120,7 +133,7 @@ export default function MarketplacePage() {
       
       // Fall back to mock data
       const mockListings = generateMockShtetl(24);
-      setListings(mockListings);
+      setListings(mockListings.map(mapShtetlToMarketplaceListing));
     } finally {
       setLoading(false);
     }
@@ -244,21 +257,16 @@ export default function MarketplacePage() {
 
             <div className="grid grid-cols-2 gap-4">
               {listings.map((listing) => (
-                <UnifiedCard
+                <Card
                   key={listing.id}
                   data={mapMarketplaceToListingData(listing)}
-                  onClick={() => router.push(`/marketplace/${listing.id}`)}
-                  showDistance={true}
-                  showRating={false}
-                  showPrice={true}
-                  showCategory={true}
-                  showCondition={true}
-                  showSeller={true}
+                  onCardClick={() => router.push(`/marketplace/${listing.id}`)}
                 />
               ))}
             </div>
           </div>
         )}
+      </div>
 
       <ShulBottomNavigation />
 
@@ -277,7 +285,7 @@ export default function MarketplacePage() {
                   <option value="home">Home & Garden</option>
                   <option value="judaica">Judaica</option>
                 </select>
-          </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Condition</label>
                 <select className="w-full p-2 border rounded">
@@ -287,7 +295,7 @@ export default function MarketplacePage() {
                   <option value="used_good">Good</option>
                   <option value="used_fair">Fair</option>
                 </select>
-        </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Price Range</label>
                 <div className="flex space-x-2">
@@ -317,7 +325,7 @@ export default function MarketplacePage() {
               >
                 Apply
               </button>
-        </div>
+            </div>
           </div>
         </div>
       )}

@@ -8,7 +8,7 @@ import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
 import { useLocation } from "@/lib/contexts/LocationContext"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
-import UnifiedCard from "@/components/ui/UnifiedCard"
+import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
 import { generateMockStores, type MockStore } from "@/lib/mockData/stores"
 
@@ -334,7 +334,7 @@ export default function StoresPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {stores.map((store, index) => (
               <div key={`store-${store.id}-${index}`}>
-                <UnifiedCard
+                <Card
                   data={transformStoreToCardData(store)}
                   variant="default"
                   showStarInBadge={true}

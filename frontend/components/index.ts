@@ -1,10 +1,15 @@
-// Barrel file for components exports
-// This provides stable entry points for commonly used components
+// Component Library Index
+// This file exports all components with the new unified structure
 
-// UI Components
+// Core Components (Primary)
+export * from './core';
+
+// Domain-Specific Wrappers
+export * from './shuls';
+
+// Legacy Components (Deprecated - use core components instead)
 export * from './ui/Loading';
 export * from './ui/LoadingSpinner';
-export * from './ui/UnifiedCard';
 export * from './ui/ErrorBoundary';
 export * from './ui/VirtualList';
 export * from './ui/FontLoader';
@@ -31,11 +36,9 @@ export * from './map/MapLegend';
 export * from './layout/MobileSearchHeader';
 export * from './layout/MobileActionButtons';
 
-// Auth Components
-// export * from './auth/index'; // Empty file, skipping for now
-
 // Newsletter Components
 export * from './newsletter/NewsletterSignup';
 
 // Marketplace Components
-// MarketplaceListingCard has been deleted - use EnhancedMarketplaceCard instead
+// Note: EnhancedMarketplaceCard and related components are still available
+// but consider migrating to core Card component for consistency

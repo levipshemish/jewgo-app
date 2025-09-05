@@ -14,7 +14,7 @@ import type {
   MarketplaceStats as _MarketplaceStats,
 } from "@/lib/types/marketplace"
 
-import EnhancedMarketplaceGrid from "./EnhancedMarketplaceGrid"
+import EnhancedMarketplaceGrid from "../archive/grids/EnhancedMarketplaceGrid"
 
 import MarketplaceHeader from "./MarketplaceHeader"
 import CategoryFilter from "./CategoryFilter"

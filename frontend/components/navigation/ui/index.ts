@@ -1,15 +1,16 @@
-export { default as BottomNavigation } from './BottomNavigation';
-export { default as DashboardBottomNavigation } from './DashboardBottomNavigation';
-export { default as CategoryTabs } from './CategoryTabs';
-export { default as MobileCategoryTabs } from './MobileCategoryTabs';
-export { default as SubNav } from './SubNav';
+// Navigation Components Index
+// Note: Most components have been moved to core/navigation/ and archived components moved to archive/
 
-// Enhanced components
-export { default as EnhancedBottomNavigation } from './EnhancedBottomNavigation';
+// Core navigation components (use these instead)
+export { default as CategoryTabs } from '../../core/navigation/CategoryTabs';
+export { default as BottomNavigation } from '../../core/navigation/BottomNavigation';
+
+// Remaining navigation components
+export { default as SubNav } from './SubNav';
 
 // Export shared utilities and hooks
 export * from './shared';
 export * from './hooks';
 
 // Export CSS module
-export { default as NavigationStyles } from './Navigation.module.css'; 
+export { default as NavigationStyles } from './Navigation.module.css';

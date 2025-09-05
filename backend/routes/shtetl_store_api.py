@@ -10,24 +10,23 @@ from flask import Blueprint, request
 from utils.logging_config import get_logger
 from utils.response_helpers import success_response, error_response, not_found_response
 from utils.feature_flags_v4 import require_api_v4_flag
-# Gate Supabase auth: fall back to PostgreSQL auth if Supabase utils are unavailable
-try:
-    from utils.supabase_auth import require_supabase_auth, get_current_supabase_user  # type: ignore
-except Exception:  # pragma: no cover - fallback path
-    from utils.rbac import require_auth as require_supabase_auth  # reuse PostgreSQL auth
-    def get_current_supabase_user():  # minimal shim
-        try:
-            from flask import g
-            user = getattr(g, 'user', None)
-            if not user:
-                return None
-            return {
-                'id': g.user_id,
-                'email': user.get('email'),
-                'app_metadata': {'provider': 'postgres'},
-            }
-        except Exception:
+# RBAC auth: use PostgreSQL auth and a small user shim
+from utils.rbac import require_auth as require_rbac_auth
+
+
+def get_current_user():
+    try:
+        from flask import g
+        user = getattr(g, 'user', None)
+        if not user:
             return None
+        return {
+            'id': g.user_id,
+            'email': user.get('email'),
+            'app_metadata': {'provider': 'postgres'},
+        }
+    except Exception:
+        return None
 from utils.security import require_admin as require_admin_auth
 from utils.limiter import limiter
 
@@ -75,12 +74,12 @@ def create_shtetl_store_service():
 @shtetl_store_bp.route("/", methods=["POST"])
 @require_api_v4_flag("api_v4_shtetl")
 @limiter.limit("120/minute")
-@require_supabase_auth
+@require_rbac_auth
 def create_store():
     """Create a new store."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Get request data
@@ -144,12 +143,12 @@ def create_store():
 
 @shtetl_store_bp.route("/my-store", methods=["GET"])
 @require_api_v4_flag("api_v4_shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_my_store():
     """Get current user's store."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Create service instance
@@ -270,12 +269,12 @@ def get_store(store_id):
 @shtetl_store_bp.route("/<store_id>", methods=["PUT"])
 @require_api_v4_flag("api_v4_shtetl")
 @limiter.limit("120/minute")
-@require_supabase_auth
+@require_rbac_auth
 def update_store(store_id):
     """Update store information."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Get request data
@@ -306,12 +305,12 @@ def update_store(store_id):
 @shtetl_store_bp.route("/<store_id>", methods=["DELETE"])
 @require_api_v4_flag("api_v4_shtetl")
 @limiter.limit("120/minute")
-@require_supabase_auth
+@require_rbac_auth
 def delete_store(store_id):
     """Delete store."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Create service instance
@@ -464,12 +463,12 @@ def search_stores():
 
 @shtetl_store_bp.route("/<store_id>/analytics", methods=["GET"])
 @require_api_v4_flag("api_v4_shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_store_analytics(store_id):
     """Get store analytics."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Extract query parameters
@@ -521,12 +520,12 @@ def get_store_analytics(store_id):
 
 @shtetl_store_bp.route("/<store_id>/products", methods=["GET"])
 @require_api_v4_flag("api_v4_shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_store_products(store_id):
     """Get products for a store."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Extract query parameters
@@ -560,12 +559,12 @@ def get_store_products(store_id):
 
 @shtetl_store_bp.route("/<store_id>/orders", methods=["GET"])
 @require_api_v4_flag("api_v4_shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_store_orders(store_id):
     """Get orders for a store."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Extract query parameters
@@ -594,12 +593,12 @@ def get_store_orders(store_id):
 
 @shtetl_store_bp.route("/<store_id>/messages", methods=["GET"])
 @require_api_v4_flag("api_v4_shtetl")
-@require_supabase_auth
+@require_rbac_auth
 def get_store_messages(store_id):
     """Get messages for a store."""
     try:
         # Get current user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Extract query parameters
@@ -727,7 +726,7 @@ def admin_approve_store(store_id):
     """Admin: Approve a store."""
     try:
         # Get current admin user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Create service instance
@@ -758,7 +757,7 @@ def admin_suspend_store(store_id):
             data.get("reason", "No reason provided") if data else "No reason provided"
         )
         # Get current admin user
-        current_user = get_current_supabase_user()
+        current_user = get_current_user()
         if not current_user:
             return error_response("Authentication required", 401)
         # Create service instance

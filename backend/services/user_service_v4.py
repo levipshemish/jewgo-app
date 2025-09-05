@@ -323,7 +323,7 @@ class UserServiceV4(BaseService):
                     f"Invalid role. Must be one of: {', '.join(allowed_roles)}"
                 )
 
-            # Call database manager to assign role via Supabase RPC
+            # Assign role using RBAC-backed database operations
             result = self.db_manager.assign_admin_role(
                 target_user_id=target_user_id,
                 role=role,
@@ -376,7 +376,7 @@ class UserServiceV4(BaseService):
         """
         self.log_operation("revoke_user_role")
         try:
-            # Call database manager to revoke role via Supabase RPC
+            # Revoke role using RBAC-backed database operations
             result = self.db_manager.remove_admin_role(
                 target_user_id=target_user_id,
                 role=role,

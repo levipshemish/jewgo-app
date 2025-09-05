@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MarketplaceListing } from '@/lib/types/marketplace';
-import EnhancedMarketplaceGrid from '@/components/marketplace/EnhancedMarketplaceGrid';
+import EnhancedMarketplaceGrid from '@/components/archive/grids/EnhancedMarketplaceGrid';
 
 // Sample data matching the marketplace theme
 const sampleListings: MarketplaceListing[] = [

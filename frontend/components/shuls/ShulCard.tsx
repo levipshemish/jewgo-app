@@ -1,5 +1,5 @@
 "use client"
-import UnifiedCard from "@/components/ui/UnifiedCard"
+import Card, { CardData } from "@/components/core/cards/Card"
 
 // Type definitions for shul data
 export interface Shul {
@@ -48,8 +48,8 @@ export default function ShulCard({
   showServices = true,
   onClick 
 }: ShulCardProps) {
-  // Transform shul data to match UnifiedCard interface exactly like eatery page
-  const cardData = {
+  // Transform shul data to match Card interface
+  const cardData: CardData = {
     id: String(shul.id),
     imageUrl: shul.images?.[0]?.url || "/shul-placeholder.jpg",
     title: shul.name,
@@ -96,7 +96,7 @@ export default function ShulCard({
     return ""
   }
 
-  const handleCardClick = (data: any) => {
+  const handleCardClick = (data: CardData) => {
     console.log("Shul card clicked:", data)
     // Navigate to ID-based shul detail page
     if (typeof window !== 'undefined') {
@@ -107,7 +107,7 @@ export default function ShulCard({
 
   return (
     <div className="w-full" role="gridcell">
-      <UnifiedCard
+      <Card
         data={cardData}
         variant="default"
         showStarInBadge={true}

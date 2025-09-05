@@ -1,9 +1,9 @@
 """
-PostgreSQL-based authentication manager to replace Supabase.
+PostgreSQL-based authentication manager.
 
-This module provides comprehensive authentication services using PostgreSQL
-instead of external services like Supabase. It includes user management,
-JWT token handling, session management, and role-based access control.
+This module provides comprehensive authentication services using PostgreSQL.
+It includes user management, JWT token handling, session management, and
+role-based access control.
 """
 
 import os
