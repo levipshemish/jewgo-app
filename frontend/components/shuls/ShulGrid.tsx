@@ -101,7 +101,7 @@ export default function ShulGrid({
   const isRetryingRef = useRef(false) // Prevent multiple simultaneous retry attempts
 
   // Real API function for synagogues with offset-based pagination for infinite scroll
-  const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 10000) => {
+  const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
       // Build API URL with parameters
       const apiUrl = new URL('/api/synagogues', window.location.origin)
@@ -117,9 +117,12 @@ export default function ShulGrid({
         })
       }
 
-      // Add timeout to fetch
+      // Add timeout to fetch (shorter than API timeout to fail fast)
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+        console.log('Frontend timeout - aborting request')
+      }, timeoutMs)
 
       const response = await fetch(apiUrl.toString(), {
         signal: controller.signal,
@@ -156,6 +159,11 @@ export default function ShulGrid({
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request aborted due to timeout')
+        throw new Error('Request timed out - backend may be unreachable')
+      }
+      if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('TimeoutError'))) {
+        console.log('Timeout error detected')
         throw new Error('Request timed out - backend may be unreachable')
       }
       console.error('Error fetching synagogues:', error)
@@ -275,11 +283,30 @@ export default function ShulGrid({
           console.error('Error loading initial items:', error)
           currentRetryCount++
           
+          // Check if it's a timeout error - fail faster for timeouts
+          const isTimeoutError = error instanceof Error && 
+            (error.message.includes('timeout') || 
+             error.message.includes('timed out') || 
+             error.message.includes('unreachable'))
+          
+          if (isTimeoutError && currentRetryCount >= 2) {
+            // Fail faster for timeout errors - only retry once
+            console.log('Timeout error detected, switching to mock data after 2 attempts')
+            setBackendError(true)
+            
+            const mockItems = generateMockShuls(6)
+            setShuls(mockItems)
+            setHasMore(true)
+            setPage(1)
+            return
+          }
+          
           if (currentRetryCount < 3) {
-            // Retry after a delay
+            // Retry after a delay (shorter for timeout errors)
+            const delay = isTimeoutError ? 1000 : 2000
             setTimeout(() => {
               attemptFetch()
-            }, 2000)
+            }, delay)
             return
           } else {
             // Max retries reached, fall back to mock data

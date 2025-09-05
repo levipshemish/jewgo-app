@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         // Add timeout and better error handling
-        signal: AbortSignal.timeout(10000), // 10 second timeout
+        signal: AbortSignal.timeout(8000), // 8 second timeout
       });
     } catch (fetchError) {
       console.error('Fetch error:', fetchError);
@@ -107,13 +107,19 @@ export async function GET(request: NextRequest) {
          fetchError.message.includes('self-signed certificate') ||
          (fetchError as any).cause?.code === 'DEPTH_ZERO_SELF_SIGNED_CERT');
       
+      const isTimeoutError = fetchError instanceof Error && 
+        (fetchError.name === 'TimeoutError' ||
+         fetchError.name === 'AbortError' ||
+         fetchError.message.toLowerCase().includes('timeout') ||
+         fetchError.message.toLowerCase().includes('aborted'));
+      
       const isNetworkError = fetchError instanceof Error && 
         (fetchError.name === 'AbortError' ||
          fetchError.message.toLowerCase().includes('fetch') ||
          fetchError.message.toLowerCase().includes('network') ||
          fetchError.message.toLowerCase().includes('timeout'));
       
-      if (isSSLError || isNetworkError) {
+      if (isSSLError || isNetworkError || isTimeoutError) {
         // Return fallback response for SSL/network issues
         const _currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit); // TODO: Use offset in response
         const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
