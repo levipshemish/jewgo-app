@@ -35,6 +35,10 @@ This document summarizes all the changes made to fix the webhook endpoint regist
    - Updated `REDIS_URL` to use cloud Redis instance
    - Updated all Redis environment variables with correct credentials
    - Added `GITHUB_WEBHOOK_SECRET` for webhook signature verification
+   - Added `SENTRY_DSN` for error monitoring and logging
+   - Added `FLASK_ENV`, `FLASK_SECRET_KEY`, and `SECRET_KEY` for Flask configuration
+   - Added `JWT_ACCESS_TOKEN_EXPIRES` and `JWT_REFRESH_TOKEN_EXPIRES` for JWT configuration
+   - Added `SUPABASE_SERVICE_ROLE_KEY` for Supabase integration
 
 7. **`deploy.sh`**
    - Created deployment script for automated git pull and docker-compose operations
@@ -65,6 +69,16 @@ This document summarizes all the changes made to fix the webhook endpoint regist
 - Updated `wsgi.py` to use `app_factory_full.py`
 - Fixed `health_bp` import issue
 - Ensured proper tuple unpacking for app creation
+
+### 4. Missing Environment Variables
+**Problem**: Container startup was showing warnings about missing environment variables.
+
+**Solution**:
+- Added `SENTRY_DSN` for error monitoring and logging
+- Added `FLASK_ENV`, `FLASK_SECRET_KEY`, and `SECRET_KEY` for Flask configuration
+- Added `JWT_ACCESS_TOKEN_EXPIRES` and `JWT_REFRESH_TOKEN_EXPIRES` for JWT configuration
+- Added `SUPABASE_SERVICE_ROLE_KEY` for Supabase integration
+- Added additional Redis configuration variables (`REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`, `REDIS_USERNAME`)
 
 ## Current Status
 
