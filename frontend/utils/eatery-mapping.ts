@@ -199,16 +199,46 @@ export function mapEateryToListingData(
     // Additional sections
     address: eatery.address,
     description: eatery.short_description,
-                    reviews: reviews?.map(review => ({
-                  id: review.id?.toString() || review.review_id?.toString() || Math.random().toString(),
-                  user: review.user_name || review.author_name || review.user || 'Anonymous',
-                  rating: review.rating || 0,
-                  comment: review.content || review.text || review.comment || '',
-                  date: review.created_at || review.time || review.date || new Date().toISOString(),
-                  source: review.source || 'user', // 'user' or 'google'
-                  profile_photo_url: review.profile_photo_url || null,
-                  relative_time_description: review.relative_time_description || null
-                })) || [],
+    reviews: (() => {
+      // Handle both external reviews and Google reviews from eatery data
+      const externalReviews = reviews?.map(review => ({
+        id: review.id?.toString() || review.review_id?.toString() || Math.random().toString(),
+        user: review.user_name || review.author_name || review.user || 'Anonymous',
+        rating: review.rating || 0,
+        comment: review.content || review.text || review.comment || '',
+        date: review.created_at || review.time || review.date || new Date().toISOString(),
+        source: review.source || 'user', // 'user' or 'google'
+        profile_photo_url: review.profile_photo_url || null,
+        relative_time_description: review.relative_time_description || null
+      })) || []
+      
+      // Parse Google reviews from eatery.google_reviews if it exists
+      let googleReviews = []
+      if (eatery.google_reviews) {
+        try {
+          const googleReviewsData = typeof eatery.google_reviews === 'string' 
+            ? JSON.parse(eatery.google_reviews) 
+            : eatery.google_reviews
+          
+          if (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)) {
+            googleReviews = googleReviewsData.reviews.map((review: any) => ({
+              id: review.google_review_id?.toString() || Math.random().toString(),
+              user: review.author_name || 'Anonymous',
+              rating: review.rating || 0,
+              comment: review.text || '',
+              date: review.time ? new Date(review.time * 1000).toISOString() : new Date().toISOString(),
+              source: 'google',
+              profile_photo_url: review.profile_photo_url || null,
+              relative_time_description: review.relative_time_description || null
+            }))
+          }
+        } catch (error) {
+          console.error('Error parsing Google reviews:', error)
+        }
+      }
+      
+      return [...externalReviews, ...googleReviews]
+    })(),
                 reviewsPagination: undefined, // Will be set by the page component
                 onLoadMoreReviews: undefined, // Will be set by the page component
                 reviewsLoading: false

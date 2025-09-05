@@ -289,15 +289,22 @@ function EateryIdPageContent() {
           zip_code: restaurantData.zip_code || '',
           phone_number: restaurantData.phone_number || '',
           listing_type: restaurantData.listing_type || 'restaurant',
-          rating: restaurantData.google_rating || restaurantData.rating || 0,
+          rating: restaurantData.google_rating || 0,
           price_range: restaurantData.price_range || '$',
           kosher_type: restaurantData.kosher_category || '',
           kosher_agency: restaurantData.certifying_agency || '',
-          kosher_certification: restaurantData.kosher_certification || '',
+          kosher_certification: (() => {
+            // Map boolean kosher fields to certification string
+            const certifications = []
+            if (restaurantData.is_cholov_yisroel) certifications.push('Cholov Yisroel')
+            if (restaurantData.is_pas_yisroel) certifications.push('Pas Yisroel')
+            return certifications.join(', ') || restaurantData.kosher_certification || ''
+          })(),
           images: (() => {
-            // Ensure we have at least one image for the gallery
+            // Combine all available image sources
             const allImages = [
               ...(restaurantData.images || []),
+              ...(restaurantData.business_images || []),
               restaurantData.image_url
             ].filter(Boolean)
             return allImages.length > 0 ? allImages : ['/modern-product-showcase-with-clean-background.png']
@@ -321,7 +328,7 @@ function EateryIdPageContent() {
           })(),
           contact: {
             phone: restaurantData.phone_number || '',
-            email: restaurantData.email || '', // Note: email field doesn't exist in database model
+            email: restaurantData.business_email || restaurantData.owner_email || '',
             website: restaurantData.website || '',
           },
           location: {
@@ -332,6 +339,7 @@ function EateryIdPageContent() {
             view_count: 1234, // TODO: Get from backend
             share_count: 0, // TODO: Get from backend
           },
+          google_reviews: restaurantData.google_reviews,
           admin_settings: {
             show_order_button: restaurantData.admin_settings?.show_order_button ?? true, // Default to true if not provided
             order_url: restaurantData.admin_settings?.order_url || '',

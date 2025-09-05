@@ -246,6 +246,7 @@ export interface EateryDB {
     google_review_count?: number
     review_count?: number
   }
+  google_reviews?: string | object // Google reviews JSON data
 }
 
 export interface ShulDB {

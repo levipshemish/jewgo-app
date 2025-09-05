@@ -151,11 +151,11 @@ class DatabaseConnectionManager:
         # Optional certificate pinning
         if os.environ.get("PGSSLROOTCERT"):
             connect_args["sslrootcert"] = os.environ.get("PGSSLROOTCERT")
-        # Detect providers that reject startup options (e.g., Neon pooler)
+        # Detect providers that reject startup options (e.g., cloud poolers)
         parsed = urlparse(self.database_url)
         hostname = (parsed.hostname or "").lower()
         is_api_host = "api.jewgo.app" in hostname
-        is_pooler_host = ("pooler" in hostname) or ("neon.tech" in hostname)
+        is_pooler_host = ("pooler" in hostname) or ("aws.neon.tech" in hostname)
         if is_api_host or is_pooler_host:
             connect_args.pop("options", None)
             logger.info(

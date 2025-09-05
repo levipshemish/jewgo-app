@@ -114,7 +114,7 @@ function MikvahPageContent() {
   const [showServices] = useState(true)
   const [activeTab, setActiveTab] = useState<string>("mikvah")
   const [showFilters, setShowFilters] = useState(false)
-  const [mikvah, setMikvah] = useState<Mikvah[]>([])
+  const [mikvah, setMikvah] = useState<MockMikvah[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [backendError, setBackendError] = useState(false) // Track if backend is accessible
@@ -236,7 +236,7 @@ function MikvahPageContent() {
   }, [setFilter, clearFilter, clearAllFilters, activeFilters])
 
   // Transform mikvah data for UnifiedCard
-  const transformMikvahToCardData = (mikvahFacility: Mikvah) => {
+  const transformMikvahToCardData = (mikvahFacility: MockMikvah) => {
     const rating = mikvahFacility.rating || mikvahFacility.star_rating || mikvahFacility.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
     const distanceText = mikvahFacility.distance && mikvahFacility.distance.trim() !== '' ? mikvahFacility.distance : '';
@@ -347,7 +347,7 @@ function MikvahPageContent() {
           
           {/* Grid Layout - Exactly matching EateryGrid and ShulGrid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {mikvah.map((mikvahFacility, index) => (
+            {Array.isArray(mikvah) && mikvah.map((mikvahFacility, index) => (
               <div key={`mikvah-${mikvahFacility.id}-${index}`}>
                 <Card
                   data={transformMikvahToCardData(mikvahFacility)}
@@ -368,7 +368,7 @@ function MikvahPageContent() {
           </div>
         )}
 
-        {mikvah.length === 0 && !loading && (
+        {Array.isArray(mikvah) && mikvah.length === 0 && !loading && (
           <div className="text-center py-10 px-5">
             <div className="text-5xl mb-4">🛁</div>
             <p className="text-lg text-gray-600 mb-2">No mikvah facilities found</p>

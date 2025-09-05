@@ -458,12 +458,12 @@ class EnhancedDatabaseManager:
             sslrootcert = ConfigManager.get_pg_sslrootcert()
             if sslrootcert:
                 connect_args["sslrootcert"] = sslrootcert
-            # Some providers (e.g. Neon pooler) reject startup options like statement_timeout.
+            # Some providers (e.g. cloud poolers) reject startup options like statement_timeout.
             # Detect these hosts and remove unsupported startup options, then set timeouts after connect.
             parsed = urlparse(self.database_url)
             hostname = (parsed.hostname or "").lower()
             is_api_host = "api.jewgo.app" in hostname
-            is_pooler_host = ("pooler" in hostname) or ("neon.tech" in hostname)
+            is_pooler_host = ("pooler" in hostname) or ("aws.neon.tech" in hostname)
             if is_api_host or is_pooler_host:
                 connect_args.pop("options", None)
                 logger.info(

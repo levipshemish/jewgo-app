@@ -186,7 +186,7 @@ class DatabaseConnectionManager:
         @event.listens_for(engine, "connect")
         def set_postgresql_optimizations(dbapi_connection, connection_record):
             """Set PostgreSQL optimizations for better performance.
-            Wrapped in try/except for pooled providers (e.g., Neon) that may reject SETs.
+            Wrapped in try/except for pooled providers that may reject SETs.
             """
             if engine.dialect.name == "postgresql":
                 try:

@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     ForeignKey,
+    ARRAY,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -97,6 +98,52 @@ class Restaurant(Base):
         default="active",
         nullable=False,
     )  # ENUM('active', 'inactive', 'pending', 'closed')
+    # 📊 Google Reviews & Rating
+    google_rating = Column(Float)  # Google rating (1-5)
+    google_review_count = Column(Integer)  # Number of Google reviews
+    
+    # 👤 Owner/Contact Information
+    user_email = Column(String(255))  # User who submitted/owns this listing
+    owner_name = Column(Text)  # Business owner name
+    owner_email = Column(Text)  # Business owner email
+    owner_phone = Column(Text)  # Business owner phone
+    is_owner_submission = Column(Boolean, default=False)  # Whether this was submitted by owner
+    business_email = Column(Text)  # Business email address
+    
+    # 📱 Social Media Links
+    instagram_link = Column(Text)  # Instagram profile URL
+    facebook_link = Column(Text)  # Facebook page URL
+    tiktok_link = Column(Text)  # TikTok profile URL
+    
+    # 🖼️ Business Images
+    business_images = Column(ARRAY(String))  # Array of business image URLs
+    
+    # 📋 Submission & Approval Process
+    submission_status = Column(String(50), default='pending_approval')  # pending_approval, approved, rejected
+    submission_date = Column(DateTime)  # When the submission was made
+    approval_date = Column(DateTime)  # When it was approved
+    approved_by = Column(Text)  # Who approved it
+    rejection_reason = Column(Text)  # Reason for rejection if applicable
+    
+    # 🏢 Business Details
+    business_license = Column(Text)  # Business license number
+    tax_id = Column(Text)  # Tax ID number
+    years_in_business = Column(Integer)  # Years in business
+    seating_capacity = Column(Integer)  # Restaurant seating capacity
+    
+    # 🚚 Service Options
+    delivery_available = Column(Boolean, default=False)  # Offers delivery
+    takeout_available = Column(Boolean, default=False)  # Offers takeout
+    catering_available = Column(Boolean, default=False)  # Offers catering
+    
+    # 📞 Contact Preferences
+    preferred_contact_method = Column(Text)  # Preferred way to contact
+    preferred_contact_time = Column(Text)  # Preferred time to contact
+    contact_notes = Column(Text)  # Additional contact notes
+    
+    # 🗑️ Soft Delete
+    deleted_at = Column(DateTime)  # Soft delete timestamp
+    
     # 🔗 Relationships
     orders = relationship("Order", back_populates="restaurant")
     def __repr__(self):

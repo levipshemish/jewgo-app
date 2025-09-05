@@ -6,13 +6,17 @@ export interface MockMikvah {
   address?: string;
   city?: string;
   state?: string;
-  zip_code?: string;
   phone_number?: string;
   website?: string;
   email?: string;
   mikvah_type?: string;
   mikvah_category?: string;
   business_hours?: string;
+  requires_appointment?: boolean;
+  appointment_phone?: string;
+  appointment_website?: string;
+  walk_in_available?: boolean;
+  advance_booking_days?: number;
   distance?: string;
   distance_miles?: number;
   rating?: number;
@@ -21,12 +25,23 @@ export interface MockMikvah {
   google_rating?: number;
   image_url?: string;
   logo_url?: string;
-  has_parking?: boolean;
+  has_changing_rooms?: boolean;
+  has_shower_facilities?: boolean;
+  has_towels_provided?: boolean;
+  has_soap_provided?: boolean;
+  has_hair_dryers?: boolean;
+  has_private_entrance?: boolean;
   has_disabled_access?: boolean;
-  has_attendant?: boolean;
-  has_private_rooms?: boolean;
-  has_heating?: boolean;
-  has_air_conditioning?: boolean;
+  has_parking?: boolean;
+  rabbinical_supervision?: string;
+  kosher_certification?: string;
+  community_affiliation?: string;
+  religious_authority?: string;
+  fee_amount?: number;
+  fee_currency?: string;
+  accepts_credit_cards?: boolean;
+  accepts_cash?: boolean;
+  accepts_checks?: boolean;
   is_active?: boolean;
   is_verified?: boolean;
   created_at?: string;
@@ -101,13 +116,17 @@ export function generateMockMikvah(count: number): MockMikvah[] {
       address: `${Math.floor(Math.random() * 9999) + 1} Jewish Way`,
       city,
       state,
-      zip_code: `${Math.floor(Math.random() * 90000) + 10000}`,
       phone_number: `(${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
       website: `https://${name.toLowerCase().replace(/\s+/g, '')}.com`,
       email: `info@${name.toLowerCase().replace(/\s+/g, '')}.com`,
       mikvah_type: mikvahType,
       mikvah_category: "Mikvah",
       business_hours: "Sun-Thu: 7AM-10PM, Fri: 7AM-2PM, Sat: 8PM-11PM",
+      requires_appointment: Math.random() > 0.3,
+      appointment_phone: Math.random() > 0.5 ? `(${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}` : undefined,
+      appointment_website: Math.random() > 0.7 ? `https://${name.toLowerCase().replace(/\s+/g, '')}.com/appointments` : undefined,
+      walk_in_available: Math.random() > 0.4,
+      advance_booking_days: Math.floor(Math.random() * 14) + 1,
       distance: `${distance} mi`,
       distance_miles: distance,
       rating,
@@ -116,12 +135,23 @@ export function generateMockMikvah(count: number): MockMikvah[] {
       google_rating: rating,
       image_url: `https://picsum.photos/400/300?random=${id}`,
       logo_url: `https://picsum.photos/100/100?random=${id + 2000}`,
-      has_parking: Math.random() > 0.2,
+      has_changing_rooms: Math.random() > 0.1,
+      has_shower_facilities: Math.random() > 0.1,
+      has_towels_provided: Math.random() > 0.3,
+      has_soap_provided: Math.random() > 0.2,
+      has_hair_dryers: Math.random() > 0.4,
+      has_private_entrance: Math.random() > 0.2,
       has_disabled_access: Math.random() > 0.3,
-      has_attendant: Math.random() > 0.1,
-      has_private_rooms: Math.random() > 0.1,
-      has_heating: Math.random() > 0.1,
-      has_air_conditioning: Math.random() > 0.2,
+      has_parking: Math.random() > 0.2,
+      rabbinical_supervision: Math.random() > 0.1 ? "Local Rabbi" : undefined,
+      kosher_certification: Math.random() > 0.2 ? "OU" : undefined,
+      community_affiliation: Math.random() > 0.3 ? "Local Community" : undefined,
+      religious_authority: Math.random() > 0.2 ? "Orthodox" : undefined,
+      fee_amount: Math.random() > 0.5 ? Math.floor(Math.random() * 50) + 10 : undefined,
+      fee_currency: "USD",
+      accepts_credit_cards: Math.random() > 0.3,
+      accepts_cash: true,
+      accepts_checks: Math.random() > 0.4,
       is_active: true,
       is_verified: Math.random() > 0.1,
       created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
