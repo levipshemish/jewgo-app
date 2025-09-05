@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useCallback, RefObject } from "react"
+import { useState, useEffect, useCallback, useRef, RefObject } from "react"
 import ShulCard from "./ShulCard"
 import { Loader2, Search } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
@@ -99,6 +99,7 @@ export default function ShulGrid({
   const [page, setPage] = useState(0)
   const [backendError, setBackendError] = useState(false) // Track if backend is accessible
   const [retryCount, setRetryCount] = useState(0) // Track retry attempts
+  const isRetryingRef = useRef(false) // Prevent multiple simultaneous retry attempts
 
   // Real API function for synagogues with offset-based pagination for infinite scroll
   const fetchShuls = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 10000) => {
@@ -180,13 +181,13 @@ export default function ShulGrid({
 
   // Load more items in batches of 6 (exactly like dynamic-card-ts)
   const loadMoreItems = useCallback(async () => {
-    if (loading || !hasMore || backendError) return
+    if (loading || !hasMore) return
 
     setLoading(true)
 
     try {
-      if (useRealData && !backendError && retryCount < 3) {
-        // Try real API first (with retry limit)
+      if (useRealData && !backendError) {
+        // Try real API first
         const currentPage = page
         const response = await fetchShuls(6, currentPage * 6, buildSearchParams())
         setShuls((prev) => [...prev, ...response.shuls])
@@ -194,7 +195,7 @@ export default function ShulGrid({
         setPage((prev) => prev + 1)
         setRetryCount(0) // Reset retry count on success
       } else {
-        // Use mock data (fallback or after max retries)
+        // Use mock data (fallback or when backend is in error state)
         await new Promise((resolve) => setTimeout(resolve, 1000))
         
         const newItems: MockShul[] = []
@@ -212,15 +213,17 @@ export default function ShulGrid({
     } catch (error) {
       console.error('Error loading more items:', error)
       
-      // Increment retry count
-      setRetryCount((prev) => prev + 1)
-      
-      // If we've exceeded retry limit, switch to mock data permanently
-      if (retryCount >= 2) {
-        console.log('Backend unreachable after 3 attempts, switching to mock data')
-        setBackendError(true)
-        setRetryCount(0)
-      }
+      // Increment retry count and check if we should switch to mock data
+      setRetryCount((prev) => {
+        const newCount = prev + 1
+        // If we've exceeded retry limit, switch to mock data permanently
+        if (newCount >= 3) {
+          console.log('Backend unreachable after 3 attempts, switching to mock data')
+          setBackendError(true)
+          return 0 // Reset retry count
+        }
+        return newCount
+      })
       
       // Fall back to mock data
       await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -238,7 +241,7 @@ export default function ShulGrid({
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, page, useRealData, backendError, retryCount, fetchShuls, buildSearchParams])
+  }, [loading, hasMore, page, useRealData, backendError, fetchShuls, buildSearchParams])
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
@@ -248,21 +251,23 @@ export default function ShulGrid({
     setHasMore(true)
     setBackendError(false) // Reset backend error state
     setRetryCount(0) // Reset retry count
+    isRetryingRef.current = false // Reset retry flag
     
     // Load initial batch only once
     const loadInitialItems = async () => {
-      if (loading) return
+      if (isRetryingRef.current) return // Prevent multiple simultaneous attempts
       
       setLoading(true)
       try {
-        if (useRealData && !backendError && retryCount < 3) {
+        if (useRealData) {
           // Try real API first
           const response = await fetchShuls(6, 0, buildSearchParams())
           setShuls(response.shuls)
           setHasMore(response.hasMore)
           setRetryCount(0) // Reset retry count on success
+          isRetryingRef.current = false
         } else {
-          // Use mock data (fallback or after max retries)
+          // Use mock data (fallback or when useRealData is false)
           await new Promise((resolve) => setTimeout(resolve, 1000))
           const mockItems = generateMockShuls(6)
           setShuls(mockItems)
@@ -271,8 +276,19 @@ export default function ShulGrid({
         setPage(1)
       } catch (error) {
         console.error('Error loading initial items:', error)
-        // Increment retry count
-        setRetryCount((prev) => prev + 1)
+        
+        // Only retry if we haven't exceeded the limit and aren't already retrying
+        if (!isRetryingRef.current && retryCount < 2) {
+          isRetryingRef.current = true
+          setRetryCount((prev) => prev + 1)
+          
+          // Retry after a delay
+          setTimeout(() => {
+            isRetryingRef.current = false
+            loadInitialItems()
+          }, 2000)
+          return
+        }
         
         // If we've exceeded retry limit, switch to mock data permanently
         if (retryCount >= 2) {
@@ -286,13 +302,14 @@ export default function ShulGrid({
         setShuls(mockItems)
         setHasMore(true)
         setPage(1)
+        isRetryingRef.current = false
       } finally {
         setLoading(false)
       }
     }
     
     loadInitialItems()
-  }, [category, searchQuery, useRealData, backendError, buildSearchParams, fetchShuls, loading, retryCount]) // Include all dependencies
+  }, [category, searchQuery, useRealData, buildSearchParams, fetchShuls, retryCount]) // Added retryCount back but with circuit breaker
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
