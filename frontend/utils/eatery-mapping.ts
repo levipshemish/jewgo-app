@@ -2,13 +2,13 @@ import { EateryDB, UserLocation, ListingData } from "@/types/listing"
 
 // Helper function to calculate distance using Haversine formula
 // This will be replaced by the centralized hook in components
-function calculateDistance(location1: { latitude: number; longitude: number }, location2: { lat: number; lng: number }): number {
+function calculateDistance(location1: { latitude: number; longitude: number }, location2: { latitude: number; longitude: number }): number {
   const R = 3959 // Earth's radius in miles
-  const dLat = (location2.lat - location1.latitude) * Math.PI / 180
-  const dLon = (location2.lng - location1.longitude) * Math.PI / 180
+  const dLat = (location2.latitude - location1.latitude) * Math.PI / 180
+  const dLon = (location2.longitude - location1.longitude) * Math.PI / 180
   const a = 
     Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(location1.latitude * Math.PI / 180) * Math.cos(location2.lat * Math.PI / 180) * 
+    Math.cos(location1.latitude * Math.PI / 180) * Math.cos(location2.latitude * Math.PI / 180) * 
     Math.sin(dLon/2) * Math.sin(dLon/2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
   return R * c
@@ -88,15 +88,6 @@ export function mapEateryToListingData(
   locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
 ): ListingData {
   
-  // Debug logging
-  console.log('=== MAPPING DEBUG ===')
-  console.log('Eatery images:', eatery.images)
-  console.log('Eatery image_url:', eatery.image_url)
-  console.log('Eatery additional_images:', eatery.additional_images)
-  console.log('User location:', userLocation)
-  console.log('Eatery location:', eatery.location)
-  console.log('Location permission:', locationPermission)
-  console.log('========================')
   
   const result = {
     // Header Section - Remove title from header, only show kosher info and stats
@@ -117,17 +108,9 @@ export function mapEateryToListingData(
 
     // Image Section
     image: {
-      src: (() => {
-        const src = eatery.images?.[0] || eatery.image_url || '/images/default-restaurant.jpg'
-        console.log('Image src:', src)
-        return src
-      })(),
+      src: eatery.images?.[0] || eatery.image_url || '/images/default-restaurant.jpg',
       alt: `${eatery.name} - ${eatery.kosher_type || 'Kosher'} Restaurant`,
-      allImages: (() => {
-        const allImages = eatery.images || eatery.additional_images || [eatery.image_url].filter(Boolean)
-        console.log('All images for gallery:', allImages)
-        return allImages
-      })(),
+      allImages: eatery.images || eatery.additional_images || [eatery.image_url].filter(Boolean),
       onAction: () => {
         // This will trigger the gallery view in ListingImage component
         console.log('View gallery clicked for:', eatery.name)
@@ -142,24 +125,21 @@ export function mapEateryToListingData(
       rightAction: (() => {
         const hasUserLocation = !!userLocation
         const hasEateryLocation = !!(eatery.location?.latitude && eatery.location?.longitude)
-        console.log('Distance calculation debug:')
-        console.log('  - Has user location:', hasUserLocation)
-        console.log('  - Has eatery location:', hasEateryLocation)
-        console.log('  - User location:', userLocation)
-        console.log('  - Eatery location:', eatery.location)
         
         if (hasUserLocation && hasEateryLocation) {
+          // Convert UserLocation format (lat/lng) to latitude/longitude format for calculation
+          const userLocationFormatted = {
+            latitude: userLocation!.lat,
+            longitude: userLocation!.lng
+          }
           const distance = calculateDistance(
             { latitude: eatery.location.latitude, longitude: eatery.location.longitude }, 
-            userLocation!
+            userLocationFormatted
           )
           const formattedDistance = formatDistance(distance)
-          console.log('  - Calculated distance:', distance)
-          console.log('  - Formatted distance:', formattedDistance)
           return formattedDistance
         } else {
-          console.log('  - Returning "Get Location"')
-          return "Get Location"
+          return eatery.zip_code || ""
         }
       })(),
       rightIcon: "map-pin",
@@ -234,8 +214,6 @@ export function mapEateryToListingData(
                 reviewsLoading: false
   }
   
-  console.log('Mapping reviews:', reviews)
-  console.log('Mapped reviews:', result.reviews)
   return result
 }
 

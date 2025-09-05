@@ -369,7 +369,7 @@ export default function EateryGrid({
 
     return {
       ...restaurant,
-      distance: distanceText
+      distance: distanceText || (userLocation ? '' : restaurant.zip_code || '')
     }
   }, [userLocation])
 

@@ -2,6 +2,9 @@ export interface LightRestaurant {
   id: string | number;
   name: string;
   address: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
   image_url?: string;
   price_range?: string;
   google_rating?: number | string;

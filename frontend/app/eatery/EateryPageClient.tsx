@@ -11,6 +11,7 @@ import { useLocation } from "@/lib/contexts/LocationContext"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "./types"
+import LocationPromptPopup from "@/components/LocationPromptPopup"
 
 export default function EateryPageClient() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -29,6 +30,19 @@ export default function EateryPageClient() {
     isLoading: locationLoading,
     requestLocation,
   } = useLocation()
+
+
+  // Show location permission prompt if no location is available
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false)
+  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false)
+  
+  useEffect(() => {
+    // Show location prompt if no user location, not loading, and haven't shown it yet
+    if (!userLocation && !locationLoading && !hasShownLocationPrompt) {
+      setShowLocationPrompt(true)
+      setHasShownLocationPrompt(true)
+    }
+  }, [userLocation, locationLoading, hasShownLocationPrompt])
 
   // Advanced filters hook
   const {
@@ -162,6 +176,13 @@ export default function EateryPageClient() {
         userLocation={userLocation}
         locationLoading={locationLoading}
         onRequestLocation={requestLocation}
+      />
+
+      {/* Location Permission Prompt */}
+      <LocationPromptPopup
+        isOpen={showLocationPrompt}
+        onClose={() => setShowLocationPrompt(false)}
+        onSkip={() => setShowLocationPrompt(false)}
       />
     </div>
   )

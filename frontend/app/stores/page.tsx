@@ -77,11 +77,13 @@ const fetchStores = async (limit: number, params?: string, timeoutMs: number = 5
     }
 
     const data = await response.json();
+    // Ensure we always return an array for stores
+    const stores = data.data?.stores || data.data || [];
     return {
-      stores: data.data || [],
-      total: data.total || 0,
-      page: data.page || 1,
-      limit: data.limit || limit
+      stores: Array.isArray(stores) ? stores : [],
+      total: data.total || data.data?.total || 0,
+      page: data.page || data.data?.page || 1,
+      limit: data.limit || data.data?.limit || limit
     };
   } catch (error) {
     clearTimeout(timeoutId);
@@ -155,7 +157,9 @@ export default function StoresPage() {
         params.append('limit', '50')
         
         const response = await fetchStores(50, params.toString())
-        setStores(response.stores)
+        // Ensure stores is always an array
+        const storesData = Array.isArray(response.stores) ? response.stores : []
+        setStores(storesData)
       } catch (err) {
         console.error('Error fetching stores:', err)
         

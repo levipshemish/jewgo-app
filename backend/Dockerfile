@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY backend/requirements.txt .
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -24,11 +24,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN if command -v playwright >/dev/null 2>&1; then playwright install chromium; fi
 
 # Copy source code
-COPY backend/ .
+COPY . .
 
 # Copy environment file if provided (relative to build context)
 ARG ENV_FILE=.env
-COPY ${ENV_FILE} .env
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

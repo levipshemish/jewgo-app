@@ -31,13 +31,13 @@ export default function LocationPromptPopup({
     onClose();
   };
 
-  // Auto-close popup when permission is granted
+  // Auto-close popup when permission is granted or denied
   useEffect(() => {
-    if (isOpen && permissionStatus === 'granted') {
-      // Small delay to show success message
+    if (isOpen && (permissionStatus === 'granted' || permissionStatus === 'denied')) {
+      // Small delay to show success/denied message
       const timer = setTimeout(() => {
         onClose();
-      }, 1000);
+      }, 2000); // Longer delay for denied to let user read the message
       return () => clearTimeout(timer);
     }
   }, [isOpen, permissionStatus, onClose]);

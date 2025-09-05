@@ -77,6 +77,17 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Unexpected error importing api_v4 blueprint: {e}")
     api_v4 = None
+
+# Import synagogues blueprint
+try:
+    from routes.synagogues_api import synagogues_bp
+    logger.info("Successfully imported synagogues blueprint")
+except ImportError as e:
+    logger.warning(f"Could not import synagogues blueprint: {e}")
+    synagogues_bp = None
+except Exception as e:
+    logger.error(f"Unexpected error importing synagogues blueprint: {e}")
+    synagogues_bp = None
 from database.database_manager_v3 import EnhancedDatabaseManager
 from utils.api_response import (
     APIResponse,
@@ -742,8 +753,16 @@ def create_app(config_class=None):
             logger.warning("API v4 routes blueprint is None - skipping registration")
     except ImportError as e:
         logger.warning(f"Could not register API v4 routes blueprint: {e}")
+    
+    # Register synagogues blueprint
+    try:
+        if synagogues_bp is not None:
+            app.register_blueprint(synagogues_bp)
+            logger.info("Synagogues blueprint registered successfully")
+        else:
+            logger.warning("Synagogues blueprint is None - skipping registration")
     except Exception as e:
-        logger.error(f"Error registering API v4 routes blueprint: {e}")
+        logger.warning(f"Could not register synagogues blueprint: {e}")
     # Register mock API routes for development
     try:
         from mock_api import mock_bp
