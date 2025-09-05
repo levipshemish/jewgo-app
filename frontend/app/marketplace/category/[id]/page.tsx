@@ -105,7 +105,7 @@ export default function CategoryPage() {
             <p className="text-gray-600">Loading category...</p>
           </div>
         </div>
-        <BottomNavigation size="compact" showLabels="active-only" />
+        <BottomNavigation />
       </div>
     );
   }
@@ -127,7 +127,7 @@ export default function CategoryPage() {
             </button>
           </div>
         </div>
-        <BottomNavigation size="compact" showLabels="active-only" />
+        <BottomNavigation />
       </div>
     );
   }
@@ -279,7 +279,7 @@ export default function CategoryPage() {
         )}
       </div>
 
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   );
 }

@@ -6,6 +6,7 @@ export interface MockMikvah {
   address?: string;
   city?: string;
   state?: string;
+  zip_code?: string;
   phone_number?: string;
   website?: string;
   email?: string;

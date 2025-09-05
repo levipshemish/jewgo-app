@@ -33,7 +33,6 @@
   - `app/auth/forgot-password/page.tsx`
   - `app/auth/reset-password/page.tsx`
   - `app/auth/signup/page.tsx`
-  - `app/auth/supabase-signup/page.tsx`
   - `components/admin/AdminHeader.tsx`
   - `components/admin/DataTable.tsx`
   - `components/admin/FeatureFlagManager.tsx`

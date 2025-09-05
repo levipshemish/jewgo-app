@@ -81,7 +81,7 @@ export default function EventsPage() {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   );
 }

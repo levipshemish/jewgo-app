@@ -54,7 +54,7 @@ export default function ShtełProductPage() {
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
         </div>
-        <BottomNavigation size="compact" showLabels="active-only" />
+        <BottomNavigation />
       </div>
     );
   }
@@ -80,7 +80,7 @@ export default function ShtełProductPage() {
             Back to Shtel
           </button>
         </div>
-        <BottomNavigation size="compact" showLabels="active-only" />
+        <BottomNavigation />
       </div>
     );
   }
@@ -218,7 +218,7 @@ export default function ShtełProductPage() {
         </div>
       </div>
 
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   );
 }

@@ -85,7 +85,31 @@ export interface ListingApiResponse {
 
 // Updated to match listing utility interface exactly
 export interface ListingData {
+  id?: string
   title?: string
+  subtitle?: string
+  imageUrl?: string
+  rating?: number
+  reviewCount?: number
+  distance?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  phone?: string
+  website?: string
+  email?: string
+  hours?: Array<{ day: string; time: string }> | string | null
+  contactInfo?: any
+  features?: any
+  kosherInfo?: any
+  tags?: string[]
+  specials?: string
+  isVerified?: boolean
+  isActive?: boolean
+  listingType?: string
+  coordinates?: { latitude: number; longitude: number }
+  createdAt?: string
+  updatedAt?: string
   image?: {
     src?: string
     alt?: string

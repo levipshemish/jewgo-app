@@ -32,6 +32,8 @@ interface Store {
   reviewcount?: number;
   star_rating?: number;
   google_rating?: number;
+  latitude?: number;
+  longitude?: number;
   image_url?: string;
   logo_url?: string;
   has_parking?: boolean;

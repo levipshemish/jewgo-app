@@ -1,6 +1,6 @@
 # Admin RBAC and Config Schema
 
-This app’s admin features expect the following database objects to exist in your Supabase/Postgres instance. Ensure these are present before deploying RBAC‑gated admin routes.
+This app’s admin features expect the following database objects to exist in your Postgres instance. Ensure these are present before deploying RBAC‑gated admin routes.
 
 ## 1) Function: get_user_admin_role
 
@@ -103,4 +103,3 @@ In production, prefer tighter policies limited to a dedicated service role, and 
 ## 4) Prisma Schema Reference
 
 See `frontend/prisma/schema.prisma` for the canonical model shapes used by the application.
-

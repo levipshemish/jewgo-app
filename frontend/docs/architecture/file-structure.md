@@ -39,8 +39,8 @@ frontend/
 │   ├── hooks/                    # Custom React hooks
 │   ├── utils/                    # Utility functions
 │   ├── types/                    # TypeScript type definitions
-│   ├── auth/                     # Authentication utilities
-│   ├── supabase/                 # Supabase client utilities
+│   ├── auth/                     # Authentication utilities (PostgreSQL cookie auth)
+│   ├── supabase/                 # Legacy Supabase client utilities (deprecated)
 │   ├── api/                      # API utilities
 │   ├── analytics/                # Analytics utilities
 │   ├── search/                   # Search utilities

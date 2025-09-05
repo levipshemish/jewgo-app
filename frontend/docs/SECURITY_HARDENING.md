@@ -2,6 +2,8 @@
 
 This document outlines the comprehensive security measures implemented in the JewGo application.
 
+> Note: References to a previous auth provider in this document are legacy from an older auth flow. The application now uses a PostgreSQL-backed authentication system with HttpOnly cookies, CSRF protection, refresh rotation, and RBAC enforced by the backend.
+
 ## 🚨 Critical Security Measures Implemented
 
 ### 1. **Environment Variables & Secrets Management**
@@ -13,28 +15,24 @@ This document outlines the comprehensive security measures implemented in the Je
 - Production secrets managed via deployment platform environment variables
 
 #### ⚠️ **Action Required:**
-1. **Check for leaked secrets:** Review git history for any committed real Supabase keys
-2. **Rotate Supabase keys:** If any real keys were ever committed, rotate them immediately:
-   - Go to Supabase dashboard → Settings → API
-   - Regenerate Anon key and Service Role key
-   - Update all deployment environments
-3. **Set up deployment environment variables:**
+1. Review git history for any committed real secrets
+2. Set up deployment environment variables:
    - Vercel: Use Vercel dashboard environment variables
    - Netlify: Use Netlify environment variables panel
    - Render: Use Render environment variables settings
 
-### 2. **HttpOnly Cookies & Session Security**
+### 2. **HttpOnly Cookies & Session Security (PostgreSQL Auth)**
 
 #### ✅ **What's Implemented:**
-- **`@supabase/ssr`** integration for secure cookie-based sessions
-- **httpOnly cookies** prevent XSS attacks from stealing tokens
-- **Secure cookie settings:** `SameSite=Lax`, `Secure` in production
-- **No localStorage token storage** - tokens never touch client-side storage
+- Backend issues HttpOnly cookies for `access_token` and `refresh_token`
+- Secure cookie settings: `SameSite=Lax`, `Secure` in production
+- No localStorage token storage — tokens never touch client-side storage
+- Refresh rotation with family reuse detection and revocation
 
 #### 📁 **Files:**
-- `lib/supabase/server.ts` - Server-side Supabase client
-- `lib/supabase/client-secure.ts` - Client-side secure client
-- `app/auth/signin/actions.ts` - Updated to use secure clients
+- `lib/auth/postgres-auth.ts` — Cookie-mode client
+- `middleware.ts` — Admin route protection, cookie check + backend verification
+- Backend: `services/auth/cookies.py`, `services/auth/csrf.py`, `services/auth/sessions.py`
 
 ### 3. **Security Headers & CSRF Protection**
 
@@ -46,8 +44,8 @@ This document outlines the comprehensive security measures implemented in the Je
 - **Permissions Policy** to disable unnecessary browser features
 
 #### 📁 **Files:**
-- `middleware-security.ts` - Comprehensive security middleware
-- `middleware.ts` - Updated to use security middleware
+- `lib/middleware/security.ts` — Security headers builder
+- `middleware.ts` — Applies headers and admin route protection
 
 ### 4. **Rate Limiting**
 
@@ -119,9 +117,9 @@ FOR UPDATE USING (
 - **Set up error monitoring** with Sentry (optional)
 
 ### **Password Security**
-- **Supabase handles password hashing** (uses bcrypt)
-- **Email verification required** for account activation
-- **Password reset flow** secured via Supabase
+- Password hashing managed server-side (bcrypt)
+- Email verification required for account activation
+- Password reset flow secured via backend routes
 
 ### **Admin Access**
 - **Server-side role checking** - never trust client flags
@@ -150,14 +148,11 @@ test('protected route redirects unauthenticated user', async ({ page }) => {
 
 ### **Environment Variables:**
 ```bash
-# Production environment variables
+# Production environment variables (subset)
 NODE_ENV=production
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-NEXTAUTH_SECRET=your-secure-random-string
-UPSTASH_REDIS_REST_URL=https://your-redis-endpoint
-UPSTASH_REDIS_REST_TOKEN=your-redis-token
+NEXT_PUBLIC_BACKEND_URL=https://api.jewgo.app
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
 ### **Security Headers in Production:**

@@ -362,7 +362,7 @@ function ShtelDashboardContent() {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   );
 }

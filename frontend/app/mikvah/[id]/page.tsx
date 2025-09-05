@@ -177,19 +177,6 @@ function MikvahDetailContent() {
   return (
     <ListingPage
       data={listingData}
-      onBack={() => router.back()}
-      onEdit={() => router.push(`/mikvah/${mikvahId}/edit`)}
-      onShare={() => {
-        if (navigator.share) {
-          navigator.share({
-            title: mikvah.name,
-            text: mikvah.description || `Check out ${mikvah.name}`,
-            url: window.location.href,
-          });
-        } else {
-          navigator.clipboard.writeText(window.location.href);
-        }
-      }}
     />
   );
 }

@@ -219,7 +219,6 @@ def _load_dependencies():
             require_feature_flag,
         )
         from utils.security import (
-            log_request,
             require_admin_auth,
             require_ip_restriction,
             require_scraper_auth,
@@ -246,7 +245,6 @@ def _load_dependencies():
                 "require_scraper_auth": require_scraper_auth,
                 "require_admin_auth": require_admin_auth,
                 "validate_request_data": validate_request_data,
-                "log_request": log_request,
             },
             "feature_flags": {
                 "feature_flag_manager": feature_flag_manager,
@@ -1786,8 +1784,8 @@ def create_app(config_class=None):
                 "cache": performance_monitor.get_cache_stats(),
                 "overall": performance_monitor.get_overall_stats(),
                 "websocket": {
-                    "active_connections": len(websocket_service.connections),
-                    "active_rooms": len(websocket_service.rooms),
+                    "active_connections": len(websocket_service.connections) if websocket_service else 0,
+                    "active_rooms": len(websocket_service.rooms) if websocket_service else 0,
                 },
             }
             return jsonify({"success": True, "data": stats})
@@ -1888,17 +1886,21 @@ def create_app(config_class=None):
                 )
         try:
             # Check database connection
-            with db_manager.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT 1")
-                    db_healthy = True
+            db_manager = app.config.get("DB_MANAGER")
+            if db_manager:
+                with db_manager.get_connection() as conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute("SELECT 1")
+                        db_healthy = True
+            else:
+                db_healthy = False
+                logger.error("Database manager not available")
         except Exception as e:
             db_healthy = False
             logger.error(f"Database health check failed: {e}")
         # Check Redis connection
         try:
-            redis_cache.ping()
-            redis_healthy = True
+            redis_healthy = redis_cache.health_check()
         except Exception as e:
             redis_healthy = False
             logger.error(f"Redis health check failed: {e}")
@@ -1911,10 +1913,10 @@ def create_app(config_class=None):
                 "websocket": "healthy",
             },
             "performance": {
-                "active_connections": len(websocket_service.connections),
+                "active_connections": len(websocket_service.connections) if websocket_service else 0,
                 "cache_hit_rate": performance_monitor.get_cache_stats().get(
                     "hit_rate", 0
-                ),
+                ) if performance_monitor else 0,
             },
         }
         status_code = 200 if db_healthy and redis_healthy else 503

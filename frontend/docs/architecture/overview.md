@@ -24,7 +24,7 @@ The JewGo frontend is built as a modern Next.js 13+ application using the App Ro
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │                    Data Layer                           │ │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │ │
-│  │  │   Prisma    │  │  Supabase   │  │   External  │     │ │
+│  │  │   Prisma    │  │  Backend    │  │   External  │     │ │
 │  │  │ (Database)  │  │ (Auth/DB)   │  │    APIs     │     │ │
 │  │  └─────────────┘  └─────────────┘  └─────────────┘     │ │
 │  └─────────────────────────────────────────────────────────┘ │
@@ -62,9 +62,9 @@ The JewGo frontend is built as a modern Next.js 13+ application using the App Ro
 User Action → Component → Hook → API Route → Database → Response
 ```
 
-### 2. Authentication Flow
+### 2. Authentication Flow (PostgreSQL Cookie Auth)
 ```
-Login → Supabase Auth → Session → Protected Routes → User Data
+Login → Backend Auth (HttpOnly cookies) → Middleware check → Protected Routes → User Data
 ```
 
 ### 3. Search Flow
@@ -91,7 +91,7 @@ Search Input → Debounced Hook → API Route → Database Query → Results
 
 ### Database and Backend
 - **Prisma**: Database ORM
-- **Supabase**: Authentication and real-time features
+- **Backend**: Flask API with PostgreSQL-based auth
 - **PostgreSQL**: Primary database
 
 ### External Services
@@ -102,9 +102,9 @@ Search Input → Debounced Hook → API Route → Database Query → Results
 ## Security Considerations
 
 ### Authentication
-- Supabase authentication with JWT tokens
-- Protected API routes with middleware
-- Role-based access control
+- Backend-issued HttpOnly cookies (access/refresh)
+- Middleware-protected admin routes with backend verification
+- Server-side RBAC from PostgreSQL roles
 
 ### Data Validation
 - Input validation on all API routes
@@ -142,7 +142,7 @@ Search Input → Debounced Hook → API Route → Database Query → Results
 
 ### Development Environment
 - **Local Development**: Next.js dev server
-- **Database**: Local PostgreSQL or Supabase
+- **Database**: Local PostgreSQL
 - **Environment Variables**: Local configuration
 
 ## Monitoring and Observability

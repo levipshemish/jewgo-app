@@ -118,12 +118,12 @@ export default function TestComponentsPage() {
                   showStarInBadge={true}
                 />
                 <Card
-                  data={{...mockCardData, id: "3", title: "Minimal Card", variant: "minimal"}}
+                  data={{...mockCardData, id: "3", title: "Minimal Card"}}
                   onCardClick={handleCardClick}
                   variant="minimal"
                 />
                 <Card
-                  data={{...mockCardData, id: "4", title: "Enhanced Card", variant: "enhanced"}}
+                  data={{...mockCardData, id: "4", title: "Enhanced Card"}}
                   onCardClick={handleCardClick}
                   variant="enhanced"
                 />

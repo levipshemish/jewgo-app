@@ -247,7 +247,7 @@ function AddListingPageContent() {
             </p>
           </div>
         </div>
-        <BottomNavigation size="compact" showLabels="active-only" />
+        <BottomNavigation />
       </div>
     );
   }
@@ -660,7 +660,7 @@ function AddListingPageContent() {
         </div>
       </div>
 
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   );
 }

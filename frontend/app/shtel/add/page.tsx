@@ -538,7 +538,7 @@ export default function AddShtelListingPage() {
         </div>
       </div>
 
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   );
 }

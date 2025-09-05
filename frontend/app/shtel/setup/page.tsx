@@ -350,7 +350,7 @@ export default function ShtelSetupPage() {
         )}
       </div>
 
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   );
 }

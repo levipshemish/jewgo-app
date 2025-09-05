@@ -288,7 +288,7 @@ export default function MarketplacePageClient() {
             />
           </div>
         </div>
-        <BottomNavigation size="compact" showLabels="active-only" />
+        <BottomNavigation />
       </div>
     )
   }
@@ -337,7 +337,7 @@ export default function MarketplacePageClient() {
           isOpen={showEnhancedFilters}
         />
       </div>
-      <BottomNavigation size="compact" showLabels="active-only" />
+      <BottomNavigation />
     </div>
   )
 }

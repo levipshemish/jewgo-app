@@ -1,7 +1,6 @@
 import { MikvahDB, ListingData, UserLocation } from '@/types/listing'
 import { 
   calculateDistance, 
-  formatHoursForPopup, 
   openImageCarousel, 
   openDirections, 
   handleOrder, 
@@ -73,7 +72,7 @@ export function mapMikvahToListingData(
     content: {
       leftText: mikvah.name,
       rightText: formatRating(mikvah.rating),
-      leftAction: mikvah.fee_amount > 0 ? `$${mikvah.fee_amount}` : 'Free',
+      leftAction: mikvah.fee_amount && mikvah.fee_amount > 0 ? `$${mikvah.fee_amount}` : 'Free',
       rightAction: userLocation ? calculateDistance(mikvah.location, userLocation) : undefined,
       leftBold: true, // Mikvah name should be bold
       rightBold: false,
@@ -149,7 +148,7 @@ export function mapMikvahToListingData(
         mikvah.kosher_agency,
       ].filter((tag): tag is string => Boolean(tag)).slice(0, 3), // Max 3 tags
 
-      onTagClick: (tag) => handleTagClick(tag),
+      onTagClick: (tag: any) => handleTagClick(tag),
 
       // Bottom Action (Hours)
       bottomAction: {

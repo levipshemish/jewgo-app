@@ -27,6 +27,8 @@ interface Store {
   reviewcount?: number;
   star_rating?: number;
   google_rating?: number;
+  latitude?: number;
+  longitude?: number;
   image_url?: string;
   logo_url?: string;
   has_parking?: boolean;
@@ -162,19 +164,6 @@ function StoreDetailContent() {
   return (
     <ListingPage
       data={listingData}
-      onBack={() => router.back()}
-      onEdit={() => router.push(`/stores/${storeId}/edit`)}
-      onShare={() => {
-        if (navigator.share) {
-          navigator.share({
-            title: store.name,
-            text: store.description || `Check out ${store.name}`,
-            url: window.location.href,
-          });
-        } else {
-          navigator.clipboard.writeText(window.location.href);
-        }
-      }}
     />
   );
 }

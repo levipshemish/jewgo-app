@@ -250,7 +250,7 @@ function FavoritesPageContent() {
 
 
 
-          <BottomNavigation size="compact" showLabels="active-only" />
+          <BottomNavigation />
         </div>
       </div>
     </ErrorBoundary>
