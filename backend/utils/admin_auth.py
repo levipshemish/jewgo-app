@@ -1,18 +1,15 @@
 """
 Legacy Admin Authentication Module - REMOVED
 
-This module has been completely removed in favor of Supabase JWT + role-based auth.
+This module has been removed in favor of PostgreSQL RBAC.
 Use utils.security.require_admin() for admin authentication.
 
 Migration Guide:
 - Replace require_legacy_admin_auth() with utils.security.require_admin()
-- Update admin routes to use Supabase JWT tokens
 - Remove ENABLE_LEGACY_ADMIN_AUTH environment variables
 
 For more information, see:
 - backend/utils/security.py for current admin authentication
-- backend/utils/supabase_auth.py for JWT verification
-- supabase/migrations/ for RBAC database schema
 """
 
 from utils.logging_config import get_logger

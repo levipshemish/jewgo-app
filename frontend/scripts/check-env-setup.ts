@@ -17,14 +17,14 @@ interface EnvCheck {
 function checkEnvironmentVariables(): EnvCheck[] {
   const checks: EnvCheck[] = [];
   
-  // Supabase variables
+  // Supabase variables (legacy; not required)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   checks.push({
     variable: 'NEXT_PUBLIC_SUPABASE_URL',
     set: !!supabaseUrl,
     value: supabaseUrl,
-    status: supabaseUrl ? '✅' : '❌',
-    message: supabaseUrl ? 'Configured' : 'Missing - required for Supabase'
+    status: supabaseUrl ? '⚠️' : '⚠️',
+    message: supabaseUrl ? 'Configured (legacy)' : 'Not set (legacy, not required)'
   });
   
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -32,8 +32,8 @@ function checkEnvironmentVariables(): EnvCheck[] {
     variable: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     set: !!supabaseAnonKey,
     value: `${supabaseAnonKey?.substring(0, 20)  }...`,
-    status: supabaseAnonKey ? '✅' : '❌',
-    message: supabaseAnonKey ? 'Configured' : 'Missing - required for Supabase'
+    status: '⚠️',
+    message: 'Legacy variable (not required)'
   });
   
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -41,8 +41,8 @@ function checkEnvironmentVariables(): EnvCheck[] {
     variable: 'SUPABASE_SERVICE_ROLE_KEY',
     set: !!supabaseServiceKey && supabaseServiceKey !== 'your_supabase_service_role_key_here',
     value: `${supabaseServiceKey?.substring(0, 20)  }...`,
-    status: supabaseServiceKey && supabaseServiceKey !== 'your_supabase_service_role_key_here' ? '✅' : '❌',
-    message: supabaseServiceKey === 'your_supabase_service_role_key_here' ? 'Still placeholder - needs real key' : 'Missing - required for admin operations'
+    status: '⚠️',
+    message: 'Legacy variable (not required)'
   });
   
   // NextAuth variables
@@ -115,7 +115,7 @@ function printEnvironmentStatus() {
   }
   
   // Specific recommendations
-  const missingSupabase = checks.filter(c => c.variable.includes('SUPABASE') && c.status === '❌');
+  const missingSupabase = [] as any[];
   const missingGoogle = checks.filter(c => c.variable.includes('GOOGLE') && c.status === '❌');
   
   if (missingSupabase.length > 0) {

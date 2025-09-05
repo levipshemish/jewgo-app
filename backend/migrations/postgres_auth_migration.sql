@@ -1,6 +1,5 @@
 -- PostgreSQL Authentication Migration
 -- This migration adds necessary columns and tables for PostgreSQL-based authentication
--- to replace Supabase authentication system.
 
 -- Begin transaction
 BEGIN;

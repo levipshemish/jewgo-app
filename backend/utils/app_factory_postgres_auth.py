@@ -196,7 +196,7 @@ def init_postgres_auth_app(app: Flask):
 
 
 """
-Supabase migration decorator removed in Phase 5 cleanup.
+Legacy migration decorator removed in Phase 5 cleanup.
 All auth is handled via PostgreSQL auth routes and managers.
 """
 

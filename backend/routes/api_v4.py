@@ -1606,13 +1606,8 @@ def _revoke_role_and_respond(user_service, user_id: str, role: str, removed_by: 
 
 
 def _invalidate_role_cache_safe(user_id: str) -> None:
-    try:
-        from utils.supabase_role_manager import get_role_manager
-
-        rm = get_role_manager()
-        rm.invalidate_user_role(user_id)
-    except Exception:
-        pass
+    # No-op: Supabase role manager removed; RBAC data comes from PostgreSQL
+    return None
 
 
 def _build_role_assigned_payload(

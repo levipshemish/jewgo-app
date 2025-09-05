@@ -15,7 +15,7 @@ def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
     
-    # Supabase minimal hooks removed in Phase 5 cleanup.
+    # Legacy minimal hooks removed in Phase 5 cleanup.
     # Configure CORS
     CORS(
         app,

@@ -53,38 +53,7 @@ def create_app():
     except Exception as e:
         logger.warning(f"Failed to load config.env: {e}")
     
-    # Pre-warm JWKS cache on startup
-    try:
-        if os.getenv("ENABLE_JWKS_PREWARM", "true").lower() == "true":
-            from utils.supabase_auth import supabase_auth
-            supabase_auth.pre_warm_jwks()
-            logger.info("JWKS pre-warming completed")
-        else:
-            logger.info("JWKS pre-warming disabled by ENABLE_JWKS_PREWARM=false")
-    except Exception as e:
-        logger.warning(f"JWKS pre-warming failed: {e}")
-    
-    # Schedule JWKS refresh
-    try:
-        if os.getenv("ENABLE_JWKS_SCHEDULER", "true").lower() == "true":
-            from utils.supabase_auth import supabase_auth
-            supabase_auth.schedule_jwks_refresh()
-            logger.info("JWKS refresh scheduling completed")
-        else:
-            logger.info("JWKS scheduler disabled by ENABLE_JWKS_SCHEDULER=false")
-    except Exception as e:
-        logger.warning(f"Failed to schedule JWKS refresh: {e}")
-    
-    # Start admin role cache invalidation listener
-    try:
-        if os.getenv("ENABLE_CACHE_INVALIDATION_LISTENER", "false").lower() == "true":
-            from utils.supabase_role_manager import get_role_manager
-            get_role_manager().start_cache_invalidation_listener()
-            logger.info("Admin role cache invalidation listener startup completed")
-        else:
-            logger.info("Cache invalidation listener disabled by ENABLE_CACHE_INVALIDATION_LISTENER=false")
-    except Exception as e:
-        logger.warning(f"Failed to start admin role cache invalidation listener: {e}")
+    # Legacy Supabase JWKS/role manager hooks removed
     
     app = Flask(__name__)
 
@@ -902,85 +871,36 @@ def create_app():
             logger.info(f"Processing user-role request with token: {token[:10]}...")
             logger.info(f"Environment: NODE_ENV={os.getenv('NODE_ENV')}, FLASK_ENV={os.getenv('FLASK_ENV')}")
             
-            # Use the existing Supabase role manager to get user role
+            # RBAC check via PostgreSQL auth manager
             try:
-                from utils.supabase_role_manager import get_role_manager
-                role_manager = get_role_manager()
-                
-                # Get user admin role from verified JWT token
-                role_data = role_manager.get_user_admin_role(token)
-                
-                if role_data:
-                    # User has admin role
-                    logger.info(f"User has admin role: {role_data}")
-                    return jsonify({
-                        "success": True,
-                        "role": role_data.get("role"),
-                        "level": role_data.get("level", 0),
-                        "permissions": role_data.get("permissions", []),
-                        "user_id": role_data.get("user_id")
-                    })
+                from utils.postgres_auth import get_postgres_auth
+                from utils.rbac import RoleBasedAccessControl
+                authm = get_postgres_auth()
+                user = authm.verify_access_token(token)
+                if not user:
+                    return jsonify({"success": False, "error": "Invalid or expired token"}), 401
+                roles = user.get('roles', [])
+                rbac = RoleBasedAccessControl()
+                level = rbac.get_max_role_level(roles)
+                role_name = None
+                if level >= 99:
+                    role_name = 'super_admin'
+                elif level >= 10:
+                    role_name = 'admin'
+                elif level >= 5:
+                    role_name = 'moderator'
                 else:
-                    # User exists but has no admin role
-                    logger.info("User exists but has no admin role")
-                    return jsonify({
-                        "success": True,
-                        "role": None,
-                        "level": 0,
-                        "permissions": [],
-                        "user_id": None
-                    })
-                    
-            except ImportError:
-                logger.warning("Supabase role manager not available, using fallback role checking")
-                # Fallback: check if token is valid and return default role for development
-                try:
-                    from utils.supabase_auth import verify_supabase_admin_role
-                    # Try to verify as admin - if it works, user has admin access
-                    result = verify_supabase_admin_role(token, "moderator")
-                    if result:
-                        role_data = result.get("role_data", {})
-                        return jsonify({
-                            "success": True,
-                            "role": role_data.get("role", "moderator"),
-                            "level": role_data.get("level", 1),
-                            "permissions": role_data.get("permissions", []),
-                            "user_id": result.get("payload", {}).get("sub")
-                        })
-                    else:
-                        # Token valid but no admin role
-                        return jsonify({
-                            "success": True,
-                            "role": None,
-                            "level": 0,
-                            "permissions": [],
-                            "user_id": None
-                        })
-                except ImportError:
-                    logger.warning("Supabase auth not available, using development fallback")
-                    # Development fallback: return super_admin role for testing
-                    # Check both NODE_ENV and FLASK_ENV for development mode
-                    is_dev = (os.getenv('NODE_ENV') == 'development' or 
-                             os.getenv('FLASK_ENV') == 'development' or
-                             os.getenv('ENVIRONMENT') == 'development')
-                    
-                    logger.info(f"Development mode check: NODE_ENV={os.getenv('NODE_ENV')}, FLASK_ENV={os.getenv('FLASK_ENV')}, ENVIRONMENT={os.getenv('ENVIRONMENT')}, is_dev={is_dev}")
-                    
-                    if is_dev:
-                        logger.info("Returning development fallback super_admin role")
-                        return jsonify({
-                            "success": True,
-                            "role": "super_admin",
-                            "level": 4,
-                            "permissions": ["*"],
-                            "user_id": "dev-user",
-                            "note": "Development mode - using fallback role"
-                        })
-                    else:
-                        return jsonify({
-                            "success": False,
-                            "error": "Role management system not available"
-                        }), 503
+                    role_name = None
+                return jsonify({
+                    "success": True,
+                    "role": role_name,
+                    "level": level,
+                    "permissions": [],
+                    "user_id": user.get('user_id')
+                })
+            except Exception as e:
+                logger.error(f"RBAC role check failed: {e}")
+                return jsonify({"success": False, "error": "Service unavailable"}), 503
                         
         except Exception as e:
             logger.error(f"Error in user-role endpoint: {e}")
@@ -1002,26 +922,11 @@ def create_app():
                 "components": {}
             }
             
-            # Check Supabase role manager availability
-            try:
-                from utils.supabase_role_manager import get_role_manager
-                role_manager = get_role_manager()
-                health_status["components"]["supabase_role_manager"] = "available"
-            except Exception as e:
-                health_status["components"]["supabase_role_manager"] = f"unavailable: {str(e)}"
-            
-            # Check Supabase auth availability
-            try:
-                from utils.supabase_auth import verify_supabase_admin_role
-                health_status["components"]["supabase_auth"] = "available"
-            except Exception as e:
-                health_status["components"]["supabase_auth"] = f"unavailable: {str(e)}"
-            
-            # Check environment configuration
+            # RBAC components
+            health_status["components"]["rbac"] = "available"
             health_status["components"]["environment"] = {
                 "NODE_ENV": os.getenv("NODE_ENV", "not_set"),
-                "SUPABASE_URL": "configured" if os.getenv("SUPABASE_URL") else "not_configured",
-                "SUPABASE_ANON_KEY": "configured" if os.getenv("SUPABASE_ANON_KEY") else "not_configured"
+                "ENVIRONMENT": os.getenv("ENVIRONMENT", "not_set")
             }
             
             return jsonify(health_status)

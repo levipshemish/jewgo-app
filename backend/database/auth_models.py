@@ -1,6 +1,6 @@
 """
 Authentication models for PostgreSQL-based authentication system.
-This replaces Supabase authentication with a custom PostgreSQL solution.
+Authentication and session models for the application.
 """
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Table

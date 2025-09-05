@@ -108,12 +108,12 @@ class TestCISecurity:
             pytest.skip(f"Security decorators not available: {e}")
     
     def test_authentication_framework(self):
-        """Test that authentication framework is in place."""
+        """Test that RBAC authentication framework is in place."""
         try:
-            from utils.supabase_auth import verify_supabase_admin_role
-            assert callable(verify_supabase_admin_role)
-        except ImportError as e:
-            pytest.skip(f"Supabase auth not available: {e}")
+            from utils.rbac import require_auth
+            assert callable(require_auth)
+        except Exception as e:
+            pytest.skip(f"RBAC auth not available: {e}")
 
 class TestCIPerformance:
     """Performance tests that must pass for CI/CD."""

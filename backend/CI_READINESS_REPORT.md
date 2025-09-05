@@ -46,7 +46,7 @@ The core backend functionality has been verified and is working correctly. The a
 ### 3. Security Framework ✅
 - Authentication decorators are properly implemented
 - Role-based access control is in place
-- Supabase integration is configured
+- PostgreSQL RBAC integration is configured
 - Rate limiting is functional
 
 ### 4. Performance ✅
@@ -152,7 +152,7 @@ python -m pytest tests/test_ci_ready.py --cov=utils --cov=routes --cov-report=te
 - **Performance**: Custom timing and concurrency tests
 
 ### Authentication Strategy
-- **Current**: Supabase JWT verification
+- **Current**: PostgreSQL RBAC verification
 - **Test**: Environment variable bypass
 - **Future**: JWT token generation for tests
 

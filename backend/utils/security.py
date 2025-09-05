@@ -49,14 +49,8 @@ def require_admin_auth(f):
     return require_admin("system_admin")(f)
 
 
-# require_user_auth decorator has been removed - use require_supabase_auth instead
-
-
-# optional_user_auth decorator has been removed - use optional_supabase_auth instead
-
-
-# REMOVED: require_super_admin decorator - no longer used
-# All admin authentication now uses Supabase JWT-based roles
+# Legacy decorators removed. Use RBAC-based require_auth and require_role_level.
+# REMOVED: require_super_admin decorator - no longer used.
 
 
 def rate_limit(max_requests: int = 100, window_seconds: int = 3600):
