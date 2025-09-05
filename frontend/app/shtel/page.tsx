@@ -26,6 +26,7 @@ import { cacheInvalidator } from '@/lib/utils/cacheInvalidation';
 
 import { MarketplaceListing } from '@/lib/types/marketplace';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
+import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 
 // Loading component for Suspense fallback
 function ShtelPageLoading() {
@@ -479,19 +480,35 @@ function ShtelPageContent() {
             setError(null);
 
             const currentFilters = activeFilters;
-            const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
-            if (searchQuery && searchQuery.trim() !== '') {
-              params.append('search', searchQuery.trim());
-            }
+            const params = {
+              page: 1,
+              limit: mobileOptimizedItemsPerPage,
+              search: searchQuery || undefined,
+              category: currentFilters.category || undefined,
+              subcategory: currentFilters.subcategory || undefined,
+              kind: currentFilters.kind || undefined,
+              condition: currentFilters.condition || undefined,
+              min_price: currentFilters.minPrice ? parseInt(currentFilters.minPrice) * 100 : undefined,
+              max_price: currentFilters.maxPrice ? parseInt(currentFilters.maxPrice) * 100 : undefined,
+              city: currentFilters.city || undefined,
+              region: currentFilters.region || undefined
+            };
 
-            const response = await fetchMarketplaceListings(params.toString(), fetchTimeoutMs);
+            const response = await fetchMarketplaceListings(params);
             
-            setListings(response.listings || []);
-            setCurrentPage(1);
-            setTotalListings(response.total || 0);
-            setTotalPages(response.totalPages || 1);
+            if (response.success && response.data?.listings) {
+              setListings(response.data.listings);
+              setCurrentPage(1);
+              setTotalListings(response.data.total || 0);
+              setTotalPages(response.data.totalPages || 1);
+            } else {
+              setListings([]);
+              setCurrentPage(1);
+              setTotalListings(0);
+              setTotalPages(1);
+            }
             
-            trackApiCall('shtel_listings', response.listings?.length || 0, Date.now() - Date.now());
+            trackApiCall('shtel_listings', response.data?.listings?.length || 0, Date.now() - Date.now());
           } catch (fetchErr) {
             console.error('Error fetching shtel listings:', fetchErr);
             if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
@@ -539,19 +556,35 @@ function ShtelPageContent() {
           setError(null);
 
           const currentFilters = activeFilters;
-          const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
-          if (searchQuery && searchQuery.trim() !== '') {
-            params.append('search', searchQuery.trim());
-          }
+          const params = {
+            page: 1,
+            limit: mobileOptimizedItemsPerPage,
+            search: searchQuery || undefined,
+            category: currentFilters.category || undefined,
+            subcategory: currentFilters.subcategory || undefined,
+            kind: currentFilters.kind || undefined,
+            condition: currentFilters.condition || undefined,
+            min_price: currentFilters.minPrice ? parseInt(currentFilters.minPrice) * 100 : undefined,
+            max_price: currentFilters.maxPrice ? parseInt(currentFilters.maxPrice) * 100 : undefined,
+            city: currentFilters.city || undefined,
+            region: currentFilters.region || undefined
+          };
 
-          const response = await fetchMarketplaceListings(params.toString(), fetchTimeoutMs);
+          const response = await fetchMarketplaceListings(params);
           
-          setListings(response.listings || []);
-          setCurrentPage(1);
-          setTotalListings(response.total || 0);
-          setTotalPages(response.totalPages || 1);
+          if (response.success && response.data?.listings) {
+            setListings(response.data.listings);
+            setCurrentPage(1);
+            setTotalListings(response.data.total || 0);
+            setTotalPages(response.data.totalPages || 1);
+          } else {
+            setListings([]);
+            setCurrentPage(1);
+            setTotalListings(0);
+            setTotalPages(1);
+          }
           
-          trackApiCall('shtel_listings', response.listings?.length || 0, Date.now() - Date.now());
+          trackApiCall('shtel_listings', response.data?.listings?.length || 0, Date.now() - Date.now());
         } catch (fetchErr) {
           console.error('Error fetching shtel listings:', fetchErr);
           if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
@@ -637,19 +670,35 @@ function ShtelPageContent() {
           setError(null);
 
           const currentFilters = activeFilters;
-          const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
-          if (searchQuery && searchQuery.trim() !== '') {
-            params.append('search', searchQuery.trim());
-          }
+          const params = {
+            page: 1,
+            limit: mobileOptimizedItemsPerPage,
+            search: searchQuery || undefined,
+            category: currentFilters.category || undefined,
+            subcategory: currentFilters.subcategory || undefined,
+            kind: currentFilters.kind || undefined,
+            condition: currentFilters.condition || undefined,
+            min_price: currentFilters.minPrice ? parseInt(currentFilters.minPrice) * 100 : undefined,
+            max_price: currentFilters.maxPrice ? parseInt(currentFilters.maxPrice) * 100 : undefined,
+            city: currentFilters.city || undefined,
+            region: currentFilters.region || undefined
+          };
 
-          const response = await fetchMarketplaceListings(params.toString(), fetchTimeoutMs);
+          const response = await fetchMarketplaceListings(params);
           
-          setListings(response.listings || []);
-          setCurrentPage(1);
-          setTotalListings(response.total || 0);
-          setTotalPages(response.totalPages || 1);
+          if (response.success && response.data?.listings) {
+            setListings(response.data.listings);
+            setCurrentPage(1);
+            setTotalListings(response.data.total || 0);
+            setTotalPages(response.data.totalPages || 1);
+          } else {
+            setListings([]);
+            setCurrentPage(1);
+            setTotalListings(0);
+            setTotalPages(1);
+          }
           
-          trackApiCall('shtel_listings', response.listings?.length || 0, Date.now() - Date.now());
+          trackApiCall('shtel_listings', response.data?.listings?.length || 0, Date.now() - Date.now());
         } catch (fetchErr) {
           console.error('Error fetching shtel listings:', fetchErr);
           if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
