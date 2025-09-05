@@ -97,7 +97,7 @@ export default function EateryPageClient() {
     }
   }, [itemsPerPage, fixedItemsPerPage]);
 
-  // Infinite scroll fetch function — trust hook's signal, no local AbortController
+  // Infinite scroll fetch function with timeout handling
   const fetchMore = useCallback(async ({ signal, offset, limit }: { signal: AbortSignal; offset: number; limit: number }) => {
     try {
       // Set loading state for initial load
@@ -136,7 +136,21 @@ export default function EateryPageClient() {
         params.set('userLng', userLocation.longitude.toString());
       }
 
-      const response = await fetch(`/api/restaurants-with-filters?${params.toString()}`, { signal });
+      // Add timeout to fetch (shorter than API timeout to fail fast)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.log('Eatery page timeout - aborting request');
+      }, 8000); // 8 second timeout
+
+      // Combine the hook's signal with our timeout signal
+      const combinedSignal = AbortSignal.any([signal, controller.signal]);
+
+      const response = await fetch(`/api/restaurants-with-filters?${params.toString()}`, { 
+        signal: combinedSignal 
+      });
+
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -177,7 +191,14 @@ export default function EateryPageClient() {
         throw new Error('Failed to fetch restaurants');
       }
     } catch (err: any) {
-      if (err?.name === 'AbortError') throw err;
+      if (err?.name === 'AbortError') {
+        console.log('Eatery page request aborted due to timeout');
+        throw new Error('Request timed out - restaurants service may be slow or unavailable');
+      }
+      if (err instanceof Error && (err.message.includes('timeout') || err.message.includes('timed out'))) {
+        console.log('Eatery page timeout error detected');
+        throw new Error('Request timed out - restaurants service may be slow or unavailable');
+      }
       console.error('Error fetching restaurants:', err);
       
       // Set error state for initial load
