@@ -4,7 +4,6 @@ import UnifiedCard from "@/components/ui/UnifiedCard"
 import { Loader2, Search } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 import { AppliedFilters } from "@/lib/filters/filters.types"
-import { eaterySlug } from "@/lib/utils/slug"
 import type { LightRestaurant } from "../types"
 
 // Import the mock data generator (fallback)
@@ -402,8 +401,8 @@ export default function EateryGrid({
     if (onCardClick) {
       onCardClick(restaurant)
     } else {
-      // Default navigation
-      window.location.href = `/eatery/${eaterySlug(restaurant.name, restaurant.id)}`
+      // Default navigation - use ID-based routing for reliability
+      window.location.href = `/eatery/${restaurant.id}`
     }
   }
 

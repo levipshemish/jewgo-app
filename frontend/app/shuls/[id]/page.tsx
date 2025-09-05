@@ -119,7 +119,7 @@ function parseHoursFromJson(hoursData: string | object): ShulDB['hours'] {
     console.log('Parsed shul hours:', hours)
     return hours
   } catch (err) {
-    console.error('Error parsing shul hours JSON:', err)
+    console.error('Error parsing hours JSON:', err)
     return {
       monday: { open: '', close: '', closed: true },
       tuesday: { open: '', close: '', closed: true },
@@ -132,15 +132,19 @@ function parseHoursFromJson(hoursData: string | object): ShulDB['hours'] {
   }
 }
 
-export default function ShulNamePage() {
+/**
+ * ID-based shul page that provides reliable routing using database IDs
+ * This replaces name-based routing for better reliability and performance
+ */
+export default function ShulIdPage() {
   return (
     <ErrorBoundary>
-      <ShulNamePageContent />
+      <ShulIdPageContent />
     </ErrorBoundary>
   );
 }
 
-function ShulNamePageContent() {
+function ShulIdPageContent() {
   const params = useParams()
   const [shul, setShul] = useState<ShulDB | null>(null)
   const [loading, setLoading] = useState(true)
@@ -160,7 +164,7 @@ function ShulNamePageContent() {
     }
   }
 
-  const shulName = params.name as string
+  const shulId = params.id as string
 
   // Fetch reviews for a synagogue
   const fetchReviews = async (synagogueId: string, offset: number = 0, limit: number = 10) => {
@@ -168,7 +172,7 @@ function ShulNamePageContent() {
       setReviewsLoading(true)
       
       // Use the frontend API route for reviews
-      const response = await fetch(`/api/reviews?restaurantId=${synagogueId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
+      const response = await fetch(`/api/reviews?synagogueId=${synagogueId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
       if (!response.ok) {
         if (offset === 0) {
           setReviews([])
@@ -204,162 +208,128 @@ function ShulNamePageContent() {
     }
   }
 
-  // Fetch shul data from backend API
+  // Fetch shul data by ID
   useEffect(() => {
     const fetchShulData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        // Try to find the synagogue by name first (for URL slug to synagogue mapping)
+        // Validate ID
+        const synagogueId = parseInt(shulId)
+        if (isNaN(synagogueId)) {
+          setError('Invalid synagogue ID')
+          setLoading(false)
+          return
+        }
+
+        // Use the frontend API route for details
+        const detailUrl = `/api/synagogues/${synagogueId}`
         
-        // Use the frontend API route which handles the backend connection
-        const searchUrl = `/api/synagogues?limit=1000`
+        const detailResponse = await fetch(detailUrl)
         
-        const searchResponse = await fetch(searchUrl)
-        
-        if (!searchResponse.ok) {
-          const errorText = await searchResponse.text()
-          console.error('Search response error:', errorText)
-          throw new Error(`Failed to fetch synagogues: ${searchResponse.status} - ${errorText}`)
+        if (!detailResponse.ok) {
+          if (detailResponse.status === 404) {
+            setError('synagogue_not_found')
+          } else {
+            const errorText = await detailResponse.text()
+            console.error('Detail response error:', errorText)
+            throw new Error(`Failed to fetch synagogue details: ${detailResponse.status} - ${errorText}`)
+          }
+          setLoading(false)
+          return
         }
         
-        const searchData = await searchResponse.json()
-        const synagogues = searchData.synagogues || []
+        const detailData = await detailResponse.json()
         
-        // Try to find the synagogue by name (case-insensitive, handle apostrophes and hyphens)
-        const normalizedShulName = shulName.toLowerCase().replace(/['-]/g, '')
-        
-        const foundSynagogue = synagogues.find((synagogue: any) => {
-          if (!synagogue.name) return false
-          
-          const synagogueName = synagogue.name.toLowerCase()
-          
-          // Convert URL slug back to potential synagogue name format
-          // e.g., "beth-israel" -> "beth israel"
-          const shulNameWithSpaces = shulName.toLowerCase().replace(/-/g, ' ')
-          
-          // Also try with apostrophes restored - handle multiple patterns
-          const shulNameWithApostrophes = shulNameWithSpaces
-            .replace(/beth/, "beth")
-            .replace(/temple/, "temple")
-          
-          // Normalize both names for comparison (remove apostrophes and hyphens)
-          const normalizedSynagogueName = synagogueName.replace(/['-]/g, '')
-          
-          // Check multiple variations
-          return synagogueName === shulNameWithSpaces ||
-                 synagogueName === shulNameWithApostrophes ||
-                 synagogueName === normalizedShulName ||
-                 normalizedSynagogueName === normalizedShulName ||
-                 synagogueName.includes(shulNameWithSpaces) ||
-                 synagogueName.includes(shulNameWithApostrophes) ||
-                 shulNameWithSpaces.includes(synagogueName) ||
-                 shulNameWithApostrophes.includes(synagogueName) ||
-                 normalizedSynagogueName.includes(normalizedShulName) ||
-                 normalizedShulName.includes(normalizedSynagogueName)
-        })
+        // Extract synagogue data from the response
+        let synagogueData = null
+        if (detailData.success && detailData.data) {
+          // Handle nested data structure
+          synagogueData = detailData.data.synagogue || detailData.data
+        } else if (detailData.id) {
+          // Direct synagogue object
+          synagogueData = detailData
+        }
 
-        if (!foundSynagogue) {
-          // Instead of throwing an error, set a specific "not found" state
+        if (!synagogueData) {
           setError('synagogue_not_found')
           setLoading(false)
           return
         }
 
-        // Now use the backend's ID-based search utility
-        
-        // Use the frontend API route for details
-        const detailUrl = `/api/synagogues/${foundSynagogue.id}`
-        
-        const detailResponse = await fetch(detailUrl)
-        
-        if (!detailResponse.ok) {
-          const errorText = await detailResponse.text()
-          console.error('Detail response error:', errorText)
-          throw new Error(`Failed to fetch synagogue details: ${detailResponse.status} - ${errorText}`)
-        }
-        
-        const detailData = await detailResponse.json()
-        
         // Convert synagogue data to ShulDB format
         const shulData: ShulDB = {
-          id: detailData.id?.toString() || foundSynagogue.id?.toString(),
-          name: detailData.name || foundSynagogue.name,
-          description: detailData.description || foundSynagogue.description || '',
-          short_description: detailData.short_description || foundSynagogue.short_description || '',
+          id: synagogueData.id?.toString(),
+          name: synagogueData.name,
+          description: synagogueData.description || '',
+          short_description: synagogueData.short_description || '',
           address: (() => {
             // Construct full address from components
             const addressParts = [
-              detailData.address || foundSynagogue.address,
-              detailData.city || foundSynagogue.city,
-              detailData.state || foundSynagogue.state,
-              detailData.zip_code || foundSynagogue.zip_code
+              synagogueData.address,
+              synagogueData.city,
+              synagogueData.state,
+              synagogueData.zip_code
             ].filter(Boolean)
             return addressParts.join(', ')
           })(),
-          city: detailData.city || foundSynagogue.city || '',
-          state: detailData.state || foundSynagogue.state || '',
-          zip_code: detailData.zip_code || foundSynagogue.zip_code || '',
-          phone_number: detailData.phone_number || foundSynagogue.phone_number || '',
-          listing_type: detailData.listing_type || foundSynagogue.listing_type || 'synagogue',
-          rating: detailData.rating || foundSynagogue.rating || 0,
-          denomination: detailData.denomination || foundSynagogue.denomination || 'Jewish',
-          shul_type: detailData.shul_type || foundSynagogue.shul_type || '',
-          religious_authority: detailData.religious_authority || foundSynagogue.religious_authority || '',
+          city: synagogueData.city || '',
+          state: synagogueData.state || '',
+          zip_code: synagogueData.zip_code || '',
+          phone_number: synagogueData.phone_number || '',
+          listing_type: synagogueData.listing_type || 'synagogue',
+          rating: synagogueData.google_rating || synagogueData.rating || 0,
+          price_range: synagogueData.price_range || '',
+          kosher_type: synagogueData.kosher_category || '',
+          kosher_agency: synagogueData.certifying_agency || '',
+          kosher_certification: synagogueData.kosher_certification || '',
           images: (() => {
             // Ensure we have at least one image for the gallery
             const allImages = [
-              ...(detailData.images || []),
-              ...(foundSynagogue.additional_images || []),
-              foundSynagogue.image_url
+              ...(synagogueData.images || []),
+              synagogueData.image_url
             ].filter(Boolean)
-            return allImages.length > 0 ? allImages : ['/images/default-synagogue.webp']
+            return allImages.length > 0 ? allImages : ['/modern-product-showcase-with-clean-background.png']
           })(),
           hours: (() => {
-            console.log('Processing shul hours data...')
-            console.log('detailData.hours_parsed:', detailData.hours_parsed)
-            console.log('foundSynagogue.hours_json:', foundSynagogue.hours_json)
+            console.log('Processing hours data...')
+            console.log('synagogueData.hours_parsed:', synagogueData.hours_parsed)
+            console.log('synagogueData.hours_json:', synagogueData.hours_json)
             
-            if (detailData.hours_parsed) {
-              console.log('Using hours_parsed from detailData')
+            if (synagogueData.hours_parsed) {
+              console.log('Using hours_parsed from synagogueData')
               // hours_parsed is already a parsed object, not a JSON string
-              return parseHoursFromJson(detailData.hours_parsed)
-            } else if (foundSynagogue.hours_json) {
-              console.log('Using hours_json from foundSynagogue')
-              return parseHoursFromJson(foundSynagogue.hours_json)
+              return parseHoursFromJson(synagogueData.hours_parsed)
+            } else if (synagogueData.hours_json) {
+              console.log('Using hours_json from synagogueData')
+              return parseHoursFromJson(synagogueData.hours_json)
             } else {
               console.log('No hours data available')
               return parseHoursFromJson('{"weekday_text": []}')
             }
           })(),
           contact: {
-            phone: detailData.phone_number || foundSynagogue.phone_number || '',
-            email: detailData.email || foundSynagogue.email || '',
-            website: detailData.website || foundSynagogue.website || '',
+            phone: synagogueData.phone_number || '',
+            email: synagogueData.business_email || '',
+            website: synagogueData.website || '',
           },
           location: {
-            latitude: detailData.latitude || foundSynagogue.latitude || 0,
-            longitude: detailData.longitude || foundSynagogue.longitude || 0,
+            latitude: synagogueData.latitude || 0,
+            longitude: synagogueData.longitude || 0,
           },
           stats: {
             view_count: 1234, // TODO: Get from backend
             share_count: 0, // TODO: Get from backend
           },
           admin_settings: {
-            show_contact_button: detailData.admin_settings?.show_contact_button ?? true, // Default to true if not provided
-            contact_url: detailData.admin_settings?.contact_url || '',
+            show_order_button: synagogueData.admin_settings?.show_order_button ?? false, // Default to false for synagogues
+            order_url: synagogueData.admin_settings?.order_url || '',
           },
-          // Shul-specific fields
-          has_daily_minyan: detailData.has_daily_minyan || foundSynagogue.has_daily_minyan || false,
-          has_shabbat_services: detailData.has_shabbat_services || foundSynagogue.has_shabbat_services || false,
-          has_holiday_services: detailData.has_holiday_services || foundSynagogue.has_holiday_services || false,
-          has_mechitza: detailData.has_mechitza || foundSynagogue.has_mechitza || false,
-          has_parking: detailData.has_parking || foundSynagogue.has_parking || false,
-          has_disabled_access: detailData.has_disabled_access || foundSynagogue.has_disabled_access || false,
-          rabbi_name: detailData.rabbi_name || foundSynagogue.rabbi_name || '',
-          services: detailData.services || foundSynagogue.services || [],
-          features: detailData.features || foundSynagogue.features || []
+          // Synagogue-specific fields
+          religious_authority: synagogueData.religious_authority || '',
+          services: synagogueData.services || [],
+          features: synagogueData.features || []
         }
 
         setShul(shulData)
@@ -387,10 +357,10 @@ function ShulNamePageContent() {
       }
     }
 
-    if (shulName) {
+    if (shulId) {
       fetchShulData()
     }
-  }, [shulName])
+  }, [shulId])
 
   // Handle location request from distance button
   const handleLocationRequest = useCallback(async () => {
@@ -519,9 +489,6 @@ function ShulNamePageContent() {
     };
   }, [userLocation, handleLocationRequest]);
 
-  // Map shul data to listing format
-  const _listingData = shul ? mapShulToListingData(shul, userLocation, reviews, handleLocationRequest, locationPermission) : undefined // TODO: Use listing data
-
   // Render loading state
   if (loading) {
     return (
@@ -529,7 +496,7 @@ function ShulNamePageContent() {
         <div className="flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Loading...</h1>
-            <p className="text-gray-600">Loading synagogue details for: {shulName}</p>
+            <p className="text-gray-600">Loading synagogue details for ID: {shulId}</p>
           </div>
         </div>
       </main>
@@ -546,15 +513,15 @@ function ShulNamePageContent() {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold mb-4 text-gray-800">Synagogue Not Found</h1>
               <p className="text-lg text-gray-600 mb-6">
-                We couldn&apos;t find a synagogue named &quot;{shulName}&quot;
+                We couldn&apos;t find a synagogue with ID &quot;{shulId}&quot;
               </p>
               
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                 <h2 className="text-xl font-semibold mb-3 text-blue-800">Suggestions</h2>
                 <ul className="text-left text-blue-700 space-y-2">
-                  <li>• Check the spelling of the synagogue name</li>
+                  <li>• Check if the synagogue ID is correct</li>
                   <li>• Try searching for the synagogue on our main page</li>
-                  <li>• The synagogue may have been removed or renamed</li>
+                  <li>• The synagogue may have been removed</li>
                   <li>• Contact us if you believe this is an error</li>
                 </ul>
               </div>
@@ -587,7 +554,7 @@ function ShulNamePageContent() {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
             <p className="text-gray-600 mb-4">{error}</p>
-            <p className="text-gray-600">Synagogue: {shulName}</p>
+            <p className="text-gray-600">Synagogue ID: {shulId}</p>
             <div className="mt-4">
               <Link 
                 href="/shuls" 
@@ -638,7 +605,7 @@ function ShulNamePageContent() {
       <div className="flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">No Data</h1>
-          <p className="text-gray-600">No synagogue data available for: {shulName}</p>
+          <p className="text-gray-600">No synagogue data available for ID: {shulId}</p>
         </div>
       </div>
     </main>

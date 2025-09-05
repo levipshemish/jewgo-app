@@ -10,7 +10,6 @@ import EateryFilterModal from "./components/EateryFilterModal"
 import { useLocation } from "@/lib/contexts/LocationContext"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
-import { eaterySlug } from "@/lib/utils/slug"
 import type { LightRestaurant } from "./types"
 
 export default function EateryPageClient() {
@@ -93,7 +92,7 @@ export default function EateryPageClient() {
   }, [setFilter, clearFilter, clearAllFilters, activeFilters])
 
   const handleCardClick = useCallback((restaurant: LightRestaurant) => {
-    router.push(`/eatery/${eaterySlug(restaurant.name, restaurant.id)}`)
+    router.push(`/eatery/${restaurant.id}`)
   }, [router])
 
   const handleShowMap = useCallback(() => {

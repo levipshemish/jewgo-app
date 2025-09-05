@@ -8,7 +8,6 @@ import { EateryDB, UserLocation } from '@/types/listing'
 import Link from 'next/link'
 import ErrorBoundary from '../components/ErrorBoundary'
 
-
 /**
  * Parse hours from the backend JSON format into EateryDB format
  */
@@ -133,15 +132,15 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
   }
 }
 
-export default function EateryNamePage() {
+export default function EateryIdPage() {
   return (
     <ErrorBoundary>
-      <EateryNamePageContent />
+      <EateryIdPageContent />
     </ErrorBoundary>
   );
 }
 
-function EateryNamePageContent() {
+function EateryIdPageContent() {
   const params = useParams()
   const [eatery, setEatery] = useState<EateryDB | null>(null)
   const [loading, setLoading] = useState(true)
@@ -161,7 +160,7 @@ function EateryNamePageContent() {
     }
   }
 
-  const eateryName = params.name as string
+  const eateryId = params.id as string
 
   // Fetch reviews for a restaurant
   const fetchReviews = async (restaurantId: string, offset: number = 0, limit: number = 10) => {
@@ -205,152 +204,123 @@ function EateryNamePageContent() {
     }
   }
 
-  // Fetch eatery data from backend API
+  // Fetch eatery data by ID
   useEffect(() => {
     const fetchEateryData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        // Try to find the restaurant by name first (for URL slug to restaurant mapping)
+        // Validate ID
+        const restaurantId = parseInt(eateryId)
+        if (isNaN(restaurantId)) {
+          setError('Invalid restaurant ID')
+          setLoading(false)
+          return
+        }
+
+        // Use the frontend API route for details
+        const detailUrl = `/api/restaurants/${restaurantId}`
         
-        // Use the frontend API route which handles the backend connection
-        const searchUrl = `/api/restaurants?limit=1000`
+        const detailResponse = await fetch(detailUrl)
         
-        const searchResponse = await fetch(searchUrl)
-        
-        if (!searchResponse.ok) {
-          const errorText = await searchResponse.text()
-          console.error('Search response error:', errorText)
-          throw new Error(`Failed to fetch restaurants: ${searchResponse.status} - ${errorText}`)
+        if (!detailResponse.ok) {
+          if (detailResponse.status === 404) {
+            setError('restaurant_not_found')
+          } else {
+            const errorText = await detailResponse.text()
+            console.error('Detail response error:', errorText)
+            throw new Error(`Failed to fetch restaurant details: ${detailResponse.status} - ${errorText}`)
+          }
+          setLoading(false)
+          return
         }
         
-        const searchData = await searchResponse.json()
-        const restaurants = searchData.restaurants || []
+        const detailData = await detailResponse.json()
         
-        // Try to find the restaurant by name (case-insensitive, handle apostrophes and hyphens)
-        const normalizedEateryName = eateryName.toLowerCase().replace(/['-]/g, '')
-        
-        const foundRestaurant = restaurants.find((restaurant: any) => {
-          if (!restaurant.name) return false
-          
-          const restaurantName = restaurant.name.toLowerCase()
-          
-          // Convert URL slug back to potential restaurant name format
-          // e.g., "ariels-bamboo-kitchen" -> "ariels bamboo kitchen"
-          const eateryNameWithSpaces = eateryName.toLowerCase().replace(/-/g, ' ')
-          
-          // Also try with apostrophes restored - handle multiple patterns
-          const eateryNameWithApostrophes = eateryNameWithSpaces
-            .replace(/ariels/, "ariel's")
-            .replace(/ariel s/, "ariel's")
-          
-          // Normalize both names for comparison (remove apostrophes and hyphens)
-          const normalizedRestaurantName = restaurantName.replace(/['-]/g, '')
-          
-          // Check multiple variations
-          return restaurantName === eateryNameWithSpaces ||
-                 restaurantName === eateryNameWithApostrophes ||
-                 restaurantName === normalizedEateryName ||
-                 normalizedRestaurantName === normalizedEateryName ||
-                 restaurantName.includes(eateryNameWithSpaces) ||
-                 restaurantName.includes(eateryNameWithApostrophes) ||
-                 eateryNameWithSpaces.includes(restaurantName) ||
-                 eateryNameWithApostrophes.includes(restaurantName) ||
-                 normalizedRestaurantName.includes(normalizedEateryName) ||
-                 normalizedEateryName.includes(normalizedRestaurantName)
-        })
+        // Extract restaurant data from the response
+        let restaurantData = null
+        if (detailData.success && detailData.data) {
+          // Handle nested data structure
+          restaurantData = detailData.data.restaurant || detailData.data
+        } else if (detailData.id) {
+          // Direct restaurant object
+          restaurantData = detailData
+        }
 
-        if (!foundRestaurant) {
-          // Instead of throwing an error, set a specific "not found" state
+        if (!restaurantData) {
           setError('restaurant_not_found')
           setLoading(false)
           return
         }
 
-        // Now use the backend's ID-based search utility
-        
-        // Use the frontend API route for details
-        const detailUrl = `/api/restaurants/${foundRestaurant.id}`
-        
-        const detailResponse = await fetch(detailUrl)
-        
-        if (!detailResponse.ok) {
-          const errorText = await detailResponse.text()
-          console.error('Detail response error:', errorText)
-          throw new Error(`Failed to fetch restaurant details: ${detailResponse.status} - ${errorText}`)
-        }
-        
-        const detailData = await detailResponse.json()
-        
         // Convert restaurant data to EateryDB format
         const eateryData: EateryDB = {
-          id: detailData.id?.toString() || foundRestaurant.id?.toString(),
-          name: detailData.name || foundRestaurant.name,
-          description: detailData.description || foundRestaurant.description || '',
-          short_description: detailData.short_description || foundRestaurant.short_description || '',
+          id: restaurantData.id?.toString(),
+          name: restaurantData.name,
+          description: restaurantData.description || '',
+          short_description: restaurantData.short_description || '',
           address: (() => {
             // Construct full address from components
             const addressParts = [
-              detailData.address || foundRestaurant.address,
-              detailData.city || foundRestaurant.city,
-              detailData.state || foundRestaurant.state,
-              detailData.zip_code || foundRestaurant.zip_code
+              restaurantData.address,
+              restaurantData.city,
+              restaurantData.state,
+              restaurantData.zip_code
             ].filter(Boolean)
             return addressParts.join(', ')
           })(),
-          city: detailData.city || foundRestaurant.city || '',
-          state: detailData.state || foundRestaurant.state || '',
-          zip_code: detailData.zip_code || foundRestaurant.zip_code || '',
-          phone_number: detailData.contact?.phone || foundRestaurant.phone_number || '',
-          listing_type: detailData.listing_type || foundRestaurant.listing_type || 'restaurant',
-          rating: detailData.rating || foundRestaurant.google_rating || 0,
-          price_range: detailData.price_range || foundRestaurant.price_range || '$',
-          kosher_type: detailData.kosher_type || foundRestaurant.kosher_category || '',
-          kosher_agency: detailData.kosher_agency || foundRestaurant.certifying_agency || '',
-          kosher_certification: detailData.kosher_certification || '',
+          city: restaurantData.city || '',
+          state: restaurantData.state || '',
+          zip_code: restaurantData.zip_code || '',
+          phone_number: restaurantData.phone_number || '',
+          listing_type: restaurantData.listing_type || 'restaurant',
+          rating: restaurantData.google_rating || restaurantData.rating || 0,
+          price_range: restaurantData.price_range || '$',
+          kosher_type: restaurantData.kosher_category || '',
+          kosher_agency: restaurantData.certifying_agency || '',
+          kosher_certification: restaurantData.kosher_certification || '',
           images: (() => {
             // Ensure we have at least one image for the gallery
             const allImages = [
-              ...(detailData.images || []),
-              ...(foundRestaurant.additional_images || []),
-              foundRestaurant.image_url
+              ...(restaurantData.images || []),
+              restaurantData.image_url
             ].filter(Boolean)
             return allImages.length > 0 ? allImages : ['/modern-product-showcase-with-clean-background.png']
           })(),
           hours: (() => {
             console.log('Processing hours data...')
-            console.log('detailData.hours_parsed:', detailData.hours_parsed)
-            console.log('foundRestaurant.hours_json:', foundRestaurant.hours_json)
+            console.log('restaurantData.hours_parsed:', restaurantData.hours_parsed)
+            console.log('restaurantData.hours_json:', restaurantData.hours_json)
             
-            if (detailData.hours_parsed) {
-              console.log('Using hours_parsed from detailData')
+            if (restaurantData.hours_parsed) {
+              console.log('Using hours_parsed from restaurantData')
               // hours_parsed is already a parsed object, not a JSON string
-              return parseHoursFromJson(detailData.hours_parsed)
-            } else if (foundRestaurant.hours_json) {
-              console.log('Using hours_json from foundRestaurant')
-              return parseHoursFromJson(foundRestaurant.hours_json)
+              return parseHoursFromJson(restaurantData.hours_parsed)
+            } else if (restaurantData.hours_json) {
+              console.log('Using hours_json from restaurantData')
+              return parseHoursFromJson(restaurantData.hours_json)
             } else {
               console.log('No hours data available')
               return parseHoursFromJson('{"weekday_text": []}')
             }
           })(),
           contact: {
-            phone: detailData.contact?.phone || foundRestaurant.phone_number || '',
-            email: detailData.contact?.email || foundRestaurant.business_email || '',
-            website: detailData.contact?.website || foundRestaurant.website || '',
+            phone: restaurantData.phone_number || '',
+            email: restaurantData.business_email || '',
+            website: restaurantData.website || '',
           },
           location: {
-            latitude: detailData.location?.latitude || foundRestaurant.latitude || 0,
-            longitude: detailData.location?.longitude || foundRestaurant.longitude || 0,
+            latitude: restaurantData.latitude || 0,
+            longitude: restaurantData.longitude || 0,
           },
           stats: {
             view_count: 1234, // TODO: Get from backend
             share_count: 0, // TODO: Get from backend
           },
           admin_settings: {
-            show_order_button: detailData.admin_settings?.show_order_button ?? true, // Default to true if not provided
-            order_url: detailData.admin_settings?.order_url || '',
+            show_order_button: restaurantData.admin_settings?.show_order_button ?? true, // Default to true if not provided
+            order_url: restaurantData.admin_settings?.order_url || '',
           }
         }
 
@@ -379,13 +349,10 @@ function EateryNamePageContent() {
       }
     }
 
-    if (eateryName) {
+    if (eateryId) {
       fetchEateryData()
     }
-  }, [eateryName])
-
-  // TODO: Implement location permission checking when needed
-  // Function removed to fix lint warning - not used in current implementation
+  }, [eateryId])
 
   // Handle location request from distance button
   const handleLocationRequest = useCallback(async () => {
@@ -514,11 +481,6 @@ function EateryNamePageContent() {
     };
   }, [userLocation, handleLocationRequest]);
 
-  // Note: getUserLocation function was removed, location is handled by handleLocationRequest
-
-  // Map eatery data to listing format
-  const _listingData = eatery ? mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission) : undefined // TODO: Use listing data
-
   // Render loading state
   if (loading) {
     return (
@@ -526,7 +488,7 @@ function EateryNamePageContent() {
         <div className="flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Loading...</h1>
-            <p className="text-gray-600">Loading eatery details for: {eateryName}</p>
+            <p className="text-gray-600">Loading eatery details for ID: {eateryId}</p>
           </div>
         </div>
       </main>
@@ -543,15 +505,15 @@ function EateryNamePageContent() {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold mb-4 text-gray-800">Restaurant Not Found</h1>
               <p className="text-lg text-gray-600 mb-6">
-                We couldn&apos;t find a restaurant named &quot;{eateryName}&quot;
+                We couldn&apos;t find a restaurant with ID &quot;{eateryId}&quot;
               </p>
               
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                 <h2 className="text-xl font-semibold mb-3 text-blue-800">Suggestions</h2>
                 <ul className="text-left text-blue-700 space-y-2">
-                  <li>• Check the spelling of the restaurant name</li>
+                  <li>• Check if the restaurant ID is correct</li>
                   <li>• Try searching for the restaurant on our main page</li>
-                  <li>• The restaurant may have been removed or renamed</li>
+                  <li>• The restaurant may have been removed</li>
                   <li>• Contact us if you believe this is an error</li>
                 </ul>
               </div>
@@ -584,7 +546,7 @@ function EateryNamePageContent() {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
             <p className="text-gray-600 mb-4">{error}</p>
-            <p className="text-gray-600">Eatery: {eateryName}</p>
+            <p className="text-gray-600">Eatery ID: {eateryId}</p>
             <div className="mt-4">
               <Link 
                 href="/eatery" 
@@ -635,7 +597,7 @@ function EateryNamePageContent() {
       <div className="flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">No Data</h1>
-          <p className="text-gray-600">No eatery data available for: {eateryName}</p>
+          <p className="text-gray-600">No eatery data available for ID: {eateryId}</p>
         </div>
       </div>
     </main>

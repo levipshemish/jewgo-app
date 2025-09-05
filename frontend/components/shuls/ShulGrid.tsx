@@ -474,7 +474,8 @@ export default function ShulGrid({
   // Handle card click
   const handleCardClick = (shul: any) => {
     console.log("Shul clicked:", shul)
-    // TODO: Navigate to shul detail page
+    // Navigate to ID-based shul detail page
+    window.location.href = `/shuls/${shul.id}`
   }
 
   if (filteredShuls.length === 0 && !loading) {
