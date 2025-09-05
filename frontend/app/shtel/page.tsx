@@ -485,10 +485,6 @@ function ShtelPageContent() {
               limit: mobileOptimizedItemsPerPage,
               search: searchQuery || undefined,
               category: currentFilters.category || undefined,
-              kind: currentFilters.kind || undefined,
-              condition: currentFilters.condition || undefined,
-              min_price: currentFilters.minPrice ? parseInt(currentFilters.minPrice) * 100 : undefined,
-              max_price: currentFilters.maxPrice ? parseInt(currentFilters.maxPrice) * 100 : undefined,
               city: currentFilters.city || undefined,
               region: currentFilters.region || undefined
             };
