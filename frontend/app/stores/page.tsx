@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback, useRef, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
@@ -490,19 +490,23 @@ function StoresPageContent() {
     }
   }, [isConnected, sendMessage]);
 
-  // Initial data fetch
+  // Initial data fetch - only once
+  const didInit = useRef(false);
   useEffect(() => {
-    fetchStoresData();
-  }, [fetchStoresData]);
+    if (!didInit.current) {
+      didInit.current = true;
+      fetchStoresData();
+    }
+  }, []); // Empty dependency array - only run once
 
   // Mobile-optimized filter changes
   useEffect(() => {
-    if (hasActiveFilters) {
+    if (hasActiveFilters && didInit.current) {
       startTransition(() => {
         fetchStoresData();
       });
     }
-  }, [activeFilters, hasActiveFilters, fetchStoresData]);
+  }, [activeFilters, hasActiveFilters]); // Removed fetchStoresData from dependencies
 
   // Mobile-specific effects
   useEffect(() => {

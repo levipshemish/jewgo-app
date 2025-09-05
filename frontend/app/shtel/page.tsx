@@ -466,7 +466,7 @@ function ShtelPageContent() {
       
       return () => clearTimeout(timeout);
     }
-  }, [userLocation, isSettingLocationFilters, fetchShtełListingsData]);
+  }, [userLocation, isSettingLocationFilters]); // Removed fetchShtełListingsData from dependencies
 
   // Initial data load - only once
   useEffect(() => {
@@ -474,7 +474,7 @@ function ShtelPageContent() {
       didInit.current = true;
       fetchShtełListingsData();
     }
-  }, [fetchShtełListingsData]);
+  }, []); // Empty dependency array - only run once
 
   // Background prefetching for related data
   useEffect(() => {
@@ -524,7 +524,7 @@ function ShtelPageContent() {
       fetchShtełListingsData();
     }, isSlowConnection ? 500 : 300); // Longer debounce for slow connections
     setFetchTimeout(timeout);
-  }, [fetchShtełListingsData, fetchTimeout, isSlowConnection]);
+  }, [fetchTimeout, isSlowConnection]); // Removed fetchShtełListingsData from dependencies
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
