@@ -709,11 +709,11 @@ def create_app(config_class=None):
     # Routes will be registered later just before returning the app
     # Register health blueprint
     try:
-        from routes.health_routes import bp as health_bp
+        from routes.health_routes import health_bp
         from routes.deploy_webhook import deploy_webhook_bp
         from routes.test_webhook import test_webhook_bp
         app.register_blueprint(health_bp)
-        app.register_blueprint(deploy_webhook_bp)
+        app.register_blueprint(deploy_webhook_bp, url_prefix="/webhook")
         app.register_blueprint(test_webhook_bp)
         logger.info("Health routes blueprint registered successfully")
     except ImportError as e:
@@ -2068,39 +2068,16 @@ def create_app(config_class=None):
     def internal_error(error):
         logger.error(f"Internal server error: {error}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
+    # Add dedicated healthz endpoint for container healthcheck
+    @app.route('/healthz', methods=['GET'])
+    def healthz():
+        return jsonify({"ok": True}), 200
+    
     return app, socketio
+
 # Create the app and socketio instances
 app, socketio = create_app()
+
 if __name__ == "__main__":
     # Run the app with SocketIO
     socketio.run(app, host="0.0.0.0", port=8000, debug=True)
-
-    # Simple webhook endpoints
-    @app.route('/webhook/deploy', methods=['POST', 'GET'])
-    def webhook_deploy():
-        from datetime import datetime
-        return jsonify({'message': 'Webhook endpoint working!', 'timestamp': datetime.now().isoformat()})
-    
-    @app.route('/webhook/status', methods=['GET'])
-    def webhook_status():
-        return jsonify({'webhook_configured': True, 'status': 'active'})
-
-    # Direct webhook routes
-    @app.route('/webhook/status', methods=['GET'])
-    def webhook_status():
-        return jsonify({'webhook_configured': True, 'status': 'active'})
-    
-    @app.route('/webhook/deploy', methods=['POST', 'GET'])
-    def webhook_deploy():
-        from datetime import datetime
-        return jsonify({'message': 'Webhook endpoint working!', 'timestamp': datetime.now().isoformat()})
-
-    # Direct webhook routes
-    @app.route('/webhook/status', methods=['GET'])
-    def webhook_status():
-        return jsonify({'webhook_configured': True, 'status': 'active'})
-    
-    @app.route('/webhook/deploy', methods=['POST', 'GET'])
-    def webhook_deploy():
-        from datetime import datetime
-        return jsonify({'message': 'Webhook endpoint working!', 'timestamp': datetime.now().isoformat()})

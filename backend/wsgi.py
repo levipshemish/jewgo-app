@@ -1,4 +1,4 @@
-from app_factory import create_app
+from app_factory_full import create_app
 import os
 
 # Import config_manager with fallback
@@ -24,7 +24,7 @@ Version: 4.1
 Last Updated: 2024
 """
 # Create the Flask application instance
-app = create_app()
+app, socketio = create_app()
 if __name__ == "__main__":
     # Get environment configuration
     is_production = config_manager.get("environment.production", False)

@@ -6,7 +6,7 @@ import hashlib
 
 deploy_webhook_bp = Blueprint('deploy_webhook', __name__)
 
-@deploy_webhook_bp.route('/webhook/deploy', methods=['POST'])
+@deploy_webhook_bp.route('/deploy', methods=['POST'])
 def github_webhook():
     try:
         webhook_secret = os.environ.get('GITHUB_WEBHOOK_SECRET')
@@ -33,25 +33,36 @@ def github_webhook():
         if ref != 'refs/heads/main':
             return jsonify({'message': 'Not main branch'}), 200
         
-        # Run deployment
-        os.chdir('/home/ubuntu')
-        
-        # Git pull
-        pull_result = subprocess.run(['git', 'pull', 'origin', 'main'], capture_output=True, text=True)
-        if pull_result.returncode != 0:
-            return jsonify({'error': 'Git pull failed', 'details': pull_result.stderr}), 500
-        
-        # Docker deployment
-        subprocess.run(['docker-compose', 'down'], capture_output=True)
-        subprocess.run(['docker-compose', 'build', '--no-cache'], capture_output=True)
-        subprocess.run(['docker-compose', 'up', '-d'], capture_output=True)
-        
-        return jsonify({'message': 'Deployment successful'}), 200
+        # Run deployment script
+        try:
+            # Execute deployment script from container
+            deploy_result = subprocess.run(['/app/deploy_container.sh'], 
+                                         capture_output=True, text=True, 
+                                         cwd='/app', timeout=300,
+                                         env={'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'})
+            if deploy_result.returncode != 0:
+                return jsonify({
+                    'error': 'Deployment script failed', 
+                    'details': deploy_result.stderr,
+                    'stdout': deploy_result.stdout
+                }), 500
+            
+            return jsonify({
+                'message': 'Deployment successful',
+                'output': deploy_result.stdout
+            }), 200
+            
+        except subprocess.TimeoutExpired:
+            return jsonify({'error': 'Deployment script timed out'}), 500
+        except FileNotFoundError:
+            return jsonify({'error': 'Deployment script not found at /app/deploy_container.sh'}), 500
+        except PermissionError:
+            return jsonify({'error': 'Permission denied accessing deployment script'}), 500
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@deploy_webhook_bp.route('/webhook/status', methods=['GET'])
+@deploy_webhook_bp.route('/status', methods=['GET'])
 def webhook_status():
     return jsonify({
         'webhook_configured': bool(os.environ.get('GITHUB_WEBHOOK_SECRET')),
