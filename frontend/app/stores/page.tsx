@@ -497,6 +497,7 @@ function StoresPageContent() {
       didInit.current = true;
       fetchStoresData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once
 
   // Mobile-optimized filter changes
@@ -506,6 +507,7 @@ function StoresPageContent() {
         fetchStoresData();
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilters, hasActiveFilters]); // Removed fetchStoresData from dependencies
 
   // Mobile-specific effects
