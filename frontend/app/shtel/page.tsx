@@ -485,8 +485,6 @@ function ShtelPageContent() {
               limit: mobileOptimizedItemsPerPage,
               search: searchQuery || undefined,
               category: currentFilters.category || undefined,
-              city: currentFilters.city || undefined,
-              region: currentFilters.region || undefined
             };
 
             const response = await fetchMarketplaceListings(params);
@@ -495,7 +493,7 @@ function ShtelPageContent() {
               setListings(response.data.listings);
               setCurrentPage(1);
               setTotalListings(response.data.total || 0);
-              setTotalPages(response.data.totalPages || 1);
+              setTotalPages(Math.ceil((response.data.total || 0) / mobileOptimizedItemsPerPage));
             } else {
               setListings([]);
               setCurrentPage(1);
@@ -503,7 +501,7 @@ function ShtelPageContent() {
               setTotalPages(1);
             }
             
-            trackApiCall('shtel_listings', response.data?.listings?.length || 0, Date.now() - Date.now());
+            trackApiCall('shtel_listings', response.data?.listings?.length || 0);
           } catch (fetchErr) {
             console.error('Error fetching shtel listings:', fetchErr);
             if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
@@ -556,12 +554,6 @@ function ShtelPageContent() {
             limit: mobileOptimizedItemsPerPage,
             search: searchQuery || undefined,
             category: currentFilters.category || undefined,
-            kind: currentFilters.kind || undefined,
-            condition: currentFilters.condition || undefined,
-            min_price: currentFilters.minPrice ? parseInt(currentFilters.minPrice) * 100 : undefined,
-            max_price: currentFilters.maxPrice ? parseInt(currentFilters.maxPrice) * 100 : undefined,
-            city: currentFilters.city || undefined,
-            region: currentFilters.region || undefined
           };
 
           const response = await fetchMarketplaceListings(params);
@@ -570,7 +562,7 @@ function ShtelPageContent() {
             setListings(response.data.listings);
             setCurrentPage(1);
             setTotalListings(response.data.total || 0);
-            setTotalPages(response.data.totalPages || 1);
+            setTotalPages(Math.ceil((response.data.total || 0) / mobileOptimizedItemsPerPage));
           } else {
             setListings([]);
             setCurrentPage(1);
@@ -578,7 +570,7 @@ function ShtelPageContent() {
             setTotalPages(1);
           }
           
-          trackApiCall('shtel_listings', response.data?.listings?.length || 0, Date.now() - Date.now());
+          trackApiCall('shtel_listings', response.data?.listings?.length || 0);
         } catch (fetchErr) {
           console.error('Error fetching shtel listings:', fetchErr);
           if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
@@ -669,12 +661,6 @@ function ShtelPageContent() {
             limit: mobileOptimizedItemsPerPage,
             search: searchQuery || undefined,
             category: currentFilters.category || undefined,
-            kind: currentFilters.kind || undefined,
-            condition: currentFilters.condition || undefined,
-            min_price: currentFilters.minPrice ? parseInt(currentFilters.minPrice) * 100 : undefined,
-            max_price: currentFilters.maxPrice ? parseInt(currentFilters.maxPrice) * 100 : undefined,
-            city: currentFilters.city || undefined,
-            region: currentFilters.region || undefined
           };
 
           const response = await fetchMarketplaceListings(params);
@@ -683,7 +669,7 @@ function ShtelPageContent() {
             setListings(response.data.listings);
             setCurrentPage(1);
             setTotalListings(response.data.total || 0);
-            setTotalPages(response.data.totalPages || 1);
+            setTotalPages(Math.ceil((response.data.total || 0) / mobileOptimizedItemsPerPage));
           } else {
             setListings([]);
             setCurrentPage(1);
@@ -691,7 +677,7 @@ function ShtelPageContent() {
             setTotalPages(1);
           }
           
-          trackApiCall('shtel_listings', response.data?.listings?.length || 0, Date.now() - Date.now());
+          trackApiCall('shtel_listings', response.data?.listings?.length || 0);
         } catch (fetchErr) {
           console.error('Error fetching shtel listings:', fetchErr);
           if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
