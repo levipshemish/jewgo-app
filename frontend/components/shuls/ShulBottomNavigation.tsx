@@ -1,195 +1,220 @@
-"use client"
+"use client";
 
-import type * as React from "react"
-import { motion } from "framer-motion"
-import { Home, Heart, Star, Bell, User } from "lucide-react"
-import { useTheme } from "next-themes"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import * as React from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Home, Heart, Star, Bell, User } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-interface MenuItem {
-  icon: React.ReactNode
-  label: string
-  href: string
-  gradient: string
-  iconColor: string
+type MenuItem = {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+  gradient: string;
+  iconColor: string;
+  bgColor: string;
+};
+
+const MENU: MenuItem[] = [
+  { 
+    icon: <Home className="h-5 w-5" />, 
+    label: "Home", 
+    href: "/",           
+    gradient: "linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(37,99,235,0.1) 100%)", 
+    iconColor: "text-blue-500",  
+    bgColor: "bg-blue-500/10" 
+  },
+  { 
+    icon: <Heart className="h-5 w-5" />, 
+    label: "Favorites", 
+    href: "/favorites", 
+    gradient: "linear-gradient(135deg, rgba(236,72,153,0.2) 0%, rgba(219,39,119,0.1) 100%)", 
+    iconColor: "text-pink-500",  
+    bgColor: "bg-pink-500/10" 
+  },
+  { 
+    icon: <Star className="h-5 w-5" />, 
+    label: "Specials", 
+    href: "/specials",   
+    gradient: "linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(217,119,6,0.1) 100%)",  
+    iconColor: "text-amber-500", 
+    bgColor: "bg-amber-500/10" 
+  },
+  { 
+    icon: <Bell className="h-5 w-5" />, 
+    label: "Notifications", 
+    href: "/notifications", 
+    gradient: "linear-gradient(135deg, rgba(249,115,22,0.2) 0%, rgba(234,88,12,0.1) 100%)", 
+    iconColor: "text-orange-500", 
+    bgColor: "bg-orange-500/10" 
+  },
+  { 
+    icon: <User className="h-5 w-5" />, 
+    label: "Profile", 
+    href: "/profile",   
+    gradient: "linear-gradient(135deg, rgba(139,69,19,0.2) 0%, rgba(101,49,13,0.1) 100%)",    
+    iconColor: "text-amber-700", 
+    bgColor: "bg-amber-700/10" 
+  },
+];
+
+interface ShulBottomNavigationProps {
+  currentPath?: string;
+  onNavigate?: (href: string) => void;
+  notificationCount?: number;
 }
 
-const menuItems: MenuItem[] = [
-  {
-    icon: <Home className="h-5 w-5" />,
-    label: "Home",
-    href: "/",
-    gradient: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)",
-    iconColor: "text-blue-500",
-  },
-  {
-    icon: <Heart className="h-5 w-5" />,
-    label: "Favorites",
-    href: "/favorites",
-    gradient: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(219,39,119,0.06) 50%, rgba(190,24,93,0) 100%)",
-    iconColor: "text-pink-500",
-  },
-  {
-    icon: <Star className="h-5 w-5" />,
-    label: "Specials",
-    href: "/specials",
-    gradient: "radial-gradient(circle, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.06) 50%, rgba(180,83,9,0) 100%)",
-    iconColor: "text-yellow-500",
-  },
-  {
-    icon: <Bell className="h-5 w-5" />,
-    label: "Notifications",
-    href: "/notifications",
-    gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
-    iconColor: "text-orange-500",
-  },
-  {
-    icon: <User className="h-5 w-5" />,
-    label: "Profile",
-    href: "/profile",
-    gradient: "radial-gradient(circle, rgba(239,68,68,0.15) 0%, rgba(220,38,38,0.06) 50%, rgba(185,28,28,0) 100%)",
-    iconColor: "text-red-500",
-  },
-]
+export default function ShulBottomNavigation({
+  currentPath,
+  onNavigate,
+  notificationCount = 0,
+}: ShulBottomNavigationProps) {
+  const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
+  
+  // Use currentPath prop or fallback to pathname
+  const activePath = currentPath || pathname;
 
-const itemVariants = {
-  initial: { rotateX: 0, opacity: 1 },
-  hover: { rotateX: -90, opacity: 0 },
-}
+  const activeIndex = React.useMemo(() => {
+    const i = MENU.findIndex(m =>
+      m.href === "/" ? activePath === "/" : activePath === m.href || activePath.startsWith(m.href + "/")
+    );
+    return i >= 0 ? i : -1; // Return -1 if no match found
+  }, [activePath]);
 
-const backVariants = {
-  initial: { rotateX: 90, opacity: 0 },
-  hover: { rotateX: 0, opacity: 1 },
-}
+  const indicatorLeftPct = activeIndex >= 0 ? (activeIndex + 0.5) * (100 / MENU.length) : 0;
 
-const glowVariants = {
-  initial: { opacity: 0, scale: 0.8 },
-  hover: {
-    opacity: 1,
-    scale: 2,
-    transition: {
-      opacity: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
-      scale: { duration: 0.5, type: "spring" as const, stiffness: 300, damping: 25 },
+  const vibrate = React.useCallback(() => {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { (navigator as any).vibrate(10); } catch {}
+    }
+  }, []);
+
+  const handleClick = React.useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      if (onNavigate) {
+        e.preventDefault();
+        vibrate();
+        onNavigate(href);
+      } else {
+        vibrate(); // allow normal navigation when no router is wired
+      }
     },
-  },
-}
-
-const navGlowVariants = {
-  initial: { opacity: 0 },
-  hover: {
-    opacity: 1,
-    transition: {
-      duration: 0.5,
-      ease: [0.4, 0, 0.2, 1] as const,
-    },
-  },
-}
-
-const sharedTransition = {
-  type: "spring" as const,
-  stiffness: 100,
-  damping: 20,
-  duration: 0.5,
-}
-
-export default function ShulBottomNavigation() {
-  const { theme } = useTheme()
-  const pathname = usePathname()
-  const isDarkTheme = theme === "dark"
+    [onNavigate, vibrate]
+  );
 
   return (
-    <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 p-2 bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-lg border-t border-border/40 shadow-lg relative overflow-hidden"
-      initial="initial"
-      whileHover="hover"
-    >
-      <motion.div
-        className={`absolute -inset-2 bg-gradient-radial from-transparent ${
-          isDarkTheme
-            ? "via-blue-400/30 via-20% via-pink-400/30 via-40% via-yellow-400/30 via-60% via-orange-400/30 via-80% via-red-400/30 via-100%"
-            : "via-blue-400/20 via-20% via-pink-400/20 via-40% via-yellow-400/20 via-60% via-orange-400/20 via-80% via-red-400/20 via-100%"
-        } to-transparent rounded-3xl z-0 pointer-events-none`}
-        variants={navGlowVariants}
-      />
-      <ul className="flex items-center justify-around gap-1 relative z-10">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href
-          
-          return (
-            <motion.li key={item.label} className="relative flex-1">
-              <motion.div
-                className="block rounded-xl overflow-visible group relative"
-                style={{ perspective: "600px" }}
-                whileHover="hover"
-                initial="initial"
-              >
-                <motion.div
-                  className="absolute inset-0 z-0 pointer-events-none"
-                  variants={glowVariants}
-                  style={{
-                    background: item.gradient,
-                    opacity: 0,
-                    borderRadius: "16px",
-                  }}
-                />
+    <div className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <motion.nav
+        role="navigation"
+        aria-label="Primary"
+        className="relative w-full overflow-hidden border-t border-gray-200/50 bg-white shadow-lg [contain:layout_paint_style]"
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30, delay: 0.05 }}
+      >
+        {/* Active background indicator */}
+        {activeIndex >= 0 && (
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 h-full w-12 rounded-xl bg-gradient-to-b from-blue-500/10 to-blue-500/5 will-change-transform"
+            style={{ left: "0%", transform: `translateX(${indicatorLeftPct}%) translateX(-50%)` }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          />
+        )}
+
+        <ul className="relative flex items-center">
+          {MENU.map((item, index) => {
+            const isActive = index === activeIndex;
+            const base =
+              "group relative flex h-16 select-none flex-col items-center justify-center gap-1 px-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 rounded-xl";
+            const tone = isActive
+              ? "text-gray-900 dark:text-white"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200";
+
+            return (
+              <li key={item.href} className="relative flex-1" data-nav-item={item.label} data-active={isActive ? "true" : "false"}>
                 <Link
                   href={item.href}
-                  className={`flex flex-col items-center gap-1 px-2 py-3 relative z-10 bg-transparent transition-colors rounded-xl h-16 justify-center ${
-                    isActive
-                      ? "text-primary-foreground bg-primary/20"
-                      : "text-muted-foreground group-hover:text-foreground"
-                  }`}
-                  style={{ transformStyle: "preserve-3d", transformOrigin: "center bottom" }}
+                  className={[base, tone].join(" ")}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={(e: any) => handleClick(e, item.href)}
                 >
-                  <motion.span 
-                    className={`transition-colors duration-300 group-hover:${item.iconColor} ${
-                      isActive ? "text-primary" : "text-foreground"
-                    }`}
-                    variants={itemVariants}
-                    transition={sharedTransition}
+                  {/* soft per-item glow */}
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute inset-0 rounded-xl ${isActive ? "" : "opacity-0 group-hover:opacity-100"}`}
+                    style={{ background: item.gradient, transition: "opacity 200ms" }}
+                  />
+
+                  {/* icon */}
+                  <motion.span
+                    className={`relative flex h-8 w-8 items-center justify-center rounded-xl ${isActive ? item.bgColor : "hover:bg-gray-100 dark:hover:bg-gray-800"} motion-reduce:transform-none motion-reduce:transition-none`}
+                    whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   >
-                    {item.icon}
+                    <motion.span
+                      className={isActive ? item.iconColor : ""}
+                      animate={prefersReducedMotion ? undefined : isActive ? { rotateY: 360 } : { rotateY: 0 }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                    >
+                      {item.icon}
+                    </motion.span>
+
+                    {isActive && !prefersReducedMotion && (
+                      <motion.span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-blue-500/70"
+                        initial={{ scale: 1, opacity: 0.4 }}
+                        animate={{ scale: [1, 1.18, 1], opacity: [0.4, 0.1, 0.4] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                    )}
                   </motion.span>
-                  <motion.span 
-                    className="text-xs font-medium"
-                    variants={itemVariants}
-                    transition={sharedTransition}
-                  >
+
+                  <span className={`text-xs ${isActive ? "font-semibold text-gray-900 dark:text-white" : ""}`}>
                     {item.label}
-                  </motion.span>
+                  </span>
+
+                  {/* notifications badge */}
+                  {item.label === "Notifications" && notificationCount > 0 && (
+                    <>
+                      <span
+                        className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white"
+                        aria-hidden="true"
+                      >
+                        {notificationCount}
+                      </span>
+                      <span className="sr-only" aria-live="polite">
+                        {notificationCount} new notifications
+                      </span>
+                    </>
+                  )}
+
+                  {/* active underline pill */}
+                  <motion.span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -bottom-0.5 h-1 w-10 rounded-full bg-current opacity-60"
+                    initial={false}
+                    animate={{ opacity: isActive ? 0.9 : 0, y: isActive ? 0 : 6, scaleX: isActive ? 1 : 0.5 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                  />
                 </Link>
-                <Link
-                  href={item.href}
-                  className={`flex flex-col items-center gap-1 px-2 py-3 absolute inset-0 z-10 bg-transparent transition-colors rounded-xl h-16 justify-center ${
-                    isActive
-                      ? "text-primary-foreground bg-primary/20"
-                      : "text-muted-foreground group-hover:text-foreground"
-                  }`}
-                  style={{ transformStyle: "preserve-3d", transformOrigin: "center top", transform: "rotateX(90deg)" }}
-                >
-                  <motion.span 
-                    className={`transition-colors duration-300 group-hover:${item.iconColor} ${
-                      isActive ? "text-primary" : "text-foreground"
-                    }`}
-                    variants={backVariants}
-                    transition={sharedTransition}
-                  >
-                    {item.icon}
-                  </motion.span>
-                  <motion.span 
-                    className="text-xs font-medium"
-                    variants={backVariants}
-                    transition={sharedTransition}
-                  >
-                    {item.label}
-                  </motion.span>
-                </Link>
-              </motion.div>
-            </motion.li>
-          )
-        })}
-      </ul>
-    </motion.nav>
-  )
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* bottom hairline accent */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        />
+      </motion.nav>
+    </div>
+  );
 }
