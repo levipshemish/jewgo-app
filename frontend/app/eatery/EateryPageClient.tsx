@@ -7,13 +7,13 @@ import ActionButtons from "@/components/layout/ActionButtons"
 import EateryGrid from "./components/EateryGrid"
 import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
 import EateryFilterModal from "./components/EateryFilterModal"
-import { useLocation } from "@/lib/contexts/LocationContext"
+import { useLocationData } from "@/hooks/useLocationData"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "./types"
-import LocationPromptPopup from "@/components/LocationPromptPopup"
+import LocationAwarePage from "@/components/LocationAwarePage"
 
-export default function EateryPageClient() {
+function EateryPageContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showDistance] = useState(true)
   const [showRating] = useState(true)
@@ -24,45 +24,15 @@ export default function EateryPageClient() {
   const pathname = usePathname()
   const router = useRouter()
   
-  // Location context for distance calculations
+  // Use the new location data hook
   const {
     userLocation,
     isLoading: locationLoading,
     requestLocation,
     permissionStatus,
-  } = useLocation()
-
-  // Debug logging for location
-  console.log('EateryPageClient location debug:', {
-    hasUserLocation: !!userLocation,
-    userLocation,
-    locationLoading,
-    permissionStatus
+  } = useLocationData({
+    fallbackText: 'Get Location'
   })
-
-
-  // Show location permission prompt if no location is available
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false)
-  const [lastPermissionStatus, setLastPermissionStatus] = useState<string | null>(null)
-  
-  useEffect(() => {
-    // Show location prompt if:
-    // 1. No user location available
-    // 2. Not currently loading
-    // 3. Permission status is 'prompt' (user hasn't made a decision yet)
-    // 4. Permission status changed from 'denied' to 'prompt' (user reset permissions)
-    const shouldShowPrompt = !userLocation && 
-                           !locationLoading && 
-                           permissionStatus === 'prompt' &&
-                           (lastPermissionStatus === null || lastPermissionStatus === 'denied')
-    
-    if (shouldShowPrompt) {
-      setShowLocationPrompt(true)
-    }
-    
-    // Update the last permission status
-    setLastPermissionStatus(permissionStatus)
-  }, [userLocation, locationLoading, permissionStatus, lastPermissionStatus])
 
   // Advanced filters hook
   const {
@@ -130,9 +100,8 @@ export default function EateryPageClient() {
   }, [router])
 
   const handleShowMap = useCallback(() => {
-    // TODO: Implement map view
-    console.log("View map")
-  }, [])
+    router.push('/live-map')
+  }, [router])
 
   const handleAddEatery = useCallback(() => {
     // TODO: Implement add eatery functionality
@@ -198,12 +167,14 @@ export default function EateryPageClient() {
         onRequestLocation={requestLocation}
       />
 
-      {/* Location Permission Prompt */}
-      <LocationPromptPopup
-        isOpen={showLocationPrompt}
-        onClose={() => setShowLocationPrompt(false)}
-        onSkip={() => setShowLocationPrompt(false)}
-      />
     </div>
+  )
+}
+
+export default function EateryPageClient() {
+  return (
+    <LocationAwarePage showLocationPrompt={true}>
+      <EateryPageContent />
+    </LocationAwarePage>
   )
 }

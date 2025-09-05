@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { DEBUG, debugLog } from '@/lib/utils/debug';
 
 interface UserLocation {
@@ -14,6 +14,8 @@ interface LocationState {
   permissionStatus: 'granted' | 'denied' | 'prompt' | 'unsupported';
   isLoading: boolean;
   error: string | null;
+  hasShownPopup: boolean;
+  lastPopupShownTime: number | null;
 }
 
 interface LocationContextType extends LocationState {
@@ -25,11 +27,15 @@ interface LocationContextType extends LocationState {
   setLoading: (loading: boolean) => void;
   checkPermissionStatus: () => Promise<'granted' | 'denied' | 'prompt' | 'unsupported'>;
   refreshPermissionStatus: () => Promise<void>;
+  markPopupShown: () => void;
+  shouldShowPopup: (forceShow?: boolean) => boolean;
+  resetPopupState: () => void;
 }
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
 const LOCATION_STORAGE_KEY = 'jewgo_location_data';
+const POPUP_STORAGE_KEY = 'jewgo_location_popup_state';
 
 export const useLocation = () => {
   const context = useContext(LocationContext);
@@ -50,10 +56,27 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [error, setError] = useState<string | null>(null);
   const [lastRequestTime, setLastRequestTime] = useState<number>(0);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [hasShownPopup, setHasShownPopup] = useState(false);
+  const [lastPopupShownTime, setLastPopupShownTime] = useState<number | null>(null);
 
-  // Load location data from localStorage on mount and check actual browser permissions
+  // Load location data and popup state from localStorage on mount and check actual browser permissions
   useEffect(() => {
     const savedLocationData = localStorage.getItem(LOCATION_STORAGE_KEY);
+    const savedPopupState = localStorage.getItem(POPUP_STORAGE_KEY);
+    
+    // Load popup state
+    if (savedPopupState) {
+      try {
+        const popupData = JSON.parse(savedPopupState);
+        setHasShownPopup(popupData.hasShownPopup || false);
+        setLastPopupShownTime(popupData.lastPopupShownTime || null);
+        if (DEBUG) { debugLog('📍 LocationContext: Loaded popup state:', popupData); }
+      } catch (_error) {
+        // Clear corrupted popup data
+        localStorage.removeItem(POPUP_STORAGE_KEY);
+        if (DEBUG) { debugLog('📍 LocationContext: Cleared corrupted popup state'); }
+      }
+    }
     
     // First, check the actual browser permission status
     const checkBrowserPermission = async () => {
@@ -84,7 +107,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               if (DEBUG) { debugLog('📍 LocationContext: Permission denied, cleared location data'); }
             } else if (newState === 'granted') {
               setError(null);
-              if (DEBUG) { debugLog('📍 LocationContext: Permission granted'); }
+              if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting location'); }
+              // Automatically request location when permission is granted
+              requestLocation();
             }
           };
           
@@ -127,12 +152,18 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               // Location is too old, clear it
               localStorage.removeItem(LOCATION_STORAGE_KEY);
               if (DEBUG) { debugLog(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`); }
+              // Request fresh location since saved data is expired
+              requestLocation();
             }
           }
         } catch (_error) {
           // Clear corrupted data
           localStorage.removeItem(LOCATION_STORAGE_KEY);
         }
+      } else if (permissionState === 'granted' && !savedLocationData) {
+        // Permission is granted but no saved data, request location
+        if (DEBUG) { debugLog('📍 LocationContext: Permission granted but no saved data, requesting location'); }
+        requestLocation();
       } else if (permissionState === 'denied') {
         // Clear any saved location data if permission is denied
         localStorage.removeItem(LOCATION_STORAGE_KEY);
@@ -156,6 +187,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     // Don't save if permission is denied
         if (permissionStatus === 'denied') {
           localStorage.removeItem(LOCATION_STORAGE_KEY);
+          // Reset popup state when location data is cleared
+          setHasShownPopup(false);
+          setLastPopupShownTime(null);
           if (DEBUG) { debugLog('📍 LocationContext: Removed location data due to denied permission'); }
           return;
         }
@@ -191,6 +225,26 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       }
     }
   }, [hasInitialized, userLocation, permissionStatus]);
+
+  // Save popup state to localStorage whenever it changes
+  useEffect(() => {
+    if (!hasInitialized) {
+      return;
+    }
+
+    const popupData = {
+      hasShownPopup,
+      lastPopupShownTime,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem(POPUP_STORAGE_KEY, JSON.stringify(popupData));
+      if (DEBUG) { debugLog('📍 LocationContext: Saved popup state to localStorage'); }
+    } catch (_error) {
+      if (DEBUG) { console.error('❌ LocationContext: Failed to save popup state:', _error); }
+    }
+  }, [hasInitialized, hasShownPopup, lastPopupShownTime]);
 
   const requestLocation = useCallback(() => {
     // console.log('📍 LocationContext: requestLocation called', {
@@ -296,6 +350,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setPermissionStatus('prompt');
     setError(null);
     localStorage.removeItem(LOCATION_STORAGE_KEY);
+    // Reset popup state when location is manually cleared
+    setHasShownPopup(false);
+    setLastPopupShownTime(null);
     if (DEBUG) { debugLog('📍 LocationContext: Manually cleared all location data'); }
   }, []);
 
@@ -342,16 +399,78 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setUserLocation(null);
       setError('Location access was denied');
       localStorage.removeItem(LOCATION_STORAGE_KEY);
+      // Reset popup state when permission is denied
+      setHasShownPopup(false);
+      setLastPopupShownTime(null);
     } else if (newStatus === 'granted') {
       setError(null);
     }
   }, [checkPermissionStatus]);
 
-  const value: LocationContextType = {
+  const markPopupShown = useCallback(() => {
+    setHasShownPopup(true);
+    setLastPopupShownTime(Date.now());
+    if (DEBUG) { debugLog('📍 LocationContext: Marked popup as shown'); }
+  }, []);
+
+  const shouldShowPopup = useCallback((forceShow: boolean = false): boolean => {
+    // Always show if forced (for location-required pages)
+    if (forceShow) {
+      return true;
+    }
+
+    // Don't show if we already have location
+    if (userLocation) {
+      return false;
+    }
+
+    // Don't show if currently loading
+    if (isLoading) {
+      return false;
+    }
+
+    // Don't show if permission is denied or unsupported
+    if (permissionStatus === 'denied' || permissionStatus === 'unsupported') {
+      return false;
+    }
+
+    // Check if location cache was cleared (no saved location data)
+    const savedLocationData = localStorage.getItem(LOCATION_STORAGE_KEY);
+    const cacheWasCleared = !savedLocationData;
+
+    // Show popup if:
+    // 1. Cache was cleared (no saved location data)
+    // 2. Permission is prompt and we haven't shown popup yet
+    // 3. Permission is prompt and we've shown popup but cache was cleared
+    if (permissionStatus === 'prompt') {
+      if (cacheWasCleared) {
+        if (DEBUG) { debugLog('📍 LocationContext: Showing popup - cache was cleared'); }
+        return true;
+      }
+      
+      if (!hasShownPopup) {
+        if (DEBUG) { debugLog('📍 LocationContext: Showing popup - first time'); }
+        return true;
+      }
+    }
+
+    return false;
+  }, [userLocation, isLoading, permissionStatus, hasShownPopup, lastPopupShownTime]);
+
+  const resetPopupState = useCallback(() => {
+    setHasShownPopup(false);
+    setLastPopupShownTime(null);
+    localStorage.removeItem(POPUP_STORAGE_KEY);
+    if (DEBUG) { debugLog('📍 LocationContext: Reset popup state'); }
+  }, []);
+
+  const value: LocationContextType = useMemo(() => ({
     userLocation,
     permissionStatus,
     isLoading,
     error,
+    hasShownPopup,
+    lastPopupShownTime,
     requestLocation,
     setLocation,
     clearLocation,
@@ -360,7 +479,28 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setLoading: setLoadingHandler,
     checkPermissionStatus,
     refreshPermissionStatus,
-  };
+    markPopupShown,
+    shouldShowPopup,
+    resetPopupState,
+  }), [
+    userLocation,
+    permissionStatus,
+    isLoading,
+    error,
+    hasShownPopup,
+    lastPopupShownTime,
+    requestLocation,
+    setLocation,
+    clearLocation,
+    setPermissionStatusHandler,
+    setErrorHandler,
+    setLoadingHandler,
+    checkPermissionStatus,
+    refreshPermissionStatus,
+    markPopupShown,
+    shouldShowPopup,
+    resetPopupState,
+  ]);
 
   // IMPORTANT: always render children regardless of location status
   return (

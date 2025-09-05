@@ -5,12 +5,13 @@ import Header from "@/components/layout/Header"
 import { CategoryTabs } from "@/components/core"
 import ActionButtons from "@/components/layout/ActionButtons"
 import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
-import { useLocation } from "@/lib/contexts/LocationContext"
+import { useLocationData } from "@/hooks/useLocationData"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
 import { generateMockShtetl, type MockShtetl } from "@/lib/mockData/shtetl"
+import LocationAwarePage from "@/components/LocationAwarePage"
 
 // Shtetl listing type
 interface ShtetlListing {
@@ -81,7 +82,7 @@ const fetchShtetlListings = async (limit: number, params?: string, timeoutMs: nu
   }
 };
 
-export default function ShtelPage() {
+function ShtelPageContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showDistance] = useState(true)
   const [showRating] = useState(true)
@@ -96,12 +97,15 @@ export default function ShtelPage() {
   const pathname = usePathname()
   const router = useRouter()
   
-  // Location context for distance calculations
+  // Use the new location data hook
   const {
     userLocation,
     isLoading: locationLoading,
     requestLocation,
-  } = useLocation()
+    getItemDisplayText
+  } = useLocationData({
+    fallbackText: 'Get Location'
+  })
 
   // Advanced filters hook
   const {
@@ -141,7 +145,7 @@ export default function ShtelPage() {
         params.append('limit', '50')
         
         const response = await fetchShtetlListings(50, params.toString())
-        setListings(response.listings)
+        setListings(Array.isArray(response.listings) ? response.listings : [])
       } catch (err) {
         console.error('Error fetching shtetl listings:', err)
         
@@ -152,7 +156,7 @@ export default function ShtelPage() {
         
         // Fall back to mock data
         const mockListings = generateMockShtetl(24)
-        setListings(mockListings)
+        setListings(Array.isArray(mockListings) ? mockListings : [])
       } finally {
         setLoading(false)
       }
@@ -317,7 +321,7 @@ export default function ShtelPage() {
           
           {/* Grid Layout - Exactly matching EateryGrid and ShulGrid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {listings.map((listing, index) => (
+            {Array.isArray(listings) && listings.map((listing, index) => (
               <div key={`shtel-${listing.id}-${index}`}>
               <Card
                   data={transformListingToCardData(listing)}
@@ -338,7 +342,7 @@ export default function ShtelPage() {
         </div>
       )}
 
-        {listings.length === 0 && !loading && (
+        {Array.isArray(listings) && listings.length === 0 && !loading && (
           <div className="text-center py-10 px-5">
             <div className="text-5xl mb-4">🏪</div>
             <p className="text-lg text-gray-600 mb-2">No listings found</p>
@@ -352,5 +356,13 @@ export default function ShtelPage() {
       {/* Bottom Navigation - Fixed at bottom */}
       <ShulBottomNavigation />
     </div>
+  )
+}
+
+export default function ShtelPage() {
+  return (
+    <LocationAwarePage showLocationPrompt={true}>
+      <ShtelPageContent />
+    </LocationAwarePage>
   )
 }

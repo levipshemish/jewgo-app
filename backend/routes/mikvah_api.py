@@ -6,6 +6,21 @@ Provides RESTful API access to mikvah facility data with filtering and search ca
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timezone
 import logging
+
+def convert_params_for_sqlalchemy(query, params):
+    """Convert %s placeholders to named parameters for SQLAlchemy"""
+    named_params = {}
+    param_count = 0
+    for param in params:
+        named_params[f'param_{param_count}'] = param
+        param_count += 1
+
+    # Replace %s with :param_N in the query
+    named_query = query
+    for i in range(len(params)):
+        named_query = named_query.replace('%s', f':param_{i}', 1)
+
+    return named_query, named_params
 from typing import Optional, Dict, Any, List
 import math
 
@@ -110,16 +125,8 @@ def build_order_clause(lat: Optional[float], lng: Optional[float],
 @mikvah_bp.route('/', methods=['GET'])
 def get_mikvah():
     """Get mikvah facilities with filtering and pagination."""
-    import signal
     from flask import current_app
     from sqlalchemy import text
-    
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Database query timed out")
-    
-    # Set a 10-second timeout for the entire request
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(10)
     
     try:
         # Get database manager from app context using v4 pattern
@@ -127,6 +134,9 @@ def get_mikvah():
         db_manager = deps.get("get_db_manager_v4")()
         if not db_manager:
             return jsonify({'error': 'Database not available'}), 503
+        
+        # Ensure database connection is established
+        db_manager.connect()
         # Parse query parameters - support both offset and page-based pagination
         limit = min(int(request.args.get('limit', 20)), 100)  # Max 100 per page
         
@@ -179,6 +189,9 @@ def get_mikvah():
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }), 503
         
+        # Ensure database connection is established
+        db_manager.connect()
+        
         try:
             # Build WHERE clause
             where_clause, where_params = build_where_clause(filters)
@@ -192,7 +205,8 @@ def get_mikvah():
             
             # Execute count query using SQLAlchemy session
             with db_manager.connection_manager.get_session() as session:
-                count_result = session.execute(text(count_query), where_params).fetchone()
+                named_query, named_params = convert_params_for_sqlalchemy(count_query, where_params)
+                count_result = session.execute(text(named_query), named_params).fetchone()
                 total = count_result[0] if count_result else 0
             
             # Apply distance filter if location is provided using optimized Haversine
@@ -235,7 +249,8 @@ def get_mikvah():
             where_params.extend([limit, offset])
             # Execute data query using SQLAlchemy session
             with db_manager.connection_manager.get_session() as session:
-                result = session.execute(text(data_query), where_params).fetchall()
+                named_query, named_params = convert_params_for_sqlalchemy(data_query, where_params)
+                result = session.execute(text(named_query), named_params).fetchall()
                 # Convert SQLAlchemy Row objects to dictionaries
                 mikvah_facilities = [dict(row._mapping) for row in result]
             
@@ -308,6 +323,9 @@ def get_mikvah_facility(mikvah_id: int):
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }), 503
         
+        # Ensure database connection is established
+        db_manager.connect()
+        
         try:
             # Get mikvah facility details
             mikvah_query = """
@@ -378,6 +396,9 @@ def get_filter_options():
                 'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }), 503
+        
+        # Ensure database connection is established
+        db_manager.connect()
         
         try:
             # Get unique values for filter options

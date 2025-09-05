@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useCallback, useRef, RefObject } from "react"
+import { useState, useEffect, useCallback, useRef, RefObject, useMemo } from "react"
 import Card from "@/components/core/cards/Card"
 import { Loader2, Search } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
@@ -40,6 +40,56 @@ export default function EateryGrid({
   const [page, setPage] = useState(0)
   const [backendError, setBackendError] = useState(false)
   const isRetryingRef = useRef(false)
+
+  // Debug userLocation changes
+  useEffect(() => {
+    console.log('EateryGrid userLocation changed:', {
+      hasUserLocation: !!userLocation,
+      userLocation,
+      timestamp: Date.now()
+    })
+  }, [userLocation])
+
+  // Transform restaurant data for UnifiedCard
+  const transformRestaurant = useCallback((restaurant: LightRestaurant) => {
+    // Calculate distance if user location is available
+    let distanceText = ''
+    console.log('EateryGrid transformRestaurant debug:', {
+      restaurantName: restaurant.name,
+      hasUserLocation: !!userLocation,
+      userLocation,
+      hasRestaurantLocation: !!(restaurant.latitude !== undefined && restaurant.longitude !== undefined),
+      restaurantLocation: { lat: restaurant.latitude, lng: restaurant.longitude },
+      fullRestaurantData: restaurant
+    })
+    
+    if (userLocation && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        restaurant.latitude,
+        restaurant.longitude
+      )
+      distanceText = formatDistance(distance)
+      console.log('EateryGrid calculated distance:', { distance, distanceText })
+    } else {
+      console.log('EateryGrid: No distance calculated - missing location data')
+    }
+
+    const finalDistance = distanceText || (userLocation ? '' : restaurant.zip_code || '')
+    console.log('EateryGrid final distance:', finalDistance)
+
+    return {
+      ...restaurant,
+      distance: finalDistance
+    }
+  }, [userLocation])
+
+  // Memoize transformed restaurants to ensure re-calculation when userLocation changes
+  const transformedRestaurants = useMemo(() => {
+    console.log('EateryGrid: Recalculating transformed restaurants due to userLocation change')
+    return restaurants.map(restaurant => transformRestaurant(restaurant))
+  }, [restaurants, transformRestaurant])
 
   // Real API function for restaurants with offset-based pagination for infinite scroll
   const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
@@ -353,43 +403,8 @@ export default function EateryGrid({
     return () => container.removeEventListener("scroll", handleScroll)
   }, [loadMoreItems, scrollContainerRef])
 
-  // Transform restaurant data for UnifiedCard
-  const transformRestaurant = useCallback((restaurant: LightRestaurant) => {
-    // Calculate distance if user location is available
-    let distanceText = ''
-    console.log('EateryGrid transformRestaurant debug:', {
-      restaurantName: restaurant.name,
-      hasUserLocation: !!userLocation,
-      userLocation,
-      hasRestaurantLocation: !!(restaurant.latitude !== undefined && restaurant.longitude !== undefined),
-      restaurantLocation: { lat: restaurant.latitude, lng: restaurant.longitude },
-      fullRestaurantData: restaurant
-    })
-    
-    if (userLocation && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
-      const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        restaurant.latitude,
-        restaurant.longitude
-      )
-      distanceText = formatDistance(distance)
-      console.log('EateryGrid calculated distance:', { distance, distanceText })
-    } else {
-      console.log('EateryGrid: No distance calculated - missing location data')
-    }
-
-    const finalDistance = distanceText || (userLocation ? '' : restaurant.zip_code || '')
-    console.log('EateryGrid final distance:', finalDistance)
-
-    return {
-      ...restaurant,
-      distance: finalDistance
-    }
-  }, [userLocation])
-
-  // Filter restaurants based on category and search
-  const filteredRestaurants = restaurants.filter(restaurant => {
+  // Filter transformed restaurants based on category and search
+  const filteredRestaurants = transformedRestaurants.filter(restaurant => {
     // Category filter
     if (category !== "all") {
       if (restaurant.kosher_category?.toLowerCase() !== category.toLowerCase()) {
@@ -465,7 +480,6 @@ export default function EateryGrid({
       {/* Grid Layout - Using ShulGrid's simple Tailwind approach */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {filteredRestaurants.map((restaurant, index) => {
-          const transformedRestaurant = transformRestaurant(restaurant)
           return (
             <div key={`restaurant-${restaurant.id}-${index}`}>
               <Card
@@ -475,7 +489,7 @@ export default function EateryGrid({
                   title: restaurant.name,
                   badge: toFixedRating(restaurant.google_rating),
                   subtitle: restaurant.price_range || '',
-                  additionalText: transformedRestaurant.distance,
+                  additionalText: restaurant.distance,
                   showHeart: true,
                   isLiked: false,
                   kosherCategory: restaurant.kosher_category || restaurant.cuisine || '',

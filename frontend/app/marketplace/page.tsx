@@ -97,11 +97,14 @@ function mapMarketplaceToListingData(listing: MarketplaceListing) {
     id: listing.id,
     title: listing.title,
     imageUrl: listing.thumbnail || listing.images?.[0] || '/images/default-restaurant.webp',
-    subtitle: listing.description,
-    additionalText: `${listing.city}, ${listing.region}`,
-    city: listing.city,
-    badge: listing.category_name,
-    kosherCategory: listing.category_name,
+    subtitle: listing.description || '',
+    additionalText: listing.distance || `${listing.city}, ${listing.region}`,
+    showHeart: true,
+    isLiked: false,
+    kosherCategory: listing.category_name || '',
+    city: listing.city || '',
+    imageTag: listing.category_name || '',
+    badge: listing.category_name || '',
   };
 }
 
@@ -232,8 +235,20 @@ export default function MarketplacePage() {
               </button>
             </div>
           </div>
+        ) : listings.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
+              <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No marketplace listings found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Try adjusting your search or filter criteria.
+            </p>
+          </div>
         ) : (
-          <div className="p-4">
+          <div className="px-4 py-4">
             {/* Backend Status Indicator */}
             {backendError && (
               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -255,15 +270,34 @@ export default function MarketplacePage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              {listings.map((listing) => (
-                <Card
-                  key={listing.id}
-                  data={mapMarketplaceToListingData(listing)}
-                  onCardClick={() => router.push(`/marketplace/${listing.id}`)}
-                />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {listings.map((listing, index) => (
+                <div key={`listing-${listing.id}-${index}`}>
+                  <Card
+                    data={mapMarketplaceToListingData(listing)}
+                    variant="default"
+                    showStarInBadge={true}
+                    onCardClick={() => router.push(`/marketplace/${listing.id}`)}
+                    priority={false}
+                    className="w-full h-full"
+                  />
+                </div>
               ))}
             </div>
+
+            {/* Loading State */}
+            {loading && (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            )}
+
+            {/* End of Results */}
+            {!loading && listings.length > 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Showing all {listings.length} marketplace listings
+              </div>
+            )}
           </div>
         )}
       </div>

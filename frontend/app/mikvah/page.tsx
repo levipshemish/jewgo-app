@@ -5,12 +5,13 @@ import Header from "@/components/layout/Header"
 import { CategoryTabs } from "@/components/core"
 import ActionButtons from "@/components/layout/ActionButtons"
 import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
-import { useLocation } from "@/lib/contexts/LocationContext"
+import { useLocationData } from "@/hooks/useLocationData"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
 import { generateMockMikvah, type MockMikvah } from "@/lib/mockData/mikvah"
+import LocationAwarePage from "@/components/LocationAwarePage"
 
 // Mikvah type
 interface Mikvah {
@@ -106,7 +107,7 @@ const fetchMikvah = async (limit: number, params?: string, timeoutMs: number = 5
   }
 };
 
-export default function MikvahPage() {
+function MikvahPageContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showDistance] = useState(true)
   const [showRating] = useState(true)
@@ -121,12 +122,15 @@ export default function MikvahPage() {
   const pathname = usePathname()
   const router = useRouter()
   
-  // Location context for distance calculations
+  // Use the new location data hook
   const {
     userLocation,
     isLoading: locationLoading,
     requestLocation,
-  } = useLocation()
+    getItemDisplayText
+  } = useLocationData({
+    fallbackText: 'Get Location'
+  })
 
   // Advanced filters hook
   const {
@@ -378,5 +382,13 @@ export default function MikvahPage() {
       {/* Bottom Navigation - Fixed at bottom */}
       <ShulBottomNavigation />
     </div>
+  )
+}
+
+export default function MikvahPage() {
+  return (
+    <LocationAwarePage showLocationPrompt={true}>
+      <MikvahPageContent />
+    </LocationAwarePage>
   )
 }
