@@ -103,7 +103,9 @@ export async function GET(request: NextRequest) {
       // Handle SSL and network errors gracefully
       const isSSLError = fetchError instanceof Error && 
         (fetchError.message.includes('certificate') || 
-         fetchError.message.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY'));
+         fetchError.message.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY') ||
+         fetchError.message.includes('self-signed certificate') ||
+         fetchError.cause?.code === 'DEPTH_ZERO_SELF_SIGNED_CERT');
       
       const isNetworkError = fetchError instanceof Error && 
         (fetchError.name === 'AbortError' ||
@@ -177,7 +179,9 @@ export async function GET(request: NextRequest) {
     // Check for SSL and network errors
     const isSSLError = error instanceof Error && 
       (error.message.includes('certificate') || 
-       error.message.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY'));
+       error.message.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY') ||
+       error.message.includes('self-signed certificate') ||
+       (error as any).cause?.code === 'DEPTH_ZERO_SELF_SIGNED_CERT');
     
     const isNetwork = error instanceof Error && (
       error.name === 'AbortError' ||
