@@ -151,6 +151,27 @@ export interface AppliedFilters extends Filters {
   lng?: number;
   page?: number;
   limit?: number;
+
+  // Shul-specific filters
+  denomination?: string;
+  shulType?: string;
+  hasDailyMinyan?: boolean;
+  hasShabbatServices?: boolean;
+  hasHolidayServices?: boolean;
+  hasWomenSection?: boolean;
+  hasMechitza?: boolean;
+  hasSeparateEntrance?: boolean;
+  hasParking?: boolean;
+  hasDisabledAccess?: boolean;
+  hasKiddushFacilities?: boolean;
+  hasSocialHall?: boolean;
+  hasLibrary?: boolean;
+  hasHebrewSchool?: boolean;
+  hasAdultEducation?: boolean;
+  hasYouthPrograms?: boolean;
+  hasSeniorPrograms?: boolean;
+  acceptsVisitors?: boolean;
+  membershipRequired?: boolean;
 }
 
 export interface DraftFilters extends FilterState {
@@ -188,4 +209,25 @@ export interface DraftFilters extends FilterState {
   
   ratingMin?: number;
   priceRange?: [number, number];
+
+  // Shul-specific filters
+  denomination?: string;
+  shulType?: string;
+  hasDailyMinyan?: boolean;
+  hasShabbatServices?: boolean;
+  hasHolidayServices?: boolean;
+  hasWomenSection?: boolean;
+  hasMechitza?: boolean;
+  hasSeparateEntrance?: boolean;
+  hasParking?: boolean;
+  hasDisabledAccess?: boolean;
+  hasKiddushFacilities?: boolean;
+  hasSocialHall?: boolean;
+  hasLibrary?: boolean;
+  hasHebrewSchool?: boolean;
+  hasAdultEducation?: boolean;
+  hasYouthPrograms?: boolean;
+  hasSeniorPrograms?: boolean;
+  acceptsVisitors?: boolean;
+  membershipRequired?: boolean;
 }

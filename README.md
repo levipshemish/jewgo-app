@@ -4,6 +4,22 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 ## 🚀 Recent Updates (August 2025)
 
+### ✅ **Fixed Shuls Pagination Issue - PRODUCTION READY**
+
+- **🎉 Major Fix**: Resolved issue where shuls page was only showing 6 out of 130 available synagogues
+- **✅ Pagination Improvements**: 
+  - Increased batch size from 6 to 12 shuls per page for better UX
+  - Fixed infinite scroll functionality that was not working properly
+  - Added explicit "Load More" button as alternative to infinite scroll
+  - Fixed API configuration to properly connect to production database
+- **✅ Technical Fixes**:
+  - Updated frontend API route to use production URL (`https://api.jewgo.app`)
+  - Fixed `hasNext`/`hasPrev` calculation logic for proper pagination
+  - Added comprehensive debugging and error handling
+  - Enhanced state management for pagination
+- **📊 Results**: Users can now access all 130 synagogues with smooth pagination
+- **📝 Documentation**: Complete technical documentation in `docs/SHULS_PAGINATION_FIX.md`
+
 ### ✅ **Enhanced Restaurant Listing Page - PRODUCTION READY**
 
 - **🎉 Major UI/UX Enhancement**: Complete redesign of restaurant listing pages with modern, professional interface
@@ -616,44 +632,62 @@ This document includes:
 - **Resource Usage**: Memory and CPU monitoring
 - **User Experience**: Core Web Vitals tracking
 
-## 🚀 VPS Deployment
+## 🚀 Production Server Deployment
 
 ### Overview
-JewGo backend can be deployed to Ubuntu VPS with local PostgreSQL and Redis for production use.
+JewGo backend is deployed on a production Ubuntu VPS with SSL certificates, Docker containerization, and comprehensive monitoring.
 
-### Quick Deploy
+### Current Production Server
+- **Server**: `141.148.50.111` (Ubuntu 24.04 LTS)
+- **Domain**: `api.jewgo.app`
+- **SSL**: Let's Encrypt certificate (auto-renewal configured)
+- **Status**: ✅ Production Ready
+
+### Quick Health Check
 ```bash
-# On your VPS
-cd /srv
-sudo git clone https://github.com/mml555/jewgo-app.git jewgo
-cd jewgo
-sudo ./scripts/deploy-vps.sh
+# Check API health
+curl -s https://api.jewgo.app/health
+
+# Check all services
+curl -s https://api.jewgo.app/api/restaurants | head -3
 ```
 
-### Manual Setup
-1. **Install Dependencies**: PostgreSQL, Redis, Python 3.12+
-2. **Setup Database**: Create `app_db` and `app_user`
-3. **Configure Services**: Copy systemd service files
-4. **Deploy Application**: Run deployment script
+### Production Features
+- ✅ **SSL/TLS**: Valid Let's Encrypt certificate
+- ✅ **CORS**: Properly configured for frontend access
+- ✅ **Rate Limiting**: API protection with nginx
+- ✅ **Database**: PostgreSQL with Redis caching
+- ✅ **Monitoring**: Health checks and logging
+- ✅ **Auto-renewal**: SSL certificate automation
 
 ### Service Management
 ```bash
-# Check status
-sudo systemctl status jewgo-backend*
+# SSH to production server
+ssh ubuntu@141.148.50.111
 
-# Restart services
-sudo systemctl restart jewgo-backend*
+# Check container status
+docker ps
 
 # View logs
-sudo journalctl -u jewgo-backend* -f
+docker logs jewgo-nginx --tail 20
+docker logs jewgo-backend --tail 20
+
+# Restart services
+docker-compose restart
 ```
 
 ### Health Checks
-- **Individual Services**: `http://127.0.0.1:8082/health/lb`
-- **Load Balancer**: `https://api.jewgo.app/health/lb`
-- **Monitoring**: `./monitor-infrastructure.sh`
+- **API Health**: `https://api.jewgo.app/health`
+- **Database**: `https://api.jewgo.app/health/db`
+- **Redis**: `https://api.jewgo.app/health/redis`
+- **Restaurants API**: `https://api.jewgo.app/api/restaurants`
+- **Synagogues API**: `https://api.jewgo.app/api/synagogues`
 
-📖 **Full Documentation**: See [VPS_DEPLOYMENT.md](docs/VPS_DEPLOYMENT.md) for complete setup guide.
+📖 **Complete Documentation**: 
+- [Server Deployment Guide](docs/SERVER_DEPLOYMENT_GUIDE.md) - Complete server setup and configuration
+- [API Documentation](docs/API_DOCUMENTATION.md) - Full API reference and examples
+- [Server Quick Reference](docs/SERVER_QUICK_REFERENCE.md) - Quick commands and troubleshooting
+- [Server Changelog](docs/SERVER_CHANGELOG.md) - Complete history of server improvements
 
 ## 📞 Support
 

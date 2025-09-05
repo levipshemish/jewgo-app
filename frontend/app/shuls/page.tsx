@@ -1,12 +1,15 @@
 "use client"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { usePathname } from "next/navigation"
 import Header from "@/components/layout/Header"
 import CategoryTabs from "@/components/navigation/ui/CategoryTabs"
 import ActionButtons from "@/components/layout/ActionButtons"
 import ShulGrid from "@/components/shuls/ShulGrid"
 import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
+import { ModernShulFilterPopup } from "@/components/shuls/ModernShulFilterPopup"
 import { useLocation } from "@/lib/contexts/LocationContext"
+import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
+import { AppliedFilters } from "@/lib/filters/filters.types"
 
 export default function ShulsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -14,11 +17,24 @@ export default function ShulsPage() {
   const [showRating] = useState(true)
   const [showServices] = useState(true)
   const [activeTab, setActiveTab] = useState<string>("shuls")
+  const [showFilters, setShowFilters] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   
   // Location context for distance calculations
-  const { userLocation } = useLocation()
+  const {
+    userLocation,
+    isLoading: locationLoading,
+    requestLocation,
+  } = useLocation()
+
+  // Advanced filters hook
+  const {
+    activeFilters,
+    setFilter,
+    clearFilter,
+    clearAllFilters
+  } = useAdvancedFilters()
 
   // Update active tab based on current pathname
   useEffect(() => {
@@ -36,6 +52,43 @@ export default function ShulsPage() {
     // Additional logic can be added here if needed
   }
 
+  const handleShowFilters = useCallback(() => {
+    setShowFilters(true)
+  }, [])
+
+  const handleCloseFilters = useCallback(() => {
+    setShowFilters(false)
+  }, [])
+
+  const handleApplyFilters = useCallback((filters: AppliedFilters) => {
+    if (Object.keys(filters).length === 0) {
+      clearAllFilters()
+    } else {
+      const cleaned: Partial<typeof filters> = {}
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && 
+            !(typeof v === "string" && v.trim() === "") &&
+            !(Array.isArray(v) && v.length === 0)) {
+          cleaned[k as keyof typeof filters] = v
+        }
+      })
+      
+      // Batch filter updates to reduce re-renders
+      const keysToRemove = Object.keys(activeFilters).filter(k => !(k in cleaned))
+      keysToRemove.forEach(k => {
+        clearFilter(k as keyof typeof activeFilters)
+      })
+      
+      Object.entries(cleaned).forEach(([key, value]) => {
+        if (value !== undefined) {
+          setFilter(key as keyof typeof activeFilters, value)
+        }
+      })
+    }
+    
+    setShowFilters(false)
+  }, [setFilter, clearFilter, clearAllFilters, activeFilters])
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header - Sticky at top */}
@@ -51,7 +104,7 @@ export default function ShulsPage() {
           onTabChange={handleTabChange}
         />
         <ActionButtons
-          onShowFilters={() => console.log("Show filters")}
+          onShowFilters={handleShowFilters}
           onShowMap={() => console.log("View map")}
           onAddEatery={() => console.log("Create listing")}
           addButtonText="Add Shul"
@@ -76,11 +129,23 @@ export default function ShulsPage() {
           scrollContainerRef={scrollContainerRef}
           userLocation={userLocation}
           useRealData={true}
+          activeFilters={activeFilters}
         />
       </div>
 
       {/* Bottom Navigation - Fixed at bottom */}
       <ShulBottomNavigation />
+
+      {/* Filter Modal */}
+      <ModernShulFilterPopup
+        isOpen={showFilters}
+        onClose={handleCloseFilters}
+        onApplyFilters={handleApplyFilters}
+        initialFilters={activeFilters}
+        userLocation={userLocation}
+        locationLoading={locationLoading}
+        onRequestLocation={requestLocation}
+      />
     </div>
   )
 }

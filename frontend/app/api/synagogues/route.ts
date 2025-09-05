@@ -66,22 +66,12 @@ export async function GET(request: NextRequest) {
       queryParams.append('maxDistanceMi', maxDistanceMi);
     }
     
-    // Use the correct backend URL - prioritize local development
-    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
-    
-    // If no backend URL is set, use local development default
-    if (!backendUrl) {
-      // Check if we're in development mode
-      if (process.env.NODE_ENV === 'development') {
-        backendUrl = 'http://localhost:8082'; // Local development
-      } else {
-        backendUrl = 'https://api.jewgo.app'; // Production fallback
-      }
-    }
+    // Use the correct backend URL - always use production API
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
     
     // Ensure the backend URL has a protocol
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
-      backendUrl = `http://${backendUrl}`;
+      backendUrl = `https://${backendUrl}`;
     }
     const fullBackendUrl = `${backendUrl}/api/v4/synagogues?${queryParams}`;
     
@@ -165,16 +155,22 @@ export async function GET(request: NextRequest) {
     // Transform the backend response to match frontend expectations
     const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
     const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
+    const total = backendData.total || 0;
+    const limitNum = parseInt(limit);
+    
+    // Calculate hasNext and hasPrev correctly
+    const hasNext = (currentOffset + limitNum) < total;
+    const hasPrev = currentOffset > 0;
     
     const transformedResponse = {
       synagogues: backendData.synagogues || [],
-      total: backendData.total || 0,
+      total: total,
       page: currentPage,
-      limit: backendData.limit || parseInt(limit),
+      limit: backendData.limit || limitNum,
       offset: currentOffset,
-      totalPages: backendData.totalPages || Math.ceil((backendData.total || 0) / parseInt(limit)),
-      hasNext: backendData.hasNext || false,
-      hasPrev: backendData.hasPrev || false
+      totalPages: backendData.totalPages || Math.ceil(total / limitNum),
+      hasNext: hasNext,
+      hasPrev: hasPrev
     };
     
     return NextResponse.json(transformedResponse);

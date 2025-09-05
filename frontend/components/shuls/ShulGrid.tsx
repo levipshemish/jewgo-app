@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef, RefObject } from "react"
 import ShulCard from "./ShulCard"
 import { Loader2, Search } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
+import { AppliedFilters } from "@/lib/filters/filters.types"
 
 // Import the mock data generator (fallback)
 import { generateMockShuls, type MockShul } from "@/lib/mockData/shuls"
@@ -16,6 +17,7 @@ interface ShulGridProps {
   scrollContainerRef: RefObject<HTMLDivElement>
   userLocation?: { latitude: number; longitude: number } | null
   useRealData?: boolean
+  activeFilters?: AppliedFilters
 }
 
 // Real shul type matching the database schema
@@ -91,7 +93,8 @@ export default function ShulGrid({
   showServices = true,
   scrollContainerRef,
   userLocation,
-  useRealData = false
+  useRealData = false,
+  activeFilters = {}
 }: ShulGridProps) {
   const [shuls, setShuls] = useState<Array<RealShul | any>>([])
   const [loading, setLoading] = useState(false)
@@ -117,6 +120,8 @@ export default function ShulGrid({
         })
       }
 
+      console.log('fetchShuls called with URL:', apiUrl.toString())
+
       // Add timeout to fetch (shorter than API timeout to fail fast)
       const controller = new AbortController()
       const timeoutId = setTimeout(() => {
@@ -133,6 +138,8 @@ export default function ShulGrid({
 
       clearTimeout(timeoutId)
 
+      console.log('fetchShuls response status:', response.status)
+
       if (!response.ok) {
         // Check if it's a server error (5xx) or client error (4xx)
         if (response.status >= 500) {
@@ -144,16 +151,24 @@ export default function ShulGrid({
       }
 
       const data = await response.json()
+      console.log('fetchShuls response data:', data)
       
       // Check if the response indicates backend is unavailable
       if (data.success === false && data.message?.includes('temporarily unavailable')) {
         throw new Error('Backend service unavailable')
       }
 
+      // Calculate hasMore if not provided by backend
+      const total = data.total || 0
+      const currentOffset = offset
+      const hasMore = data.hasNext !== undefined ? data.hasNext : (currentOffset + limit) < total
+      
+      console.log('fetchShuls calculated hasMore:', hasMore, 'total:', total, 'currentOffset:', currentOffset, 'limit:', limit)
+      
       return {
         shuls: data.synagogues || [],
-        total: data.total || 0,
-        hasMore: data.hasNext || false,
+        total: total,
+        hasMore: hasMore,
         limit: data.limit || limit
       }
 
@@ -182,64 +197,85 @@ export default function ShulGrid({
     if (category && category !== 'all') {
       params.append('denomination', category)
     }
+
+    // Add active filters to search parameters
+    if (activeFilters) {
+      for (const [key, value] of Object.entries(activeFilters)) {
+        if (value === null || value === undefined) continue;
+        if (typeof value === 'string' && !value.trim()) continue;
+        if (Array.isArray(value)) {
+          if (value.length === 0) continue;
+          for (const v of value) params.append(key, String(v));
+        } else {
+          params.set(key, String(value));
+        }
+      }
+    }
     
     return params.toString()
-  }, [searchQuery, category])
+  }, [searchQuery, category, activeFilters])
 
-  // Load more items in batches of 6 (exactly like dynamic-card-ts)
+  // Load more items in batches of 12 (increased from 6 for better UX)
   const loadMoreItems = useCallback(async () => {
-    if (loading || !hasMore) return
+    console.log('loadMoreItems called - loading:', loading, 'hasMore:', hasMore, 'page:', page);
+    if (loading || !hasMore) {
+      console.log('loadMoreItems early return - loading:', loading, 'hasMore:', hasMore);
+      return;
+    }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
       if (useRealData && !backendError) {
         // Try real API first
-        const currentPage = page
-        const response = await fetchShuls(6, currentPage * 6, buildSearchParams())
-        setShuls((prev) => [...prev, ...response.shuls])
-        setHasMore(response.hasMore)
-        setPage((prev) => prev + 1)
+        const currentPage = page;
+        const offset = currentPage * 12;
+        console.log('Loading more items - page:', currentPage, 'offset:', offset);
+        const response = await fetchShuls(12, offset, buildSearchParams());
+        console.log('API response - hasMore:', response.hasMore, 'shuls count:', response.shuls.length);
+        setShuls((prev) => [...prev, ...response.shuls]);
+        setHasMore(response.hasMore);
+        setPage((prev) => prev + 1);
       } else {
         // Use mock data (fallback or when backend is in error state)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         
-        const newItems: MockShul[] = []
-        for (let i = 0; i < 6; i++) {
-          const itemIndex = page * 6 + i
+        const newItems: MockShul[] = [];
+        for (let i = 0; i < 12; i++) {
+          const itemIndex = page * 12 + i;
           if (itemIndex < 50) { // Limit mock data to 50 items
-            newItems.push(generateMockShuls(1)[0])
+            newItems.push(generateMockShuls(1)[0]);
           }
         }
         
-        setShuls((prev) => [...prev, ...newItems])
-        setHasMore(newItems.length === 6 && page * 6 + newItems.length < 50)
-        setPage((prev) => prev + 1)
+        setShuls((prev) => [...prev, ...newItems]);
+        setHasMore(newItems.length === 12 && page * 12 + newItems.length < 50);
+        setPage((prev) => prev + 1);
       }
     } catch (error) {
-      console.error('Error loading more items:', error)
+      console.error('Error loading more items:', error);
       
       // Switch to mock data permanently after error
-      console.log('Backend unreachable, switching to mock data')
-      setBackendError(true)
+      console.log('Backend unreachable, switching to mock data');
+      setBackendError(true);
       
       // Fall back to mock data
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      const newItems: MockShul[] = []
-      for (let i = 0; i < 6; i++) {
-        const itemIndex = page * 6 + i
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const newItems: MockShul[] = [];
+      for (let i = 0; i < 12; i++) {
+        const itemIndex = page * 12 + i;
         if (itemIndex < 50) {
-          newItems.push(generateMockShuls(1)[0])
+          newItems.push(generateMockShuls(1)[0]);
         }
       }
       
-      setShuls((prev) => [...prev, ...newItems])
-      setHasMore(newItems.length === 6 && page * 6 + newItems.length < 50)
-      setPage((prev) => prev + 1)
+      setShuls((prev) => [...prev, ...newItems]);
+      setHasMore(newItems.length === 12 && page * 12 + newItems.length < 50);
+      setPage((prev) => prev + 1);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [loading, hasMore, page, useRealData, backendError, fetchShuls, buildSearchParams])
+  }, [loading, hasMore, page, useRealData, backendError, fetchShuls, buildSearchParams]);
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
@@ -261,15 +297,16 @@ export default function ShulGrid({
         try {
           if (useRealData && currentRetryCount < 3) {
             // Try real API first
-            const response = await fetchShuls(6, 0, buildSearchParams())
-                      setShuls(response.shuls)
-          setHasMore(response.hasMore)
-          isRetryingRef.current = false
+            const response = await fetchShuls(12, 0, buildSearchParams())
+            console.log('Initial load - API response - hasMore:', response.hasMore, 'shuls count:', response.shuls.length);
+            setShuls(response.shuls)
+            setHasMore(response.hasMore)
+            isRetryingRef.current = false
             setPage(1)
           } else {
             // Use mock data (fallback or when useRealData is false or max retries reached)
             await new Promise((resolve) => setTimeout(resolve, 1000))
-            const mockItems = generateMockShuls(6)
+            const mockItems = generateMockShuls(12)
             setShuls(mockItems)
             setHasMore(true)
             setPage(1)
@@ -294,7 +331,7 @@ export default function ShulGrid({
             console.log('Timeout error detected, switching to mock data after 2 attempts')
             setBackendError(true)
             
-            const mockItems = generateMockShuls(6)
+            const mockItems = generateMockShuls(12)
             setShuls(mockItems)
             setHasMore(true)
             setPage(1)
@@ -313,7 +350,7 @@ export default function ShulGrid({
             console.log('Backend unreachable after 3 attempts, switching to mock data')
             setBackendError(true)
             
-            const mockItems = generateMockShuls(6)
+            const mockItems = generateMockShuls(12)
             setShuls(mockItems)
             setHasMore(true)
             setPage(1)
@@ -326,7 +363,7 @@ export default function ShulGrid({
     }
     
     loadInitialItems()
-  }, [category, searchQuery, useRealData, buildSearchParams, fetchShuls]) // Removed retryCount from dependencies
+  }, [category, searchQuery, useRealData, buildSearchParams, fetchShuls, activeFilters]) // Added activeFilters to dependencies
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
@@ -497,9 +534,23 @@ export default function ShulGrid({
         </div>
       )}
 
+      {/* Load More Button */}
+      {hasMore && !loading && filteredShuls.length > 0 && (
+        <div className="flex justify-center py-8">
+          <button
+            onClick={loadMoreItems}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Load More Shuls
+          </button>
+        </div>
+      )}
+
       {/* End of Results */}
       {!hasMore && filteredShuls.length > 0 && (
-        <div className="text-center py-8 text-muted-foreground">No more items to load</div>
+        <div className="text-center py-8 text-muted-foreground">
+          Showing all {filteredShuls.length} shuls
+        </div>
       )}
     </div>
   )
