@@ -542,3 +542,141 @@ model AuditLog {
   @@map("audit_logs")
   @@schema("public")
 }
+
+/// Jewish stores and businesses (grocery, Judaica, bakery, etc.)
+model Store {
+  id                   Int       @id @default(autoincrement())
+  name                 String    @db.VarChar(255)
+  description          String?
+  address              String?   @db.VarChar(500)
+  city                 String?   @db.VarChar(100)
+  state                String?   @db.VarChar(50)
+  zip_code             String?   @db.VarChar(20)
+  country              String?   @db.VarChar(50) @default("USA")
+  latitude             Decimal?  @db.Decimal(10, 8)
+  longitude            Decimal?  @db.Decimal(11, 8)
+  phone_number         String?   @db.VarChar(50)
+  website              String?   @db.VarChar(500)
+  email                String?   @db.VarChar(255)
+  
+  // Store specific fields
+  store_type           String?   @db.VarChar(100) // grocery, judaica, bakery, butcher, etc.
+  store_category       String?   @db.VarChar(100) // kosher, glatt, cholov yisroel, etc.
+  business_hours       String?
+  hours_parsed         Boolean   @default(false)
+  timezone             String?   @db.VarChar(50)
+  
+  // Store features
+  has_parking          Boolean   @default(false)
+  has_delivery         Boolean   @default(false)
+  has_pickup           Boolean   @default(false)
+  accepts_credit_cards Boolean   @default(true)
+  accepts_cash         Boolean   @default(true)
+  
+  // Kosher information
+  kosher_certification String?   @db.VarChar(255)
+  kosher_category      String?   @db.VarChar(100) // glatt, cholov yisroel, pas yisroel, etc.
+  is_cholov_yisroel    Boolean   @default(false)
+  is_pas_yisroel       Boolean   @default(false)
+  
+  // Ratings and reviews
+  rating               Decimal?  @db.Decimal(3, 2)
+  review_count         Int       @default(0)
+  star_rating          Decimal?  @db.Decimal(3, 2)
+  google_rating        Decimal?  @db.Decimal(3, 2)
+  
+  // Images and media
+  image_url            String?   @db.VarChar(2000)
+  logo_url             String?   @db.VarChar(2000)
+  
+  // Status and metadata
+  is_active            Boolean   @default(true)
+  is_verified          Boolean   @default(false)
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  
+  // Search and filtering
+  tags                 String[]
+  admin_notes          String?
+  specials             String?
+  listing_type         String?   @db.VarChar(100) @default("store")
+
+  @@map("stores")
+  @@schema("public")
+}
+
+/// Jewish mikvah facilities
+model Mikvah {
+  id                   Int       @id @default(autoincrement())
+  name                 String    @db.VarChar(255)
+  description          String?
+  address              String?   @db.VarChar(500)
+  city                 String?   @db.VarChar(100)
+  state                String?   @db.VarChar(50)
+  zip_code             String?   @db.VarChar(20)
+  country              String?   @db.VarChar(50) @default("USA")
+  latitude             Decimal?  @db.Decimal(10, 8)
+  longitude            Decimal?  @db.Decimal(11, 8)
+  phone_number         String?   @db.VarChar(50)
+  website              String?   @db.VarChar(500)
+  email                String?   @db.VarChar(255)
+  
+  // Mikvah specific fields
+  mikvah_type          String?   @db.VarChar(100) // women, men, community, private, etc.
+  mikvah_category      String?   @db.VarChar(100) // orthodox, conservative, reform, etc.
+  business_hours       String?
+  hours_parsed         Boolean   @default(false)
+  timezone             String?   @db.VarChar(50)
+  
+  // Mikvah features and services
+  has_parking          Boolean   @default(false)
+  has_disabled_access  Boolean   @default(false)
+  has_heating          Boolean   @default(true)
+  has_air_conditioning Boolean   @default(true)
+  has_private_changing_rooms Boolean @default(true)
+  has_amenities        Boolean   @default(false)
+  
+  // Kosher information
+  kosher_certification String?   @db.VarChar(255)
+  kosher_category      String?   @db.VarChar(100) // glatt, cholov yisroel, etc.
+  is_cholov_yisroel    Boolean   @default(false)
+  is_pas_yisroel       Boolean   @default(false)
+  
+  // Mikvah specific services
+  has_attendant        Boolean   @default(true)
+  has_private_sessions Boolean   @default(false)
+  has_group_sessions   Boolean   @default(false)
+  has_educational_programs Boolean @default(false)
+  
+  // Pricing and fees
+  has_fees             Boolean   @default(false)
+  fee_amount           Decimal?  @db.Decimal(10, 2)
+  fee_currency         String?   @db.VarChar(3) @default("USD")
+  accepts_credit_cards Boolean   @default(true)
+  accepts_cash         Boolean   @default(true)
+  
+  // Ratings and reviews
+  rating               Decimal?  @db.Decimal(3, 2)
+  review_count         Int       @default(0)
+  star_rating          Decimal?  @db.Decimal(3, 2)
+  google_rating        Decimal?  @db.Decimal(3, 2)
+  
+  // Images and media
+  image_url            String?   @db.VarChar(2000)
+  logo_url             String?   @db.VarChar(2000)
+  
+  // Status and metadata
+  is_active            Boolean   @default(true)
+  is_verified          Boolean   @default(false)
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  
+  // Search and filtering
+  tags                 String[]
+  admin_notes          String?
+  specials             String?
+  listing_type         String?   @db.VarChar(100) @default("mikvah")
+
+  @@map("mikvah")
+  @@schema("public")
+}

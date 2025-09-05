@@ -947,7 +947,8 @@ class DatabaseManager:
             return self._build_restaurant_dict(restaurant, image_dicts, status_info)
         except Exception as e:
             logger.exception("Error converting restaurant to dict", error=str(e))
-            return {}
+            # Re-raise the exception instead of returning empty dict
+            raise
 
     def _restaurant_to_dict_with_images(self, restaurant, images: List[Any]) -> Dict[str, Any]:
         """Convert restaurant model to dictionary with pre-loaded images (avoids N+1 queries)."""

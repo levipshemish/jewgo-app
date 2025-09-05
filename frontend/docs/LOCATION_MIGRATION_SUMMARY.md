@@ -73,13 +73,13 @@ const popupState = {
 2. No user location available
 3. Not currently loading
 4. Permission is 'prompt'
-5. Haven't shown popup in last 24 hours
+5. Cache was cleared OR first time visit
 ```
 
 ### Page Types
 
 1. **Regular Pages** (Eatery, Shtetl, Mikvah, Stores)
-   - Show popup once per 24 hours
+   - Show popup when cache is cleared or first visit
    - Graceful fallback to zip codes
    - Optional location functionality
 

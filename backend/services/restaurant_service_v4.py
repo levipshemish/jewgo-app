@@ -1,7 +1,7 @@
 import json
 from typing import Any
 from services.base_service import BaseService
-from utils.error_handler import NotFoundError, ValidationError
+from utils.error_handler import NotFoundError, ValidationError, DatabaseError
 from utils.error_handler_v2 import (
     handle_database_operation,
     handle_validation_operation,
@@ -71,14 +71,23 @@ class RestaurantServiceV4(BaseService):
             raise ValidationError("Invalid restaurant ID")
         self.log_operation("get_restaurant_by_id", restaurant_id=restaurant_id)
         context = create_error_context(restaurant_id=restaurant_id)
-        # Handle database operation with specific error handling
-        restaurant = handle_database_operation(
-            operation=lambda: self.db_manager.get_restaurant_by_id(restaurant_id),
-            operation_name="get_restaurant_by_id",
-            context=context,
-        )
+        
+        # Call database manager directly without handle_database_operation wrapper
+        # since get_restaurant_by_id returns None for not found, not an exception
+        try:
+            restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
+        except Exception as e:
+            # Handle actual database errors
+            self.logger.exception(
+                "Database error getting restaurant", 
+                restaurant_id=restaurant_id, 
+                error=str(e)
+            )
+            raise DatabaseError(f"Database error: {str(e)}")
+        
         if not restaurant:
             raise NotFoundError(f"Restaurant with ID {restaurant_id} not found")
+        
         # Apply any post-processing
         processed_restaurant = self._process_restaurant_data(restaurant)
         self.logger.info(

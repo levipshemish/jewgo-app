@@ -4,9 +4,11 @@ import { useParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { ListingPage } from '@/components/listing-details-utility/listing-page'
 import { mapEateryToListingData } from '@/utils/eatery-mapping'
-import { EateryDB, UserLocation } from '@/types/listing'
+import { EateryDB } from '@/types/listing'
+import { useLocationData } from '@/hooks/useLocationData'
 import Link from 'next/link'
 import ErrorBoundary from '../components/ErrorBoundary'
+import LocationAwarePage from '@/components/LocationAwarePage'
 
 /**
  * Parse hours from the backend JSON format into EateryDB format
@@ -134,9 +136,11 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
 
 export default function EateryIdPage() {
   return (
-    <ErrorBoundary>
-      <EateryIdPageContent />
-    </ErrorBoundary>
+    <LocationAwarePage showLocationPrompt={true}>
+      <ErrorBoundary>
+        <EateryIdPageContent />
+      </ErrorBoundary>
+    </LocationAwarePage>
   );
 }
 
@@ -145,12 +149,21 @@ function EateryIdPageContent() {
   const [eatery, setEatery] = useState<EateryDB | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null)
-  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown')
-  const [_locationError, setLocationError] = useState<string | null>(null) // TODO: Implement location error handling
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewsPagination, setReviewsPagination] = useState<any>(null)
+
+  // Use the new location utility system
+  const {
+    userLocation,
+    permissionStatus,
+    isLoading: locationLoading,
+    error: locationError,
+    requestLocation,
+    getItemDisplayText
+  } = useLocationData({
+    fallbackText: 'Get Location'
+  })
 
   // Load more reviews function
   const handleLoadMoreReviews = () => {
@@ -248,6 +261,7 @@ function EateryIdPageContent() {
           restaurantData = detailData
         }
 
+
         if (!restaurantData) {
           setError('restaurant_not_found')
           setLoading(false)
@@ -307,7 +321,7 @@ function EateryIdPageContent() {
           })(),
           contact: {
             phone: restaurantData.phone_number || '',
-            email: restaurantData.business_email || '',
+            email: restaurantData.email || '', // Note: email field doesn't exist in database model
             website: restaurantData.website || '',
           },
           location: {
@@ -354,132 +368,11 @@ function EateryIdPageContent() {
     }
   }, [eateryId])
 
-  // Handle location request from distance button
-  const handleLocationRequest = useCallback(async () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser');
-      return;
-    }
-
-    // Always try to request location, even if previously denied
-    // This allows users to try again if they've changed their browser settings
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-        setLocationError(null);
-        setLocationPermission('granted');
-      },
-      (geolocationError) => {
-        let errorMessage = 'Unable to get your location';
-        
-        switch (geolocationError.code) {
-          case geolocationError.PERMISSION_DENIED:
-            errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-            setLocationPermission('denied');
-            break;
-          case geolocationError.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable. Please try again.';
-            break;
-          case geolocationError.TIMEOUT:
-            errorMessage = 'Location request timed out. Please try again.';
-            break;
-        }
-        
-        setLocationError(errorMessage);
-        setUserLocation(null);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 300000, // 5 minutes
-      }
-    );
-  }, []);
-
-  // Monitor location permission changes and set up location watching
-  useEffect(() => {
-    let watchId: number | null = null;
-    let permissionResult: PermissionStatus | null = null;
-
-    const setupLocationWatching = async () => {
-      if ('permissions' in navigator) {
-        try {
-          const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
-          permissionResult = permission;
-          
-          const handlePermissionChange = () => {
-            const newState = permission.state;
-            setLocationPermission(newState as 'granted' | 'denied' | 'prompt');
-            
-            // If permission was revoked, clear location and stop watching
-            if (newState === 'denied') {
-              setUserLocation(null);
-              setLocationError('Location access was denied. Please enable location services in your browser settings.');
-              if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-              }
-            }
-            
-            // If permission was granted, try to get location and start watching
-            if (newState === 'granted') {
-              handleLocationRequest();
-              
-              // Start watching for location changes
-              if (navigator.geolocation && !watchId) {
-                watchId = navigator.geolocation.watchPosition(
-                  (position) => {
-                    setUserLocation({
-                      lat: position.coords.latitude,
-                      lng: position.coords.longitude
-                    });
-                    setLocationError(null);
-                  },
-                  (watchError) => {
-                    if (watchError.code === watchError.PERMISSION_DENIED) {
-                      setLocationPermission('denied');
-                      setUserLocation(null);
-                      setLocationError('Location access was denied. Please enable location services in your browser settings.');
-                    }
-                  },
-                  {
-                    enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 300000, // 5 minutes
-                  }
-                );
-              }
-            }
-          };
-
-          permission.addEventListener('change', handlePermissionChange);
-          
-          // Initial setup
-          if (permission.state === 'granted' && !userLocation) {
-            handleLocationRequest();
-          }
-        } catch (locationError) {
-          // Silently handle permission setup errors
-          console.error('Error setting up location permissions:', locationError);
-        }
-      }
-    };
-
-    setupLocationWatching();
-
-    // Cleanup function
-    return () => {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-      if (permissionResult) {
-        permissionResult.removeEventListener('change', () => {});
-      }
-    };
-  }, [userLocation, handleLocationRequest]);
+  // Convert new location format to old format for compatibility with mapEateryToListingData
+  const legacyUserLocation = userLocation ? {
+    lat: userLocation.latitude,
+    lng: userLocation.longitude
+  } : null;
 
   // Render loading state
   if (loading) {
@@ -564,7 +457,8 @@ function EateryIdPageContent() {
   // Render eatery details
   if (eatery) {
     try {
-      const finalListingData = mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission)
+      const finalListingData = mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus)
+      
       
       // Add pagination and load more props
       const listingDataWithPagination = {

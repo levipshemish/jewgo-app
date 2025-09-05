@@ -128,6 +128,7 @@ def get_mikvah():
     from flask import current_app
     from sqlalchemy import text
     
+    print("DEBUG: get_mikvah function called")
     try:
         # Get database manager from app context using v4 pattern
         deps = current_app.config.get("dependencies", {})
@@ -225,24 +226,26 @@ def get_mikvah():
                 where_clause += distance_filter
                 where_params.extend([lat, lng, lat, max_distance_mi])
             
+            # Build order clause
+            order_clause = build_order_clause(lat, lng, max_distance_mi)
+            
             # Get mikvah facilities with pagination
             data_query = f"""
                 SELECT 
                     id, name, description, address, city, state, zip_code, country,
                     phone_number, website, email, mikvah_type, mikvah_category,
-                    business_hours, requires_appointment, appointment_phone, appointment_website,
-                    walk_in_available, advance_booking_days, has_changing_rooms,
-                    has_shower_facilities, has_towels_provided, has_soap_provided,
-                    has_hair_dryers, has_private_entrance, has_disabled_access,
-                    has_parking, rabbinical_supervision, kosher_certification,
-                    community_affiliation, religious_authority, fee_amount, fee_currency,
-                    accepts_credit_cards, accepts_cash, accepts_checks,
-                    is_active, is_verified, created_at, updated_at, tags,
+                    business_hours, has_parking, has_disabled_access, has_heating,
+                    has_air_conditioning, has_private_changing_rooms, has_amenities,
+                    kosher_certification, kosher_category, is_cholov_yisroel, is_pas_yisroel,
+                    has_attendant, has_private_sessions, has_group_sessions, has_educational_programs,
+                    has_fees, fee_amount, fee_currency, accepts_credit_cards, accepts_cash,
                     rating, review_count, star_rating, google_rating,
-                    image_url, logo_url, latitude, longitude
+                    image_url, logo_url, latitude, longitude,
+                    is_active, is_verified, created_at, updated_at, tags,
+                    admin_notes, specials, listing_type
                 FROM mikvah 
                 WHERE {where_clause}
-                ORDER BY {build_order_clause(lat, lng, max_distance_mi)}
+                ORDER BY {order_clause}
                 LIMIT %s OFFSET %s
             """
             
@@ -289,8 +292,13 @@ def get_mikvah():
             logger.info(f"Successfully retrieved {len(mikvah_facilities)} mikvah facilities")
             return jsonify(response_data)
             
-        finally:
-            db_manager.disconnect()
+        except Exception as e:
+            logger.error(f"Error in get_mikvah: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': 'Internal server error',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 500
             
     except TimeoutError:
         logger.error("Database query timed out")

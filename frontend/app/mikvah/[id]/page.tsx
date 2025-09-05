@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { ListingPage } from '@/components/listing-details-utility/listing-page';
 import { mapMikvahToListingData } from '@/lib/mappers/mikvahMapper';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
-import { useLocation } from '@/lib/contexts/LocationContext';
+import { useLocationData } from '@/hooks/useLocationData';
+import LocationAwarePage from '@/components/LocationAwarePage';
 
 interface Mikvah {
   id: number;
@@ -66,7 +67,17 @@ interface Mikvah {
 function MikvahDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const { userLocation } = useLocation();
+  
+  // Use the new location utility system
+  const {
+    userLocation,
+    permissionStatus,
+    isLoading: locationLoading,
+    error: locationError,
+    requestLocation
+  } = useLocationData({
+    fallbackText: 'Get Location'
+  })
   
   const [mikvah, setMikvah] = useState<Mikvah | null>(null);
   const [loading, setLoading] = useState(true);
@@ -183,14 +194,16 @@ function MikvahDetailContent() {
 
 export default function MikvahDetailPage() {
   return (
-    <ErrorBoundary>
-      <Suspense fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-        </div>
-      }>
-        <MikvahDetailContent />
-      </Suspense>
-    </ErrorBoundary>
+    <LocationAwarePage showLocationPrompt={true}>
+      <ErrorBoundary>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          </div>
+        }>
+          <MikvahDetailContent />
+        </Suspense>
+      </ErrorBoundary>
+    </LocationAwarePage>
   );
 }
