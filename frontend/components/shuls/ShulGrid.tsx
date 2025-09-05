@@ -215,7 +215,7 @@ export default function ShulGrid({
     return params.toString()
   }, [searchQuery, category, activeFilters])
 
-  // Load more items in batches of 12 (increased from 6 for better UX)
+  // Load more items in batches of 24 (increased from 12 for better UX)
   const loadMoreItems = useCallback(async () => {
     console.log('loadMoreItems called - loading:', loading, 'hasMore:', hasMore, 'page:', page);
     if (loading || !hasMore) {
@@ -229,9 +229,9 @@ export default function ShulGrid({
       if (useRealData && !backendError) {
         // Try real API first
         const currentPage = page;
-        const offset = currentPage * 12;
+        const offset = currentPage * 24;
         console.log('Loading more items - page:', currentPage, 'offset:', offset);
-        const response = await fetchShuls(12, offset, buildSearchParams());
+        const response = await fetchShuls(24, offset, buildSearchParams());
         console.log('API response - hasMore:', response.hasMore, 'shuls count:', response.shuls.length);
         setShuls((prev) => [...prev, ...response.shuls]);
         setHasMore(response.hasMore);
@@ -241,15 +241,15 @@ export default function ShulGrid({
         await new Promise((resolve) => setTimeout(resolve, 1000));
         
         const newItems: MockShul[] = [];
-        for (let i = 0; i < 12; i++) {
-          const itemIndex = page * 12 + i;
+        for (let i = 0; i < 24; i++) {
+          const itemIndex = page * 24 + i;
           if (itemIndex < 50) { // Limit mock data to 50 items
             newItems.push(generateMockShuls(1)[0]);
           }
         }
         
         setShuls((prev) => [...prev, ...newItems]);
-        setHasMore(newItems.length === 12 && page * 12 + newItems.length < 50);
+        setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
         setPage((prev) => prev + 1);
       }
     } catch (error) {
@@ -262,15 +262,15 @@ export default function ShulGrid({
       // Fall back to mock data
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const newItems: MockShul[] = [];
-      for (let i = 0; i < 12; i++) {
-        const itemIndex = page * 12 + i;
+      for (let i = 0; i < 24; i++) {
+        const itemIndex = page * 24 + i;
         if (itemIndex < 50) {
           newItems.push(generateMockShuls(1)[0]);
         }
       }
       
       setShuls((prev) => [...prev, ...newItems]);
-      setHasMore(newItems.length === 12 && page * 12 + newItems.length < 50);
+      setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
       setPage((prev) => prev + 1);
     } finally {
       setLoading(false);
@@ -297,7 +297,7 @@ export default function ShulGrid({
         try {
           if (useRealData && currentRetryCount < 3) {
             // Try real API first
-            const response = await fetchShuls(12, 0, buildSearchParams())
+            const response = await fetchShuls(24, 0, buildSearchParams())
             console.log('Initial load - API response - hasMore:', response.hasMore, 'shuls count:', response.shuls.length);
             setShuls(response.shuls)
             setHasMore(response.hasMore)
@@ -306,7 +306,7 @@ export default function ShulGrid({
           } else {
             // Use mock data (fallback or when useRealData is false or max retries reached)
             await new Promise((resolve) => setTimeout(resolve, 1000))
-            const mockItems = generateMockShuls(12)
+            const mockItems = generateMockShuls(24)
             setShuls(mockItems)
             setHasMore(true)
             setPage(1)
@@ -331,7 +331,7 @@ export default function ShulGrid({
             console.log('Timeout error detected, switching to mock data after 2 attempts')
             setBackendError(true)
             
-            const mockItems = generateMockShuls(12)
+            const mockItems = generateMockShuls(24)
             setShuls(mockItems)
             setHasMore(true)
             setPage(1)
@@ -350,7 +350,7 @@ export default function ShulGrid({
             console.log('Backend unreachable after 3 attempts, switching to mock data')
             setBackendError(true)
             
-            const mockItems = generateMockShuls(12)
+            const mockItems = generateMockShuls(24)
             setShuls(mockItems)
             setHasMore(true)
             setPage(1)

@@ -485,7 +485,6 @@ function ShtelPageContent() {
               limit: mobileOptimizedItemsPerPage,
               search: searchQuery || undefined,
               category: currentFilters.category || undefined,
-              subcategory: currentFilters.subcategory || undefined,
               kind: currentFilters.kind || undefined,
               condition: currentFilters.condition || undefined,
               min_price: currentFilters.minPrice ? parseInt(currentFilters.minPrice) * 100 : undefined,
