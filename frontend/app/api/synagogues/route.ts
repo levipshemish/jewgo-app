@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
         (fetchError.message.includes('certificate') || 
          fetchError.message.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY') ||
          fetchError.message.includes('self-signed certificate') ||
-         fetchError.cause?.code === 'DEPTH_ZERO_SELF_SIGNED_CERT');
+         (fetchError as any).cause?.code === 'DEPTH_ZERO_SELF_SIGNED_CERT');
       
       const isNetworkError = fetchError instanceof Error && 
         (fetchError.name === 'AbortError' ||
