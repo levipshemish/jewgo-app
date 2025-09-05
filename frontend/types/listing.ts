@@ -252,6 +252,10 @@ export interface ShulDB {
   is_active?: boolean
   listing_type: string
   status?: string
+  price_range?: string
+  kosher_type?: string
+  kosher_agency?: string
+  kosher_certification?: string
   hours: {
     [day: string]: {
       open: string
@@ -271,6 +275,8 @@ export interface ShulDB {
   admin_settings: {
     show_contact_button?: boolean
     contact_url?: string
+    show_order_button?: boolean
+    order_url?: string
   }
   stats: {
     view_count: number

@@ -278,6 +278,7 @@ function ShulIdPageContent() {
           state: synagogueData.state || '',
           zip_code: synagogueData.zip_code || '',
           phone_number: synagogueData.phone_number || '',
+          denomination: synagogueData.denomination || 'Orthodox', // Default denomination
           listing_type: synagogueData.listing_type || 'synagogue',
           rating: synagogueData.google_rating || synagogueData.rating || 0,
           price_range: synagogueData.price_range || '',
