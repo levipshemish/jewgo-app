@@ -4,8 +4,8 @@ import { MapPin, Zap, ChevronDown, MessageCircle, Filter } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 
-import { BottomNavigation } from "@/components/navigation/ui"
-import { CategoryTabs } from "@/components/navigation/ui"
+import { BottomNavigation } from "@/components/core"
+import { CategoryTabs } from "@/components/core"
 import { MarketplaceAPI } from "@/lib/api/marketplace"
 import type {
   MarketplaceListing,

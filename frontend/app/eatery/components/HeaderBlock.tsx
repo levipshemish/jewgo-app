@@ -3,7 +3,7 @@
 import React from 'react';
 import { Header } from '@/components/layout';
 import ActionButtons from '@/components/layout/ActionButtons';
-import CategoryTabs from '@/components/navigation/ui/CategoryTabs';
+import { CategoryTabs } from '@/components/core';
 
 type Props = {
   onSearch: (q: string) => void;

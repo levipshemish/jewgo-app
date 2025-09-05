@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import { CategoryTabs } from '@/components/navigation/ui';
+import { CategoryTabs } from '@/components/core';
 import { ActionButtons } from '@/components/layout';
 import { ShulBottomNavigation } from '@/components/shuls';
 import Card from '@/components/core/cards/Card';

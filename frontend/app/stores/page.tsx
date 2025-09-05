@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { usePathname } from "next/navigation"
 import Header from "@/components/layout/Header"
-import CategoryTabs from "@/components/navigation/ui/CategoryTabs"
+import { CategoryTabs } from "@/components/core"
 import ActionButtons from "@/components/layout/ActionButtons"
 import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
 import { useLocation } from "@/lib/contexts/LocationContext"

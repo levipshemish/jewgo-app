@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { CategoryTabs } from '@/components/core';
+import { BottomNavigation } from '@/components/core';
 import { useAuth } from '@/hooks/useAuth';
 import { appLogger } from '@/lib/utils/logger';
 

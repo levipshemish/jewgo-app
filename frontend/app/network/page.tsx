@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { CategoryTabs } from '@/components/core';
+import { BottomNavigation } from '@/components/core';
 
 export default function NetworkPage() {
   const router = useRouter();
