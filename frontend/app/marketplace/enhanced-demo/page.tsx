@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MarketplaceListing } from '@/lib/types/marketplace';
-import EnhancedMarketplaceGrid from '@/components/archive/grids/EnhancedMarketplaceGrid';
+import { Grid } from '@/components/core';
 
 // Sample data matching the marketplace theme
 const sampleListings: MarketplaceListing[] = [
@@ -293,15 +293,17 @@ export default function EnhancedMarketplaceDemo() {
         </div>
       </div>
 
-      <EnhancedMarketplaceGrid
-        listings={listings}
-        loading={loading}
-        gridCols={gridCols}
-        variant={variant}
-        showEndorsements={showEndorsements}
-        onLike={handleLike}
-        likedListings={likedListings}
-        skeletonCount={8}
+      <Grid
+        category="all"
+        searchQuery=""
+        showDistance={true}
+        showRating={true}
+        showServices={true}
+        scrollContainerRef={{ current: null }}
+        userLocation={null}
+        useRealData={false}
+        activeFilters={{}}
+        dataType="marketplace"
       />
 
       <div className="mt-8 text-center">

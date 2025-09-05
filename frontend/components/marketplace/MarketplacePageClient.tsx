@@ -14,7 +14,7 @@ import type {
   MarketplaceStats as _MarketplaceStats,
 } from "@/lib/types/marketplace"
 
-import EnhancedMarketplaceGrid from "../archive/grids/EnhancedMarketplaceGrid"
+import { Grid } from "@/components/core"
 
 import MarketplaceHeader from "./MarketplaceHeader"
 import CategoryFilter from "./CategoryFilter"
@@ -274,11 +274,17 @@ export default function MarketplacePageClient() {
               activeFilters={filters}
             />
             <LocationDisplay />
-            <EnhancedMarketplaceGrid
-              listings={[]}
-              loading={true}
-              onLike={handleAddToWishlist}
-              likedListings={new Set(wishlist.map((p) => p.id))}
+            <Grid
+              category="all"
+              searchQuery=""
+              showDistance={true}
+              showRating={true}
+              showServices={true}
+              scrollContainerRef={{ current: null }}
+              userLocation={null}
+              useRealData={false}
+              activeFilters={{}}
+              dataType="marketplace"
             />
           </div>
         </div>
@@ -301,11 +307,17 @@ export default function MarketplacePageClient() {
             activeFilters={filters}
           />
           <LocationDisplay />
-          <EnhancedMarketplaceGrid
-            listings={products}
-            loading={loading}
-            onLike={handleAddToWishlist}
-            likedListings={new Set(wishlist.map((p) => p.id))}
+          <Grid
+            category="all"
+            searchQuery=""
+            showDistance={true}
+            showRating={true}
+            showServices={true}
+            scrollContainerRef={{ current: null }}
+            userLocation={null}
+            useRealData={false}
+            activeFilters={{}}
+            dataType="marketplace"
           />
         </div>
 
