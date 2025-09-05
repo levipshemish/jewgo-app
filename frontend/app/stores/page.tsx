@@ -547,6 +547,7 @@ function StoresPageContent() {
       
       loadInitialData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once
 
   // Mobile-optimized filter changes

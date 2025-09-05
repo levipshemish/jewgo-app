@@ -572,7 +572,7 @@ function ShtelPageContent() {
       
       loadInitialData();
     }
-  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, fetchTimeoutMs, trackApiCall]);
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, fetchTimeoutMs, trackApiCall, isSettingLocationFilters, userLocation]);
 
   // Background prefetching for related data
   useEffect(() => {
@@ -671,7 +671,7 @@ function ShtelPageContent() {
       loadSearchData();
     }, isSlowConnection ? 500 : 300); // Longer debounce for slow connections
     setFetchTimeout(timeout);
-  }, [fetchTimeout, isSlowConnection, activeFilters, searchQuery, mobileOptimizedItemsPerPage, fetchTimeoutMs, trackApiCall]);
+  }, [fetchTimeout, isSlowConnection, activeFilters, searchQuery, mobileOptimizedItemsPerPage, fetchTimeoutMs, trackApiCall, isSettingLocationFilters, userLocation]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
