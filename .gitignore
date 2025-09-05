@@ -52,6 +52,11 @@ venv.bak/
 !**/*env.example
 !**/*.env.example
 
+# Real environment files with secrets
+config/environment/docker.env.real
+config/environment/production.env
+config/environment/active/*.env
+
 # Next.js
 jewgo-frontend/.next/
 frontend/.next/
