@@ -10,8 +10,10 @@ import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 export interface UseAuthReturn {
   user: AuthUser | null;
   isLoading: boolean;
+  loading: boolean; // Legacy alias for backward compatibility
   error: Error | null;
   isAnonymous: boolean;
+  isAuthenticated: boolean; // Legacy property for backward compatibility
   signOut: () => Promise<void>;
   signInAnonymously: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -101,8 +103,10 @@ export function useAuth(): UseAuthReturn {
   return {
     user,
     isLoading,
+    loading: isLoading, // Legacy alias for backward compatibility
     error,
     isAnonymous: false, // PostgreSQL auth doesn't support anonymous users
+    isAuthenticated: authState === 'authenticated', // Legacy property for backward compatibility
     signOut,
     signInAnonymously,
     refreshUser,

@@ -3,7 +3,7 @@
  * Handles user session operations and validation
  */
 
-import { createServerSupabaseClient } from '../supabase/server';
+// PostgreSQL auth - using backend API instead of Supabase
 import { TransformedUser } from '../utils/auth-utils';
 import { Permission } from '../constants/permissions';
 
@@ -11,85 +11,42 @@ import { Permission } from '../constants/permissions';
  * Get current user session
  */
 export async function getCurrentSession() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { session }, error } = await supabase.auth.getSession();
-  
-  if (error) {
-    console.error('Session error:', error);
-    return null;
-  }
-  
-  return session;
+  // PostgreSQL auth - session management not implemented yet
+  return null;
 }
 
 /**
- * Get current user with transformed data
+ * Get current user with session validation
  */
 export async function getCurrentUser(): Promise<TransformedUser | null> {
-  const session = await getCurrentSession();
-  if (!session?.user) {
-    return null;
-  }
+  // PostgreSQL auth - user session not implemented yet
+  return null;
+}
+
+/**
+ * Check if user has specific permission
+ */
+export function hasPermission(user: TransformedUser | null, permission: Permission): boolean {
+  if (!user) return false;
   
-  return transformUser(session.user);
+  // Check if user has the specific permission
+  return user.permissions?.includes(permission) || false;
 }
 
 /**
- * Transform Supabase user to TransformedUser
+ * Check if user has any of the specified permissions
  */
-function transformUser(user: any): TransformedUser {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-    username: user.user_metadata?.username,
-    provider: user.app_metadata?.provider || 'unknown',
-    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-    providerInfo: getProviderInfo(user.app_metadata?.provider),
-    createdAt: user.created_at,
-    updatedAt: user.updated_at,
-    isEmailVerified: true, // Default to true for now
-    isPhoneVerified: false, // Default to false for now
-    role: 'user', // Default role
-    permissions: ['restaurant:view', 'review:view'] as Permission[], // Default permissions
-    subscriptionTier: 'free', // Default subscription tier
-    // Initialize role fields
-    adminRole: null,
-    roleLevel: 0,
-    isSuperAdmin: false
-  };
-}
-
-/**
- * Get provider information
- */
-function getProviderInfo(provider: string) {
-  switch (provider) {
-    case 'apple':
-      return { name: 'Apple', icon: '🍎', color: '#000000', displayName: 'Apple' };
-    case 'google':
-      return { name: 'Google', icon: '🔍', color: '#4285F4', displayName: 'Google' };
-    default:
-      return { name: 'Email', icon: '📧', color: '#6B7280', displayName: 'Email' };
-  }
-}
-
-/**
- * Validate session is recent (within last 24 hours)
- */
-export function isSessionRecent(session: any): boolean {
-  if (!session?.access_token) {
-    return false;
-  }
+export function hasAnyPermission(user: TransformedUser | null, permissions: Permission[]): boolean {
+  if (!user || !user.permissions) return false;
   
-  try {
-    const payload = JSON.parse(Buffer.from(session.access_token.split('.')[1], 'base64').toString());
-    const issuedAt = payload.iat * 1000; // Convert to milliseconds
-    const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-    
-    return (now - issuedAt) < oneDay;
-  } catch {
-    return false;
-  }
+  return permissions.some(permission => user.permissions?.includes(permission));
+}
+
+/**
+ * Check if user has all of the specified permissions
+ */
+export function hasAllPermissions(user: TransformedUser | null, permissions: Permission[]): boolean {
+  if (!user || !user.permissions) return false;
+  
+  return permissions.every(permission => user.permissions?.includes(permission));
 }

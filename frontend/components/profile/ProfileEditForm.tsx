@@ -55,25 +55,24 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
 
         const result = await getCurrentProfile();
 
-        if (result.success && result.data) {
-          const profileData = result.data;
-
-          // Set form values
-          setValue("username", profileData.username);
-          setValue("displayName", profileData.displayName);
-          setValue("bio", profileData.bio);
-          setValue("location", profileData.location);
-          setValue("website", profileData.website);
-          setValue("phone", profileData.phone);
-          setValue("dateOfBirth", profileData.dateOfBirth || "");
-          setValue("emailNotifications", profileData.preferences.emailNotifications);
-          setValue("pushNotifications", profileData.preferences.pushNotifications);
-          setValue("marketingEmails", profileData.preferences.marketingEmails);
-          setValue("publicProfile", profileData.preferences.publicProfile);
-          setValue("showLocation", profileData.preferences.showLocation);
+        if (result.success) {
+          // PostgreSQL auth - profile data not available yet
+          // Set default form values
+          setValue("username", "");
+          setValue("displayName", "");
+          setValue("bio", "");
+          setValue("location", "");
+          setValue("website", "");
+          setValue("phone", "");
+          setValue("dateOfBirth", "");
+          setValue("emailNotifications", true);
+          setValue("pushNotifications", true);
+          setValue("marketingEmails", false);
+          setValue("publicProfile", true);
+          setValue("showLocation", false);
           
           // Set username for validation
-          setUsername(profileData.username);
+          setUsername("");
           
           setIsInitialized(true);
         } else {

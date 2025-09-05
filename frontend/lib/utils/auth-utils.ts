@@ -1,5 +1,5 @@
 import ipaddr from 'ipaddr.js';
-import { type TransformedUser, type AuthProvider as _AuthProvider } from '@/lib/types/supabase-auth';
+import { type TransformedUser, type AuthProvider as _AuthProvider } from '@/lib/types/postgres-auth';
 
 // User type definition - moved here to avoid circular dependencies
 interface User {
@@ -24,12 +24,12 @@ interface User {
  * across the JewGo authentication system.
  */
 
-// Runtime check to prevent Supabase client import in Edge Runtime
-let supabaseClient: any = null;
+// PostgreSQL authentication client - no longer using Supabase
+let postgresAuthClient: any = null;
 if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
-  // Only import Supabase client in Node.js runtime
-  const { createClient } = require('@supabase/supabase-js');
-  supabaseClient = createClient;
+  // Only import PostgreSQL auth client in Node.js runtime
+  const { postgresAuth } = require('@/lib/auth/postgres-auth');
+  postgresAuthClient = postgresAuth;
 }
 
 // Re-export client-safe functions and types from auth-utils-client
@@ -57,7 +57,7 @@ export {
 export { transformSupabaseUserLegacy as transformSupabaseUserClient } from './auth-utils-client';
 
 // Re-export types from centralized location
-export type { TransformedUser, AuthProvider } from '@/lib/types/supabase-auth';
+export type { TransformedUser, AuthProvider } from '@/lib/types/postgres-auth';
 
 /**
  * Server-side transform function - delegates to client-safe version
@@ -457,7 +457,7 @@ export function mapAppleOAuthError(error: string): string {
  * Feature support guard for client-side usage
  * Checks for presence of required Supabase features via lightweight test client
  */
-export function validateSupabaseFeatureSupport(): boolean {
+export async function validateSupabaseFeatureSupport(): Promise<boolean> {
   try {
     // Check if Supabase environment variables are configured
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -476,24 +476,19 @@ export function validateSupabaseFeatureSupport(): boolean {
       return false;
     }
 
-    // Create a lightweight test client to check feature availability
-    const testClient = supabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+    // PostgreSQL auth doesn't need client testing like Supabase
+    // Just check if backend URL is accessible
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+      if (backendUrl) {
+        const response = await fetch(`${backendUrl}/api/auth/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000)
+        });
+        return response.ok;
       }
-    });
-
-    // Check if signInAnonymously method exists
-    if (typeof testClient.auth.signInAnonymously !== 'function') {
-      // signInAnonymously method not available
-      return false;
-    }
-
-    // Check if linkIdentity method exists (for merge flow)
-    if (typeof testClient.auth.linkIdentity !== 'function') {
-      // linkIdentity method not available - merge flow may not work
-      // Don't fail for linkIdentity as it's not critical for basic auth
+    } catch (error) {
+      console.error('[Auth] Backend health check failed:', error);
     }
 
     return true;

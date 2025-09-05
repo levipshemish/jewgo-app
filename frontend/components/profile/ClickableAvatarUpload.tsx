@@ -123,7 +123,7 @@ export default function ClickableAvatarUpload({
 
     try {
 
-      const result = await deleteAvatar();
+      const result = await deleteAvatar(currentAvatarUrl || '');
 
       if (result.success) {
 
@@ -131,7 +131,7 @@ export default function ClickableAvatarUpload({
         onAvatarChange?.("");
       } else {
 
-        setError(result.error || "Failed to delete avatar");
+        setError(result.message || "Failed to delete avatar");
       }
     } catch (_error) {
       console.error('Delete error:', _error);

@@ -93,9 +93,9 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 ### ✅ **Admin System - Production Ready**
 
-- **✅ Complete Supabase Integration**: Fully migrated admin system from Prisma to Supabase
+- **✅ Complete PostgreSQL Integration**: Fully migrated admin system to PostgreSQL with custom authentication
 - **✅ Role-Based Access Control (RBAC)**: Implemented 4-tier admin role system (super_admin, system_admin, data_admin, moderator)
-- **✅ Row Level Security (RLS)**: Database-level security policies for admin tables
+- **✅ Database Security**: Database-level security policies for admin tables
 - **✅ Admin Management Scripts**: Complete set of npm scripts for admin user management
 - **✅ Super Admin Setup**: admin@jewgo.app configured as super admin with full privileges
 
@@ -103,7 +103,7 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 - **🎉 Test Authentication Issues Resolved**: Successfully resolved all backend test failures and created CI-ready test suite
 - **✅ Core Functionality Verified**: 12/12 core tests passing, confirming all essential functionality works correctly
-- **✅ Authentication Framework**: Security decorators and Supabase integration properly implemented and tested
+- **✅ Authentication Framework**: Security decorators and PostgreSQL authentication properly implemented and tested
 - **✅ Performance Validated**: Endpoints responding in <1 second, handling concurrent requests successfully
 - **✅ Error Handling**: Proper HTTP status codes, structured logging, and comprehensive error responses
 - **✅ Test Coverage**: 15% coverage established, sufficient for CI/CD pipeline readiness
@@ -114,7 +114,7 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 - **Profile Authentication Flow**: Fixed redirect loops and loading state management
 - **Avatar Upload Components**: New ClickableAvatarUpload component with modern UX
-- **Supabase Migration**: Complete admin system migration from PostgreSQL to Supabase
+- **PostgreSQL Migration**: Complete admin system migration to PostgreSQL with custom authentication
 - **Admin Functions**: Database functions for role management (`get_user_admin_role`, `assign_admin_role`)
 - **Security Enhancements**: RLS policies, secure metadata storage, service role integration
 - **Management Tools**: Comprehensive admin verification and testing scripts
@@ -169,7 +169,7 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 - **Next.js 14**: React framework with App Router
 - **TypeScript**: Type-safe JavaScript
 - **Tailwind CSS**: Utility-first CSS framework
-- **Supabase**: Authentication and real-time database
+- **PostgreSQL**: Authentication and database
 - **Prisma**: Database ORM
 - **Google Maps API**: Location services
 
@@ -183,7 +183,7 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 ### Infrastructure
 - **Vercel**: Frontend deployment
 - **Render**: Backend deployment
-- **Supabase**: Database and authentication
+- **PostgreSQL**: Database and authentication
 - **Sentry**: Error monitoring
 - **Google Analytics**: Analytics tracking
 
@@ -266,7 +266,7 @@ jewgo-app/
 │   └── utils/               # Utility functions
 ├── docs/                    # Project documentation
 ├── scripts/                 # Development and deployment scripts
-└── supabase/                # Supabase configuration
+└── config/                  # Configuration files
 ```
 
 ### Development Commands
@@ -300,13 +300,13 @@ npm run db:reset     # Reset database (development only)
 
 #### Frontend (.env.local)
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_BACKEND_URL=your-backend-url
+JWT_SECRET_KEY=your-jwt-secret-key
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-key
 DATABASE_URL=postgresql://...
 NEXTAUTH_SECRET=your-secret-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+JWT_ACCESS_EXPIRE_HOURS=24
 ```
 
 #### Backend (.env)
@@ -314,8 +314,8 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 DATABASE_URL=postgresql://...
 FLASK_ENV=development
 SECRET_KEY=your-secret-key
-SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+JWT_SECRET_KEY=your-jwt-secret-key
+JWT_ACCESS_EXPIRE_HOURS=24
 ```
 
 ## 🚀 Deployment
@@ -333,9 +333,9 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 3. **Set environment variables**
 4. **Deploy automatically**
 
-### Database (Supabase)
+### Database (PostgreSQL)
 
-1. **Create Supabase project**
+1. **Set up PostgreSQL database**
 2. **Run database migrations**
 3. **Configure authentication**
 4. **Set up admin users**
@@ -346,13 +346,13 @@ For detailed deployment instructions, see [Deployment Guide](docs/DEPLOYMENT_GUI
 
 ### Overview
 
-The admin system provides comprehensive administrative capabilities for managing the JewGo platform with full Supabase integration, role-based access control, and secure authentication.
+The admin system provides comprehensive administrative capabilities for managing the JewGo platform with full PostgreSQL integration, role-based access control, and secure authentication.
 
 ### ✅ **Status: Production Ready**
 
 The admin system is fully implemented and functional with:
 - **4-Tier Role System**: super_admin, system_admin, data_admin, moderator
-- **Supabase Integration**: Complete migration from Prisma to Supabase
+- **PostgreSQL Integration**: Complete migration to PostgreSQL with custom authentication
 - **Row Level Security**: Database-level access control policies
 - **Management Scripts**: Comprehensive admin user management tools
 
@@ -368,7 +368,7 @@ The admin system is fully implemented and functional with:
 ### Access
 
 - **URL**: `/admin`
-- **Authentication**: Requires admin role in Supabase
+- **Authentication**: Requires admin role in PostgreSQL
 - **Security**: CSRF token protection for all actions
 
 ### Quick Setup
@@ -584,7 +584,7 @@ This document includes:
 
 ### Authentication
 
-- **Supabase Auth**: Secure user authentication
+- **PostgreSQL Auth**: Secure user authentication
 - **OAuth Providers**: Google, Apple integration
 - **Session Management**: Secure session handling
 
@@ -681,7 +681,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Supabase**: Authentication and database services
+- **PostgreSQL**: Authentication and database services
 - **Vercel**: Frontend deployment platform
 - **Render**: Backend deployment platform
 - **Google Maps**: Location services

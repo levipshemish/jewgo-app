@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { json } from '@/lib/server/route-helpers';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
+import { isPostgresAuthConfigured } from '@/lib/utils/auth-utils-client';
 import { ROLE_PERMISSIONS, normalizeAdminRole } from '@/lib/constants/permissions';
 import { getRoleLevelForRole } from '@/lib/server/admin-constants';
 import { validatePermissions } from '@/lib/server/security';
@@ -18,9 +17,9 @@ export async function GET(request: NextRequest) {
 
     let authWarning: string | null = null;
 
-    // Check if Supabase is configured
-    if (!isSupabaseConfigured()) {
-      const res = json({ success: false, error: 'Supabase not configured', adminRole: null, roleLevel: 0, permissions: [] }, 500);
+    // Check if PostgreSQL authentication is configured
+    if (!isPostgresAuthConfigured()) {
+      const res = json({ success: false, error: 'PostgreSQL auth not configured', adminRole: null, roleLevel: 0, permissions: [] }, 500);
       return res;
     }
 
@@ -34,100 +33,47 @@ export async function GET(request: NextRequest) {
       return res;
     }
 
-    const supabase = await createServerSupabaseClient();
-    
     // Check for Authorization header first, fall back to cookie session
     const authHeader = request.headers.get('authorization');
-    let user, accessToken;
+    let accessToken;
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const { data, error } = await supabase.auth.getUser(token);
-      
-      if (!error && data.user) {
-        // Authorization header is valid
-        user = data.user;
-        accessToken = token;
-        
-        // Check if cookie session exists and compare user IDs
-        const { data: { user: cookieUser } } = await supabase.auth.getUser();
-        if (cookieUser && cookieUser.id !== data.user.id) {
-          console.warn('[Auth] User mismatch between header token and cookie session');
-          authWarning = 'user-mismatch';
-          if (process.env.ENFORCE_STRICT_AUTH_MATCH === 'true') {
-            const res = json({ success: false, error: 'Unauthorized (user mismatch)' }, 401);
-            res.headers.set('X-Auth-Warning', 'user-mismatch');
-            return res;
-          }
-          // Prefer header token as it's more explicit
-          // Continue with header user, but log the mismatch
-        }
-      } else {
-        // Authorization header is invalid, try cookie fallback
-        console.warn('[Auth] Invalid Authorization header, trying cookie fallback:', error);
-        
-        const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
-        if (!cookieError && cookieUser) {
-          user = cookieUser;
-          // Get token from session for backend call
-          const { data: { session } } = await supabase.auth.getSession();
-          accessToken = session?.access_token;
-        } else {
-          // Both Authorization header and cookie failed
-          console.error('[Auth] Both Authorization header and cookie failed');
-          const res = json({ success: false, error: 'Unauthorized', adminRole: null, roleLevel: 0, permissions: [] }, 401);
-          return res;
-        }
-      }
+      accessToken = authHeader.substring(7);
     } else {
-      // No Authorization header, use cookie session
-      const { data: { user: cookieUser }, error } = await supabase.auth.getUser();
-      user = cookieUser;
-      
-      if (error) {
-        console.error('[Auth] Error getting user from cookie session:', error);
-        const res = json(
-          { 
-            success: false, 
-            error: 'Unauthorized'
-          },
-          401
-        );
-        return res;
-      }
-      
-      // Get token from session for backend call
-      const { data: { session } } = await supabase.auth.getSession();
-      accessToken = session?.access_token;
-    }
-
-    // No session/user is a valid state, not an error
-    if (!user) {
-      const res = json(
-        { 
-          success: true, 
-          adminRole: null,
-          roleLevel: 0,
-          permissions: []
-        },
-        200
-      );
-      if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
-      return res;
+      // Try to get token from cookies
+      const cookieStore = await import('next/headers').then(m => m.cookies());
+      accessToken = cookieStore.get('auth_access_token')?.value;
     }
 
     if (!accessToken) {
-      console.warn('[Auth] Missing access token but user exists, returning default role payload');
-      const res = json(
-        { 
-          success: true, 
-          adminRole: null,
-          roleLevel: 0,
-          permissions: []
+      const res = json({ success: false, error: 'Unauthorized', adminRole: null, roleLevel: 0, permissions: [] }, 401);
+      return res;
+    }
+
+    // Verify token with backend first
+    try {
+      const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
         },
-        200
-      );
-      if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
+        signal: AbortSignal.timeout(5000)
+      });
+
+      if (!verifyResponse.ok) {
+        const res = json({ success: false, error: 'Unauthorized', adminRole: null, roleLevel: 0, permissions: [] }, 401);
+        return res;
+      }
+
+      const userData = await verifyResponse.json();
+      if (!userData.success || !userData.data) {
+        const res = json({ success: false, error: 'Unauthorized', adminRole: null, roleLevel: 0, permissions: [] }, 401);
+        return res;
+      }
+    } catch (error) {
+      console.error('[Auth] Token verification failed:', error);
+      const res = json({ success: false, error: 'Unauthorized', adminRole: null, roleLevel: 0, permissions: [] }, 401);
       return res;
     }
 

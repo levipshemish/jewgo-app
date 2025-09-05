@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
+import { validateRedirectUrl } from '@/lib/utils/auth-utils';
 import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
 
 // Enhanced middleware with security hardening and admin route protection
@@ -40,73 +39,41 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
     
-    // Create Supabase client with Edge Runtime compatibility
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // Get JWT token from Authorization header or cookies
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') 
+      ? authHeader.split(' ')[1] 
+      : request.cookies.get('auth_access_token')?.value;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn('Supabase environment variables not configured in middleware.');
-      return NextResponse.next();
-    }
-
-    const supabase = createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            // Set cookies on the response to persist refreshed tokens
-            response.cookies.set(name, value, options);
-          },
-          remove(name: string, options: any) {
-            // Remove cookies on the response
-            response.cookies.set(name, '', { ...options, maxAge: 0 });
-          },
-        },
-        // Disable realtime to prevent middleware errors
-        realtime: {
-          params: {
-            eventsPerSecond: 0,
-          },
-        },
-        global: {
-          headers: {
-            'X-Client-Info': 'jewgo-middleware',
-          },
-        },
-      }
-    );
-
-    // Get authenticated user from Supabase Auth server (secure)
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
-    // Handle authentication errors
-    if (error) {
-      console.error('Middleware auth error:', error);
-      return handleAuthError(request, isApi, error);
-    }
-    
-    // Handle unauthenticated users
-    if (!user) {
+    if (!token) {
       return handleUnauthenticatedUser(request, isApi);
     }
-    
-    // Handle anonymous users - not allowed in admin routes
-    if (extractIsAnonymous(user)) {
-      if (isApi) {
-        return NextResponse.json(
-          { error: 'Admin access required' }, 
-          { status: 403, headers: corsHeaders(request) }
-        );
+
+    // Verify JWT token with backend
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+      const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!verifyResponse.ok) {
+        return handleUnauthenticatedUser(request, isApi);
       }
-      return redirectToSignin(request);
+
+      const userData = await verifyResponse.json();
+      if (!userData.success || !userData.data) {
+        return handleUnauthenticatedUser(request, isApi);
+      }
+
+      // Handle authenticated users
+      return await handleAuthenticatedUser(request, isApi, userData.data, response);
+    } catch (error) {
+      console.error('Middleware auth verification error:', error);
+      return handleAuthError(request, isApi, error);
     }
-    
-    // Handle authenticated users
-    return await handleAuthenticatedUser(request, isApi, user, response);
 
   } catch (error) {
     console.error('Middleware error:', error);

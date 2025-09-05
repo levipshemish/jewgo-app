@@ -115,13 +115,13 @@ export default function AvatarUpload({
     setError(null);
 
     try {
-      const result = await deleteAvatar();
+      const result = await deleteAvatar(currentAvatarUrl || '');
       
       if (result.success) {
         setPreviewUrl(null);
         onAvatarChange?.("");
       } else {
-        setError(result.error || "Failed to delete avatar");
+        setError(result.message || "Failed to delete avatar");
       }
     } catch {
       setError("Failed to delete avatar. Please try again.");

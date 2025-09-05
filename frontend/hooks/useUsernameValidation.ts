@@ -62,7 +62,7 @@ export function useUsernameValidation(initialUsername: string = "") {
         } else {
           setValidationState(prev => ({
             ...prev,
-            isAvailable: result.available,
+            isAvailable: result.available ?? null,
             isChecking: false,
             error: result.available ? null : "Username is already taken",
           }));

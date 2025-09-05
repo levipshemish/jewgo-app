@@ -120,7 +120,7 @@ export function withAnyPermission(requiredPermissions: string[]) {
     const admin = await requireAdminOrThrow(request);
     
     // Super admin has all permissions
-    const userRole = admin.adminRole || admin.role;
+    const userRole = admin.adminRole || (admin.roles && admin.roles[0]?.role);
     if (userRole === 'super_admin') {
       return admin;
     }

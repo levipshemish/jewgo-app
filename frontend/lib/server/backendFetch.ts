@@ -7,15 +7,12 @@ export async function backendFetch(input: string, init: RequestInit & { requireA
   const headers = new Headers(init.headers || {});
   
   if (init.requireAdmin) {
-    const { createServerSupabaseClient } = await import('@/lib/supabase/server');
-    const supabase = await createServerSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Admin JWT missing');
+    // PostgreSQL auth - get admin token from environment or request
+    const adminToken = process.env.ADMIN_TOKEN;
+    if (!adminToken) {
+      throw new Error('Admin token not configured');
     }
-    
-    headers.set('Authorization', `Bearer ${session.access_token}`);
+    headers.set('Authorization', `Bearer ${adminToken}`);
   }
   
   headers.set('Content-Type', headers.get('Content-Type') || 'application/json');

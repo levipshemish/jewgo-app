@@ -1,6 +1,5 @@
 "use server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limiting";
 
 export async function forgotPasswordAction(formData: FormData) {
@@ -18,15 +17,28 @@ export async function forgotPasswordAction(formData: FormData) {
       return { ok: false, message: "Please enter a valid email address" };
     }
 
-    const supabase = await createServerSupabaseClient();
-    
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`,
+    // Send password reset request to PostgreSQL auth backend
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+    if (!backendUrl) {
+      return { ok: false, message: "Backend not configured" };
+    }
+
+    const response = await fetch(`${backendUrl}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        email,
+        redirect_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`
+      }),
     });
 
-    if (error) {
+    const result = await response.json();
+
+    if (!response.ok) {
       // Don't leak whether email exists or not
-      console.error('Password reset error:', error);
+      console.error('Password reset error:', result);
       return { ok: false, message: "If an account exists with this email, you will receive a password reset link." };
     }
 

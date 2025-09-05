@@ -1,10 +1,9 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
 
 import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
-import { validateCSRFServer, validateSupabaseFeaturesWithLogging } from '@/lib/utils/auth-utils.server';
+import { validateCSRFServer, isPostgresAuthConfigured } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit } from '@/lib/rate-limiting';
 // Anonymous authentication endpoint - no CAPTCHA required
 
@@ -31,11 +30,11 @@ export async function POST(request: NextRequest) {
 
   // Debug logging for production
 
-  // Feature guard: ensure required Supabase methods exist
-  const featureOk = await validateSupabaseFeaturesWithLogging();
+  // Feature guard: ensure PostgreSQL auth is configured
+  const featureOk = isPostgresAuthConfigured();
 
   if (!featureOk) {
-    console.error('Supabase features not available for anonymous auth');
+    console.error('PostgreSQL auth not configured for anonymous auth');
     return NextResponse.json(
       { error: 'ANON_SIGNIN_UNSUPPORTED' },
       { status: 503, headers: baseHeaders }
@@ -83,81 +82,13 @@ export async function POST(request: NextRequest) {
   // Parse body (no CAPTCHA token required)
   await request.json().catch(() => ({} as any));
 
-  // Create SSR Supabase client bound to response cookies
-  const cookieStore = await cookies();
-  
-  // Debug Supabase configuration
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase configuration');
-    return NextResponse.json(
-      { error: 'CONFIGURATION_ERROR' },
-      { status: 500, headers: baseHeaders }
-    );
-  }
-  
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          // Ensure cookies work on localhost (no Secure on http, SameSite=Lax, path=/)
-          cookieStore.set({
-            name,
-            value,
-            ...options,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-          });
-        },
-        remove(name: string, options: any) {
-          cookieStore.set({
-            name,
-            value: '',
-            ...options,
-            maxAge: 0,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-          });
-        },
-      },
-    }
-  );
-
-  // Attempt anonymous sign-in (no CAPTCHA required)
-  try {
-
-    const { data, error } = await supabase.auth.signInAnonymously();
-    
-    if (error || !data?.user) {
-      console.error('Anonymous sign-in failed:', error);
-      return NextResponse.json(
-        { error: 'ANON_SIGNIN_FAILED', details: error?.message },
-        { status: 500, headers: baseHeaders }
-      );
-    }
-
-  } catch (unexpectedError) {
-    console.error('Unexpected error during anonymous sign-in:', unexpectedError);
-    return NextResponse.json(
-      { error: 'UNEXPECTED_ERROR' },
-      { status: 500, headers: baseHeaders }
-    );
-  }
-
+  // PostgreSQL auth doesn't support anonymous users
+  // Return error indicating anonymous auth is not supported
+  console.warn('Anonymous authentication not supported with PostgreSQL auth');
   return NextResponse.json(
-    { ok: true },
-    { status: 200, headers: baseHeaders }
+    { error: 'ANON_SIGNIN_UNSUPPORTED', message: 'Anonymous authentication is not supported with PostgreSQL authentication' },
+    { status: 501, headers: baseHeaders }
   );
+
 }
 /* eslint-disable no-console */

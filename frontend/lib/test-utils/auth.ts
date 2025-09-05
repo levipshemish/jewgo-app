@@ -14,15 +14,14 @@ export const mockAdmin = () => {
         { role: 'admin', level: 3, granted_at: '2024-01-01T00:00:00Z' }
       ]
     },
+    isLoading: false,
     loading: false,
     error: null,
-    isAuthenticated: jest.fn(() => true),
+    isAnonymous: false,
+    isAuthenticated: true,
     signOut: jest.fn(),
     refreshUser: jest.fn(),
     signInAnonymously: jest.fn(),
-    verifyTokenRotationStatus: jest.fn(),
-    hasPermission: jest.fn(() => true),
-    hasMinimumRoleLevel: jest.fn(() => true)
   });
 };
 
@@ -40,15 +39,14 @@ export const mockUser = () => {
         { role: 'user', level: 1, granted_at: '2024-01-01T00:00:00Z' }
       ]
     },
+    isLoading: false,
     loading: false,
     error: null,
-    isAuthenticated: jest.fn(() => true),
+    isAnonymous: false,
+    isAuthenticated: true,
     signOut: jest.fn(),
     refreshUser: jest.fn(),
     signInAnonymously: jest.fn(),
-    verifyTokenRotationStatus: jest.fn(),
-    hasPermission: jest.fn(() => false),
-    hasMinimumRoleLevel: jest.fn(() => false)
   });
 };
 
@@ -57,14 +55,13 @@ export const mockUnauthenticated = () => {
   const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
   mockUseAuth.mockReturnValue({
     user: null,
+    isLoading: false,
     loading: false,
     error: null,
-    isAuthenticated: jest.fn(() => false),
+    isAnonymous: false,
+    isAuthenticated: false,
     signOut: jest.fn(),
     refreshUser: jest.fn(),
     signInAnonymously: jest.fn(),
-    verifyTokenRotationStatus: jest.fn(),
-    hasPermission: jest.fn(() => false),
-    hasMinimumRoleLevel: jest.fn(() => false)
   });
 };

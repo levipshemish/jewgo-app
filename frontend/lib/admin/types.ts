@@ -21,6 +21,8 @@ export type AdminUser = TransformedUser & {
   permissions: string[];
   /** Optional token for admin operations */
   token?: string;
+  /** Name property for compatibility */
+  name?: string | null | undefined;
 };
 
 /**

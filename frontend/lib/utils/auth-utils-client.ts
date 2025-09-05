@@ -3,7 +3,7 @@
  * This prevents Edge Runtime compatibility issues during prerendering
  */
 
-import { type TransformedUser, type AuthProvider, AUTH_PROVIDERS } from "@/lib/types/supabase-auth";
+import { type TransformedUser, type AuthProvider, AUTH_PROVIDERS } from "@/lib/types/postgres-auth";
 import type { Permission, Role } from '@/lib/constants/permissions';
 
 // User type definition - moved here to avoid circular dependencies
@@ -37,11 +37,14 @@ export function extractIsAnonymous(u?: any): boolean {
 }
 
 /**
- * Check if Supabase is configured (client-side only)
+ * Check if PostgreSQL authentication is configured (client-side only)
  */
-export function isSupabaseConfigured(): boolean {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+export function isPostgresAuthConfigured(): boolean {
+  return !!(process.env.NEXT_PUBLIC_BACKEND_URL && process.env.JWT_SECRET_KEY);
 }
+
+// Legacy alias for backward compatibility
+export const isSupabaseConfigured = isPostgresAuthConfigured;
 
 /**
  * Get base URL for client-side requests
@@ -131,11 +134,12 @@ function transformSupabaseUserBase(user: User | null): Omit<TransformedUser, 'ad
 
   return {
     id: user.id,
-    email: user.email || undefined,
-    name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+    email: user.email || '',
+    name: user.user_metadata?.full_name || user.user_metadata?.name || undefined,
     username: user.user_metadata?.username,
-    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || undefined,
     provider: provider as AuthProvider,
+    roles: [], // Default empty roles array
     providerInfo,
     createdAt: user.created_at || undefined,
     updatedAt: user.updated_at || undefined,
@@ -163,7 +167,7 @@ export async function transformSupabaseUserWithRoles(
   const transformedUser: TransformedUser = {
     ...baseUser,
     permissions: [], // Initialize empty, filled by backend role data
-    adminRole: null,
+    adminRole: undefined,
     roleLevel: 0,
     isSuperAdmin: false
   };
@@ -173,7 +177,7 @@ export async function transformSupabaseUserWithRoles(
     try {
       const roleData = await getUserWithRoles(options.userToken);
       if (roleData) {
-        transformedUser.adminRole = roleData.adminRole;
+        transformedUser.adminRole = roleData.adminRole || undefined;
         transformedUser.roleLevel = roleData.roleLevel;
         transformedUser.permissions = [...roleData.permissions];
         transformedUser.isSuperAdmin = roleData.adminRole === 'super_admin';
@@ -220,7 +224,7 @@ export function handleUserLoadError(error: any, router?: any): void {
  * Check if user has admin role
  */
 export function isAdminUser(user: TransformedUser | null): boolean {
-  return !!(user && (user.isSuperAdmin || (user.adminRole && user.roleLevel > 0)));
+  return !!(user && (user.isSuperAdmin || (user.adminRole && (user.roleLevel || 0) > 0)));
 }
 
 /**
@@ -240,7 +244,7 @@ export function hasMinimumRoleLevel(user: TransformedUser | null, minLevel: numb
   if (!user) {
     return false;
   }
-  return user.roleLevel >= minLevel;
+  return (user.roleLevel || 0) >= minLevel;
 }
 
 /**
@@ -300,13 +304,13 @@ export function createMockUser(): TransformedUser {
     name: 'Mock User',
     username: 'mockuser',
     provider: 'unknown' as AuthProvider,
-    avatar_url: null,
+    avatar_url: undefined,
+    roles: [], // Default empty roles array
     providerInfo: {
-      name: 'Email',
-      icon: '📧',
-      color: 'text-gray-600',
+      provider: 'email',
       displayName: 'Email',
-      },
+      icon: '📧',
+    },
     createdAt: undefined,
     updatedAt: undefined,
     isEmailVerified: true,
@@ -315,7 +319,7 @@ export function createMockUser(): TransformedUser {
     permissions: [],
     subscriptionTier: 'free',
     // Initialize role fields with proper defaults
-    adminRole: null,
+    adminRole: undefined,
     roleLevel: 0,
     isSuperAdmin: false
     };

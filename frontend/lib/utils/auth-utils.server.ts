@@ -1,6 +1,8 @@
 import 'server-only';
 import type { Permission, Role } from '@/lib/constants/permissions';
-import { validateSupabaseFeatureSupport as clientValidateSupabaseFeatureSupport } from './auth-utils';
+import { isPostgresAuthConfigured as clientValidatePostgresAuth } from './auth-utils-client';
+
+export { isPostgresAuthConfigured } from './auth-utils-client';
 
 // Server-aware role fetcher for absolute URL calls during SSR/route handlers
 export async function getUserWithRolesServer(userToken: string): Promise<{
@@ -35,53 +37,60 @@ export async function getUserWithRolesServer(userToken: string): Promise<{
 }
 
 /**
- * Server-side validation of required Supabase auth features with clear logging.
- * Does not print or expose secrets. Uses the public anon key.
+ * Server-side validation of PostgreSQL authentication configuration with clear logging.
+ * Does not print or expose secrets.
  */
-export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
+export async function validatePostgresAuthFeaturesWithLogging(): Promise<boolean> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+    const jwtSecret = process.env.JWT_SECRET_KEY;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('[Auth] Supabase env missing: URL or ANON key');
+    if (!backendUrl || !jwtSecret) {
+      console.error('[Auth] PostgreSQL auth env missing: BACKEND_URL or JWT_SECRET_KEY');
       return false;
     }
 
     try {
       // Validate URL format without leaking values
       // eslint-disable-next-line no-new
-      new URL(supabaseUrl);
+      new URL(backendUrl);
     } catch {
-      console.error('[Auth] Supabase URL invalid format');
+      console.error('[Auth] Backend URL invalid format');
       return false;
     }
 
-    // Lazy import to keep client bundles clean; safe on server
-    const { createClient } = await import('@supabase/supabase-js');
-    const client = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    // Test backend connectivity
+    try {
+      const response = await fetch(`${backendUrl}/api/auth/health`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(5000)
+      });
 
-    const hasAnon = typeof client.auth.signInAnonymously === 'function';
-    const hasLink = typeof client.auth.linkIdentity === 'function';
+      if (!response.ok) {
+        console.error('[Auth] Backend health check failed');
+        return false;
+      }
 
-    if (!hasAnon) {
-      console.error('[Auth] signInAnonymously not available in SDK');
+      const data = await response.json();
+      if (!data.success || data.status !== 'healthy') {
+        console.error('[Auth] Backend auth system not healthy');
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('[Auth] Backend connectivity test failed:', err);
       return false;
     }
-
-    if (!hasLink) {
-      // Not fatal for basic anonymous sign-in; warn only
-      console.warn('[Auth] linkIdentity not available (merge flow limited)');
-    }
-
-    return true;
   } catch (err) {
-    console.error('[Auth] Supabase feature validation failed:', err);
+    console.error('[Auth] PostgreSQL auth feature validation failed:', err);
     return false;
   }
 }
+
+// Legacy alias for backward compatibility
+export const validateSupabaseFeaturesWithLogging = validatePostgresAuthFeaturesWithLogging;
 
 /**
  * Attempt to link anonymous identity with authenticated user
@@ -109,7 +118,7 @@ export async function attemptIdentityLinking(_anonymousToken: string, _userToken
 
 // Re-export client-safe feature support check for SSR callers/tests that import from .server
 export function validateSupabaseFeatureSupport(): boolean {
-  return clientValidateSupabaseFeatureSupport();
+  return clientValidatePostgresAuth();
 }
 
 /**

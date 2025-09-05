@@ -1,11 +1,8 @@
 "use server";
 import { checkRateLimit} from "@/lib/rate-limiting";
-import { createServerSupabaseClient} from "@/lib/supabase/server";
 import { verifyRecaptchaToken} from "@/lib/utils/recaptcha";
 
-// Note: No CAPTCHA verification required.
-// Supabase Auth verifies captcha tokens itself. Double-verification can
-// consume the one-time token before Supabase sees it and cause failures.
+// PostgreSQL authentication signin action
 
 export async function signInAction(prevState: any, formData: FormData) {
   const email = formData.get("email") as string;
@@ -32,18 +29,27 @@ export async function signInAction(prevState: any, formData: FormData) {
 
 
 
-    // Attempt sign in
-    const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return { ok: false, message: error.message };
+    // Attempt sign in with PostgreSQL auth backend
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+    if (!backendUrl) {
+      return { ok: false, message: "Backend not configured" };
     }
 
-    if (data.user) {
+    const response = await fetch(`${backendUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return { ok: false, message: result.message || "Sign in failed" };
+    }
+
+    if (result.access_token) {
       return { ok: true, message: "Sign in successful" };
     }
 

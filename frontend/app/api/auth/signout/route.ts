@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse} from 'next/server';
 import { cookies} from 'next/headers';
-import { createServerClient} from '@supabase/ssr';
 import { getCORSHeaders } from '@/lib/config/environment';
 
 // export const runtime = 'nodejs';
@@ -19,31 +18,41 @@ export async function POST(request: NextRequest) {
   const baseHeaders = getCORSHeaders(origin || undefined);
 
   try {
-    // Create SSR Supabase client bound to cookies
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
-          set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }); },
-          remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options, maxAge: 0 }); },
-        },
-      }
-    );
+    // Get JWT token from Authorization header or cookies
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') 
+      ? authHeader.split(' ')[1] 
+      : request.cookies.get('auth_access_token')?.value;
 
-    // Sign out the user
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      console.error('Sign out error:', error);
-      return NextResponse.json({ error: 'SIGNOUT_FAILED' }, { status: 500, headers: baseHeaders });
+    if (!token) {
+      return NextResponse.json({ error: 'NO_TOKEN' }, { status: 401, headers: baseHeaders });
     }
+
+    // Call backend logout endpoint
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const logoutResponse = await fetch(`${backendUrl}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!logoutResponse.ok) {
+      console.error('Backend logout failed:', logoutResponse.status);
+      // Continue with local logout even if backend fails
+    }
+
+    // Clear local cookies
+    const cookieStore = await cookies();
+    cookieStore.set('auth_access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+    cookieStore.set('auth_refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+    cookieStore.set('auth_expires_at', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
 
     return NextResponse.json({ ok: true }, { status: 200, headers: baseHeaders });
 
-  } catch (_error) {
+  } catch (error) {
+    console.error('Sign out error:', error);
     return NextResponse.json({ error: 'INTERNAL_ERROR' }, { status: 500, headers: baseHeaders });
   }
 }

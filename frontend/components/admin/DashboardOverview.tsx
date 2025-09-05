@@ -21,18 +21,22 @@ type AdminRole = 'moderator' | 'data_admin' | 'store_admin' | 'system_admin' | '
 type AdminUser = {
   id: string;
   email: string | undefined;
-  name: string | null;
-  username: string | undefined;
-  provider: string;
-  avatar_url: string | null;
-  providerInfo: any;
-  createdAt: string | undefined;
-  updatedAt: string | undefined;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  role: string;
+  name?: string | null | undefined;
+  username?: string | undefined;
+  provider?: string;
+  avatar_url?: string | null;
+  providerInfo?: {
+    provider: string;
+    displayName: string;
+    icon: string;
+  };
+  createdAt?: string | undefined;
+  updatedAt?: string | undefined;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  role?: string;
   permissions: string[];
-  subscriptionTier: string;
+  subscriptionTier?: string;
   adminRole: AdminRole | null;
   roleLevel: number;
   isSuperAdmin: boolean;

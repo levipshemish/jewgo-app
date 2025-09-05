@@ -1,5 +1,5 @@
 import 'server-only';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+// PostgreSQL auth - using backend API instead of Supabase
 import { 
   transformSupabaseUser, 
   isSupabaseConfigured,
@@ -94,38 +94,8 @@ async function getSessionUserWithRoles(): Promise<TransformedUser | null> {
       return null;
     }
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        secureLog('warn', 'ADMIN', {
-          code: 'NO_ACCESS_TOKEN',
-          hasUser: true,
-          requestId: getRequestId()
-        });
-        return null;
-      }
-      
-      // Transform user with role information using JWT validation
-      const transformedUser = await transformSupabaseUser(user, {
-        includeRoles: true,
-        userToken: session.access_token
-      });
-      
-      if (transformedUser) {
-        secureLog('info', 'ADMIN', {
-          code: 'USER_TRANSFORMED_SUCCESS',
-          hasRoles: !!transformedUser.adminRole,
-          roleLevel: transformedUser.roleLevel || 0,
-          requestId: getRequestId()
-        });
-      }
-      
-      return transformedUser;
-    }
+    // PostgreSQL auth - admin auth not implemented yet
+    return null;
   } catch (error) {
     secureLog('error', 'ADMIN', {
       code: 'SESSION_USER_ERROR',
@@ -181,8 +151,9 @@ export async function requireAdmin(request: Request): Promise<AdminUser | null> 
         name: 'Development Admin',
         username: 'dev-admin',
         provider: 'unknown',
-        avatar_url: null,
-        providerInfo: { name: 'Development', icon: '👤', color: '#6B7280', displayName: 'Development' },
+        avatar_url: undefined,
+        roles: [{ role: 'super_admin', level: 4, granted_at: new Date().toISOString() }],
+        providerInfo: { provider: 'development', displayName: 'Development', icon: '👤' },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isEmailVerified: true,
@@ -455,10 +426,8 @@ export function getAdminHeaders(): Record<string, string> {
  */
 export async function getBackendAuthHeader(): Promise<string | null> {
   try {
-    const supabase = await createServerSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    return token ? `Bearer ${token}` : null;
+    // PostgreSQL auth - admin auth not implemented yet
+    return null;
   } catch {
     return null;
   }

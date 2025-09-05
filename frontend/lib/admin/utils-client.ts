@@ -75,7 +75,7 @@ export function getRoleLevel(user: TransformedUser | null): number {
  */
 export function getUserPermissions(user: TransformedUser | null): Permission[] {
   if (!user || !isAdmin(user)) { return []; }
-  return user.permissions || [];
+  return (user.permissions || []) as Permission[];
 }
 
 /**

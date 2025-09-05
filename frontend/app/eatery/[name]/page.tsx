@@ -399,9 +399,8 @@ function EateryNamePageContent() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          timestamp: Date.now()
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
         });
         setLocationError(null);
         setLocationPermission('granted');
@@ -467,9 +466,8 @@ function EateryNamePageContent() {
                 watchId = navigator.geolocation.watchPosition(
                   (position) => {
                     setUserLocation({
-                      latitude: position.coords.latitude,
-                      longitude: position.coords.longitude,
-                      timestamp: Date.now()
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude
                     });
                     setLocationError(null);
                   },

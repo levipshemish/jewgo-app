@@ -3,14 +3,13 @@
 /**
  * Admin Role Setup Script for Production
  * 
- * This script helps set up admin roles in Supabase for production use.
+ * This script helps set up admin roles in PostgreSQL for production use.
  * It can be used to:
  * - Create a super admin user
  * - Assign admin roles to existing users
  * - Verify admin role setup
  */
 
-import { createClient } from '@supabase/supabase-js';
 import { ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from '@/lib/server/admin-constants';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -28,52 +27,53 @@ interface AdminRoleSetup {
 }
 
 // Configuration
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+if (!BACKEND_URL) {
   console.error('❌ Missing required environment variables:');
-  console.error('   - NEXT_PUBLIC_SUPABASE_URL');
-  console.error('   - SUPABASE_SERVICE_ROLE_KEY');
+  console.error('   - NEXT_PUBLIC_BACKEND_URL or BACKEND_URL');
   process.exit(1);
 }
 
-// Create Supabase client with service role key for admin operations
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// Helper function to make authenticated requests to backend
+async function makeBackendRequest(endpoint: string, method: string = 'GET', body?: any) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (ADMIN_TOKEN) {
+    headers['Authorization'] = `Bearer ${ADMIN_TOKEN}`;
+  }
+  
+  const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+    throw new Error(error.message || `HTTP ${response.status}`);
+  }
+  
+  return response.json();
+}
 
 /**
  * Create a super admin user
  */
 async function createSuperAdmin(email: string, name?: string): Promise<void> {
   try {
-
-
-
-
-
-
-
-
-    console.log(`   (If the user doesn't exist, have them sign up through your app first)`);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    console.log(`     COALESCE(raw_user_meta_data, '{}'::jsonb),`);
-
-    console.log(`   ) WHERE email = '${email}';`);
+    console.log(`🔧 Creating super admin for: ${email}`);
+    
+    const result = await makeBackendRequest('/api/admin/promote-user', 'POST', {
+      email,
+      role: 'super_admin',
+      notes: name ? `Created by admin script: ${name}` : 'Created by admin script'
+    });
+    
+    console.log(`✅ Super admin created successfully:`, result);
     
   } catch (error) {
     console.error(`❌ Error in createSuperAdmin:`, error);
@@ -86,20 +86,17 @@ async function createSuperAdmin(email: string, name?: string): Promise<void> {
  */
 async function assignAdminRole(userId: string, role: string, assignedBy: string, notes?: string): Promise<void> {
   try {
-
-    // Use the assign_admin_role function
-    const { data, error } = await supabase.rpc('assign_admin_role', {
-      target_user_id: userId,
-      role_param: role,
-      assigned_by_param: assignedBy,
-      expires_at_param: null,
-      notes_param: notes || null
+    console.log(`🔧 Assigning role ${role} to user ${userId}`);
+    
+    const result = await makeBackendRequest('/api/admin/promote-user', 'POST', {
+      userId,
+      role,
+      assignedBy,
+      notes: notes || `Assigned by admin script`
     });
     
-    if (error) {
-      throw error;
-    }
-
+    console.log(`✅ Role assigned successfully:`, result);
+    
   } catch (error) {
     console.error(`❌ Error assigning admin role:`, error);
     throw error;
@@ -111,15 +108,8 @@ async function assignAdminRole(userId: string, role: string, assignedBy: string,
  */
 async function getUserAdminRole(userId: string): Promise<string> {
   try {
-    const { data, error } = await supabase.rpc('get_user_admin_role', {
-      user_id_param: userId
-    });
-    
-    if (error) {
-      throw error;
-    }
-    
-    return data || 'moderator';
+    const result = await makeBackendRequest(`/api/admin/user-roles/${userId}`);
+    return result.role || 'moderator';
   } catch (error) {
     console.error(`❌ Error getting user admin role:`, error);
     return 'moderator';
@@ -131,48 +121,20 @@ async function getUserAdminRole(userId: string): Promise<string> {
  */
 async function listAdminUsers(): Promise<void> {
   try {
-
-    // Get all users with admin roles
-    const { data: adminRoles, error: rolesError } = await supabase
-      .from('admin_roles')
-      .select(`
-        user_id,
-        role,
-        assigned_at,
-        expires_at,
-        is_active,
-        notes,
-        users!inner(email, name)
-      `)
-      .eq('is_active', true);
+    console.log('📋 Listing all admin users...');
     
-    if (rolesError) {
-      throw rolesError;
+    const result = await makeBackendRequest('/api/admin/list-admins');
+    
+    if (result.admins && result.admins.length > 0) {
+      result.admins.forEach((admin: any) => {
+        const status = admin.is_active ? '✅ Active' : '❌ Inactive';
+        const expires = admin.expires_at ? ` (expires: ${new Date(admin.expires_at).toLocaleDateString()})` : '';
+        console.log(`   - ${admin.email} (${admin.name || 'No name'}) - ${admin.role} ${status}${expires}`);
+      });
+    } else {
+      console.log('   No admin users found');
     }
     
-    // Get super admins
-    const { data: superAdmins, error: superError } = await supabase
-      .from('users')
-      .select('id, email, name, issuperadmin')
-      .eq('issuperadmin', true);
-    
-    if (superError) {
-      throw superError;
-    }
-
-    superAdmins?.forEach(user => {
-      console.log(`   - ${user.email} (${user.name || 'No name'})`);
-    });
-
-    adminRoles?.forEach(role => {
-      const user = role.users as any;
-      const status = role.is_active ? '✅ Active' : '❌ Inactive';
-      const expires = role.expires_at ? ` (expires: ${new Date(role.expires_at).toLocaleDateString()})` : '';
-      console.log(`   - ${user.email} (${user.name || 'No name'}) - ${role.role} ${status}${expires}`);
-    });
-
-
-
   } catch (error) {
     console.error(`❌ Error listing admin users:`, error);
     throw error;
@@ -184,64 +146,28 @@ async function listAdminUsers(): Promise<void> {
  */
 async function verifyAdminSetup(): Promise<void> {
   try {
-
-    // Check if admin_roles table exists by trying to query it
+    console.log('🔍 Verifying admin setup...');
+    
+    // Check if backend is accessible
     try {
-      const { data: roles, error: rolesError } = await supabase
-        .from('admin_roles')
-        .select('count')
-        .limit(1);
-      
-      if (rolesError) {
-        console.error('❌ admin_roles table does not exist or is not accessible');
-
-
-        return;
-      }
-
+      await makeBackendRequest('/api/health');
+      console.log('✅ Backend is accessible');
     } catch (error) {
-      console.error('❌ admin_roles table does not exist');
-
-
+      console.error('❌ Backend is not accessible:', error);
       return;
     }
     
-    // Check if get_user_admin_role function exists
+    // Check if admin endpoints are available
     try {
-      const { data: functionResult, error: functionError } = await supabase.rpc('get_user_admin_role', {
-        user_id_param: 'test'
-      });
-      
-      if (functionError && functionError.message.includes('function')) {
-        console.error('❌ get_user_admin_role function does not exist');
-
-
-        return;
-      }
-
+      await makeBackendRequest('/api/admin/list-admins');
+      console.log('✅ Admin endpoints are available');
     } catch (error) {
-      console.log('✅ get_user_admin_role function exists (fallback will be used)');
+      console.error('❌ Admin endpoints are not available:', error);
+      return;
     }
     
-    // Check if assign_admin_role function exists
-    try {
-      const { data: assignResult, error: assignError } = await supabase.rpc('assign_admin_role', {
-        target_user_id: 'test',
-        role_param: 'moderator',
-        assigned_by_param: 'test'
-      });
-      
-      if (assignError && assignError.message.includes('function')) {
-        console.error('❌ assign_admin_role function does not exist');
-
-
-        return;
-      }
-
-    } catch (error) {
-      console.log('✅ assign_admin_role function exists (fallback will be used)');
-    }
-
+    console.log('✅ Admin setup verification completed');
+    
   } catch (error) {
     console.error(`❌ Error verifying admin setup:`, error);
     throw error;
@@ -255,6 +181,10 @@ async function main() {
   const command = process.argv[2];
   const args = process.argv.slice(3);
 
+  console.log('🚀 PostgreSQL Admin Setup Script');
+  console.log(`   Backend URL: ${BACKEND_URL}`);
+  console.log(`   Command: ${command || 'help'}`);
+  console.log('');
 
   try {
     switch (command) {
@@ -295,23 +225,22 @@ async function main() {
         }
         const targetUserId = args[0];
         const userRole = await getUserAdminRole(targetUserId);
-
+        console.log(`User ${targetUserId} has role: ${userRole}`);
         break;
         
       default:
-
-
-
-
-
-
-
-
-
-
-
-
-
+        console.log('📖 Available commands:');
+        console.log('   verify                    - Verify admin setup');
+        console.log('   list                      - List all admin users');
+        console.log('   create-super-admin <email> [name] - Create a super admin');
+        console.log('   assign-role <userId> <role> <assignedBy> [notes] - Assign admin role');
+        console.log('   get-role <userId>         - Get user admin role');
+        console.log('');
+        console.log('📖 Available roles:');
+        console.log('   - moderator');
+        console.log('   - data_admin');
+        console.log('   - system_admin');
+        console.log('   - super_admin');
         break;
     }
   } catch (error) {

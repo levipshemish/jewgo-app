@@ -47,9 +47,8 @@ export const CLEANUP_CRON_SECRET = process.env.CLEANUP_CRON_SECRET;
 export const RATE_LIMIT_SHOW_REMAINING = process.env.RATE_LIMIT_SHOW_REMAINING !== 'false';
 export const RATE_LIMIT_SHOW_RESET_TIME = process.env.RATE_LIMIT_SHOW_RESET_TIME !== 'false';
 
-// Supabase configuration (client-safe)
-export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// PostgreSQL authentication configuration (client-safe)
+export const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 
 // Redis configuration
 export const REDIS_URL = process.env.REDIS_URL;
@@ -77,8 +76,8 @@ export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || (IS_PRODUCTION
  */
 export function validateEnvironment(): void {
   const requiredVars = [
-    { name: 'NEXT_PUBLIC_SUPABASE_URL', value: SUPABASE_URL },
-    { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: SUPABASE_ANON_KEY },
+    { name: 'NEXT_PUBLIC_BACKEND_URL', value: process.env.NEXT_PUBLIC_BACKEND_URL },
+    { name: 'JWT_SECRET_KEY', value: JWT_SECRET_KEY },
   ];
 
   const missingVars = requiredVars.filter(({ value }) => !value);

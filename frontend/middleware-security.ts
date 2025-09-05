@@ -3,7 +3,6 @@
  * Implements CSRF protection, security headers, rate limiting, and session management
  */
 
-import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 // Only import rate limiting if Redis is configured
 let Ratelimit: any = null;
@@ -144,7 +143,7 @@ export async function securityMiddleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://www.google-analytics.com",
+    "connect-src 'self' https://challenges.cloudflare.com https://www.google-analytics.com",
     "frame-src 'self' https://challenges.cloudflare.com",
     "worker-src 'self' blob:",
     "object-src 'none'",
@@ -174,31 +173,8 @@ export async function securityMiddleware(request: NextRequest) {
   // SESSION MANAGEMENT
   // =============================================================================
   
-  // Update Supabase session if needed
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, {
-              ...options,
-              httpOnly: true,
-              secure: !isDev,
-              sameSite: "lax",
-            })
-          );
-        },
-      },
-    }
-  );
-
-  // Refresh session if needed
-  await supabase.auth.getUser();
+  // Session management is now handled by PostgreSQL authentication
+  // JWT tokens are managed client-side and verified server-side
 
   return response;
 }

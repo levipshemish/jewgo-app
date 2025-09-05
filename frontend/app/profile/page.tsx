@@ -11,7 +11,7 @@ import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
 
-import { type TransformedUser } from "@/lib/types/supabase-auth";
+import { type TransformedUser } from "@/lib/types/postgres-auth";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<TransformedUser | null>(null);
