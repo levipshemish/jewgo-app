@@ -1,5 +1,6 @@
 "use client"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import Header from "@/components/layout/Header"
 import CategoryTabs from "@/components/navigation/ui/CategoryTabs"
 import ActionButtons from "@/components/layout/ActionButtons"
@@ -9,16 +10,30 @@ import { useLocation } from "@/lib/contexts/LocationContext"
 
 export default function ShulsPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [showDistance, setShowDistance] = useState(true)
-  const [showRating, setShowRating] = useState(true)
-  const [showServices, setShowServices] = useState(true)
+  const [showDistance] = useState(true)
+  const [showRating] = useState(true)
+  const [showServices] = useState(true)
+  const [activeTab, setActiveTab] = useState<string>("shuls")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
   
   // Location context for distance calculations
   const { userLocation } = useLocation()
 
+  // Update active tab based on current pathname
+  useEffect(() => {
+    if (pathname.startsWith('/shuls')) {
+      setActiveTab('shuls')
+    }
+  }, [pathname])
+
   const handleSearch = (query: string) => {
     setSearchQuery(query)
+  }
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+    // Additional logic can be added here if needed
   }
 
   return (
@@ -31,11 +46,15 @@ export default function ShulsPage() {
 
       {/* Navigation Block - Sticky below header */}
       <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <CategoryTabs />
+        <CategoryTabs 
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
         <ActionButtons
-          onCreateListing={() => console.log("Create listing")}
-          onViewMap={() => console.log("View map")}
-          onViewFavorites={() => console.log("View favorites")}
+          onShowFilters={() => console.log("Show filters")}
+          onShowMap={() => console.log("View map")}
+          onAddEatery={() => console.log("Create listing")}
+          addButtonText="Add Shul"
         />
       </div>
 
