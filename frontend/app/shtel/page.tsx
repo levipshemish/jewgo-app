@@ -461,22 +461,118 @@ function ShtelPageContent() {
       didFetchInitial.current = true;
       // Small delay to ensure filters have been applied
       const timeout = setTimeout(() => {
-        fetchShtełListingsData();
+        // Inline the fetch logic to avoid dependency issues
+        const loadLocationData = async () => {
+          if (isSettingLocationFilters) {
+            return;
+          }
+          
+          const requestKey = JSON.stringify({ filters: activeFilters, searchQuery, userLocation });
+          if (_inFlightRequests.current.has(requestKey)) {
+            return;
+          }
+          
+          _inFlightRequests.current.set(requestKey, true);
+          
+          try {
+            setLoading(true);
+            setError(null);
+
+            const currentFilters = activeFilters;
+            const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
+            if (searchQuery && searchQuery.trim() !== '') {
+              params.append('search', searchQuery.trim());
+            }
+
+            const response = await fetchMarketplaceListings(params.toString(), fetchTimeoutMs);
+            
+            setListings(response.listings || []);
+            setCurrentPage(1);
+            setTotalListings(response.total || 0);
+            setTotalPages(response.totalPages || 1);
+            
+            trackApiCall('shtel_listings', response.listings?.length || 0, Date.now() - Date.now());
+          } catch (fetchErr) {
+            console.error('Error fetching shtel listings:', fetchErr);
+            if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+              setError('Request timed out. Please try again.');
+            } else {
+              appLogger.error('Shtel fetch error', { error: String(fetchErr) });
+              if (fetchErr instanceof Error) {
+                setError(fetchErr.message);
+              } else {
+                setError('Unable to load shtel listings. Please try again later.');
+              }
+            }
+          } finally {
+            setLoading(false);
+            _inFlightRequests.current.delete(requestKey);
+          }
+        };
+        
+        loadLocationData();
       }, 150);
       
       return () => clearTimeout(timeout);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLocation, isSettingLocationFilters]); // Removed fetchShtełListingsData from dependencies
+  }, [userLocation, isSettingLocationFilters, activeFilters, searchQuery, mobileOptimizedItemsPerPage, fetchTimeoutMs, trackApiCall]);
 
   // Initial data load - only once
   useEffect(() => {
     if (!didInit.current) {
       didInit.current = true;
-      fetchShtełListingsData();
+      // Inline the fetch logic to avoid dependency issues
+      const loadInitialData = async () => {
+        if (isSettingLocationFilters) {
+          return;
+        }
+        
+        const requestKey = JSON.stringify({ filters: activeFilters, searchQuery, userLocation });
+        if (_inFlightRequests.current.has(requestKey)) {
+          return;
+        }
+        
+        _inFlightRequests.current.set(requestKey, true);
+        
+        try {
+          setLoading(true);
+          setError(null);
+
+          const currentFilters = activeFilters;
+          const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
+          if (searchQuery && searchQuery.trim() !== '') {
+            params.append('search', searchQuery.trim());
+          }
+
+          const response = await fetchMarketplaceListings(params.toString(), fetchTimeoutMs);
+          
+          setListings(response.listings || []);
+          setCurrentPage(1);
+          setTotalListings(response.total || 0);
+          setTotalPages(response.totalPages || 1);
+          
+          trackApiCall('shtel_listings', response.listings?.length || 0, Date.now() - Date.now());
+        } catch (fetchErr) {
+          console.error('Error fetching shtel listings:', fetchErr);
+          if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+            setError('Request timed out. Please try again.');
+          } else {
+            appLogger.error('Shtel fetch error', { error: String(fetchErr) });
+            if (fetchErr instanceof Error) {
+              setError(fetchErr.message);
+            } else {
+              setError('Unable to load shtel listings. Please try again later.');
+            }
+          }
+        } finally {
+          setLoading(false);
+          _inFlightRequests.current.delete(requestKey);
+        }
+      };
+      
+      loadInitialData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only run once
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, fetchTimeoutMs, trackApiCall]);
 
   // Background prefetching for related data
   useEffect(() => {
@@ -523,11 +619,59 @@ function ShtelPageContent() {
       clearTimeout(fetchTimeout);
     }
     const timeout = setTimeout(() => {
-      fetchShtełListingsData();
+      // Inline the fetch logic to avoid dependency issues
+      const loadSearchData = async () => {
+        if (isSettingLocationFilters) {
+          return;
+        }
+        
+        const requestKey = JSON.stringify({ filters: activeFilters, searchQuery, userLocation });
+        if (_inFlightRequests.current.has(requestKey)) {
+          return;
+        }
+        
+        _inFlightRequests.current.set(requestKey, true);
+        
+        try {
+          setLoading(true);
+          setError(null);
+
+          const currentFilters = activeFilters;
+          const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
+          if (searchQuery && searchQuery.trim() !== '') {
+            params.append('search', searchQuery.trim());
+          }
+
+          const response = await fetchMarketplaceListings(params.toString(), fetchTimeoutMs);
+          
+          setListings(response.listings || []);
+          setCurrentPage(1);
+          setTotalListings(response.total || 0);
+          setTotalPages(response.totalPages || 1);
+          
+          trackApiCall('shtel_listings', response.listings?.length || 0, Date.now() - Date.now());
+        } catch (fetchErr) {
+          console.error('Error fetching shtel listings:', fetchErr);
+          if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+            setError('Request timed out. Please try again.');
+          } else {
+            appLogger.error('Shtel fetch error', { error: String(fetchErr) });
+            if (fetchErr instanceof Error) {
+              setError(fetchErr.message);
+            } else {
+              setError('Unable to load shtel listings. Please try again later.');
+            }
+          }
+        } finally {
+          setLoading(false);
+          _inFlightRequests.current.delete(requestKey);
+        }
+      };
+      
+      loadSearchData();
     }, isSlowConnection ? 500 : 300); // Longer debounce for slow connections
     setFetchTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchTimeout, isSlowConnection]); // Removed fetchShtełListingsData from dependencies
+  }, [fetchTimeout, isSlowConnection, activeFilters, searchQuery, mobileOptimizedItemsPerPage, fetchTimeoutMs, trackApiCall]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);

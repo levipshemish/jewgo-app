@@ -495,20 +495,118 @@ function StoresPageContent() {
   useEffect(() => {
     if (!didInit.current) {
       didInit.current = true;
-      fetchStoresData();
+      // Inline the fetch logic to avoid dependency issues
+      const loadInitialData = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          const params = new URLSearchParams();
+          if (searchQuery && searchQuery.trim() !== '') {
+            params.append('search', searchQuery.trim());
+          }
+
+          Object.entries(activeFilters).forEach(([key, value]) => {
+            if (value !== undefined && value !== '' && value !== null) {
+              params.append(key, String(value));
+            }
+          });
+
+          params.append('limit', mobileOptimizedItemsPerPage.toString());
+          params.append('mobile_optimized', 'true');
+          
+          if (isLowPowerMode) {
+            params.append('low_power_mode', 'true');
+          }
+          
+          if (isSlowConnection) {
+            params.append('slow_connection', 'true');
+          }
+
+          const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
+          
+          setStores(response.stores);
+          setCurrentPage(1);
+          
+          const total = response.total || response.stores.length;
+          setTotalStores(total);
+          const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+          setTotalPages(calculatedTotalPages);
+        } catch (err) {
+          console.error('Error fetching stores:', err);
+          if (err instanceof Error) {
+            setError(err.message);
+          } else {
+            setError('Unable to load stores. Please try again later.');
+          }
+          setStores([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      loadInitialData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once
 
   // Mobile-optimized filter changes
   useEffect(() => {
     if (hasActiveFilters && didInit.current) {
       startTransition(() => {
-        fetchStoresData();
+        // Inline the fetch logic to avoid dependency issues
+        const loadFilteredData = async () => {
+          try {
+            setLoading(true);
+            setError(null);
+
+            const params = new URLSearchParams();
+            if (searchQuery && searchQuery.trim() !== '') {
+              params.append('search', searchQuery.trim());
+            }
+
+            Object.entries(activeFilters).forEach(([key, value]) => {
+              if (value !== undefined && value !== '' && value !== null) {
+                params.append(key, String(value));
+              }
+            });
+
+            params.append('limit', mobileOptimizedItemsPerPage.toString());
+            params.append('mobile_optimized', 'true');
+            
+            if (isLowPowerMode) {
+              params.append('low_power_mode', 'true');
+            }
+            
+            if (isSlowConnection) {
+              params.append('slow_connection', 'true');
+            }
+
+            const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
+            
+            setStores(response.stores);
+            setCurrentPage(1);
+            
+            const total = response.total || response.stores.length;
+            setTotalStores(total);
+            const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+            setTotalPages(calculatedTotalPages);
+          } catch (err) {
+            console.error('Error fetching stores:', err);
+            if (err instanceof Error) {
+              setError(err.message);
+            } else {
+              setError('Unable to load stores. Please try again later.');
+            }
+            setStores([]);
+          } finally {
+            setLoading(false);
+          }
+        };
+        
+        loadFilteredData();
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilters, hasActiveFilters]); // Removed fetchStoresData from dependencies
+  }, [activeFilters, hasActiveFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
   // Mobile-specific effects
   useEffect(() => {
