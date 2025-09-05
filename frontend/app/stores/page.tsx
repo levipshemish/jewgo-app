@@ -1,26 +1,18 @@
-'use client';
+"use client"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { usePathname } from "next/navigation"
+import Header from "@/components/layout/Header"
+import CategoryTabs from "@/components/navigation/ui/CategoryTabs"
+import ActionButtons from "@/components/layout/ActionButtons"
+import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
+import { useLocation } from "@/lib/contexts/LocationContext"
+import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
+import { AppliedFilters } from "@/lib/filters/filters.types"
+import UnifiedCard from "@/components/ui/UnifiedCard"
+import { useRouter } from "next/navigation"
+import { generateMockStores, type MockStore } from "@/lib/mockData/stores"
 
-import React, { useState, useEffect, useMemo, Suspense, useCallback, useRef, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { Header } from '@/components/layout';
-import { CategoryTabs } from '@/components/navigation/ui';
-import ShulBottomNavigation from '@/components/shuls/ShulBottomNavigation';
-import UnifiedCard from '@/components/ui/UnifiedCard';
-import { Pagination } from '@/components/ui/Pagination';
-import ActionButtons from '@/components/layout/ActionButtons';
-import { StoreFilters } from '@/components/stores/StoreFilters';
-import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
-
-import { scrollToTop } from '@/lib/utils/scrollUtils';
-import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
-import { useWebSocket } from '@/lib/hooks/useWebSocket';
-import { useLocation } from '@/lib/contexts/LocationContext';
-import LocationPromptPopup from '@/components/LocationPromptPopup';
-import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
-
-import { Filters } from '@/lib/filters/schema';
-
-// Mock store type for now - will be replaced with actual API
+// Store type
 interface Store {
   id: number;
   name: string;
@@ -101,140 +93,148 @@ const fetchStores = async (limit: number, params?: string, timeoutMs: number = 5
   }
 };
 
-// Loading component for Suspense fallback
-function StoresPageLoading() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-    </div>
-  );
-}
-
-// Main component that uses useSearchParams
-function StoresPageContent() {
-  const router = useRouter();
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalStores, setTotalStores] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function StoresPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [showDistance] = useState(true)
+  const [showRating] = useState(true)
+  const [showServices] = useState(true)
+  const [activeTab, setActiveTab] = useState<string>("stores")
+  const [showFilters, setShowFilters] = useState(false)
+  const [stores, setStores] = useState<Store[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [backendError, setBackendError] = useState(false) // Track if backend is accessible
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+  const router = useRouter()
   
-
-  // Removed hasMore infinite-scroll state; pagination is explicit
-  
-  // Mobile optimization hooks
-  const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
-  const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
-  
-  // Performance optimizations based on device capabilities
-  const imageQuality = isLowPowerMode || isSlowConnection ? 'low' : 'high';
-  const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
-  const shouldLazyLoad = isSlowConnection;
-  const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
-  
-  // Ensure mobile detection is working correctly
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-  
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileDevice(typeof window !== 'undefined' && window.innerWidth <= 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    window.addEventListener('orientationchange', checkMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('orientationchange', checkMobile);
-    };
-  }, []);
-  
-  // Mobile gesture support
-  const { onTouchStart, onTouchMove, onTouchEnd } = useMobileGestures(
-    () => router.push('/marketplace'), // Swipe left to marketplace
-    () => router.push('/favorites'),   // Swipe right to favorites
-    () => scrollToTop(),               // Swipe up to scroll to top
-    () => window.scrollTo(0, document.body.scrollHeight) // Swipe down to bottom
-  );
-  
-  // WebSocket for real-time updates (currently disabled)
-  const { isConnected, sendMessage } = useWebSocket();
-  
-  // URL-backed filter state
-  const {
-    activeFilters,
-    hasActiveFilters,
-    setFilter,
-    clearFilter,
-    clearAllFilters: _clearAllFilters
-  } = useAdvancedFilters();
-  
-  // Location state from context
+  // Location context for distance calculations
   const {
     userLocation,
     isLoading: locationLoading,
-    requestLocation: _requestLocation
-  } = useLocation();
+    requestLocation,
+  } = useLocation()
 
-  // Location prompt popup state
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
+  // Advanced filters hook
+  const {
+    activeFilters,
+    setFilter,
+    clearFilter,
+    clearAllFilters
+  } = useAdvancedFilters()
 
-  // Responsive grid with maximum 4 rows and up to 8 columns
-  const mobileOptimizedItemsPerPage = useMemo(() => {
-    // Calculate items per page to ensure exactly 4 rows on every screen size
-    if (isMobile || isMobileDevice) {
-      return 8; // 4 rows × 2 columns = 8 items
-    } else {
-      // For desktop, calculate based on viewport width to ensure 4 rows
-      let columnsPerRow = 3; // Default fallback
-      
-      if (viewportWidth >= 1441) {
-        columnsPerRow = 8; // Large desktop: 8 columns × 4 rows = 32 items
-      } else if (viewportWidth >= 1025) {
-        columnsPerRow = 6; // Desktop: 6 columns × 4 rows = 24 items
-      } else if (viewportWidth >= 769) {
-        columnsPerRow = 4; // Large tablet: 4 columns × 4 rows = 16 items
-      } else if (viewportWidth >= 641) {
-        columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
-      }
-      
-      return columnsPerRow * 4; // Always 4 rows
+  // Update active tab based on current pathname
+  useEffect(() => {
+    if (pathname.startsWith('/stores')) {
+      setActiveTab('stores')
     }
-  }, [isMobile, isMobileDevice, viewportWidth]);
+  }, [pathname])
 
-  // Memoize store transformation to prevent unnecessary re-renders
-  const transformStoreToCardData = useCallback((store: Store) => {
-    // Enhanced rating logic with better fallbacks
+  // Fetch stores data
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        setBackendError(false)
+        
+        const params = new URLSearchParams()
+        if (searchQuery && searchQuery.trim() !== '') {
+          params.append('search', searchQuery.trim())
+        }
+        
+        // Add filter parameters
+        Object.entries(activeFilters).forEach(([key, value]) => {
+          if (value !== undefined && value !== '' && value !== null) {
+            params.append(key, String(value))
+          }
+        })
+        
+        params.append('limit', '50')
+        
+        const response = await fetchStores(50, params.toString())
+        setStores(response.stores)
+      } catch (err) {
+        console.error('Error fetching stores:', err)
+        
+        // Switch to mock data after error
+        console.log('Backend unreachable, switching to mock data')
+        setBackendError(true)
+        setError(null) // Clear error since we're showing mock data
+        
+        // Fall back to mock data
+        const mockStores = generateMockStores(24)
+        setStores(mockStores)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadStores()
+  }, [searchQuery, activeFilters])
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+  }
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+  }
+
+  const handleShowFilters = useCallback(() => {
+    setShowFilters(true)
+  }, [])
+
+  const handleCloseFilters = useCallback(() => {
+    setShowFilters(false)
+  }, [])
+
+  const handleApplyFilters = useCallback((filters: AppliedFilters) => {
+    if (Object.keys(filters).length === 0) {
+      clearAllFilters()
+    } else {
+      const cleaned: Partial<typeof filters> = {}
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && 
+            !(typeof v === "string" && v.trim() === "") &&
+            !(Array.isArray(v) && v.length === 0)) {
+          cleaned[k as keyof typeof filters] = v
+        }
+      })
+      
+      // Batch filter updates to reduce re-renders
+      const keysToRemove = Object.keys(activeFilters).filter(k => !(k in cleaned))
+      keysToRemove.forEach(k => {
+        clearFilter(k as keyof typeof activeFilters)
+      })
+      
+      Object.entries(cleaned).forEach(([key, value]) => {
+        if (value !== undefined) {
+          setFilter(key as keyof typeof activeFilters, value)
+        }
+      })
+    }
+    
+    setShowFilters(false)
+  }, [setFilter, clearFilter, clearAllFilters, activeFilters])
+
+  // Transform store data for UnifiedCard
+  const transformStoreToCardData = (store: Store) => {
     const rating = store.rating || store.star_rating || store.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
-    
-    // Enhanced distance logic - ensure we have a valid distance string
     const distanceText = store.distance && store.distance.trim() !== '' ? store.distance : '';
-    
-    // Store type as subtitle
     const storeType = store.store_type && store.store_type.trim() !== '' ? store.store_type : '';
-    
-    // Adjust image quality based on device capabilities
-    let optimizedImageUrl = store.image_url;
-    if (imageQuality === 'low' && store.image_url) {
-      // For low power mode or slow connections, use lower quality images
-      optimizedImageUrl = store.image_url.replace('/300/200', '/150/100');
-    }
     
     return {
       id: String(store.id),
-      imageUrl: optimizedImageUrl,
+      imageUrl: store.image_url,
       imageTag: store.kosher_category,
       title: store.name,
-      badge: ratingText, // Use the enhanced rating text
+      badge: ratingText,
       subtitle: storeType,
       additionalText: distanceText,
       showHeart: true,
-      isLiked: false, // Will be set by the component based on favorites state
+      isLiked: false,
       kosherCategory: store.kosher_category,
       rating,
       reviewCount: store.reviewcount,
@@ -243,368 +243,17 @@ function StoresPageContent() {
       isCholovYisroel: store.is_cholov_yisroel,
       isPasYisroel: store.is_pas_yisroel,
     };
-  }, [imageQuality]); // Include imageQuality dependency since it can change based on device state
-
-  // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
-    // Apply all the new filters
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (key in activeFilters || value !== undefined) {
-        setFilter(key as keyof Filters, value);
-      }
-    });
-    
-    // Send real-time filter update via WebSocket (currently disabled)
-    if (isConnected) {
-                   sendMessage({
-               type: 'filter_update',
-               data: {
-                 filters: newFilters,
-                 location: userLocation
-               }
-             });
-    }
-  }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
-
-
-
-
-
-  // Handle search functionality
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-    // Note: Data will be refetched via useEffect dependency on searchQuery
-  }, [setSearchQuery, setCurrentPage]);
-
-
-
-  // Fetch stores with mobile optimization
-  const fetchStoresData = useCallback(async (filters: Filters = activeFilters) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Mobile-optimized parameters
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
-      }
-
-      // Add filter parameters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-
-      // Mobile-specific optimizations
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-      
-      if (isLowPowerMode) {
-        params.append('low_power_mode', 'true');
-      }
-      
-      if (isSlowConnection) {
-        params.append('slow_connection', 'true');
-      }
-
-      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-      
-      setStores(response.stores);
-      setCurrentPage(1);
-      
-      // Update pagination state
-      const total = response.total || response.stores.length;
-      setTotalStores(total);
-      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
-      setTotalPages(calculatedTotalPages);
-      
-
-    } catch (err) {
-      console.error('Error fetching stores:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Unable to load stores. Please try again later.');
-      }
-      setStores([]); // Clear any existing stores
-    } finally {
-      setLoading(false);
-    }
-  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
-
-  // Mobile-optimized state
-  const [showFilters, setShowFilters] = useState(false); // Filters start hidden
-  const { isScrolling } = useScrollDetection({ debounceMs: 100 });
-
-  // Handle page changes for desktop pagination
-  const handlePageChange = async (page: number) => {
-    if (page === currentPage || loading) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
-      }
-      
-      // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-
-      params.append('page', page.toString());
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-
-      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-      
-      setStores(response.stores);
-      setCurrentPage(page);
-    } catch (err) {
-      console.error('Error fetching page:', err);
-    } finally {
-      setLoading(false);
-    }
   };
 
-
-
-  // Handle location changes and update filters
-  useEffect(() => {
-    if (userLocation) {
-      // Update filters with location
-      setFilter('lat', userLocation.latitude);
-      setFilter('lng', userLocation.longitude);
-      setFilter('nearMe', true);
-              setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
-      
-      // Send location update via WebSocket
-      if (isConnected) {
-        sendMessage({
-          type: 'location_update',
-          data: { latitude: userLocation.latitude, longitude: userLocation.longitude }
-        });
-      }
-    } else {
-      // Clear distance-related filters when no location is available
-      clearFilter('lat');
-      clearFilter('lng');
-      clearFilter('nearMe');
-              clearFilter('maxDistanceMi');
-    }
-  }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
-
-  // Show location prompt when page loads and user doesn't have location
-  useEffect(() => {
-    // Only show prompt if we haven't shown it before and user doesn't have location
-    if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
-      setShowLocationPrompt(true);
-      setHasShownLocationPrompt(true);
-    }
-  }, [hasShownLocationPrompt, userLocation, locationLoading]);
-
-  // Close location prompt when user gets location
-  useEffect(() => {
-    if (showLocationPrompt && userLocation) {
-      setShowLocationPrompt(false);
-    }
-  }, [showLocationPrompt, userLocation]);
-
-
-
-
-
-  // Subscribe to real-time updates
-  useEffect(() => {
-    if (isConnected) {
-      // Subscribe to store updates
-      sendMessage({
-        type: 'subscribe',
-        data: { room_id: 'store_updates' }
-      });
-    }
-  }, [isConnected, sendMessage]);
-
-  // Initial data fetch - only once
-  const didInit = useRef(false);
-  useEffect(() => {
-    if (!didInit.current) {
-      didInit.current = true;
-      // Inline the fetch logic to avoid dependency issues
-      const loadInitialData = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-
-          const params = new URLSearchParams();
-          if (searchQuery && searchQuery.trim() !== '') {
-            params.append('search', searchQuery.trim());
-          }
-
-          Object.entries(activeFilters).forEach(([key, value]) => {
-            if (value !== undefined && value !== '' && value !== null) {
-              params.append(key, String(value));
-            }
-          });
-
-          params.append('limit', mobileOptimizedItemsPerPage.toString());
-          params.append('mobile_optimized', 'true');
-          
-          if (isLowPowerMode) {
-            params.append('low_power_mode', 'true');
-          }
-          
-          if (isSlowConnection) {
-            params.append('slow_connection', 'true');
-          }
-
-          const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-          
-          setStores(response.stores);
-          setCurrentPage(1);
-          
-          const total = response.total || response.stores.length;
-          setTotalStores(total);
-          const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
-          setTotalPages(calculatedTotalPages);
-        } catch (err) {
-          console.error('Error fetching stores:', err);
-          if (err instanceof Error) {
-            setError(err.message);
-          } else {
-            setError('Unable to load stores. Please try again later.');
-          }
-          setStores([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      loadInitialData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only run once
-
-  // Mobile-optimized filter changes
-  useEffect(() => {
-    if (hasActiveFilters && didInit.current) {
-      startTransition(() => {
-        // Inline the fetch logic to avoid dependency issues
-        const loadFilteredData = async () => {
-          try {
-            setLoading(true);
-            setError(null);
-
-            const params = new URLSearchParams();
-            if (searchQuery && searchQuery.trim() !== '') {
-              params.append('search', searchQuery.trim());
-            }
-
-            Object.entries(activeFilters).forEach(([key, value]) => {
-              if (value !== undefined && value !== '' && value !== null) {
-                params.append(key, String(value));
-              }
-            });
-
-            params.append('limit', mobileOptimizedItemsPerPage.toString());
-            params.append('mobile_optimized', 'true');
-            
-            if (isLowPowerMode) {
-              params.append('low_power_mode', 'true');
-            }
-            
-            if (isSlowConnection) {
-              params.append('slow_connection', 'true');
-            }
-
-            const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-            
-            setStores(response.stores);
-            setCurrentPage(1);
-            
-            const total = response.total || response.stores.length;
-            setTotalStores(total);
-            const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
-            setTotalPages(calculatedTotalPages);
-          } catch (err) {
-            console.error('Error fetching stores:', err);
-            if (err instanceof Error) {
-              setError(err.message);
-            } else {
-              setError('Unable to load stores. Please try again later.');
-            }
-            setStores([]);
-          } finally {
-            setLoading(false);
-          }
-        };
-        
-        loadFilteredData();
-      });
-    }
-  }, [activeFilters, hasActiveFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
-
-  // Mobile-specific effects
-  useEffect(() => {
-    // Auto-hide filters on mobile when scrolling
-    if ((isMobile || isMobileDevice) && isScrolling) {
-      setShowFilters(false);
-    }
-  }, [isMobile, isMobileDevice, isScrolling]);
-
-  // Consistent responsive styles
-  const responsiveStyles = useMemo(() => {
-    const isMobileView = isMobile || isMobileDevice;
-    const styles = {
-      container: {
-        minHeight: isMobileView ? viewportHeight : 'auto',
-      },
-      filtersContainer: {
-        position: isMobileView ? 'fixed' as const : 'relative' as const,
-        top: isMobileView ? 'auto' : '0',
-        bottom: isMobileView ? '0' : 'auto',
-        left: isMobileView ? '0' : 'auto',
-        right: isMobileView ? '0' : 'auto',
-        zIndex: isMobileView ? 50 : 'auto',
-        backgroundColor: isMobileView ? 'white' : 'transparent',
-        borderTop: isMobileView ? '1px solid #e5e7eb' : 'none',
-        borderRadius: isMobileView ? '16px 16px 0 0' : '0',
-        boxShadow: isMobileView ? '0 -4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
-        maxHeight: isMobileView ? '80vh' : 'auto',
-        overflowY: isMobileView ? 'auto' as const : 'visible' as const,
-      },
-      loadMoreButton: {
-        ...mobileStyles.touchButton,
-        width: isMobileView ? '100%' : 'auto',
-        margin: isMobileView ? '16px 8px' : '16px',
-      }
-    };
-
-    return styles;
-  }, [isMobile, isMobileDevice, viewportHeight]);
-
-  if (error) {
+  // Only show error if we're not using mock data
+  if (error && !backendError) {
     return (
-      <div style={responsiveStyles.container}>
+      <div className="min-h-screen bg-background flex flex-col">
         <Header 
           onSearch={handleSearch}
-          placeholder="Search stores..."
-          showFilters={true}
-          onShowFilters={() => setShowFilters(!showFilters)}
+          placeholder="Find stores near you"
         />
         
-        {/* Navigation Block - Sticky below header */}
         <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs activeTab="stores" />
         </div>
@@ -618,10 +267,7 @@ function StoresPageContent() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Connection Error</h2>
           <p className="text-gray-600 text-center mb-6 max-w-md">{error}</p>
           <button
-            onClick={() => {
-              setError(null);
-              fetchStoresData();
-            }}
+            onClick={() => window.location.reload()}
             className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
           >
             Try Again
@@ -632,55 +278,58 @@ function StoresPageContent() {
   }
 
   return (
-    <div 
-      className="min-h-screen bg-[#f4f4f4] stores-page page-with-bottom-nav"
-      style={responsiveStyles.container}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      role="main"
-      aria-label="Store listings"
-    >
-      <div className="sticky top-0 z-50 bg-white">
-        <Header 
-          onSearch={handleSearch}
-          placeholder="Search stores..."
-          showFilters={true}
-          onShowFilters={() => setShowFilters(!showFilters)}
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header - Sticky at top */}
+      <Header 
+        onSearch={handleSearch}
+        placeholder="Find stores near you"
+      />
+
+      {/* Navigation Block - Sticky below header */}
+      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
+        <CategoryTabs 
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
         />
-        
-        {/* Navigation Block - Sticky below header */}
-        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
-          <CategoryTabs activeTab="stores" />
-        </div>
-        
-        <ActionButtons 
-          onShowFilters={() => setShowFilters(!showFilters)}
-          onShowMap={() => router.push('/live-map')}
-          onAddEatery={() => router.push('/add-store')}
+        <ActionButtons
+          onShowFilters={handleShowFilters}
+          onShowMap={() => console.log("View map")}
+          onAddEatery={() => console.log("Create listing")}
           addButtonText="Add Store"
         />
       </div>
-      
-      {/* Store Filters */}
-      <StoreFilters
-        isOpen={showFilters}
-        onClose={() => setShowFilters(false)}
-        onApplyFilters={handleFilterChange}
-        currentFilters={activeFilters}
-      />
 
-      {/* Store grid with consistent responsive spacing */}
-      {stores.length === 0 && !loading ? (
-        <div className="text-center py-10 px-5" role="status" aria-live="polite">
-          <div className="text-5xl mb-4" aria-hidden="true">🛒</div>
-          <p className="text-lg text-gray-600 mb-2">No stores found</p>
-          <p className="text-sm text-gray-500">
-            Try adjusting your filters or check back later
-          </p>
-        </div>
-      ) : (
+      {/* Grid - Explicit height constraint to prevent overflow */}
+      <div 
+        ref={scrollContainerRef}
+        className="overflow-y-auto pb-4"
+        style={{ 
+          height: 'calc(100vh - 64px - 64px - 64px - 160px)', // header - nav - bottom nav - extra space for search bar
+          maxHeight: 'calc(100vh - 64px - 64px - 64px - 160px)'
+        }}
+      >
         <div className="px-4 py-4">
+          {/* Backend Status Indicator */}
+          {backendError && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    Backend Service Unavailable
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>Showing sample data. Real store data will appear when the backend is accessible.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Grid Layout - Exactly matching EateryGrid and ShulGrid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {stores.map((store, index) => (
@@ -689,63 +338,34 @@ function StoresPageContent() {
                   data={transformStoreToCardData(store)}
                   variant="default"
                   showStarInBadge={true}
-                  priority={index < 4} // Always prioritize first 4 images for LCP optimization
+                  priority={index < 4}
                   onCardClick={() => router.push(`/stores/${store.id}`)}
                   className="w-full h-full"
-                  isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
                 />
               </div>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Loading states with consistent spacing */}
-      {loading && (
-        <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading stores{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
-        </div>
-      )}
-
-
-
-      {/* Pagination - show on all devices */}
-      {totalPages > 1 && (
-        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            isLoading={loading}
-            className="mb-4"
-          />
-          <div className="text-center text-sm text-gray-600">
-            Showing {stores.length} of {totalStores} stores
+        {loading && (
+          <div className="text-center py-5">
+            <p>Loading stores...</p>
           </div>
-        </div>
-      )}
+        )}
 
-
+        {stores.length === 0 && !loading && (
+          <div className="text-center py-10 px-5">
+            <div className="text-5xl mb-4">🛒</div>
+            <p className="text-lg text-gray-600 mb-2">No stores found</p>
+            <p className="text-sm text-gray-500">
+              Try adjusting your filters or check back later
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Bottom Navigation - Fixed at bottom */}
       <ShulBottomNavigation />
-
-      {/* Location Prompt Popup */}
-      <LocationPromptPopup
-        isOpen={showLocationPrompt}
-        onClose={() => setShowLocationPrompt(false)}
-        onSkip={() => {
-          setShowLocationPrompt(false);
-        }}
-      />
     </div>
-  );
-}
-
-export default function StoresPage() {
-  return (
-    <Suspense fallback={<StoresPageLoading />}>
-      <StoresPageContent />
-    </Suspense>
-  );
+  )
 }

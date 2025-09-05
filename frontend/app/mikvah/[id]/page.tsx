@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ListingPage } from '@/components/listing/ListingPage';
+import { ListingPage } from '@/components/listing-details-utility/listing-page';
 import { mapMikvahToListingData } from '@/lib/mappers/mikvahMapper';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useLocation } from '@/lib/contexts/LocationContext';
 
 interface Mikvah {
