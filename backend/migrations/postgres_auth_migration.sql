@@ -17,7 +17,8 @@ ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP,
 ADD COLUMN IF NOT EXISTS last_login TIMESTAMP,
 ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR(100),
-ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE;
+ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS is_guest BOOLEAN DEFAULT FALSE;
 
 -- Update existing users to have email verified (migration safety)
 UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;
@@ -45,6 +46,26 @@ FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE user_roles 
 ADD CONSTRAINT fk_user_roles_granted_by 
 FOREIGN KEY (granted_by) REFERENCES users(id) ON DELETE SET NULL;
+
+-- Create auth sessions table for refresh token families
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+    refresh_token_hash TEXT NOT NULL,
+    family_id VARCHAR(36) NOT NULL,
+    rotated_from VARCHAR(36),
+    user_agent TEXT,
+    ip INET,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    last_used TIMESTAMPTZ DEFAULT now(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ
+);
+
+-- Add foreign key for auth sessions
+ALTER TABLE auth_sessions
+ADD CONSTRAINT fk_auth_sessions_user_id 
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- Add authentication columns to existing sessions table (skip columns that already exist)
 -- Note: Sessions table already has ip_address, user_agent, created_at, last_used from previous setup
@@ -80,6 +101,11 @@ CREATE INDEX IF NOT EXISTS idx_users_locked_until ON users(locked_until) WHERE l
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_active ON user_roles(user_id, is_active, expires_at);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role ON user_roles(role);
+
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_family_id ON auth_sessions(family_id);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_revoked_at ON auth_sessions(revoked_at) WHERE revoked_at IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions("userId");
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions("sessionToken");

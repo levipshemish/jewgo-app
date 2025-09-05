@@ -36,8 +36,8 @@ def register_postgres_auth(app: Flask):
         app.config['DB_MANAGER'] = db_manager
         app.config['AUTH_MANAGER'] = auth_manager
         
-        # Register auth blueprint
-        from routes.auth_routes import auth_bp
+        # Register auth blueprint (use the new auth_api routes)
+        from routes.auth_api import auth_bp
         app.register_blueprint(auth_bp)
         logger.info("Auth API blueprint registered")
         

@@ -321,3 +321,161 @@ export interface ShulDB {
     review_count?: number
   }
 }
+
+export interface StoreDB {
+  id: string
+  name: string
+  description: string
+  short_description?: string
+  address: string
+  city: string
+  state: string
+  zip_code: string
+  phone_number: string
+  website?: string
+  email?: string
+  store_type: string
+  store_category?: string
+  rating?: number
+  review_count?: number
+  image_url?: string
+  additional_images?: string[]
+  images: string[]
+  hours_of_operation?: string
+  hours_json?: string
+  hours_last_updated?: string
+  timezone?: string
+  latitude?: number
+  longitude?: number
+  is_active?: boolean
+  listing_type: string
+  status?: string
+  price_range?: string
+  kosher_type?: string
+  kosher_agency?: string
+  kosher_certification?: string
+  hours: {
+    [day: string]: {
+      open: string
+      close: string
+      closed?: boolean
+    }
+  }
+  contact: {
+    phone?: string
+    email?: string
+    website?: string
+  }
+  location: {
+    latitude: number
+    longitude: number
+  }
+  admin_settings: {
+    show_order_button?: boolean
+    order_url?: string
+  }
+  stats: {
+    view_count: number
+    share_count: number
+  }
+  // Store-specific fields
+  has_parking?: boolean
+  has_delivery?: boolean
+  has_pickup?: boolean
+  accepts_credit_cards?: boolean
+  accepts_cash?: boolean
+  is_cholov_yisroel?: boolean
+  is_pas_yisroel?: boolean
+  reviews?: {
+    google_reviews?: string
+    review_snippets?: string
+    google_review_count?: number
+    review_count?: number
+  }
+}
+
+export interface MikvahDB {
+  id: string
+  name: string
+  description: string
+  short_description?: string
+  address: string
+  city: string
+  state: string
+  zip_code: string
+  phone_number: string
+  website?: string
+  email?: string
+  mikvah_type: string
+  mikvah_category?: string
+  rating?: number
+  review_count?: number
+  image_url?: string
+  additional_images?: string[]
+  images: string[]
+  hours_of_operation?: string
+  hours_json?: string
+  hours_last_updated?: string
+  timezone?: string
+  latitude?: number
+  longitude?: number
+  is_active?: boolean
+  listing_type: string
+  status?: string
+  price_range?: string
+  kosher_type?: string
+  kosher_agency?: string
+  kosher_certification?: string
+  hours: {
+    [day: string]: {
+      open: string
+      close: string
+      closed?: boolean
+    }
+  }
+  contact: {
+    phone?: string
+    email?: string
+    website?: string
+  }
+  location: {
+    latitude: number
+    longitude: number
+  }
+  admin_settings: {
+    show_order_button?: boolean
+    order_url?: string
+  }
+  stats: {
+    view_count: number
+    share_count: number
+  }
+  // Mikvah-specific fields
+  requires_appointment?: boolean
+  appointment_phone?: string
+  appointment_website?: string
+  walk_in_available?: boolean
+  advance_booking_days?: number
+  has_changing_rooms?: boolean
+  has_shower_facilities?: boolean
+  has_towels_provided?: boolean
+  has_soap_provided?: boolean
+  has_hair_dryers?: boolean
+  has_private_entrance?: boolean
+  has_disabled_access?: boolean
+  has_parking?: boolean
+  rabbinical_supervision?: string
+  community_affiliation?: string
+  religious_authority?: string
+  fee_amount?: number
+  fee_currency?: string
+  accepts_credit_cards?: boolean
+  accepts_cash?: boolean
+  accepts_checks?: boolean
+  reviews?: {
+    google_reviews?: string
+    review_snippets?: string
+    google_review_count?: number
+    review_count?: number
+  }
+}

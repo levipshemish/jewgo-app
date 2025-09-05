@@ -191,7 +191,7 @@ class PostgresAuthManager:
             
             with self.db.connection_manager.session_scope() as session:
                 # Check if email already exists
-                result = conn.execute(
+                result = session.execute(
                     text("SELECT id FROM users WHERE email = :email"),
                     {'email': email}
                 ).fetchone()
@@ -199,15 +199,15 @@ class PostgresAuthManager:
                 if result:
                     raise ValidationError("Email address is already registered")
                 
-                # Insert new user
+                # Insert new user (skip created_at/updated_at as they don't exist in users table)
                 session.execute(
                     text("""
                         INSERT INTO users (
                             id, name, email, password_hash, email_verified,
-                            verification_token, verification_expires, created_at, updated_at
+                            verification_token, verification_expires
                         ) VALUES (
                             :user_id, :name, :email, :password_hash, FALSE,
-                            :verification_token, :verification_expires, NOW(), NOW()
+                            :verification_token, :verification_expires
                         )
                     """),
                     {
@@ -228,8 +228,6 @@ class PostgresAuthManager:
                     """),
                     {'user_id': user_id}
                 )
-                
-                session.commit()
                 
                 # Log user creation
                 self._log_auth_event(user_id, 'user_created', True, {'email': email})
@@ -260,7 +258,7 @@ class PostgresAuthManager:
             
             with self.db.connection_manager.session_scope() as session:
                 # Get user details with role information
-                result = conn.execute(
+                result = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.password_hash, u.email_verified,
                                u.failed_login_attempts, u.locked_until, u.last_login,
@@ -317,7 +315,6 @@ class PostgresAuthManager:
                             'locked_until': locked_until
                         }
                     )
-                    session.commit()
                     
                     self._log_auth_event(user_id, 'login_failed', False, {
                         'reason': 'invalid_password',
@@ -337,7 +334,6 @@ class PostgresAuthManager:
                     """),
                     {'user_id': user_id}
                 )
-                session.commit()
                 
                 # Parse roles from JSON
                 import json
@@ -387,7 +383,7 @@ class PostgresAuthManager:
         # Get fresh user data from database
         try:
             with self.db.connection_manager.session_scope() as session:
-                result = conn.execute(
+                result = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.email_verified,
                                COALESCE(
@@ -438,7 +434,7 @@ class PostgresAuthManager:
         # Get user data for new access token
         try:
             with self.db.connection_manager.session_scope() as session:
-                result = conn.execute(
+                result = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.email_verified,
                                COALESCE(
@@ -491,7 +487,7 @@ class PostgresAuthManager:
         """Get active user roles."""
         try:
             with self.db.connection_manager.session_scope() as session:
-                results = conn.execute(
+                results = session.execute(
                     text("""
                         SELECT role, level, granted_at, expires_at
                         FROM user_roles
@@ -514,7 +510,7 @@ class PostgresAuthManager:
         try:
             with self.db.connection_manager.session_scope() as session:
                 # Check if role already exists
-                existing = conn.execute(
+                existing = session.execute(
                     text("SELECT id FROM user_roles WHERE user_id = :user_id AND role = :role"),
                     {'user_id': user_id, 'role': role}
                 ).fetchone()
@@ -555,7 +551,6 @@ class PostgresAuthManager:
                         }
                     )
                 
-                session.commit()
                 logger.info(f"Role '{role}' assigned to user {user_id} (level {level})")
                 return True
                 
@@ -574,7 +569,6 @@ class PostgresAuthManager:
                     """),
                     {'user_id': user_id, 'role': role}
                 )
-                session.commit()
                 logger.info(f"Role '{role}' revoked from user {user_id}")
                 return True
                 
@@ -587,7 +581,7 @@ class PostgresAuthManager:
         try:
             with self.db.connection_manager.session_scope() as session:
                 # Find user with valid verification token
-                result = conn.execute(
+                result = session.execute(
                     text("""
                         SELECT id FROM users 
                         WHERE verification_token = :token 
@@ -614,7 +608,6 @@ class PostgresAuthManager:
                     """),
                     {'user_id': user_id}
                 )
-                session.commit()
                 
                 self._log_auth_event(user_id, 'email_verified', True)
                 logger.info(f"Email verified for user {user_id}")
@@ -624,6 +617,58 @@ class PostgresAuthManager:
             logger.error(f"Email verification error: {e}")
             return False
     
+    def create_guest_user(self, ip_address: str = None) -> Dict[str, Any]:
+        """Create a guest user account with minimal permissions."""
+        try:
+            # Generate unique guest user ID and email
+            user_id = secrets.token_hex(16)
+            guest_email = f"guest-{user_id}@guest.local"
+            
+            with self.db.connection_manager.session_scope() as session:
+                # Insert new guest user
+                session.execute(
+                    text("""
+                        INSERT INTO users (
+                            id, name, email, email_verified, is_guest
+                        ) VALUES (
+                            :user_id, :name, :email, TRUE, TRUE
+                        )
+                    """),
+                    {
+                        'user_id': user_id,
+                        'name': f'Guest User',
+                        'email': guest_email
+                    }
+                )
+                
+                # Assign guest role with level 0
+                session.execute(
+                    text("""
+                        INSERT INTO user_roles (user_id, role, level, granted_at, is_active)
+                        VALUES (:user_id, 'guest', 0, NOW(), TRUE)
+                    """),
+                    {'user_id': user_id}
+                )
+                
+                # Log guest user creation
+                self._log_auth_event(user_id, 'guest_created', True, {'ip_address': ip_address}, ip_address)
+                
+                logger.info(f"Guest user created: {user_id}")
+                
+                return {
+                    'user_id': user_id,
+                    'email': guest_email,
+                    'name': 'Guest User',
+                    'email_verified': True,
+                    'is_guest': True,
+                    'roles': [{'role': 'guest', 'level': 0, 'granted_at': datetime.utcnow().isoformat()}],
+                    'created_at': datetime.utcnow().isoformat()
+                }
+                
+        except Exception as e:
+            logger.error(f"Guest user creation error: {e}")
+            raise AuthenticationError("Failed to create guest user account")
+
     def _log_auth_event(self, user_id: str, action: str, success: bool, details: Dict[str, Any] = None, ip_address: str = None):
         """Log authentication events for audit purposes."""
         try:
@@ -641,7 +686,6 @@ class PostgresAuthManager:
                         'details': details or {}
                     }
                 )
-                session.commit()
                 
         except Exception as e:
             logger.error(f"Failed to log auth event: {e}")

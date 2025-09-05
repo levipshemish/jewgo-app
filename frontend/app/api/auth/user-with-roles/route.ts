@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     } else {
       // Try to get token from cookies
       const cookieStore = await import('next/headers').then(m => m.cookies());
-      accessToken = cookieStore.get('auth_access_token')?.value;
+      accessToken = cookieStore.get('access_token')?.value || cookieStore.get('auth_access_token')?.value;
     }
 
     if (!accessToken) {

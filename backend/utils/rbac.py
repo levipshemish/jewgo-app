@@ -20,6 +20,14 @@ class RoleBasedAccessControl:
     
     # Define system roles and their hierarchical levels
     ROLES = {
+        'guest': {
+            'level': 0,
+            'permissions': [
+                'read_restaurants',
+                'view_public_content'
+            ],
+            'description': 'Guest user with read-only public access'
+        },
         'user': {
             'level': 1,
             'permissions': [

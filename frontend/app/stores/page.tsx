@@ -60,99 +60,44 @@ interface Store {
   listing_type?: string;
 }
 
-// Mock API function for stores - will be replaced with actual API
-const fetchStores = async (limit: number, _params?: string, timeoutMs: number = 5000) => {
-  // Simulate network delay for testing timeout functionality
-  if (timeoutMs) {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000)); // Random delay up to 1s
-  }
+// Real API function for stores
+const fetchStores = async (limit: number, params?: string, timeoutMs: number = 5000) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   
-  // For now, return mock data
-  const mockStores: Store[] = [
-    {
-      id: 1,
-      name: "Kosher Market Plus",
-      description: "Your one-stop shop for all kosher groceries",
-      city: "Miami",
-      store_type: "grocery",
-      store_category: "kosher",
-      rating: 4.5,
-      reviewcount: 127,
-      distance: "2.3 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "Glatt Kosher",
-      has_parking: true,
-      has_delivery: true,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 2,
-      name: "Jewish Book Center",
-      description: "Specialized bookstore with religious texts and literature",
-      city: "Miami",
-      store_type: "bookstore",
-      store_category: "specialty",
-      rating: 4.2,
-      reviewcount: 89,
-      distance: "1.8 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "General",
-      has_parking: false,
-      has_delivery: false,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 3,
-      name: "Judaica World",
-      description: "Complete selection of Judaica items and gifts",
-      city: "Miami",
-      store_type: "judaica",
-      store_category: "specialty",
-      rating: 4.7,
-      reviewcount: 156,
-      distance: "3.1 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "General",
-      has_parking: true,
-      has_delivery: true,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 4,
-      name: "Kosher Deli Express",
-      description: "Fresh kosher deli meats and prepared foods",
-      city: "Miami",
-      store_type: "deli",
-      store_category: "kosher",
-      rating: 4.3,
-      reviewcount: 94,
-      distance: "2.7 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "Glatt Kosher",
-      has_parking: false,
-      has_delivery: true,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
-    }
-  ];
+  try {
+    const queryString = params ? `?${params}` : '';
+    const response = await fetch(`/api/stores${queryString}`, {
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  return {
-    stores: mockStores,
-    total: mockStores.length,
-    page: 1,
-    limit
-  };
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      stores: data.data || [],
+      total: data.total || 0,
+      page: data.page || 1,
+      limit: data.limit || limit
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - please check your connection');
+      }
+      throw error;
+    }
+    throw new Error('Failed to fetch stores');
+  }
 };
 
 // Loading component for Suspense fallback

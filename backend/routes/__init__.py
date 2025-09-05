@@ -6,9 +6,11 @@ Version: 1.0
 """
 
 from . import health_routes, redis_health, restaurants
+from . import deploy_webhook
 
 __all__ = [
     "restaurants",
     "health_routes",
     "redis_health",
+    "deploy_webhook",
 ]

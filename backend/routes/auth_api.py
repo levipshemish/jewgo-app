@@ -5,7 +5,7 @@ This module provides REST API endpoints for user authentication, registration,
 and account management using PostgreSQL instead of Supabase.
 """
 
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, make_response
 from werkzeug.exceptions import BadRequest
 from utils.logging_config import get_logger
 from utils.error_handler import ValidationError, AuthenticationError
@@ -119,8 +119,8 @@ def login():
         
         # Generate tokens
         tokens = auth_manager.generate_tokens(user_info)
-        
-        # Prepare response
+
+        # Prepare response payload (keep JSON tokens for backward compatibility)
         response_data = {
             'user': {
                 'id': user_info['user_id'],
@@ -131,9 +131,40 @@ def login():
             },
             'tokens': tokens
         }
-        
+        # Build response and set HttpOnly cookies
+        resp = make_response(jsonify(response_data), 200)
+
+        # Cookie security flags
+        import os
+        from config.settings import ENVIRONMENT
+        secure = ENVIRONMENT == 'production'
+        same_site = 'Lax'
+        cookie_domain = os.getenv('COOKIE_DOMAIN')
+
+        # Set access token cookie
+        resp.set_cookie(
+            'access_token',
+            tokens['access_token'],
+            httponly=True,
+            secure=secure,
+            samesite=same_site,
+            max_age=int(tokens.get('expires_in', 3600)),
+            domain=cookie_domain,
+        )
+        # Set refresh token cookie (longer TTL; default 45 days if not specified)
+        refresh_ttl = int(os.getenv('REFRESH_TTL_SECONDS', str(45 * 24 * 3600)))
+        resp.set_cookie(
+            'refresh_token',
+            tokens['refresh_token'],
+            httponly=True,
+            secure=secure,
+            samesite=same_site,
+            max_age=refresh_ttl,
+            domain=cookie_domain,
+        )
+
         logger.info(f"User login successful: {email}")
-        return jsonify(response_data), 200
+        return resp
         
     except Exception as e:
         logger.error(f"Login error: {e}")
@@ -160,8 +191,37 @@ def refresh_token():
         if not new_tokens:
             return jsonify({'error': 'Invalid or expired refresh token'}), 401
         
+        # Build response and set cookies (rotation)
+        resp = make_response(jsonify(new_tokens), 200)
+
+        import os
+        from config.settings import ENVIRONMENT
+        secure = ENVIRONMENT == 'production'
+        same_site = 'Lax'
+        cookie_domain = os.getenv('COOKIE_DOMAIN')
+
+        resp.set_cookie(
+            'access_token',
+            new_tokens['access_token'],
+            httponly=True,
+            secure=secure,
+            samesite=same_site,
+            max_age=int(new_tokens.get('expires_in', 3600)),
+            domain=cookie_domain,
+        )
+        refresh_ttl = int(os.getenv('REFRESH_TTL_SECONDS', str(45 * 24 * 3600)))
+        resp.set_cookie(
+            'refresh_token',
+            new_tokens['refresh_token'],
+            httponly=True,
+            secure=secure,
+            samesite=same_site,
+            max_age=refresh_ttl,
+            domain=cookie_domain,
+        )
+
         logger.debug("Token refresh successful")
-        return jsonify(new_tokens), 200
+        return resp
         
     except Exception as e:
         logger.error(f"Token refresh error: {e}")
@@ -335,7 +395,26 @@ def logout():
             auth_manager._log_auth_event(user_id, 'logout', True)
             logger.info(f"User logout: {user_id}")
         
-        return jsonify({'message': 'Logged out successfully'}), 200
+        # Clear cookies for both new and legacy names
+        resp = make_response(jsonify({'message': 'Logged out successfully'}), 200)
+        import os
+        from config.settings import ENVIRONMENT
+        secure = ENVIRONMENT == 'production'
+        same_site = 'Lax'
+        cookie_domain = os.getenv('COOKIE_DOMAIN')
+
+        for name in ['access_token', 'refresh_token', 'auth_access_token', 'auth_refresh_token']:
+            resp.set_cookie(
+                name,
+                '',
+                max_age=0,
+                httponly=True,
+                secure=secure,
+                samesite=same_site,
+                domain=cookie_domain,
+            )
+
+        return resp
         
     except Exception as e:
         logger.error(f"Logout error: {e}")

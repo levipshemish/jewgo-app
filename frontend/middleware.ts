@@ -41,9 +41,9 @@ export async function middleware(request: NextRequest) {
     
     // Get JWT token from Authorization header or cookies
     const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.split(' ')[1] 
-      : request.cookies.get('auth_access_token')?.value;
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : (request.cookies.get('access_token')?.value || request.cookies.get('auth_access_token')?.value);
 
     if (!token) {
       return handleUnauthenticatedUser(request, isApi);
@@ -186,5 +186,4 @@ function _isAnonymousAllowedPath(_pathname: string): boolean {
   // This helper is intentionally unused in middleware runtime but kept for future extension
   return false;
 }
-
 

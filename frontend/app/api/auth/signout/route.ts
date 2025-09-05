@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
   try {
     // Get JWT token from Authorization header or cookies
     const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.split(' ')[1] 
-      : request.cookies.get('auth_access_token')?.value;
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : (request.cookies.get('access_token')?.value || request.cookies.get('auth_access_token')?.value);
 
     if (!token) {
       return NextResponse.json({ error: 'NO_TOKEN' }, { status: 401, headers: baseHeaders });
@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
 
     // Clear local cookies
     const cookieStore = await cookies();
+    // Clear new cookie names
+    cookieStore.set('access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+    cookieStore.set('refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+    cookieStore.set('access_expires_at', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+    // Clear legacy cookie names for backward compatibility
     cookieStore.set('auth_access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
     cookieStore.set('auth_refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
     cookieStore.set('auth_expires_at', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
