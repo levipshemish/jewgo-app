@@ -357,6 +357,15 @@ export default function EateryGrid({
   const transformRestaurant = useCallback((restaurant: LightRestaurant) => {
     // Calculate distance if user location is available
     let distanceText = ''
+    console.log('EateryGrid transformRestaurant debug:', {
+      restaurantName: restaurant.name,
+      hasUserLocation: !!userLocation,
+      userLocation,
+      hasRestaurantLocation: !!(restaurant.latitude !== undefined && restaurant.longitude !== undefined),
+      restaurantLocation: { lat: restaurant.latitude, lng: restaurant.longitude },
+      fullRestaurantData: restaurant
+    })
+    
     if (userLocation && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
       const distance = calculateDistance(
         userLocation.latitude,
@@ -365,11 +374,17 @@ export default function EateryGrid({
         restaurant.longitude
       )
       distanceText = formatDistance(distance)
+      console.log('EateryGrid calculated distance:', { distance, distanceText })
+    } else {
+      console.log('EateryGrid: No distance calculated - missing location data')
     }
+
+    const finalDistance = distanceText || (userLocation ? '' : restaurant.zip_code || '')
+    console.log('EateryGrid final distance:', finalDistance)
 
     return {
       ...restaurant,
-      distance: distanceText || (userLocation ? '' : restaurant.zip_code || '')
+      distance: finalDistance
     }
   }, [userLocation])
 

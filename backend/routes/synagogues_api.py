@@ -184,6 +184,8 @@ def build_order_clause(lat: Optional[float], lng: Optional[float],
 def get_synagogues():
     """Get synagogues with filtering and pagination."""
     import signal
+    from flask import current_app
+    from sqlalchemy import text
     
     def timeout_handler(signum, frame):
         raise TimeoutError("Database query timed out")
@@ -193,6 +195,11 @@ def get_synagogues():
     signal.alarm(10)
     
     try:
+        # Get database manager from app context using v4 pattern
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
+            return jsonify({'error': 'Database not available'}), 503
         # Parse query parameters - support both offset and page-based pagination
         limit = min(int(request.args.get('limit', 20)), 100)  # Max 100 per page
         
@@ -273,16 +280,16 @@ def get_synagogues():
                     'timestamp': datetime.now(timezone.utc).isoformat()
                 }), 400
         
-        # Get database connection
-        db_manager = DatabaseManager()
-        
-        # Connect to database
-        if not db_manager.connect():
+        # Get database manager from app context using v4 pattern
+        from flask import current_app
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
             return jsonify({
                 'success': False,
-                'error': 'Unable to connect to database',
+                'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            }), 503
         
         try:
             # Build WHERE clause
@@ -298,8 +305,10 @@ def get_synagogues():
                 WHERE {where_clause}
             """
             
-            count_result = db_manager.execute_query(count_query, where_params)
-            total = count_result[0]['total'] if count_result else 0
+            # Execute count query using SQLAlchemy session
+            with db_manager.connection_manager.get_session() as session:
+                count_result = session.execute(text(count_query), where_params).fetchone()
+                total = count_result[0] if count_result else 0
             
             # Apply distance filter if location is provided using optimized Haversine
             if lat is not None and lng is not None and max_distance_mi is not None:
@@ -340,8 +349,11 @@ def get_synagogues():
             # Add pagination parameters
             query_params = where_params + [limit, offset]
             
-            # Execute query
-            synagogues = db_manager.execute_query(data_query, query_params)
+            # Execute data query using SQLAlchemy session
+            with db_manager.connection_manager.get_session() as session:
+                result = session.execute(text(data_query), query_params).fetchall()
+                # Convert SQLAlchemy Row objects to dictionaries
+                synagogues = [dict(row._mapping) for row in result]
             
             # Calculate distances if location is provided using optimized Python function
             if lat is not None and lng is not None:
@@ -405,16 +417,16 @@ def get_synagogues():
 def get_filter_options():
     """Get available filter options for synagogues."""
     try:
-        # Get database connection
-        db_manager = DatabaseManager()
-        
-        # Connect to database
-        if not db_manager.connect():
+        # Get database manager from app context using v4 pattern
+        from flask import current_app
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
             return jsonify({
                 'success': False,
-                'error': 'Unable to connect to database',
+                'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            }), 503
         
         try:
             # Get cities
@@ -424,8 +436,9 @@ def get_filter_options():
                 WHERE is_active = true AND city IS NOT NULL AND city != ''
                 ORDER BY city
             """
-            cities_result = db_manager.execute_query(cities_query)
-            cities = [row['city'] for row in cities_result if row['city']]
+            with db_manager.connection_manager.get_session() as session:
+                cities_result = session.execute(text(cities_query)).fetchall()
+                cities = [row[0] for row in cities_result if row[0]]
             
             # Get states
             states_query = """
@@ -434,8 +447,9 @@ def get_filter_options():
                 WHERE is_active = true AND state IS NOT NULL AND state != ''
                 ORDER BY state
             """
-            states_result = db_manager.execute_query(states_query)
-            states = [row['state'] for row in states_result if row['state']]
+            with db_manager.connection_manager.get_session() as session:
+                states_result = session.execute(text(states_query)).fetchall()
+                states = [row[0] for row in states_result if row[0]]
             
             # Get denominations
             denominations_query = """
@@ -444,8 +458,9 @@ def get_filter_options():
                 WHERE is_active = true AND denomination IS NOT NULL AND denomination != ''
                 ORDER BY denomination
             """
-            denominations_result = db_manager.execute_query(denominations_query)
-            denominations = [row['denomination'] for row in denominations_result if row['denomination']]
+            with db_manager.connection_manager.get_session() as session:
+                denominations_result = session.execute(text(denominations_query)).fetchall()
+                denominations = [row[0] for row in denominations_result if row[0]]
             
             # Get shul types
             shul_types_query = """
@@ -454,8 +469,9 @@ def get_filter_options():
                 WHERE is_active = true AND shul_type IS NOT NULL AND shul_type != ''
                 ORDER BY shul_type
             """
-            shul_types_result = db_manager.execute_query(shul_types_query)
-            shul_types = [row['shul_type'] for row in shul_types_result if row['shul_type']]
+            with db_manager.connection_manager.get_session() as session:
+                shul_types_result = session.execute(text(shul_types_query)).fetchall()
+                shul_types = [row[0] for row in shul_types_result if row[0]]
             
             # Get shul categories
             shul_categories_query = """
@@ -464,8 +480,9 @@ def get_filter_options():
                 WHERE is_active = true AND shul_category IS NOT NULL AND shul_category != ''
                 ORDER BY shul_category
             """
-            shul_categories_result = db_manager.execute_query(shul_categories_query)
-            shul_categories = [row['shul_category'] for row in shul_categories_result if row['shul_category']]
+            with db_manager.connection_manager.get_session() as session:
+                shul_categories_result = session.execute(text(shul_categories_query)).fetchall()
+                shul_categories = [row[0] for row in shul_categories_result if row[0]]
             
             # Prepare response
             filter_options = {
@@ -520,16 +537,16 @@ def get_filter_options():
 def get_synagogue(synagogue_id: int):
     """Get a specific synagogue by ID."""
     try:
-        # Get database connection
-        db_manager = DatabaseManager()
-        
-        # Connect to database
-        if not db_manager.connect():
+        # Get database manager from app context using v4 pattern
+        from flask import current_app
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
             return jsonify({
                 'success': False,
-                'error': 'Unable to connect to database',
+                'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            }), 503
         
         try:
             # Get synagogue by ID
@@ -550,9 +567,11 @@ def get_synagogue(synagogue_id: int):
                 WHERE id = %s AND is_active = true
             """
             
-            result = db_manager.execute_query(query, [synagogue_id])
+            with db_manager.connection_manager.get_session() as session:
+                result = session.execute(text(query), [synagogue_id]).fetchall()
+                synagogue = dict(result[0]._mapping) if result else None
             
-            if not result:
+            if not synagogue:
                 return jsonify({
                     'success': False,
                     'error': 'Synagogue not found',
@@ -586,22 +605,23 @@ def get_synagogue(synagogue_id: int):
 def get_synagogue_statistics():
     """Get statistics about synagogues."""
     try:
-        # Get database connection
-        db_manager = DatabaseManager()
-        
-        # Connect to database
-        if not db_manager.connect():
+        # Get database manager from app context using v4 pattern
+        from flask import current_app
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
             return jsonify({
                 'success': False,
-                'error': 'Unable to connect to database',
+                'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            }), 503
         
         try:
             # Get total count
             total_query = "SELECT COUNT(*) as total FROM shuls WHERE is_active = true"
-            total_result = db_manager.execute_query(total_query)
-            total_synagogues = total_result[0]['total'] if total_result else 0
+            with db_manager.connection_manager.get_session() as session:
+                total_result = session.execute(text(total_query)).fetchone()
+                total_synagogues = total_result[0] if total_result else 0
             
             # Get count by denomination
             denomination_query = """
@@ -611,8 +631,9 @@ def get_synagogue_statistics():
                 GROUP BY denomination 
                 ORDER BY count DESC
             """
-            denomination_result = db_manager.execute_query(denomination_query)
-            denomination_counts = {row['denomination']: row['count'] for row in denomination_result}
+            with db_manager.connection_manager.get_session() as session:
+                denomination_result = session.execute(text(denomination_query)).fetchall()
+                denomination_counts = {row[0]: row[1] for row in denomination_result}
             
             # Get count by state
             state_query = """
@@ -622,8 +643,9 @@ def get_synagogue_statistics():
                 GROUP BY state 
                 ORDER BY count DESC
             """
-            state_result = db_manager.execute_query(state_query)
-            state_counts = {row['state']: row['count'] for row in state_result}
+            with db_manager.connection_manager.get_session() as session:
+                state_result = session.execute(text(state_query)).fetchall()
+                state_counts = {row[0]: row[1] for row in state_result}
             
             # Get count by city
             city_query = """
@@ -634,8 +656,9 @@ def get_synagogue_statistics():
                 ORDER BY count DESC
                 LIMIT 10
             """
-            city_result = db_manager.execute_query(city_query)
-            city_counts = {row['city']: row['count'] for row in city_result}
+            with db_manager.connection_manager.get_session() as session:
+                city_result = session.execute(text(city_query)).fetchall()
+                city_counts = {row[0]: row[1] for row in city_result}
             
             # Get count by shul type
             shul_type_query = """
@@ -645,8 +668,9 @@ def get_synagogue_statistics():
                 GROUP BY shul_type 
                 ORDER BY count DESC
             """
-            shul_type_result = db_manager.execute_query(shul_type_query)
-            shul_type_counts = {row['shul_type']: row['count'] for row in shul_type_result}
+            with db_manager.connection_manager.get_session() as session:
+                shul_type_result = session.execute(text(shul_type_query)).fetchall()
+                shul_type_counts = {row[0]: row[1] for row in shul_type_result}
             
             # Get feature counts
             feature_queries = {
@@ -669,10 +693,11 @@ def get_synagogue_statistics():
             }
             
             feature_counts = {}
-            for feature, condition in feature_queries.items():
-                query = f"SELECT COUNT(*) as count FROM shuls WHERE is_active = true AND {condition}"
-                result = db_manager.execute_query(query)
-                feature_counts[feature] = result[0]['count'] if result else 0
+            with db_manager.connection_manager.get_session() as session:
+                for feature, condition in feature_queries.items():
+                    query = f"SELECT COUNT(*) as count FROM shuls WHERE is_active = true AND {condition}"
+                    result = session.execute(text(query)).fetchone()
+                    feature_counts[feature] = result[0] if result else 0
             
             # Prepare response
             statistics = {

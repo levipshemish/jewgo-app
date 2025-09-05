@@ -111,6 +111,8 @@ def build_order_clause(lat: Optional[float], lng: Optional[float],
 def get_stores():
     """Get stores with filtering and pagination."""
     import signal
+    from flask import current_app
+    from sqlalchemy import text
     
     def timeout_handler(signum, frame):
         raise TimeoutError("Database query timed out")
@@ -120,6 +122,11 @@ def get_stores():
     signal.alarm(10)
     
     try:
+        # Get database manager from app context using v4 pattern
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
+            return jsonify({'error': 'Database not available'}), 503
         # Parse query parameters - support both offset and page-based pagination
         limit = min(int(request.args.get('limit', 20)), 100)  # Max 100 per page
         
@@ -161,16 +168,16 @@ def get_stores():
                     'timestamp': datetime.now(timezone.utc).isoformat()
                 }), 400
         
-        # Get database connection
-        db_manager = DatabaseManager()
-        
-        # Connect to database
-        if not db_manager.connect():
+        # Get database manager from app context using v4 pattern
+        from flask import current_app
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
             return jsonify({
                 'success': False,
-                'error': 'Unable to connect to database',
+                'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            }), 503
         
         try:
             # Build WHERE clause
@@ -183,8 +190,10 @@ def get_stores():
                 WHERE {where_clause}
             """
             
-            count_result = db_manager.execute_query(count_query, where_params)
-            total = count_result[0]['total'] if count_result else 0
+            # Execute count query using SQLAlchemy session
+            with db_manager.connection_manager.get_session() as session:
+                count_result = session.execute(text(count_query), where_params).fetchone()
+                total = count_result[0] if count_result else 0
             
             # Apply distance filter if location is provided using optimized Haversine
             if lat is not None and lng is not None and max_distance_mi is not None:
@@ -220,7 +229,11 @@ def get_stores():
             """
             
             where_params.extend([limit, offset])
-            stores = db_manager.execute_query(data_query, where_params)
+            # Execute data query using SQLAlchemy session
+            with db_manager.connection_manager.get_session() as session:
+                result = session.execute(text(data_query), where_params).fetchall()
+                # Convert SQLAlchemy Row objects to dictionaries
+                stores = [dict(row._mapping) for row in result]
             
             # Calculate distances if location is provided
             if lat is not None and lng is not None:
@@ -280,16 +293,16 @@ def get_stores():
 def get_store(store_id: int):
     """Get a specific store by ID."""
     try:
-        # Get database connection
-        db_manager = DatabaseManager()
-        
-        # Connect to database
-        if not db_manager.connect():
+        # Get database manager from app context using v4 pattern
+        from flask import current_app
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
             return jsonify({
                 'success': False,
-                'error': 'Unable to connect to database',
+                'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            }), 503
         
         try:
             # Get store details
@@ -307,9 +320,11 @@ def get_store(store_id: int):
                 WHERE id = %s AND is_active = %s
             """
             
-            store_result = db_manager.execute_query(store_query, [store_id, True])
+            with db_manager.connection_manager.get_session() as session:
+                store_result = session.execute(text(store_query), [store_id, True]).fetchall()
+                store = dict(store_result[0]._mapping) if store_result else None
             
-            if not store_result:
+            if not store:
                 return jsonify({
                     'success': False,
                     'error': 'Store not found',
@@ -345,16 +360,16 @@ def get_store(store_id: int):
 def get_filter_options():
     """Get available filter options for stores."""
     try:
-        # Get database connection
-        db_manager = DatabaseManager()
-        
-        # Connect to database
-        if not db_manager.connect():
+        # Get database manager from app context using v4 pattern
+        from flask import current_app
+        deps = current_app.config.get("dependencies", {})
+        db_manager = deps.get("get_db_manager_v4")()
+        if not db_manager:
             return jsonify({
                 'success': False,
-                'error': 'Unable to connect to database',
+                'error': 'Database not available',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            }), 503
         
         try:
             # Get unique values for filter options
@@ -368,9 +383,10 @@ def get_filter_options():
             
             filter_options = {}
             
-            for key, query in filter_queries.items():
-                result = db_manager.execute_query(query, [True])
-                filter_options[key] = [row[key.replace('_', '')] for row in result]
+            with db_manager.connection_manager.get_session() as session:
+                for key, query in filter_queries.items():
+                    result = session.execute(text(query), [True]).fetchall()
+                    filter_options[key] = [row[0] for row in result if row[0]]
             
             # Add boolean filter options
             filter_options['boolean_filters'] = {

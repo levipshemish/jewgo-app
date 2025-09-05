@@ -13,9 +13,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Glatt Kosher",
       city: "Miami",
       state: "FL",
+      zip_code: "33101",
       rating: 4.5,
       price_range: "$$",
-      status: "active"
+      status: "active",
+      latitude: 25.7617,
+      longitude: -80.1918
     },
     {
       id: 2,
@@ -24,9 +27,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Kosher",
       city: "Miami Beach",
       state: "FL",
+      zip_code: "33139",
       rating: 4.2,
       price_range: "$",
-      status: "active"
+      status: "active",
+      latitude: 25.7907,
+      longitude: -80.1300
     },
     {
       id: 3,
@@ -35,9 +41,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Glatt Kosher",
       city: "Aventura",
       state: "FL",
+      zip_code: "33180",
       rating: 4.7,
       price_range: "$$$",
-      status: "active"
+      status: "active",
+      latitude: 25.9565,
+      longitude: -80.1390
     },
     {
       id: 4,
@@ -46,9 +55,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Kosher",
       city: "Hollywood",
       state: "FL",
+      zip_code: "33020",
       rating: 4.3,
       price_range: "$",
-      status: "active"
+      status: "active",
+      latitude: 26.0112,
+      longitude: -80.1495
     },
     {
       id: 5,
@@ -57,9 +69,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Glatt Kosher",
       city: "North Miami",
       state: "FL",
+      zip_code: "33161",
       rating: 4.1,
       price_range: "$$",
-      status: "active"
+      status: "active",
+      latitude: 25.8901,
+      longitude: -80.1867
     },
     {
       id: 6,
@@ -68,9 +83,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Kosher",
       city: "Coral Gables",
       state: "FL",
+      zip_code: "33134",
       rating: 4.4,
       price_range: "$",
-      status: "active"
+      status: "active",
+      latitude: 25.7214,
+      longitude: -80.2683
     },
     {
       id: 7,
@@ -79,9 +97,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Glatt Kosher",
       city: "Sunny Isles",
       state: "FL",
+      zip_code: "33154",
       rating: 4.6,
       price_range: "$$",
-      status: "active"
+      status: "active",
+      latitude: 25.9420,
+      longitude: -80.1234
     },
     {
       id: 8,
@@ -90,9 +111,12 @@ function getSampleRestaurantsWithImages() {
       kosher_category: "Kosher",
       city: "Doral",
       state: "FL",
+      zip_code: "33178",
       rating: 4.0,
       price_range: "$",
-      status: "active"
+      status: "active",
+      latitude: 25.8195,
+      longitude: -80.3553
     }
   ];
 }

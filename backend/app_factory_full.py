@@ -763,6 +763,32 @@ def create_app(config_class=None):
             logger.warning("Synagogues blueprint is None - skipping registration")
     except Exception as e:
         logger.warning(f"Could not register synagogues blueprint: {e}")
+
+    # Register stores blueprint
+    try:
+        from routes.stores_api import stores_bp
+        if stores_bp is not None:
+            app.register_blueprint(stores_bp)
+            logger.info("Stores blueprint registered successfully")
+        else:
+            logger.warning("Stores blueprint is None - skipping registration")
+    except ImportError as e:
+        logger.warning(f"Could not import stores blueprint: {e}")
+    except Exception as e:
+        logger.warning(f"Could not register stores blueprint: {e}")
+
+    # Register mikvah blueprint
+    try:
+        from routes.mikvah_api import mikvah_bp
+        if mikvah_bp is not None:
+            app.register_blueprint(mikvah_bp)
+            logger.info("Mikvah blueprint registered successfully")
+        else:
+            logger.warning("Mikvah blueprint is None - skipping registration")
+    except ImportError as e:
+        logger.warning(f"Could not import mikvah blueprint: {e}")
+    except Exception as e:
+        logger.warning(f"Could not register mikvah blueprint: {e}")
     # Register mock API routes for development
     try:
         from mock_api import mock_bp

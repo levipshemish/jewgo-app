@@ -29,20 +29,40 @@ export default function EateryPageClient() {
     userLocation,
     isLoading: locationLoading,
     requestLocation,
+    permissionStatus,
   } = useLocation()
+
+  // Debug logging for location
+  console.log('EateryPageClient location debug:', {
+    hasUserLocation: !!userLocation,
+    userLocation,
+    locationLoading,
+    permissionStatus
+  })
 
 
   // Show location permission prompt if no location is available
   const [showLocationPrompt, setShowLocationPrompt] = useState(false)
-  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false)
+  const [lastPermissionStatus, setLastPermissionStatus] = useState<string | null>(null)
   
   useEffect(() => {
-    // Show location prompt if no user location, not loading, and haven't shown it yet
-    if (!userLocation && !locationLoading && !hasShownLocationPrompt) {
+    // Show location prompt if:
+    // 1. No user location available
+    // 2. Not currently loading
+    // 3. Permission status is 'prompt' (user hasn't made a decision yet)
+    // 4. Permission status changed from 'denied' to 'prompt' (user reset permissions)
+    const shouldShowPrompt = !userLocation && 
+                           !locationLoading && 
+                           permissionStatus === 'prompt' &&
+                           (lastPermissionStatus === null || lastPermissionStatus === 'denied')
+    
+    if (shouldShowPrompt) {
       setShowLocationPrompt(true)
-      setHasShownLocationPrompt(true)
     }
-  }, [userLocation, locationLoading, hasShownLocationPrompt])
+    
+    // Update the last permission status
+    setLastPermissionStatus(permissionStatus)
+  }, [userLocation, locationLoading, permissionStatus, lastPermissionStatus])
 
   // Advanced filters hook
   const {
