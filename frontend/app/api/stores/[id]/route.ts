@@ -40,24 +40,36 @@ export async function GET(
 
     if (!response.ok) {
       if (response.status === 404) {
-        return createErrorResponse('Store not found', 404);
+        return createSuccessResponse({
+          success: false,
+          message: 'Store not found'
+        }, undefined, 404);
       }
       
       const errorText = await response.text();
       console.error('Backend store detail error:', errorText);
-      return createErrorResponse('Failed to fetch store details', response.status);
+      return createSuccessResponse({
+        success: false,
+        message: 'Failed to fetch store details'
+      }, undefined, response.status);
     }
 
     const data = await response.json();
     
     if (!data.success) {
-      return createErrorResponse(data.error || 'Failed to fetch store details', 500);
+      return createSuccessResponse({
+        success: false,
+        message: data.error || 'Failed to fetch store details'
+      }, undefined, 500);
     }
 
     return createSuccessResponse('Store details retrieved successfully', data.data);
 
   } catch (error) {
     console.error('Store detail API error:', error);
-    return createErrorResponse('Internal server error', 500);
+    return createSuccessResponse({
+      success: false,
+      message: 'Internal server error'
+    }, undefined, 500);
   }
 }

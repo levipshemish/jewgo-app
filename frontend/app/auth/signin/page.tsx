@@ -126,8 +126,8 @@ function SignInForm() {
         appLogger.info('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
       }
       
-      // Sign in with PostgreSQL auth
-      await postgresAuth.login({ email, password });
+      // Sign in with PostgreSQL auth (include optional reCAPTCHA)
+      await postgresAuth.login({ email, password, recaptcha_token: _recaptchaToken || undefined });
       
       // Redirect on success
       if (typeof window !== 'undefined') {
@@ -177,9 +177,20 @@ function SignInForm() {
     }
   };
 
-  // Anonymous sign-in (not supported in PostgreSQL auth)
-  const handleAnonymousSignIn = async () => {
-    setError('Anonymous sign-in not supported in PostgreSQL auth system');
+  // Continue as Guest
+  const handleGuestContinue = async () => {
+    setError(null);
+    try {
+      await postgresAuth.guestLogin();
+      if (typeof window !== 'undefined') {
+        window.location.assign(redirectTo);
+      } else {
+        router.push(redirectTo);
+      }
+    } catch (e) {
+      appLogger.error('Guest login failed', { error: String(e) });
+      setError('Failed to start a guest session');
+    }
   };
 
   if (isCheckingAuth) {
@@ -326,14 +337,13 @@ function SignInForm() {
                 )}
               </button>
 
-              {/* Anonymous Sign-in (Not supported in PostgreSQL auth) */}
+              {/* Continue as Guest */}
               <button
-                onClick={handleAnonymousSignIn}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                disabled
-                title="Anonymous sign-in not supported in PostgreSQL auth system"
+                onClick={handleGuestContinue}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                title="Start a temporary guest session"
               >
-                Sign in anonymously (Not supported)
+                Continue as Guest
               </button>
             </div>
           </div>

@@ -1,194 +1,51 @@
 """
-Security utilities for the Flask application.
-This module provides authentication and authorization decorators
-to replace simple token checking throughout the application.
+Security utilities for the Flask application (PostgreSQL RBAC based).
+Provides decorators for admin authorization via server-side roles.
 """
 
-import os
-import time
-import uuid
 from functools import wraps
-from typing import Optional, Dict, Any
-from flask import request, jsonify
+from flask import jsonify
 from utils.logging_config import get_logger
-from utils.error_handler import AuthenticationError, AuthorizationError
+from utils.rbac import require_auth, require_role_level
 
-# Supabase admin roles are always enabled in the modern system
-
-# Import Supabase auth and role manager
-try:
-    from utils.supabase_auth import (
-        verify_supabase_admin_role,
-        RoleLookupDependencyError,
-    )
-
-    SUPABASE_ROLES_ENABLED = True
-except ImportError:
-    SUPABASE_ROLES_ENABLED = False
-    logger = get_logger(__name__)
-    logger.error("Supabase roles not available - no authentication fallback")
 logger = get_logger(__name__)
 
 
-# Legacy authentication functions have been removed
+def _map_min_level(min_level):
+    if isinstance(min_level, int):
+        return min_level
+    name = str(min_level).lower()
+    mapping = {
+        'moderator': 5,
+        'data_admin': 10,
+        'system_admin': 10,
+        'admin': 10,
+        'super_admin': 99,
+    }
+    return mapping.get(name, 10)
 
 
 def require_admin(min_level="system_admin"):
-    """
-    Decorator to require admin authentication with specified minimum level.
+    """Require authenticated user with at least the given role level.
 
-    Args:
-        min_level: Minimum required admin role level ('moderator', 'data_admin', 'system_admin', 'super_admin')
-
-    This function accepts only Supabase RS256 JWTs with admin roles.
-    Legacy token fallback is disabled - pure fail-closed policy.
+    min_level: string role alias or numeric level.
     """
+
+    level = _map_min_level(min_level)
 
     def admin_decorator(f):
         @wraps(f)
-        def decorated_function(*args, **kwargs):
-            try:
-                # Check for Authorization header
-                auth_header = request.headers.get("Authorization")
-                if not auth_header:
-                    raise AuthenticationError("Authorization header required")
+        def decorated(*args, **kwargs):
+            protected = require_auth(require_role_level(level)(f))
+            return protected(*args, **kwargs)
 
-                # Check Bearer token format - only Supabase JWTs accepted
-                if not auth_header.startswith("Bearer "):
-                    raise AuthenticationError("Bearer token required")
-
-                token = auth_header.split(" ")[1]
-                if not token:
-                    raise AuthenticationError("Token required")
-
-                # Check if Supabase roles are available before calling verify_supabase_admin_role
-                if not SUPABASE_ROLES_ENABLED:
-                    req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                    logger.error(
-                        "AUTH_503_DEP: supabase-roles-unavailable",
-                        extra={"endpoint": request.endpoint, "request_id": req_id},
-                    )
-                    return jsonify({"error": "unavailable"}), 503
-
-                # Try Supabase role-based authentication
-                try:
-                    result = verify_supabase_admin_role(token, min_level)
-                    if result:
-                        # Extract payload and role data from result
-                        payload = result["payload"]
-                        role_data = result["role_data"]
-
-                        # Add role info to Flask g context
-                        from flask import g
-
-                        g.admin_role = role_data
-
-                        # Build user info from the already-verified payload
-                        user_info = {
-                            "user_id": payload.get("sub"),
-                            "email": payload.get("email"),
-                            "jwt_role": payload.get("role", "authenticated"),
-                            "aud": payload.get("aud"),
-                            "exp": payload.get("exp"),
-                            "iat": payload.get("iat"),
-                            "admin_role": role_data.get("role"),
-                            "admin_level": role_data.get("level", 0),
-                        }
-                        # Add metadata if available
-                        if "app_metadata" in payload:
-                            user_info["app_metadata"] = payload["app_metadata"]
-                        if "user_metadata" in payload:
-                            user_info["user_metadata"] = payload["user_metadata"]
-
-                        g.user = user_info
-
-                        # Log successful Supabase admin authentication
-                        req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                        logger.info(
-                            "AUTH_SUCCESS",
-                            extra={
-                                "endpoint": request.endpoint,
-                                "role": role_data.get("role"),
-                                "level": role_data.get("level"),
-                                "request_id": req_id,
-                            },
-                        )
-
-                        return f(*args, **kwargs)
-                    else:
-                        req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                        logger.warning(
-                            "AUTH_403_ROLE",
-                            extra={"endpoint": request.endpoint, "request_id": req_id},
-                        )
-                        raise AuthorizationError("Insufficient admin privileges")
-                except AuthenticationError as e:
-                    req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                    logger.warning(
-                        "AUTH_401_SIG: %s",
-                        getattr(e, "message", str(e)),
-                        extra={"endpoint": request.endpoint, "request_id": req_id},
-                    )
-                    raise
-                except RoleLookupDependencyError as e:
-                    req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                    logger.error(
-                        "AUTH_503_DEP: %s",
-                        e,
-                        extra={"endpoint": request.endpoint, "request_id": req_id},
-                    )
-                    raise
-                except Exception as e:
-                    req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                    logger.error(
-                        f"AUTH_503_DEP: {e}",
-                        extra={"endpoint": request.endpoint, "request_id": req_id},
-                    )
-                    raise
-
-                # All control paths above return or raise; no legacy fallback
-
-            except AuthenticationError as e:
-                req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                logger.warning(
-                    "AUTH_401_SIG: %s",
-                    getattr(e, "message", str(e)),
-                    extra={"endpoint": request.endpoint, "request_id": req_id},
-                )
-                response = jsonify({"success": False, "error": "unauthorized"})
-                response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
-                return response, 401
-
-            except AuthorizationError as e:
-                req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                logger.warning(
-                    "AUTH_403_ROLE: %s",
-                    getattr(e, "message", str(e)),
-                    extra={"endpoint": request.endpoint, "request_id": req_id},
-                )
-                return jsonify({"success": False, "error": "forbidden"}), 403
-
-            except Exception as e:
-                req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-                logger.error(
-                    "AUTH_503_DEP: %s",
-                    e,
-                    extra={"endpoint": request.endpoint, "request_id": req_id},
-                )
-                return jsonify({"success": False, "error": "unavailable"}), 503
-
-        return decorated_function
+        return decorated
 
     return admin_decorator
 
 
 def require_admin_auth(f):
-    """
-    Decorator to require admin authentication (alias for require_admin with system_admin level).
-
-    This function accepts only Supabase RS256 JWTs with admin roles.
-    Legacy token fallback is disabled - pure fail-closed policy.
-    """
+    """Alias for require_admin with system_admin level via RBAC."""
     return require_admin("system_admin")(f)
 
 

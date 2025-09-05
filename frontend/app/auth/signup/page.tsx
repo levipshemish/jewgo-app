@@ -27,6 +27,21 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  
+  const handleGuestContinue = async () => {
+    setError(null);
+    try {
+      await postgresAuth.guestLogin();
+      if (typeof window !== 'undefined') {
+        window.location.assign(_redirectTo);
+      } else {
+        router.push(_redirectTo);
+      }
+    } catch (e) {
+      appLogger.error('Guest login failed (signup page)', { error: String(e) });
+      setError('Failed to start a guest session');
+    }
+  };
 
   const onEmailSignUp = async (e: FormEvent) => {
     e.preventDefault();
@@ -223,6 +238,27 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
             </p>
           </div>
         </form>
+
+        {/* Continue as Guest */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-50 text-gray-500">Or</span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={handleGuestContinue}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              title="Start a temporary guest session"
+            >
+              Continue as Guest
+            </button>
+          </div>
+        </div>
 
         {/* Note about OAuth providers */}
         <div className="mt-6">

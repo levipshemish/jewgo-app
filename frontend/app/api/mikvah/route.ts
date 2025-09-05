@@ -62,19 +62,28 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Backend mikvah list error:', errorText);
-      return createErrorResponse('Failed to fetch mikvah facilities', response.status);
+      return createSuccessResponse({
+        success: false,
+        message: 'Failed to fetch mikvah facilities'
+      }, undefined, response.status);
     }
 
     const data = await response.json();
     
     if (!data.success) {
-      return createErrorResponse(data.error || 'Failed to fetch mikvah facilities', 500);
+      return createSuccessResponse({
+        success: false,
+        message: data.error || 'Failed to fetch mikvah facilities'
+      }, undefined, 500);
     }
 
     return createSuccessResponse('Mikvah facilities retrieved successfully', data.data);
 
   } catch (error) {
     console.error('Mikvah list API error:', error);
-    return createErrorResponse('Internal server error', 500);
+    return createSuccessResponse({
+      success: false,
+      message: 'Internal server error'
+    }, undefined, 500);
   }
 }

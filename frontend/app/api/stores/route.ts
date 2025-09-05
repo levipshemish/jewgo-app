@@ -62,19 +62,28 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Backend stores list error:', errorText);
-      return createErrorResponse('Failed to fetch stores', response.status);
+      return createSuccessResponse({
+        success: false,
+        message: 'Failed to fetch stores'
+      }, undefined, response.status);
     }
 
     const data = await response.json();
     
     if (!data.success) {
-      return createErrorResponse(data.error || 'Failed to fetch stores', 500);
+      return createSuccessResponse({
+        success: false,
+        message: data.error || 'Failed to fetch stores'
+      }, undefined, 500);
     }
 
     return createSuccessResponse('Stores retrieved successfully', data.data);
 
   } catch (error) {
     console.error('Stores list API error:', error);
-    return createErrorResponse('Internal server error', 500);
+    return createSuccessResponse({
+      success: false,
+      message: 'Internal server error'
+    }, undefined, 500);
   }
 }

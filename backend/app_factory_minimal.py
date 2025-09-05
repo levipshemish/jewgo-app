@@ -15,22 +15,7 @@ def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
     
-    # Pre-warm JWKS and schedule refresh at startup
-    try:
-        from utils.supabase_auth import supabase_auth
-        supabase_auth.pre_warm_jwks()
-        supabase_auth.schedule_jwks_refresh()
-    except Exception:
-        # Keep minimal factory resilient if optional deps missing
-        pass
-    
-    # Start role cache invalidation listener (if enabled and deps present)
-    try:
-        from utils.supabase_role_manager import get_role_manager
-        rm = get_role_manager()
-        rm.start_cache_invalidation_listener()
-    except Exception:
-        pass
+    # Supabase minimal hooks removed in Phase 5 cleanup.
     # Configure CORS
     CORS(
         app,

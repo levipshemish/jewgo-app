@@ -106,6 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_family_id ON auth_sessions(family_id);
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_revoked_at ON auth_sessions(revoked_at) WHERE revoked_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_rthash ON auth_sessions(refresh_token_hash);
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions("userId");
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions("sessionToken");
@@ -169,8 +170,6 @@ SELECT
     u.locked_until,
     u.last_login,
     u.two_factor_enabled,
-    u.created_at,
-    u.updated_at,
     COALESCE(
         JSON_AGG(
             JSON_BUILD_OBJECT(
@@ -185,7 +184,7 @@ SELECT
 FROM users u
 LEFT JOIN user_roles ur ON u.id = ur.user_id
 GROUP BY u.id, u.name, u.email, u.email_verified, u.failed_login_attempts, 
-         u.locked_until, u.last_login, u.two_factor_enabled, u.created_at, u.updated_at;
+         u.locked_until, u.last_login, u.two_factor_enabled;
 
 -- Create function to check user permissions
 CREATE OR REPLACE FUNCTION user_has_permission(p_user_id VARCHAR(50), p_permission VARCHAR(50))

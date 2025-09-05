@@ -40,7 +40,8 @@ export async function middleware(request: NextRequest) {
     Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
     
     // Check presence of access_token cookie only (cookie-mode)
-    const tokenCookie = request.cookies.get('access_token')?.value || request.cookies.get('auth_access_token')?.value;
+    const legacyEnabled = (process.env.NEXT_PUBLIC_LEGACY_AUTH_ENABLED || 'true').toLowerCase() === 'true';
+    const tokenCookie = request.cookies.get('access_token')?.value || (legacyEnabled ? request.cookies.get('auth_access_token')?.value : undefined);
     if (!tokenCookie) {
       return handleUnauthenticatedUser(request, isApi);
     }
@@ -48,7 +49,12 @@ export async function middleware(request: NextRequest) {
     // Verify JWT token with backend
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
-      const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, { credentials: 'include' });
+      const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, {
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${tokenCookie}`,
+        },
+      });
 
       if (!verifyResponse.ok) {
         return handleUnauthenticatedUser(request, isApi);

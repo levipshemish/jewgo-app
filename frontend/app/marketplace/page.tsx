@@ -236,29 +236,29 @@ export default function MarketplacePage() {
                     </h3>
                     <div className="mt-2 text-sm text-yellow-700">
                       <p>Showing sample data. Real marketplace listings will appear when the backend is accessible.</p>
-        </div>
-            </div>
-          </div>
-        </div>
-      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               {listings.map((listing) => (
-              <UnifiedCard
-                key={listing.id}
-                data={mapMarketplaceToListingData(listing)}
-                onClick={() => router.push(`/marketplace/${listing.id}`)}
-                showDistance={true}
-                showRating={false}
-                showPrice={true}
-                showCategory={true}
-                showCondition={true}
-                showSeller={true}
-              />
-            ))}
-        </div>
-      )}
+                <UnifiedCard
+                  key={listing.id}
+                  data={mapMarketplaceToListingData(listing)}
+                  onClick={() => router.push(`/marketplace/${listing.id}`)}
+                  showDistance={true}
+                  showRating={false}
+                  showPrice={true}
+                  showCategory={true}
+                  showCondition={true}
+                  showSeller={true}
+                />
+              ))}
             </div>
+          </div>
+        )}
 
       <ShulBottomNavigation />
 

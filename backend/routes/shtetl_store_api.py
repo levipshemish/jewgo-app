@@ -10,7 +10,24 @@ from flask import Blueprint, request
 from utils.logging_config import get_logger
 from utils.response_helpers import success_response, error_response, not_found_response
 from utils.feature_flags_v4 import require_api_v4_flag
-from utils.supabase_auth import require_supabase_auth, get_current_supabase_user
+# Gate Supabase auth: fall back to PostgreSQL auth if Supabase utils are unavailable
+try:
+    from utils.supabase_auth import require_supabase_auth, get_current_supabase_user  # type: ignore
+except Exception:  # pragma: no cover - fallback path
+    from utils.rbac import require_auth as require_supabase_auth  # reuse PostgreSQL auth
+    def get_current_supabase_user():  # minimal shim
+        try:
+            from flask import g
+            user = getattr(g, 'user', None)
+            if not user:
+                return None
+            return {
+                'id': g.user_id,
+                'email': user.get('email'),
+                'app_metadata': {'provider': 'postgres'},
+            }
+        except Exception:
+            return None
 from utils.security import require_admin as require_admin_auth
 from utils.limiter import limiter
 

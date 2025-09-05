@@ -94,35 +94,37 @@ except Exception:
         return f
 
 
-# Import Supabase authentication decorators
-try:
-    from utils.supabase_auth import (
-        require_supabase_auth,
-        optional_supabase_auth,
-        get_current_supabase_user,
-        is_supabase_authenticated,
-        get_supabase_user_id,
-        get_supabase_user_email,
-    )
-except ImportError:
-    # Fallback decorators if Supabase auth module is not available
-    def require_supabase_auth(f):
-        return f
+# RBAC-based authentication decorators and helpers (replacing Supabase usage)
+from utils.rbac import require_auth as require_rbac_auth
+from utils.rbac import optional_auth as optional_rbac_auth
 
-    def optional_supabase_auth(f):
-        return f
 
-    def get_current_supabase_user():
+def get_current_user():  # RBAC user fetch shim
+    from flask import g
+    user = getattr(g, 'user', None)
+    if not user:
         return None
+    return {
+        'id': user.get('user_id') or getattr(g, 'user_id', None),
+        'email': user.get('email'),
+        'app_metadata': {'provider': 'postgres'},
+    }
 
-    def is_supabase_authenticated():
-        return False
 
-    def get_supabase_user_id():
-        return None
+def is_authenticated():  # RBAC shim
+    from flask import g
+    return bool(getattr(g, 'user', None))
 
-    def get_supabase_user_email():
-        return None
+
+def get_user_id():  # RBAC shim
+    from flask import g
+    return getattr(g, 'user_id', None)
+
+
+def get_user_email():  # RBAC shim
+    from flask import g
+    user = getattr(g, 'user', None)
+    return user.get('email') if user else None
 
 
 # Import feature flag decorators
@@ -1468,7 +1470,7 @@ def _parse_role_mutation_body(data: Dict[str, Any]):
 
 
 def _require_current_user():
-    current_user = get_current_supabase_user()
+    current_user = get_current_user()
     if not current_user:
         return error_response("Authentication required", 401)
     return current_user
@@ -1892,7 +1894,7 @@ def get_marketplace_listing(listing_id):
 @safe_route("/marketplace/listings", methods=["POST"])
 @limiter.limit("120/minute")
 @require_api_v4_flag("api_v4_marketplace")
-@require_supabase_auth
+@require_rbac_auth
 def create_marketplace_listing():
     """Create a new marketplace listing."""
     try:
@@ -1900,7 +1902,7 @@ def create_marketplace_listing():
         if not data:
             return error_response("Request body is required", 400)
         # Get authenticated user information
-        user = get_current_supabase_user()
+        user = get_current_user()
         if not user:
             return error_response("User authentication required", 401)
         # Add user information to listing data
@@ -1929,7 +1931,7 @@ def create_marketplace_listing():
 @safe_route("/marketplace/listings/<listing_id>", methods=["PUT"])
 @limiter.limit("120/minute")
 @require_api_v4_flag("api_v4_marketplace")
-@require_supabase_auth
+@require_rbac_auth
 def update_marketplace_listing(listing_id: str):
     """Update a marketplace listing."""
     try:
@@ -1937,7 +1939,7 @@ def update_marketplace_listing(listing_id: str):
         if not data:
             return error_response("Request body is required", 400)
         # Get authenticated user information
-        user = get_current_supabase_user()
+        user = get_current_user()
         if not user:
             return error_response("User authentication required", 401)
         # Use marketplace service
@@ -1967,12 +1969,12 @@ def update_marketplace_listing(listing_id: str):
 @safe_route("/marketplace/listings/<listing_id>", methods=["DELETE"])
 @limiter.limit("120/minute")
 @require_api_v4_flag("api_v4_marketplace")
-@require_supabase_auth
+@require_rbac_auth
 def delete_marketplace_listing(listing_id: str):
     """Delete a marketplace listing."""
     try:
         # Get authenticated user information
-        user = get_current_supabase_user()
+        user = get_current_user()
         if not user:
             return error_response("User authentication required", 401)
         # Use marketplace service

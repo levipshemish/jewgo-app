@@ -745,19 +745,7 @@ def create_app():
     except ImportError as e:
         logger.warning(f"Could not import user API routes: {e}")
 
-    # Register auth API routes
-    try:
-        logger.info("Attempting to import auth API routes...")
-        from routes.user_api import auth_api
-
-        logger.info(f"Auth API blueprint imported: {auth_api}")
-        if auth_api is not None:
-            app.register_blueprint(auth_api)
-            logger.info("Auth API routes registered successfully")
-        else:
-            logger.warning("Auth API blueprint is None - not registering routes")
-    except ImportError as e:
-        logger.warning(f"Could not import auth API routes: {e}")
+    # Legacy auth API routes (Supabase/NextAuth) removed in Phase 5 cleanup.
     
     # PostgreSQL-based authentication routes are now handled by app_factory_postgres_auth.py
     # No need to register them here to avoid duplicate registration

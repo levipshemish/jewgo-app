@@ -1,0 +1,79 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Logins (success)",
+      "targets": [
+        {"expr": "sum(increase(auth_logins_total{result=\"success\"}[5m]))", "legendFormat": "success"}
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Logins (failure)",
+      "targets": [
+        {"expr": "sum(increase(auth_logins_total{result=\"failure\"}[5m]))", "legendFormat": "failure"}
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Refresh (success)",
+      "targets": [
+        {"expr": "sum(increase(auth_refresh_total{result=\"success\"}[5m]))", "legendFormat": "success"}
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+    },
+    {
+      "type": "stat",
+      "title": "Refresh (reuse/failure)",
+      "targets": [
+        {"expr": "sum(increase(auth_refresh_total{result=\"reuse\"}[5m]))", "legendFormat": "reuse"},
+        {"expr": "sum(increase(auth_refresh_total{result=\"failure\"}[5m]))", "legendFormat": "failure"}
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "Refresh Latency",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(auth_refresh_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p50"},
+        {"expr": "histogram_quantile(0.95, sum(rate(auth_refresh_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
+        {"expr": "histogram_quantile(0.99, sum(rate(auth_refresh_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+    },
+    {
+      "type": "stat",
+      "title": "Guest Sessions",
+      "targets": [
+        {"expr": "sum(increase(auth_guest_total[5m]))", "legendFormat": "guests"}
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 4}
+    },
+    {
+      "type": "stat",
+      "title": "Logouts",
+      "targets": [
+        {"expr": "sum(increase(auth_logout_total{result=\"success\"}[5m]))", "legendFormat": "logouts"}
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 4}
+    },
+    {
+      "type": "timeseries",
+      "title": "OAuth Events",
+      "targets": [
+        {"expr": "sum by (step, result) (increase(auth_oauth_total[5m]))", "legendFormat": "{{step}}/{{result}}"}
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12}
+    }
+  ],
+  "schemaVersion": 38,
+  "title": "JewGo Auth",
+  "version": 1
+}
+

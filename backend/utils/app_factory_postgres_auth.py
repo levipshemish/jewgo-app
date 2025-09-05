@@ -10,6 +10,7 @@ from flask import Flask
 from utils.logging_config import get_logger
 from utils.postgres_auth import initialize_postgres_auth
 # from utils.error_handler import register_error_handlers  # Function not implemented yet
+from utils.metrics import register_metrics_endpoint
 
 logger = get_logger(__name__)
 
@@ -43,6 +44,12 @@ def register_postgres_auth(app: Flask):
         
         # Register enhanced error handlers
         register_auth_error_handlers(app)
+
+        # Optional Prometheus metrics endpoint
+        try:
+            register_metrics_endpoint(app)
+        except Exception as _e:
+            logger.info("Metrics endpoint not enabled or unavailable")
         
         logger.info("PostgreSQL authentication system registered successfully")
         
@@ -188,37 +195,10 @@ def init_postgres_auth_app(app: Flask):
         raise
 
 
-def migrate_from_supabase_decorator(app: Flask):
-    """
-    Add a decorator to gradually migrate from Supabase to PostgreSQL auth.
-    
-    This allows for a gradual migration by providing fallback functionality.
-    """
-    
-    def with_auth_fallback(postgres_func):
-        """Decorator to provide Supabase fallback during migration."""
-        def wrapper(*args, **kwargs):
-            try:
-                # Try PostgreSQL auth first
-                return postgres_func(*args, **kwargs)
-            except Exception as e:
-                logger.warning(f"PostgreSQL auth failed, checking for Supabase fallback: {e}")
-                
-                # Check if Supabase is still available
-                try:
-                    from utils.supabase_auth import supabase_auth
-                    # You could implement fallback logic here
-                    logger.info("Supabase auth available as fallback")
-                    # For now, re-raise the original error
-                    raise e
-                except ImportError:
-                    logger.info("Supabase auth not available, using PostgreSQL only")
-                    raise e
-        
-        return wrapper
-    
-    # Store the decorator in app config for use in routes
-    app.config['AUTH_FALLBACK_DECORATOR'] = with_auth_fallback
+"""
+Supabase migration decorator removed in Phase 5 cleanup.
+All auth is handled via PostgreSQL auth routes and managers.
+"""
 
 
 # Utility functions for app integration

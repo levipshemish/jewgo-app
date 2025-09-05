@@ -5,7 +5,7 @@ This module provides REST API endpoints for user authentication, registration,
 and account management using PostgreSQL instead of Supabase.
 """
 
-from flask import Blueprint, request, jsonify, current_app, make_response
+from flask import Blueprint, request, jsonify, current_app, make_response, redirect
 from werkzeug.exceptions import BadRequest
 from utils.logging_config import get_logger
 from utils.error_handler import ValidationError, AuthenticationError
@@ -18,6 +18,7 @@ import os
 # Auth helpers
 from services.auth.cookies import set_auth, clear_auth
 from services.auth.csrf import protect as csrf_protect, issue as csrf_issue
+from utils.metrics import inc_login, inc_refresh, inc_guest, observe_refresh_latency, inc_logout, inc_oauth
 try:
     from services.auth.recaptcha import verify_or_429 as verify_recaptcha_or_429
 except Exception:
@@ -50,12 +51,254 @@ def get_client_ip() -> str:
         return request.remote_addr
 
 
+def _build_google_redirect_uri() -> str:
+    """Compute redirect URI for Google OAuth callback based on request host or env."""
+    # Prefer explicit PUBLIC_URL if set
+    public_url = os.getenv('PUBLIC_BACKEND_URL') or os.getenv('BACKEND_URL')
+    if public_url:
+        base = public_url.rstrip('/')
+        return f"{base}/api/auth/oauth/google/callback"
+    # Fall back to request
+    scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
+    host = request.headers.get('X-Forwarded-Host') or request.host
+    return f"{scheme}://{host}/api/auth/oauth/google/callback"
+
+
+def _sign_state(payload: dict) -> str:
+    import jwt as _jwt
+    secret = os.getenv('JWT_SECRET_KEY') or os.getenv('JWT_SECRET') or 'dev_secret'
+    return _jwt.encode(payload, secret, algorithm='HS256')
+
+
+def _unsign_state(token: str) -> dict | None:
+    import jwt as _jwt
+    secret = os.getenv('JWT_SECRET_KEY') or os.getenv('JWT_SECRET') or 'dev_secret'
+    try:
+        return _jwt.decode(token, secret, algorithms=['HS256'])
+    except Exception:
+        return None
+
+
+# --- Google ID token verification via JWKS ---
+_GOOGLE_JWKS_CACHE: dict | None = None
+_GOOGLE_JWKS_TS: float | None = None
+
+
+def _get_google_jwks() -> dict | None:
+    """Fetch Google's JWKS with basic in-memory caching."""
+    import time
+    global _GOOGLE_JWKS_CACHE, _GOOGLE_JWKS_TS
+    # refresh every hour
+    if _GOOGLE_JWKS_CACHE and _GOOGLE_JWKS_TS and (time.time() - _GOOGLE_JWKS_TS) < 3600:
+        return _GOOGLE_JWKS_CACHE
+    try:
+        import requests as _requests
+        resp = _requests.get('https://www.googleapis.com/oauth2/v3/certs', timeout=5)
+        if resp.status_code == 200:
+            _GOOGLE_JWKS_CACHE = resp.json()
+            _GOOGLE_JWKS_TS = time.time()
+            return _GOOGLE_JWKS_CACHE
+        logger.warning(f"Failed to fetch Google JWKS: {resp.status_code}")
+    except Exception as e:
+        logger.error(f"Google JWKS fetch error: {e}")
+    return None
+
+
+def _verify_google_id_token(id_token: str, audience: str) -> dict | None:
+    import jwt as _jwt
+    from jwt import algorithms
+    import json as _json
+    try:
+        header = _jwt.get_unverified_header(id_token)
+        kid = header.get('kid')
+        if not kid:
+            return None
+        jwks = _get_google_jwks()
+        if not jwks:
+            return None
+        key = None
+        for jwk in jwks.get('keys', []):
+            if jwk.get('kid') == kid:
+                key = jwk
+                break
+        if not key:
+            return None
+        public_key = algorithms.RSAAlgorithm.from_jwk(_json.dumps(key))
+        claims = _jwt.decode(
+            id_token,
+            public_key,
+            algorithms=['RS256'],
+            audience=audience,
+            issuer=['https://accounts.google.com', 'accounts.google.com'],
+        )
+        return claims
+    except Exception as e:
+        logger.warning(f"Google id_token verification failed: {e}")
+        return None
+
+
 @auth_bp.route('/csrf', methods=['GET'])
 def csrf_token():
     """Issue a non-HttpOnly CSRF cookie and return the token in body."""
     resp = make_response(jsonify({}))
     token = csrf_issue(resp)
     return make_response(jsonify({"token": token}), 200)
+
+
+@auth_bp.route('/oauth/google/start', methods=['GET'])
+def oauth_google_start():
+    """Initiate Google OAuth with PKCE and return redirect URL or redirect directly."""
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    if not client_id:
+        return jsonify({'error': 'Google OAuth not configured'}), 501
+
+    import secrets, hashlib, base64, time
+    code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b'=').decode('ascii')
+    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).rstrip(b'=').decode('ascii')
+    state = _sign_state({'cv': code_verifier, 'ts': int(time.time()), 'nonce': secrets.token_hex(8)})
+
+    params = {
+        'client_id': client_id,
+        'redirect_uri': _build_google_redirect_uri(),
+        'response_type': 'code',
+        'scope': 'openid email profile',
+        'state': state,
+        'code_challenge': code_challenge,
+        'code_challenge_method': 'S256',
+        'access_type': 'offline',
+        'prompt': 'consent',
+    }
+    from urllib.parse import urlencode
+    url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+
+    if request.args.get('redirect') == 'true':
+        inc_oauth('start', 'success')
+        return redirect(url, code=302)
+    inc_oauth('start', 'success')
+    return jsonify({'url': url})
+
+
+@auth_bp.route('/oauth/google/callback', methods=['GET'])
+def oauth_google_callback():
+    """Handle Google OAuth callback, exchange code, upsert account, set cookies, redirect back."""
+    error = request.args.get('error')
+    if error:
+        return jsonify({'error': error}), 400
+    code = request.args.get('code')
+    state = request.args.get('state')
+    if not code or not state:
+        return jsonify({'error': 'Missing code or state'}), 400
+
+    st = _unsign_state(state)
+    if not st or 'cv' not in st:
+        return jsonify({'error': 'Invalid state'}), 400
+    code_verifier = st['cv']
+
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+    redirect_uri = _build_google_redirect_uri()
+
+    # Exchange code for tokens
+    import requests as _requests
+    data = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'code': code,
+        'code_verifier': code_verifier,
+        'grant_type': 'authorization_code',
+        'redirect_uri': redirect_uri,
+    }
+    try:
+        token_resp = _requests.post('https://oauth2.googleapis.com/token', data=data, timeout=10)
+        if token_resp.status_code != 200:
+            inc_oauth('callback', 'failure')
+            return jsonify({'error': 'Token exchange failed'}), 400
+        tok = token_resp.json()
+    except Exception as e:
+        logger.error(f"Google token exchange error: {e}")
+        inc_oauth('callback', 'failure')
+        return jsonify({'error': 'Token exchange error'}), 500
+
+    id_token = tok.get('id_token')
+    access_token = tok.get('access_token')
+    refresh_token = tok.get('refresh_token')
+    expires_in = tok.get('expires_in')
+    if not id_token:
+        return jsonify({'error': 'Missing id_token'}), 400
+
+    # Verify id_token via Google JWKS
+    claims = _verify_google_id_token(id_token, audience=client_id)
+    if not claims:
+        inc_oauth('callback', 'failure')
+        return jsonify({'error': 'Invalid id_token'}), 400
+
+    sub = claims.get('sub')
+    email = claims.get('email')
+    name = claims.get('name')
+    if not sub or not email:
+        inc_oauth('callback', 'failure')
+        return jsonify({'error': 'Insufficient profile'}), 400
+
+    # Upsert user + account
+    try:
+        from sqlalchemy import text
+        from utils.postgres_auth import get_postgres_auth as _get_auth
+        auth_manager = _get_auth()
+        dbm = auth_manager.db
+        with dbm.connection_manager.session_scope() as session:
+            # Ensure user exists
+            row = session.execute(text("SELECT id FROM users WHERE email = :e"), {"e": email}).fetchone()
+            if row:
+                user_id = row[0]
+            else:
+                user_id = __import__('secrets').token_hex(16)
+                session.execute(text("INSERT INTO users (id, name, email, email_verified) VALUES (:id, :n, :e, TRUE)"), {"id": user_id, "n": name, "e": email})
+                session.execute(text("INSERT INTO user_roles (user_id, role, level, granted_at, is_active) VALUES (:id, 'user', 1, NOW(), TRUE)"), {"id": user_id})
+            # Upsert account
+            session.execute(
+                text(
+                    """
+                    INSERT INTO accounts (id, userId, type, provider, providerAccountId, access_token, refresh_token, expires_at, token_type, scope, id_token, session_state)
+                    VALUES (:id, :uid, 'oauth', 'google', :paid, :at, :rt, :exp, :tt, :sc, :idt, NULL)
+                    ON CONFLICT (id) DO UPDATE SET access_token = EXCLUDED.access_token, refresh_token = EXCLUDED.refresh_token, expires_at = EXCLUDED.expires_at, id_token = EXCLUDED.id_token
+                    """
+                ),
+                {
+                    "id": f"google_{sub}",
+                    "uid": user_id,
+                    "paid": sub,
+                    "at": access_token,
+                    "rt": refresh_token,
+                    "exp": int(expires_in) if expires_in else None,
+                    "tt": tok.get('token_type'),
+                    "sc": tok.get('scope'),
+                    "idt": id_token,
+                },
+            )
+    except Exception as e:
+        logger.error(f"Account upsert error: {e}")
+        inc_oauth('callback', 'failure')
+        return jsonify({'error': 'Account upsert failed'}), 500
+
+    # Issue our cookies (session family)
+    try:
+        from services.auth import tokens as jwt_tokens
+        from services.auth import sessions as sess
+        roles = [{'role': 'user', 'level': 1}]  # For brevity; would query actual roles
+        fid = sess.new_family_id()
+        sid = sess.new_session_id()
+        rtok, rttl = jwt_tokens.mint_refresh(user_id, sid=sid, fid=fid, is_guest=False)
+        ua = request.headers.get('User-Agent')
+        sess.persist_initial(auth_manager.db, user_id=user_id, refresh_token=rtok, sid=sid, fid=fid, user_agent=ua, ip=get_client_ip(), ttl_seconds=rttl)
+        atok, attl = jwt_tokens.mint_access(user_id, email, roles, is_guest=False)
+        out = make_response(redirect(request.args.get('returnTo') or '/'))
+        set_auth(out, atok, rtok, attl)
+        inc_oauth('callback', 'success')
+        return out
+    except Exception as e:
+        logger.error(f"OAuth cookie issuance error: {e}")
+        inc_oauth('callback', 'failure')
+        return jsonify({'error': 'Login finalize failed'}), 500
 
 
 @auth_bp.route('/register', methods=['POST'])
@@ -146,6 +389,7 @@ def login():
         user_info = auth_manager.authenticate_user(email, password, client_ip)
         
         if not user_info:
+            inc_login('failure', 'password')
             return jsonify({'error': 'Invalid email or password'}), 401
         
         # Generate tokens with session family + rotation support
@@ -190,6 +434,7 @@ def login():
         set_auth(resp, tokens['access_token'], tokens['refresh_token'], int(tokens.get('expires_in', 3600)))
 
         logger.info(f"User login successful: {email}")
+        inc_login('success', 'password')
         return resp
         
     except Exception as e:
@@ -213,8 +458,11 @@ def refresh_token():
         
         # Validate refresh token and rotate session
         from services.auth import tokens as jwt_tokens
+        import time
+        start = time.perf_counter()
         payload = jwt_tokens.verify(refresh_token, expected_type='refresh')
         if not payload:
+            inc_refresh('failure')
             return jsonify({'error': 'Invalid or expired refresh token'}), 401
 
         auth_manager = get_postgres_auth()
@@ -232,6 +480,7 @@ def refresh_token():
                 ttl_seconds=int(os.getenv('REFRESH_TTL_SECONDS', str(45 * 24 * 3600))),
             )
             if rotate_res is None:
+                inc_refresh('reuse')
                 return jsonify({'error': 'Refresh reuse detected; session revoked'}), 401
             new_sid, new_refresh, new_refresh_ttl = rotate_res
 
@@ -276,6 +525,8 @@ def refresh_token():
         resp = make_response(jsonify(new_tokens), 200)
         set_auth(resp, new_tokens['access_token'], new_tokens['refresh_token'], int(new_tokens.get('expires_in', 3600)))
 
+        observe_refresh_latency(time.perf_counter() - start)
+        inc_refresh('success')
         logger.debug("Token refresh successful")
         return resp
         
@@ -434,7 +685,7 @@ def change_password():
         return jsonify({'error': 'Failed to change password'}), 500
 
 
-@auth_bp.route('/logout', methods=['POST'])
+@auth_bp.route('/logout', methods=['POST', 'GET'])
 @optional_auth  # Optional auth because logout should work even with invalid tokens
 @csrf_protect
 def logout():
@@ -465,9 +716,24 @@ def logout():
         except Exception as e:
             logger.debug(f"Logout family revoke skipped: {e}")
 
+        # Determine optional returnTo for redirect-after-logout (only allow safe relative paths)
+        return_to = request.args.get('returnTo')
+        is_safe_rel = isinstance(return_to, str) and return_to.startswith('/') and not return_to.startswith('//')
+
         resp = make_response(jsonify({'message': 'Logged out successfully'}), 200)
         clear_auth(resp)
 
+        # If safe returnTo present, redirect
+        if is_safe_rel:
+            redir = redirect(return_to, code=302)
+            # carry cookie clearing headers from resp to redirect response
+            for k, v in resp.headers.items():
+                if k.lower() == 'set-cookie':
+                    redir.headers.add(k, v)
+            inc_logout('success')
+            return redir
+
+        inc_logout('success')
         return resp
         
     except Exception as e:
@@ -735,6 +1001,7 @@ def guest_login():
         # Use helper to set cookies
         set_auth(resp, tokens['access_token'], tokens['refresh_token'], int(tokens.get('expires_in', 3600)))
 
+        inc_guest('created')
         return resp
     except Exception as e:
         logger.error(f"Guest login error: {e}")

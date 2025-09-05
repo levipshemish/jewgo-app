@@ -120,8 +120,6 @@ class ConfigManager:
                 "external_services": {
                     "google_places_api_key": os.getenv("GOOGLE_PLACES_API_KEY"),
                     "google_maps_api_key": os.getenv("GOOGLE_MAPS_API_KEY"),
-                    "supabase_url": os.getenv("SUPABASE_URL"),
-                    "supabase_key": os.getenv("SUPABASE_KEY"),
                 },
                 # Feature flags
                 "features": {
@@ -328,12 +326,7 @@ class ConfigManager:
         # Check required security configuration
         security_config = self.get_security_config()
         # Legacy admin auth check removed - feature has been deprecated
-        # Check required external services
-        ext_config = self.get_external_services_config()
-        if not ext_config.get("supabase_url"):
-            errors.append("SUPABASE_URL is required")
-        if not ext_config.get("supabase_key"):
-            errors.append("SUPABASE_KEY is required")
+        # Check required external services (Supabase validation removed)
         return errors
 
 

@@ -18,43 +18,22 @@ export async function POST(request: NextRequest) {
   const baseHeaders = getCORSHeaders(origin || undefined);
 
   try {
-    // Get JWT token from Authorization header or cookies
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.split(' ')[1]
-      : (request.cookies.get('access_token')?.value || request.cookies.get('auth_access_token')?.value);
-
-    if (!token) {
-      return NextResponse.json({ error: 'NO_TOKEN' }, { status: 401, headers: baseHeaders });
-    }
-
-    // Call backend logout endpoint
+    // Redirect the browser to backend logout so HttpOnly cookies on that domain are cleared
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
-    const logoutResponse = await fetch(`${backendUrl}/api/auth/logout`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!logoutResponse.ok) {
-      console.error('Backend logout failed:', logoutResponse.status);
-      // Continue with local logout even if backend fails
-    }
-
-    // Clear local cookies
-    const cookieStore = await cookies();
-    // Clear new cookie names
-    cookieStore.set('access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
-    cookieStore.set('refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
-    cookieStore.set('access_expires_at', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
-    // Clear legacy cookie names for backward compatibility
-    cookieStore.set('auth_access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
-    cookieStore.set('auth_refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
-    cookieStore.set('auth_expires_at', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
-
-    return NextResponse.json({ ok: true }, { status: 200, headers: baseHeaders });
+    const url = new URL(request.url);
+    const returnTo = url.searchParams.get('returnTo') || '/';
+    const backendLogoutUrl = `${backendUrl}/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
+    const redirect = NextResponse.redirect(backendLogoutUrl, 302);
+    // Best effort: also clear any same-site cookies that may be set on this domain
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set('access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+      cookieStore.set('refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+      cookieStore.set('auth_access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+      cookieStore.set('auth_refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
+    } catch {}
+    Object.entries(baseHeaders).forEach(([k, v]) => redirect.headers.set(k, v));
+    return redirect;
 
   } catch (error) {
     console.error('Sign out error:', error);

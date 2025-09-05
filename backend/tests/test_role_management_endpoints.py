@@ -17,7 +17,7 @@ def make_client(monkeypatch, role='super_admin', authed=True):
             return None
         return { 'id': 'admin-1', 'email': 'admin@example.com', 'role': role, 'adminRole': role }
 
-    monkeypatch.setattr(api_v4, 'get_current_supabase_user', get_user, raising=False)
+    monkeypatch.setattr(api_v4, 'get_current_user', get_user, raising=False)
 
     from backend.app_factory_full import create_app
     app, socketio = create_app()  # Unpack the tuple
@@ -115,4 +115,3 @@ def test_get_available_roles(monkeypatch):
     assert resp.status_code == 200
     data = resp.get_json()
     assert 'data' in data and isinstance(data['data'], list)
-

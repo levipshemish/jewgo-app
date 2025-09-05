@@ -227,7 +227,7 @@ class TestRoleManagement:
     def test_prevent_last_super_admin_revocation(self, client):
         """Ensure revoking the last super_admin returns 409."""
         # Patch auth to bypass and set current user as super_admin
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-1',
                 'role': 'super_admin'
@@ -524,7 +524,7 @@ class TestRoleManagement:
 
     def test_assign_role_endpoint_insufficient_permissions(self, client):
         """Test role assignment with insufficient permissions."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-123',
                 'role': 'moderator'  # Not super_admin
@@ -543,7 +543,7 @@ class TestRoleManagement:
 
     def test_assign_role_endpoint_invalid_payload(self, client):
         """Test role assignment with invalid payload."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-123',
                 'role': 'super_admin'
@@ -560,7 +560,7 @@ class TestRoleManagement:
 
     def test_assign_role_endpoint_conflict(self, client):
         """Test role assignment with conflict (user already has role)."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-123',
                 'role': 'super_admin'
@@ -588,7 +588,7 @@ class TestRoleManagement:
 
     def test_revoke_role_endpoint_success(self, client):
         """Test successful role revocation via Flask endpoint."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-123',
                 'role': 'super_admin'
@@ -613,7 +613,7 @@ class TestRoleManagement:
 
     def test_revoke_role_endpoint_self_revocation(self, client):
         """Test self-revocation of super_admin role."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-123',
                 'role': 'super_admin'
@@ -632,7 +632,7 @@ class TestRoleManagement:
 
     def test_list_roles_endpoint_success(self, client):
         """Test successful role listing via Flask endpoint."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-123',
                 'role': 'super_admin'
@@ -668,7 +668,7 @@ class TestRoleManagement:
 
     def test_available_roles_endpoint_success(self, client):
         """Test successful available roles endpoint."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+        with patch('backend.routes.api_v4.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id': 'admin-123',
                 'role': 'super_admin'

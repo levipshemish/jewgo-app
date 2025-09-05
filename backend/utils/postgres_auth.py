@@ -602,8 +602,7 @@ class PostgresAuthManager:
                         UPDATE users SET 
                             email_verified = TRUE,
                             verification_token = NULL,
-                            verification_expires = NULL,
-                            updated_at = NOW()
+                            verification_expires = NULL
                         WHERE id = :user_id
                     """),
                     {'user_id': user_id}
