@@ -220,9 +220,6 @@ def _load_dependencies():
         )
         from utils.security import (
             require_admin_auth,
-            require_ip_restriction,
-            require_scraper_auth,
-            validate_request_data,
         )
         # Try to import v4 components
         v4_deps = {}
@@ -241,10 +238,7 @@ def _load_dependencies():
             "ErrorHandler": ErrorHandler,
             "APIResponse": APIResponse,
             "security": {
-                "require_ip_restriction": require_ip_restriction,
-                "require_scraper_auth": require_scraper_auth,
                 "require_admin_auth": require_admin_auth,
-                "validate_request_data": validate_request_data,
             },
             "feature_flags": {
                 "feature_flag_manager": feature_flag_manager,
@@ -276,13 +270,11 @@ def create_app(config_class=None):
     # Import required decorators early to avoid NameError
     try:
         from utils.feature_flags import require_feature_flag
-        from utils.security import log_request, require_admin_auth, require_scraper_auth
+        from utils.security import require_admin_auth
     except ImportError as e:
         logger.warning(f"Could not import decorators: {e}")
         # Fallback decorators
         require_admin_auth = lambda f: f
-        require_scraper_auth = lambda f: f
-        log_request = lambda f: f
         require_feature_flag = lambda flag, default=True: lambda f: f
     # Create Flask app
     app = Flask(__name__)
