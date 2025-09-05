@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { CategoryTabs } from '@/components/navigation/ui';
+import ShulBottomNavigation from '@/components/shuls/ShulBottomNavigation';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -772,8 +773,8 @@ function ShtelPageContent() {
       <div style={responsiveStyles.container}>
         <Header />
         
-        {/* Navigation Tabs - Always visible */}
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+        {/* Navigation Block - Sticky below header */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
         
@@ -817,7 +818,8 @@ function ShtelPageContent() {
           onShowFilters={handleShowFilters}
         />
 
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+        {/* Navigation Block - Sticky below header */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
@@ -882,44 +884,26 @@ function ShtelPageContent() {
           </p>
         </div>
       ) : (
-        <div 
-          className="restaurant-grid"
-          role="grid"
-          aria-label="Shtel community listings"
-          style={{ 
-            contain: 'layout style paint',
-            willChange: 'auto',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden',
-            perspective: '1000px'
-          }}
-        >
-          {sortedListings.map((listing, index) => (
-            <div 
-              key={listing.id} 
-              className="w-full" 
-              role="gridcell"
-              style={{
-                contain: 'layout style paint',
-                willChange: 'auto',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden'
-              }}
-            >
-              <UnifiedCard
-                data={{
-                  ...transformListingToCardData(listing),
-                  imageUrl: transformListingToCardData(listing).imageUrl || undefined,
-                }}
-                variant="default"
-                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
-                onCardClick={() => router.push(`/shtel/product/${listing.id}`)}
-                className="w-full h-full"
-                showStarInBadge={true}
-                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
-              />
-            </div>
-          ))}
+        <div className="px-4 py-4">
+          {/* Grid Layout - Exactly matching EateryGrid and ShulGrid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {sortedListings.map((listing, index) => (
+              <div key={`shtel-${listing.id}-${index}`}>
+                <UnifiedCard
+                  data={{
+                    ...transformListingToCardData(listing),
+                    imageUrl: transformListingToCardData(listing).imageUrl || undefined,
+                  }}
+                  variant="default"
+                  priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
+                  onCardClick={() => router.push(`/shtel/product/${listing.id}`)}
+                  className="w-full h-full"
+                  showStarInBadge={true}
+                  isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -955,8 +939,8 @@ function ShtelPageContent() {
         </div>
       )}
 
-      {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation size="compact" showLabels="active-only" />
+      {/* Bottom Navigation - Fixed at bottom */}
+      <ShulBottomNavigation />
 
       {/* Shtetl Filters */}
       <ShtelFilters

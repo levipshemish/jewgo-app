@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRateLimit, rateLimitConfigs } from '@/lib/rate-limiting';
-import { createSuccessResponse, createErrorResponse } from '@/lib/api-response';
+import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
+import { createSuccessResponse } from '@/lib';
 import { getBackendUrl } from '@/lib';
 
 // Ensure Node.js runtime for admin auth

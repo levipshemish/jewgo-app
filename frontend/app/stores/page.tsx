@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, Suspense, useCallback, useRef, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { CategoryTabs } from '@/components/navigation/ui';
+import ShulBottomNavigation from '@/components/shuls/ShulBottomNavigation';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -603,8 +604,8 @@ function StoresPageContent() {
           onShowFilters={() => setShowFilters(!showFilters)}
         />
         
-        {/* Navigation Tabs - Always visible */}
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+        {/* Navigation Block - Sticky below header */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs activeTab="stores" />
         </div>
         
@@ -648,7 +649,8 @@ function StoresPageContent() {
           onShowFilters={() => setShowFilters(!showFilters)}
         />
         
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+        {/* Navigation Block - Sticky below header */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs activeTab="stores" />
         </div>
         
@@ -678,41 +680,23 @@ function StoresPageContent() {
           </p>
         </div>
       ) : (
-        <div 
-          className="restaurant-grid px-4 sm:px-6 lg:px-8"
-          role="grid"
-          aria-label="Store listings"
-          style={{ 
-            contain: 'layout style paint',
-            willChange: 'auto',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden',
-            perspective: '1000px'
-          }}
-        >
-          {stores.map((store, index) => (
-            <div 
-              key={store.id} 
-              className="w-full" 
-              role="gridcell"
-              style={{
-                contain: 'layout style paint',
-                willChange: 'auto',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden'
-              }}
-            >
-              <UnifiedCard
-                data={transformStoreToCardData(store)}
-                variant="default"
-                showStarInBadge={true}
-                priority={index < 4} // Always prioritize first 4 images for LCP optimization
-                onCardClick={() => router.push(`/store/${store.id}`)}
-                className="w-full h-full"
-                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
-              />
-            </div>
-          ))}
+        <div className="px-4 py-4">
+          {/* Grid Layout - Exactly matching EateryGrid and ShulGrid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {stores.map((store, index) => (
+              <div key={`store-${store.id}-${index}`}>
+                <UnifiedCard
+                  data={transformStoreToCardData(store)}
+                  variant="default"
+                  showStarInBadge={true}
+                  priority={index < 4} // Always prioritize first 4 images for LCP optimization
+                  onCardClick={() => router.push(`/stores/${store.id}`)}
+                  className="w-full h-full"
+                  isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -743,8 +727,8 @@ function StoresPageContent() {
 
 
 
-      {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation size="compact" showLabels="active-only" />
+      {/* Bottom Navigation - Fixed at bottom */}
+      <ShulBottomNavigation />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup

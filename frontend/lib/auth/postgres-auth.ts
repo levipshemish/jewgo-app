@@ -56,18 +56,14 @@ class PostgresAuthError extends Error {
 
 class PostgresAuthClient {
   private baseUrl: string;
+  // Deprecated in cookie-mode. Kept for compatibility but unused.
   public accessToken: string | null = null;
   private refreshToken: string | null = null;
+  private csrfToken: string | null = null;
 
   constructor() {
     // Use environment variable or default to backend URL
     this.baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
-    
-    // Load tokens from localStorage on initialization
-    if (typeof window !== 'undefined') {
-      this.accessToken = localStorage.getItem('auth_access_token');
-      this.refreshToken = localStorage.getItem('auth_refresh_token');
-    }
   }
 
   public async request(
@@ -80,10 +76,7 @@ class PostgresAuthClient {
       'Content-Type': 'application/json',
     };
 
-    // Add authorization header if we have an access token
-    if (this.accessToken) {
-      defaultHeaders.Authorization = `Bearer ${this.accessToken}`;
-    }
+    // Cookie-mode: do not attach Authorization; rely on HttpOnly cookies
 
     const config: RequestInit = {
       ...options,
@@ -91,7 +84,21 @@ class PostgresAuthClient {
         ...defaultHeaders,
         ...options.headers,
       },
+      // Always include credentials so HttpOnly cookies are sent
+      credentials: 'include',
     };
+
+    // Inject CSRF token for mutating requests (double-submit)
+    const method = (config.method || 'GET').toString().toUpperCase();
+    const unsafe = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+    if (unsafe) {
+      if (!this.csrfToken) {
+        try { await this.getCsrf(); } catch { /* ignore in dev */ }
+      }
+      if (this.csrfToken) {
+        (config.headers as Record<string, string>)['X-CSRF-Token'] = this.csrfToken;
+      }
+    }
 
     try {
       const response = await fetch(url, config);
@@ -120,6 +127,19 @@ class PostgresAuthClient {
     }
   }
 
+  /**
+   * Fetch and cache CSRF token (and set CSRF cookie via backend)
+   */
+  public async getCsrf(): Promise<string> {
+    const resp = await fetch(`${this.baseUrl}/api/auth/csrf`, { credentials: 'include', cache: 'no-store' });
+    const data = await resp.json();
+    if (resp.ok && data?.token) {
+      this.csrfToken = data.token as string;
+      return this.csrfToken;
+    }
+    throw new PostgresAuthError('Failed to obtain CSRF token');
+  }
+
   private async handleResponse<T>(response: Response): Promise<T> {
     const data = await response.json();
 
@@ -135,28 +155,14 @@ class PostgresAuthClient {
   }
 
   private saveTokens(tokens: AuthTokens): void {
-    if (typeof window === 'undefined') return;
-
-    this.accessToken = tokens.access_token;
-    this.refreshToken = tokens.refresh_token;
-
-    localStorage.setItem('auth_access_token', tokens.access_token);
-    localStorage.setItem('auth_refresh_token', tokens.refresh_token);
-
-    // Set token expiration reminder
-    const expiresAt = Date.now() + (tokens.expires_in * 1000);
-    localStorage.setItem('auth_expires_at', expiresAt.toString());
+    // Deprecated: tokens are set as HttpOnly cookies by backend
+    this.accessToken = null;
+    this.refreshToken = null;
   }
 
   private clearTokens(): void {
-    if (typeof window === 'undefined') return;
-
     this.accessToken = null;
     this.refreshToken = null;
-
-    localStorage.removeItem('auth_access_token');
-    localStorage.removeItem('auth_refresh_token');
-    localStorage.removeItem('auth_expires_at');
   }
 
   /**
@@ -174,14 +180,16 @@ class PostgresAuthClient {
   /**
    * Log in with email and password
    */
-  async login(data: LoginData): Promise<AuthResponse> {
+  async login(data: LoginData & { recaptcha_token?: string }): Promise<AuthResponse> {
+    // Ensure CSRF cookie present
+    try { await this.getCsrf(); } catch {}
     const response = await this.request('/login', {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
     const result: AuthResponse = await this.handleResponse(response);
-    this.saveTokens(result.tokens);
+    // Tokens are set as cookies; nothing to persist client-side
     return result;
   }
 
@@ -190,6 +198,7 @@ class PostgresAuthClient {
    */
   async logout(): Promise<void> {
     try {
+      try { await this.getCsrf(); } catch {}
       // Call logout endpoint (for audit logging)
       await this.request('/logout', {
         method: 'POST',
@@ -206,10 +215,6 @@ class PostgresAuthClient {
    * Get current user profile
    */
   async getProfile(): Promise<AuthUser> {
-    if (!this.accessToken) {
-      throw new PostgresAuthError('No access token available', 'NOT_AUTHENTICATED', 401);
-    }
-
     const response = await this.request('/profile');
     const result = await this.handleResponse<{ user: AuthUser }>(response);
     return result.user;
@@ -219,10 +224,7 @@ class PostgresAuthClient {
    * Update user profile
    */
   async updateProfile(data: { name: string }): Promise<void> {
-    if (!this.accessToken) {
-      throw new PostgresAuthError('No access token available', 'NOT_AUTHENTICATED', 401);
-    }
-
+    try { await this.getCsrf(); } catch {}
     const response = await this.request('/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -235,10 +237,7 @@ class PostgresAuthClient {
    * Update user data
    */
   async updateUser(data: { full_name?: string; [key: string]: any }): Promise<void> {
-    if (!this.accessToken) {
-      throw new PostgresAuthError('No access token available', 'NOT_AUTHENTICATED', 401);
-    }
-
+    try { await this.getCsrf(); } catch {}
     const response = await this.request('/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -251,10 +250,7 @@ class PostgresAuthClient {
    * Change user password
    */
   async changePassword(data: { current_password: string; new_password: string }): Promise<void> {
-    if (!this.accessToken) {
-      throw new PostgresAuthError('No access token available', 'NOT_AUTHENTICATED', 401);
-    }
-
+    try { await this.getCsrf(); } catch {}
     const response = await this.request('/change-password', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -279,17 +275,15 @@ class PostgresAuthClient {
    * Refresh access token using refresh token
    */
   async refreshAccessToken(): Promise<AuthTokens> {
-    if (!this.refreshToken) {
-      throw new PostgresAuthError('No refresh token available', 'NOT_AUTHENTICATED', 401);
-    }
-
+    try { await this.getCsrf(); } catch {}
     const response = await this.request('/refresh', {
       method: 'POST',
-      body: JSON.stringify({ refresh_token: this.refreshToken }),
+      // Body retains param for backward compatibility (server prefers cookie)
+      body: JSON.stringify({}),
     });
 
     const tokens: AuthTokens = await this.handleResponse(response);
-    this.saveTokens(tokens);
+    // Tokens are cookie-based
     return tokens;
   }
 
@@ -297,26 +291,16 @@ class PostgresAuthClient {
    * Check if user is currently authenticated
    */
   isAuthenticated(): boolean {
-    if (typeof window === 'undefined') return false;
-    
-    const token = localStorage.getItem('auth_access_token');
-    const expiresAt = localStorage.getItem('auth_expires_at');
-    
-    if (!token || !expiresAt) return false;
-    
-    // Check if token is expired (with 5 minute buffer)
-    const now = Date.now();
-    const expiry = parseInt(expiresAt);
-    const buffer = 5 * 60 * 1000; // 5 minutes in milliseconds
-    
-    return now < (expiry - buffer);
+    // Deprecated in cookie-mode: use middleware guard or call /api/auth/me server-side
+    return false;
   }
 
   /**
    * Get current access token
    */
   getAccessToken(): string | null {
-    return this.accessToken;
+    // Deprecated with cookie-mode; no direct token access
+    return null;
   }
 
   /**
@@ -386,12 +370,8 @@ class PostgresAuthClient {
    */
   async signOut(): Promise<void> {
     try {
-      // Call the backend logout endpoint if we have a token
-      if (this.accessToken) {
-        await this.request('/logout', {
-          method: 'POST',
-        });
-      }
+      try { await this.getCsrf(); } catch {}
+      await this.request('/logout', { method: 'POST' });
     } catch (error) {
       // Even if the backend call fails, we should clear local tokens
       console.warn('Backend logout failed, but clearing local tokens:', error);
@@ -420,12 +400,23 @@ class PostgresAuthClient {
    * Request password reset
    */
   async requestPasswordReset(email: string): Promise<void> {
+    try { await this.getCsrf(); } catch {}
     const response = await this.request('/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
 
     await this.handleResponse(response);
+  }
+
+  /**
+   * Continue as Guest
+   */
+  async guestLogin(): Promise<AuthResponse> {
+    try { await this.getCsrf(); } catch {}
+    const response = await this.request('/guest', { method: 'POST' });
+    const result: AuthResponse = await this.handleResponse(response);
+    return result;
   }
 }
 

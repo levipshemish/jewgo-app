@@ -28,36 +28,19 @@ export default function ShtełProductPage() {
   const fetchListing = async (id: string) => {
     try {
       setLoading(true);
-      // For now, return a sample listing
-      // In production, this would call: /api/shtel-listings/${id}
-      
-      const sampleListing: MarketplaceListing = {
-        id,
-        kind: 'regular',
-        txn_type: 'sale',
-        title: 'Mezuzah Case - Sterling Silver',
-        description: 'Beautiful handcrafted sterling silver mezuzah case. Kosher scroll included from Rabbi Goldstein. Perfect for any Jewish home.',
-        price_cents: 12000,
-        currency: 'USD',
-        condition: 'new',
-        category_id: 1,
-        category_name: 'Judaica',
-        city: 'Miami Beach',
-        region: 'FL',
-        country: 'US',
-        seller_name: 'Sarah Cohen',
-        endorse_up: 15,
-        endorse_down: 0,
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        images: ['/images/default-restaurant.webp'],
-        thumbnail: '/images/default-restaurant.webp'
-      };
+      setError(null);
 
-      setListing(sampleListing);
+      const response = await fetch(`/api/shtel-listings/${id}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch listing details');
+      }
+
+      const data = await response.json();
+      setListing(data.data);
     } catch (err) {
-      setError('Failed to load listing');
+      setError(err instanceof Error ? err.message : 'Failed to load listing');
       console.error('Error fetching listing:', err);
     } finally {
       setLoading(false);

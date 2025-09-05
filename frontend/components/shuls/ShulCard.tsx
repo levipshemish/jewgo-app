@@ -109,6 +109,7 @@ export default function ShulCard({
     <div className="w-full" role="gridcell">
       <UnifiedCard
         data={cardData}
+        variant="default"
         showStarInBadge={true}
         onCardClick={handleCardClick}
         priority={false}

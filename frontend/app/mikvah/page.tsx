@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransi
 import { appLogger } from '@/lib/utils/logger';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { CategoryTabs } from '@/components/navigation/ui';
+import ShulBottomNavigation from '@/components/shuls/ShulBottomNavigation';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -74,133 +75,44 @@ interface Mikvah {
   listing_type?: string;
 }
 
-// Mock API function for mikvah - will be replaced with actual API
-const fetchMikvah = async (limit: number, _params?: string, timeoutMs: number = 5000) => {
-  // Simulate network delay for testing timeout functionality
-  if (timeoutMs) {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000)); // Random delay up to 1s
-  }
+// Real API function for mikvah
+const fetchMikvah = async (limit: number, params?: string, timeoutMs: number = 5000) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   
-  // For now, return mock data
-  const mockMikvah: Mikvah[] = [
-    {
-      id: 1,
-      name: "Community Mikvah Center",
-      description: "Beautiful and well-maintained mikvah facility for the community",
-      city: "Miami",
-      mikvah_type: "women's",
-      mikvah_category: "community",
-      rating: 4.8,
-      reviewcount: 203,
-      distance: "1.2 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: true,
-      appointment_phone: "305-555-0123",
-      walk_in_available: false,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: true,
-      has_soap_provided: true,
-      has_hair_dryers: true,
-      has_parking: true,
-      rabbinical_supervision: "Rabbi Cohen",
-      kosher_certification: "OU",
-      fee_amount: 25.00,
-      accepts_cash: true,
-      accepts_checks: true,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 2,
-      name: "Private Mikvah Suite",
-      description: "Luxury private mikvah with premium amenities",
-      city: "Miami",
-      mikvah_type: "women's",
-      mikvah_category: "private",
-      rating: 4.9,
-      reviewcount: 156,
-      distance: "2.8 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: true,
-      appointment_phone: "305-555-0456",
-      walk_in_available: false,
-      advance_booking_days: 7,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: true,
-      has_soap_provided: true,
-      has_hair_dryers: true,
-      has_private_entrance: true,
-      has_parking: true,
-      rabbinical_supervision: "Rabbi Goldstein",
-      kosher_certification: "OU",
-      fee_amount: 50.00,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 3,
-      name: "Hotel Mikvah",
-      description: "Convenient mikvah located within the hotel complex",
-      city: "Miami",
-      mikvah_type: "women's",
-      mikvah_category: "hotel",
-      rating: 4.3,
-      reviewcount: 89,
-      distance: "3.5 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: false,
-      walk_in_available: true,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: false,
-      has_soap_provided: false,
-      has_hair_dryers: true,
-      has_parking: true,
-      rabbinical_supervision: "Hotel Rabbi",
-      kosher_certification: "OU",
-      fee_amount: 35.00,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
-    },
-    {
-      id: 4,
-      name: "Men's Mikvah",
-      description: "Traditional men's mikvah for daily use",
-      city: "Miami",
-      mikvah_type: "men's",
-      mikvah_category: "community",
-      rating: 4.5,
-      reviewcount: 67,
-      distance: "1.8 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: false,
-      walk_in_available: true,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: false,
-      has_soap_provided: false,
-      has_parking: false,
-      rabbinical_supervision: "Rabbi Schwartz",
-      kosher_certification: "OU",
-      fee_amount: 15.00,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
-    }
-  ];
+  try {
+    const queryString = params ? `?${params}` : '';
+    const response = await fetch(`/api/mikvah${queryString}`, {
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  return {
-    mikvah: mockMikvah,
-    total: mockMikvah.length,
-    page: 1,
-    limit
-  };
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      mikvah: data.data || [],
+      total: data.total || 0,
+      page: data.page || 1,
+      limit: data.limit || limit
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - please check your connection');
+      }
+      throw error;
+    }
+    throw new Error('Failed to fetch mikvah facilities');
+  }
 };
 
 // Loading component for Suspense fallback
@@ -608,8 +520,8 @@ function MikvahPageContent() {
           onShowFilters={() => setShowFilters(!showFilters)}
         />
         
-        {/* Navigation Tabs - Always visible */}
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+        {/* Navigation Block - Sticky below header */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs activeTab="mikvah" />
         </div>
         
@@ -653,7 +565,8 @@ function MikvahPageContent() {
           onShowFilters={() => setShowFilters(!showFilters)}
         />
         
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+        {/* Navigation Block - Sticky below header */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs activeTab="mikvah" />
         </div>
         
@@ -683,41 +596,23 @@ function MikvahPageContent() {
           </p>
         </div>
       ) : (
-        <div 
-          className="restaurant-grid px-4 sm:px-6 lg:px-8"
-          role="grid"
-          aria-label="Mikvah facility listings"
-          style={{ 
-            contain: 'layout style paint',
-            willChange: 'auto',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden',
-            perspective: '1000px'
-          }}
-        >
-          {mikvah.map((mikvahFacility, index) => (
-            <div 
-              key={mikvahFacility.id} 
-              className="w-full" 
-              role="gridcell"
-              style={{
-                contain: 'layout style paint',
-                willChange: 'auto',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden'
-              }}
-            >
-              <UnifiedCard
-                data={transformMikvahToCardData(mikvahFacility)}
-                variant="default"
-                showStarInBadge={true}
-                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
-                onCardClick={() => router.push(`/mikvah/${mikvahFacility.id}`)}
-                className="w-full h-full"
-                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
-              />
-            </div>
-          ))}
+        <div className="px-4 py-4">
+          {/* Grid Layout - Exactly matching EateryGrid and ShulGrid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {mikvah.map((mikvahFacility, index) => (
+              <div key={`mikvah-${mikvahFacility.id}-${index}`}>
+                <UnifiedCard
+                  data={transformMikvahToCardData(mikvahFacility)}
+                  variant="default"
+                  showStarInBadge={true}
+                  priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
+                  onCardClick={() => router.push(`/mikvah/${mikvahFacility.id}`)}
+                  className="w-full h-full"
+                  isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -748,8 +643,8 @@ function MikvahPageContent() {
 
 
 
-      {/* Bottom navigation - visible on all screen sizes */}
-      <BottomNavigation size="compact" showLabels="active-only" />
+      {/* Bottom Navigation - Fixed at bottom */}
+      <ShulBottomNavigation />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup

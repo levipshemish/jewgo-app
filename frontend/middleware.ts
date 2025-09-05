@@ -39,25 +39,16 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
     
-    // Get JWT token from Authorization header or cookies
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.split(' ')[1]
-      : (request.cookies.get('access_token')?.value || request.cookies.get('auth_access_token')?.value);
-
-    if (!token) {
+    // Check presence of access_token cookie only (cookie-mode)
+    const tokenCookie = request.cookies.get('access_token')?.value || request.cookies.get('auth_access_token')?.value;
+    if (!tokenCookie) {
       return handleUnauthenticatedUser(request, isApi);
     }
 
     // Verify JWT token with backend
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
-      const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, { credentials: 'include' });
 
       if (!verifyResponse.ok) {
         return handleUnauthenticatedUser(request, isApi);
@@ -186,4 +177,3 @@ function _isAnonymousAllowedPath(_pathname: string): boolean {
   // This helper is intentionally unused in middleware runtime but kept for future extension
   return false;
 }
-

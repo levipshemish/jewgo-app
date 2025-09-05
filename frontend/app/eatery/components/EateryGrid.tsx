@@ -467,6 +467,7 @@ export default function EateryGrid({
                   city: restaurant.address,
                   imageTag: restaurant.kosher_category || '',
                 }}
+                variant="default"
                 showStarInBadge={true}
                 onCardClick={() => handleCardClick(restaurant)}
                 priority={false}
