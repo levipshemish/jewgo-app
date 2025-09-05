@@ -92,7 +92,7 @@ export function ListingActions({
     : null;
 
   // Only show distance if we have valid user location and restaurant location
-  const _shouldShowDistance = userLocation && location && distance && 
+  const shouldShowDistance = userLocation && location && distance && 
     typeof userLocation.latitude === 'number' && 
     typeof userLocation.longitude === 'number' &&
     typeof location.latitude === 'number' && 
@@ -102,7 +102,6 @@ export function ListingActions({
     <>
       <div className="p-0">
         <Stack gap={3}>
-
 
           {/* Address Section - Always show */}
           {address && (
@@ -116,6 +115,33 @@ export function ListingActions({
                 <MapPin className="w-4 h-4" />
                 {address}
               </Button>
+            </div>
+          )}
+
+          {/* Location/Distance Section */}
+          {location && (
+            <div className="text-center">
+              {shouldShowDistance ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAddressClick}
+                  className="flex items-center justify-center gap-2 text-sm text-blue-600 font-medium h-auto p-0 hover:bg-blue-50 hover:text-blue-700 transition-colors group mx-auto rounded-full px-2 py-1"
+                >
+                  <MapPin className="w-4 h-4" />
+                  {distance} away
+                </Button>
+              ) : _onLocationRequest ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={_onLocationRequest}
+                  className="flex items-center justify-center gap-2 text-sm text-gray-600 font-medium h-auto p-0 hover:bg-gray-50 hover:text-gray-700 transition-colors group mx-auto rounded-full px-2 py-1 border border-gray-200"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Get Location
+                </Button>
+              ) : null}
             </div>
           )}
 

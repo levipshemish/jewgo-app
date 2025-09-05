@@ -168,6 +168,6 @@ export function formatPriceRange(priceRange?: string): string {
  * Format rating for display
  */
 export function formatRating(rating?: number): string {
-  if (!rating) return "No rating"
-  return `${rating.toFixed(1)}`
+  if (rating === undefined || rating === null) return "No rating"
+  return rating.toFixed(1)
 }

@@ -74,7 +74,8 @@ function formatPriceRange(priceRange?: string): string {
 }
 
 function formatRating(rating?: number): string {
-  return rating ? rating.toString() : 'No rating'
+  if (rating === undefined || rating === null) return 'No rating'
+  return rating.toFixed(1)
 }
 
 /**
@@ -87,7 +88,6 @@ export function mapEateryToListingData(
   onLocationRequest?: () => void,
   locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
 ): ListingData {
-  
   
   const result = {
     // Header Section - Remove title from header, only show kosher info and stats
@@ -108,9 +108,26 @@ export function mapEateryToListingData(
 
     // Image Section
     image: {
-      src: eatery.images?.[0] || eatery.image_url || '/images/default-restaurant.jpg',
+      src: (() => {
+        // Use the same fallback system as UnifiedRestaurantCard
+        const { getFallbackImageUrl } = require('@/lib/utils/imageFallback');
+        const primaryImage = eatery.images?.[0] || eatery.image_url;
+        return getFallbackImageUrl(primaryImage, eatery.kosher_type, { enableLogging: process.env.NODE_ENV === 'development' });
+      })(),
       alt: `${eatery.name} - ${eatery.kosher_type || 'Kosher'} Restaurant`,
-      allImages: eatery.images || eatery.additional_images || [eatery.image_url].filter(Boolean),
+      allImages: (() => {
+        // Process all images with fallback handling
+        const { getFallbackImageUrl } = require('@/lib/utils/imageFallback');
+        const allImages = [
+          ...(eatery.images || []),
+          ...(eatery.additional_images || []),
+          eatery.image_url
+        ].filter(Boolean);
+        
+        return allImages.map(img => 
+          getFallbackImageUrl(img, eatery.kosher_type, { enableLogging: process.env.NODE_ENV === 'development' })
+        );
+      })(),
       onAction: () => {
         // This will trigger the gallery view in ListingImage component
         console.log('View gallery clicked for:', eatery.name)
@@ -142,7 +159,7 @@ export function mapEateryToListingData(
           return eatery.zip_code || ""
         }
       })(),
-      rightIcon: "map-pin",
+      rightIcon: undefined, // Remove map icon from rating line
       onRightAction: onLocationRequest,
       leftBold: true,
       leftTextSize: 'lg',
@@ -220,10 +237,17 @@ export function mapEateryToListingData(
             ? JSON.parse(eatery.google_reviews) 
             : eatery.google_reviews
           
-          if (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)) {
-            googleReviews = googleReviewsData.reviews.map((review: any) => ({
+          // Handle both array format and nested reviews format
+          const reviewsArray = Array.isArray(googleReviewsData) 
+            ? googleReviewsData 
+            : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews) 
+                ? googleReviewsData.reviews 
+                : [])
+          
+          if (reviewsArray.length > 0) {
+            googleReviews = reviewsArray.map((review: any) => ({
               id: review.google_review_id?.toString() || Math.random().toString(),
-              user: review.author_name || 'Anonymous',
+              user: review.author_name || review.author || 'Anonymous',
               rating: review.rating || 0,
               comment: review.text || '',
               date: review.time ? new Date(review.time * 1000).toISOString() : new Date().toISOString(),

@@ -67,7 +67,11 @@ export function ImageCarouselPopup({
               className="max-h-full max-w-full object-contain"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
-                target.src = "/placeholder.svg?height=400&width=400"
+                if (target.src !== "/images/default-restaurant.webp") {
+                  console.log(`🖼️ Carousel image failed to load, using fallback:`, target.src);
+                  target.src = "/images/default-restaurant.webp";
+                  target.onerror = null; // Prevent infinite loops
+                }
               }}
             />
 
@@ -114,7 +118,10 @@ export function ImageCarouselPopup({
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement
-                        target.src = "/placeholder.svg?height=64&width=64"
+                        if (target.src !== "/images/default-restaurant.webp") {
+                          target.src = "/images/default-restaurant.webp";
+                          target.onerror = null; // Prevent infinite loops
+                        }
                       }}
                     />
                   </button>

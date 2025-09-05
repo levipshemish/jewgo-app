@@ -254,8 +254,14 @@ function EateryIdPageContent() {
         // Extract restaurant data from the response
         let restaurantData = null
         if (detailData.success && detailData.data) {
-          // Handle nested data structure
-          restaurantData = detailData.data.restaurant || detailData.data
+          // Handle nested data structure - check for double nesting
+          if (detailData.data.success && detailData.data.data && detailData.data.data.restaurant) {
+            restaurantData = detailData.data.data.restaurant
+          } else if (detailData.data.restaurant) {
+            restaurantData = detailData.data.restaurant
+          } else if (detailData.data.id) {
+            restaurantData = detailData.data
+          }
         } else if (detailData.id) {
           // Direct restaurant object
           restaurantData = detailData
@@ -272,8 +278,8 @@ function EateryIdPageContent() {
         const eateryData: EateryDB = {
           id: restaurantData.id?.toString(),
           name: restaurantData.name,
-          description: restaurantData.description || '',
-          short_description: restaurantData.short_description || '',
+          description: restaurantData.description || restaurantData.short_description || '',
+          short_description: restaurantData.short_description || restaurantData.description || '',
           address: (() => {
             // Construct full address from components
             const addressParts = [
@@ -289,7 +295,7 @@ function EateryIdPageContent() {
           zip_code: restaurantData.zip_code || '',
           phone_number: restaurantData.phone_number || '',
           listing_type: restaurantData.listing_type || 'restaurant',
-          rating: restaurantData.google_rating || 0,
+          rating: restaurantData.google_rating ?? restaurantData.rating ?? restaurantData.star_rating ?? restaurantData.quality_rating ?? 0,
           price_range: restaurantData.price_range || '$',
           kosher_type: restaurantData.kosher_category || '',
           kosher_agency: restaurantData.certifying_agency || '',
@@ -301,13 +307,22 @@ function EateryIdPageContent() {
             return certifications.join(', ') || restaurantData.kosher_certification || ''
           })(),
           images: (() => {
-            // Combine all available image sources
+            // Combine all available image sources with proper fallback handling
+            const { getFallbackImageUrl } = require('@/lib/utils/imageFallback');
             const allImages = [
               ...(restaurantData.images || []),
               ...(restaurantData.business_images || []),
               restaurantData.image_url
-            ].filter(Boolean)
-            return allImages.length > 0 ? allImages : ['/modern-product-showcase-with-clean-background.png']
+            ].filter(Boolean);
+            
+            if (allImages.length === 0) {
+              return ['/images/default-restaurant.webp'];
+            }
+            
+            // Process each image with fallback handling
+            return allImages.map(img => 
+              getFallbackImageUrl(img, restaurantData.kosher_category, { enableLogging: process.env.NODE_ENV === 'development' })
+            );
           })(),
           hours: (() => {
             console.log('Processing hours data...')
@@ -327,9 +342,9 @@ function EateryIdPageContent() {
             }
           })(),
           contact: {
-            phone: restaurantData.phone_number || '',
+            phone: restaurantData.phone_number || restaurantData.owner_phone || '',
             email: restaurantData.business_email || restaurantData.owner_email || '',
-            website: restaurantData.website || '',
+            website: restaurantData.website || restaurantData.google_listing_url || '',
           },
           location: {
             latitude: restaurantData.latitude || 0,
@@ -465,12 +480,16 @@ function EateryIdPageContent() {
   // Render eatery details
   if (eatery) {
     try {
-      const finalListingData = mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus)
+      const finalListingData = mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
       
       
       // Add pagination and load more props
       const listingDataWithPagination = {
         ...finalListingData,
+        userLocation: userLocation ? {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        } : undefined,
         reviewsPagination,
         onLoadMoreReviews: handleLoadMoreReviews,
         reviewsLoading

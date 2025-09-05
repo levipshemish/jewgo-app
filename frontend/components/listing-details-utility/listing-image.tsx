@@ -45,17 +45,34 @@ export function ListingImage({
     }
   }
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    if (target.src !== '/images/default-restaurant.webp') {
+      console.log(`🖼️ Image failed to load, using fallback:`, target.src);
+      target.src = '/images/default-restaurant.webp';
+      target.onerror = null; // Prevent infinite loops
+    }
+  };
+
   return (
     <div className={`relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden ${className}`}>
       {src ? (
-        <Image src={src || "/placeholder.svg"} alt={alt} fill className="object-cover rounded-3xl" />
+        <Image 
+          src={src || "/images/default-restaurant.webp"} 
+          alt={alt} 
+          fill 
+          className="object-cover rounded-3xl"
+          onError={handleImageError}
+          priority={false}
+        />
       ) : (
         <div className="relative h-full rounded-3xl overflow-hidden">
           <Image
-            src="/modern-product-showcase-with-clean-background.png"
-            alt="Mock product image"
+            src="/images/default-restaurant.webp"
+            alt="Default restaurant image"
             fill
             className="object-cover rounded-3xl"
+            onError={handleImageError}
           />
         </div>
       )}
