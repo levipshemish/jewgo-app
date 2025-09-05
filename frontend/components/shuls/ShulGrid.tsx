@@ -292,7 +292,7 @@ export default function ShulGrid({
     }
     
     loadInitialItems()
-  }, [category, searchQuery, useRealData]) // Remove forceMockData dependency to prevent circular dependency
+  }, [category, searchQuery, useRealData, backendError, buildSearchParams, fetchShuls, loading, retryCount]) // Include all dependencies
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
@@ -316,7 +316,7 @@ export default function ShulGrid({
   const transformRealShul = useCallback((shul: RealShul) => {
     // Enhanced rating logic with better fallbacks
     const rating = shul.rating || shul.star_rating || shul.google_rating
-    const ratingText = rating && typeof rating === 'number' ? rating.toFixed(1) : undefined
+    const _ratingText = rating && typeof rating === 'number' ? rating.toFixed(1) : undefined // TODO: Use rating text
     
     // Distance logic — compute from user location if available; fall back to API string
     let distanceText = ''
@@ -337,14 +337,14 @@ export default function ShulGrid({
     }
     
     // Shul type as subtitle - use denomination if shul_type is not available
-    const shulType = (shul.shul_type && typeof shul.shul_type === 'string' && shul.shul_type.trim() !== '') 
+    const _shulType = (shul.shul_type && typeof shul.shul_type === 'string' && shul.shul_type.trim() !== '') 
       ? shul.shul_type 
-      : (shul.denomination && typeof shul.denomination === 'string' && shul.denomination.trim() !== '' ? shul.denomination : '')
+      : (shul.denomination && typeof shul.denomination === 'string' && shul.denomination.trim() !== '' ? shul.denomination : '') // TODO: Use shul type
     
     // Create a meaningful description
     const denomination = shul.denomination && typeof shul.denomination === 'string' ? shul.denomination : 'Jewish'
     const city = shul.city && typeof shul.city === 'string' ? shul.city : 'Florida'
-    const description = shul.description && typeof shul.description === 'string' ? shul.description : `${denomination} synagogue in ${city}`
+    const _description = shul.description && typeof shul.description === 'string' ? shul.description : `${denomination} synagogue in ${city}` // TODO: Use description
     
     return {
       id: String(shul.id),

@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+// import { cookies } from 'next/headers'; // TODO: Implement anonymous auth
 
 import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
 import { validateCSRFServer, isPostgresAuthConfigured } from '@/lib/utils/auth-utils.server';

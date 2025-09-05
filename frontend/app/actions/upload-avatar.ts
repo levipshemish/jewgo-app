@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { v4 as uuidv4 } from "uuid";
+// import { v4 as uuidv4 } from "uuid"; // TODO: Implement avatar upload functionality
 
 // PostgreSQL auth - using backend API instead of Supabase
 import { appLogger } from '@/lib/utils/logger';

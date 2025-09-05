@@ -52,9 +52,9 @@ class Config:
     PERMANENT_SESSION_LIFETIME = 3600  # 1 hour
     # CORS Configuration
     CORS_ORIGINS = (
-        os.environ.get("CORS_ORIGINS", "*").split(",")
+        os.environ.get("CORS_ORIGINS", "").split(",")
         if os.environ.get("CORS_ORIGINS")
-        else ["*"]
+        else []
     )
     CORS_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     CORS_ALLOW_HEADERS = [
@@ -91,7 +91,7 @@ class DevelopmentConfig(Config):
 
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "postgresql://username:password@localhost:5432/jewgo_db"
-    CORS_ORIGINS = ["*"]
+    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 
 class ProductionConfig(Config):
@@ -102,9 +102,9 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
     # Production CORS origins
     CORS_ORIGINS = (
-        os.environ.get("CORS_ORIGINS", "*").split(",")
+        os.environ.get("CORS_ORIGINS", "").split(",")
         if os.environ.get("CORS_ORIGINS")
-        else ["*"]
+        else []
     )
     # Enhanced security for production
     SESSION_COOKIE_SECURE = True

@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
-import { useEffect, useState, Suspense, useCallback } from "react";
+import { useEffect, useState, Suspense } from "react";
+// import { useCallback } from "react"; // TODO: Implement callback functionality
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,7 +13,7 @@ function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, _setIsLoading] = useState(false); // TODO: Implement loading state
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isEmailSigningIn, setIsEmailSigningIn] = useState(false);
   const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
@@ -87,7 +88,7 @@ function SignInForm() {
     
     try {
       // Execute reCAPTCHA v3 for 'login' action if site key is present and properly configured
-      let recaptchaToken = null;
+      let _recaptchaToken = null; // TODO: Use recaptcha token
       if (isRecaptchaReady && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
         appLogger.info('Executing reCAPTCHA v3 for login action');
         
@@ -113,7 +114,7 @@ function SignInForm() {
           
           if (finalToken) {
             appLogger.info('reCAPTCHA token obtained successfully');
-            recaptchaToken = finalToken;
+            _recaptchaToken = finalToken;
           } else {
             appLogger.warn('reCAPTCHA token was empty');
           }
@@ -135,9 +136,9 @@ function SignInForm() {
         router.push(redirectTo);
       }
       
-    } catch (error) {
-      appLogger.error('Sign in failed', { error: String(error) });
-      setError(error instanceof Error ? error.message : 'Sign in failed');
+    } catch (signinError) {
+      appLogger.error('Sign in failed', { error: String(signinError) });
+      setError(signinError instanceof Error ? signinError.message : 'Sign in failed');
     } finally {
       setIsEmailSigningIn(false);
     }
@@ -169,8 +170,8 @@ function SignInForm() {
       setError('Magic link sign-in not supported in PostgreSQL auth system');
       setMagicStatus(null);
       
-    } catch (error) {
-      appLogger.error('Magic link sign-in failed', { error: String(error) });
+    } catch (magicError) {
+      appLogger.error('Magic link sign-in failed', { error: String(magicError) });
       setError('Failed to send magic link');
       setMagicStatus(null);
     }

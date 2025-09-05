@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse} from 'next/server';
 // PostgreSQL auth - using backend API instead of Supabase
-import { cookies} from 'next/headers';
-import { generateCorrelationId, scrubPII} from '@/lib/utils/auth-utils';
-import { errorResponses, createSuccessResponse } from '@/lib';
+// import { cookies} from 'next/headers'; // TODO: Implement cookie handling
+import { generateCorrelationId } from '@/lib/utils/auth-utils';
+// import { scrubPII} from '@/lib/utils/auth-utils'; // TODO: Implement PII scrubbing
+import { errorResponses } from '@/lib';
+// import { createSuccessResponse } from '@/lib'; // TODO: Implement success response
 
 // export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
-  const correlationId = generateCorrelationId();
+  const _correlationId = generateCorrelationId(); // TODO: Use correlation ID
   
   try {
     // Verify this is a cron job request

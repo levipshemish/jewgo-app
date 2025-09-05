@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission } from '@/lib/server/admin-utils';
-import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
+// import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants'; // TODO: Implement admin permissions
 // PostgreSQL auth - using backend API instead of Supabase
 import { adminLogger } from '@/lib/admin/logger';
 import { errorResponses } from '@/lib';

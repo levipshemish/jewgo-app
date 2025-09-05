@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isPostgresAuthConfigured } from '@/lib/utils/auth-utils-client';
-import type { TransformedUser } from '@/lib/types/postgres-auth';
-import { ROLE_PERMISSIONS, normalizeAdminRole, type Permission } from '@/lib/constants/permissions';
-import { validatePermissions } from '@/lib/server/security';
+// import type { TransformedUser } from '@/lib/types/postgres-auth'; // TODO: Implement user transforms
+// import { ROLE_PERMISSIONS, normalizeAdminRole, type Permission } from '@/lib/constants/permissions'; // TODO: Implement admin constants
+// import { validatePermissions } from '@/lib/server/security'; // TODO: Implement permission validation
 
 export async function GET(_request: NextRequest) {
   try {

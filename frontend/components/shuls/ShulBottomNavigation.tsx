@@ -77,7 +77,7 @@ export default function ShulBottomNavigation({
 
   const activeIndex = React.useMemo(() => {
     const i = MENU.findIndex(m =>
-      m.href === "/" ? activePath === "/" : activePath === m.href || activePath.startsWith(m.href + "/")
+      m.href === "/" ? activePath === "/" : activePath === m.href || activePath.startsWith(`${m.href}/`)
     );
     return i >= 0 ? i : -1; // Return -1 if no match found
   }, [activePath]);

@@ -1,7 +1,7 @@
 import 'server-only';
 // PostgreSQL auth - using backend API instead of Supabase
 import { 
-  transformSupabaseUser, 
+  // transformSupabaseUser, // TODO: Implement user transforms 
   isSupabaseConfigured,
   type TransformedUser,
   isAdminUser,

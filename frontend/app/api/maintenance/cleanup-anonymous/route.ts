@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 // PostgreSQL auth - using backend API instead of Supabase
-import { cookies } from 'next/headers';
+// import { cookies } from 'next/headers'; // TODO: Implement cookie handling
 import { errorResponses } from '@/lib';
 import { 
   generateCorrelationId
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
-  const correlationId = generateCorrelationId();
+  const _correlationId = generateCorrelationId(); // TODO: Use correlation ID
   
   try {
     // Verify this is an admin request
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { dryRun = false, maxAge = 30 } = body;
+    const { dryRun: _dryRun = false, maxAge: _maxAge = 30 } = body; // TODO: Use dry run and max age settings
 
     // PostgreSQL auth - anonymous cleanup not implemented yet
     return NextResponse.json(

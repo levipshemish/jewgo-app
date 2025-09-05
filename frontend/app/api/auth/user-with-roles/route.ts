@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // and a filtered, deduplicated Permission[] list.
     // Normalization performed here removes the need for client-side normalization.
 
-    let authWarning: string | null = null;
+    const authWarning: string | null = null;
 
     // Check if PostgreSQL authentication is configured
     if (!isPostgresAuthConfigured()) {

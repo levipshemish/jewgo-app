@@ -53,10 +53,10 @@ export default function EateryPageClient() {
     userLocation,
     permissionStatus,
     isLoading: locationLoading,
-    error: locationError,
+    error: _locationError, // TODO: Implement location error handling
     requestLocation,
     checkPermissionStatus,
-    refreshPermissionStatus,
+    refreshPermissionStatus: _refreshPermissionStatus, // TODO: Implement permission refresh
   } = useLocation();
 
   // Location prompt popup state
@@ -92,7 +92,7 @@ export default function EateryPageClient() {
 
   // FIXED: Freeze itemsPerPage once set to prevent pagination desync
   useEffect(() => {
-    if (fixedItemsPerPage == null && itemsPerPage) {
+    if (fixedItemsPerPage === null && itemsPerPage) {
       setFixedItemsPerPage(itemsPerPage);
     }
   }, [itemsPerPage, fixedItemsPerPage]);
@@ -118,7 +118,7 @@ export default function EateryPageClient() {
       // FIXED: Proper array parameter handling for filters
       if (activeFilters) {
         for (const [key, value] of Object.entries(activeFilters)) {
-          if (value == null) continue;
+          if (value === null) continue;
           if (typeof value === 'string' && !value.trim()) continue;
           if (Array.isArray(value)) {
             if (value.length === 0) continue;

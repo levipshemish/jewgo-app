@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
       params.append('offset', offset.toString());
 
       // Get backend URL
-      let backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || process.env['BACKEND_URL'] || 'https://api.jewgo.app';
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || process.env['BACKEND_URL'] || 'https://api.jewgo.app';
 
       // Fetch feedback from backend with admin JWT
       const backendResponse = await fetch(

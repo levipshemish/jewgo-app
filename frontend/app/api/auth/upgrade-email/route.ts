@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 // PostgreSQL auth - using backend API instead of Supabase
-import { cookies } from 'next/headers';
+// import { cookies } from 'next/headers'; // TODO: Implement cookie handling
 import { 
   checkRateLimit
 } from '@/lib/rate-limiting';
 import { 
   generateCorrelationId,
-  scrubPII
+  // scrubPII // TODO: Implement PII scrubbing
 } from '@/lib/utils/auth-utils';
-import { errorResponses, createSuccessResponse } from '@/lib';
+// import { errorResponses } from '@/lib'; // TODO: Implement error responses
+// import { createSuccessResponse } from '@/lib'; // TODO: Implement success response
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
-  const correlationId = generateCorrelationId();
+  const _correlationId = generateCorrelationId(); // TODO: Use correlation ID
   
   try {
     // Check rate limiting

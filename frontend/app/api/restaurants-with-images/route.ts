@@ -102,7 +102,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   // Declare these variables outside try block so they're accessible in catch
-  let backendUrl = '';
+  const backendUrl = '';
   let apiUrl = '';
   
   try {
@@ -234,17 +234,17 @@ export async function GET(request: NextRequest) {
     
     // Call the backend API (normalize URL and default to production API)
     const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
-    let backendUrl = raw && raw.trim().length > 0
+    let finalBackendUrl = raw && raw.trim().length > 0
       ? raw.replace(/\/+$/, '')
       : getBackendUrl();
     
     // Ensure the backend URL has a protocol
-    if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
-      backendUrl = `https://${backendUrl}`;
+    if (finalBackendUrl && !finalBackendUrl.startsWith('http://') && !finalBackendUrl.startsWith('https://')) {
+      finalBackendUrl = `https://${finalBackendUrl}`;
     }
     
     // Use v4 backend route prefix
-    apiUrl = `${backendUrl}/api/v4/restaurants?${queryParams.toString()}`;
+    apiUrl = `${finalBackendUrl}/api/v4/restaurants?${queryParams.toString()}`;
     
     // Configurable timeout to avoid long hangs in dev; faster fallback improves UX
     const timeoutEnv = process.env.NEXT_PUBLIC_BACKEND_TIMEOUT_MS;

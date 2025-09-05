@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       
       if (isSSLError || isNetworkError) {
         // Return fallback response for SSL/network issues
-        const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
+        const _currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit); // TODO: Use offset in response
         const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
         
         const payload = {

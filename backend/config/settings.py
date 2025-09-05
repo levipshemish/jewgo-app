@@ -194,7 +194,7 @@ RESTAURANT_CONFIG = {
 # Development Configuration
 if DEBUG:
     # Override settings for development
-    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "*"]
+    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
     LOGGING_CONFIG["handlers"]["console"]["level"] = "DEBUG"
     FEATURE_FLAGS["debug_mode"] = True
 # Production Configuration

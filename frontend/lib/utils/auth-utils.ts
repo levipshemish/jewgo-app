@@ -25,11 +25,11 @@ interface User {
  */
 
 // PostgreSQL authentication client - no longer using Supabase
-let postgresAuthClient: any = null;
+let _postgresAuthClient: any = null; // TODO: Use postgres auth client
 if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
   // Only import PostgreSQL auth client in Node.js runtime
   const { postgresAuth } = require('@/lib/auth/postgres-auth');
-  postgresAuthClient = postgresAuth;
+  _postgresAuthClient = postgresAuth;
 }
 
 // Re-export client-safe functions and types from auth-utils-client

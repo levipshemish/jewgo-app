@@ -73,7 +73,7 @@ export async function requireAdminUser(): Promise<AuthUser> {
 /**
  * Check if current user has specific permission
  */
-export async function hasUserPermission(permission: string): Promise<boolean> {
+export async function hasUserPermission(_permission: string): Promise<boolean> { // TODO: Implement permission checking
   try {
     const user = await getSessionUser();
     if (!user) return false;

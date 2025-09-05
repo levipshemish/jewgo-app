@@ -3,8 +3,8 @@ import { useIntersectionObserver } from '@/lib/hooks/useIntersectionObserver';
 import {
   IS_MIN_REMAINING_VIEWPORT_MULTIPLIER,
   IS_STARVATION_MS,
-  IS_MAX_CONSEC_AUTOLOADS,
-  IS_USER_SCROLL_DELTA_PX,
+  // IS_MAX_CONSEC_AUTOLOADS, // TODO: Implement max consecutive autoloads
+  // IS_USER_SCROLL_DELTA_PX, // TODO: Implement user scroll delta
 } from '@/lib/config/infiniteScroll.constants';
 
 export type LoadMoreArgs = { signal: AbortSignal; offset: number; limit: number };
@@ -23,7 +23,7 @@ export type UseInfiniteScrollOpts = {
 };
 
 export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts) {
-  const { limit, initialOffset = 0, reinitOnPageShow, onAttempt, onSuccess, onAbort, onFailure, isBot } = opts;
+  const { limit, initialOffset = 0, reinitOnPageShow, onAttempt: _onAttempt, onSuccess, onAbort, onFailure, isBot: _isBot } = opts; // TODO: Implement attempt and bot detection
 
   // Debug logging - only in development
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -37,7 +37,7 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
   const epochRef = useRef(0);
   const inFlightRef = useRef<boolean>(false);
   const controllerRef = useRef<AbortController | null>(null);
-  const lastAppendAtRef = useRef<number>(performance.now());
+  const _lastAppendAtRef = useRef<number>(performance.now()); // TODO: Implement append timing tracking
   const consecAutoLoadsRef = useRef(0);
   const lastScrollYRef = useRef<number>(0);
   const starvationTimerRef = useRef<number | null>(null);
@@ -64,7 +64,7 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
     }, IS_STARVATION_MS);
   };
 
-  const canRequestAnother = () => {
+  const canRequestAnother = useCallback(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return false;
     
     // Don't request more if we're already at the bottom
@@ -123,7 +123,7 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
     }
     
     return shouldRequest;
-  };
+  }, [isDevelopment, offset]);
 
   const request = useCallback(async (source: string) => {
     if (!canRequestAnother()) return;
@@ -179,7 +179,7 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
     } finally {
       inFlightRef.current = false;
     }
-  }, [canRequestAnother, loadMore, limit, offset, hasMore, onSuccess, onFailure, onAbort, consecutiveFailures]);
+  }, [canRequestAnother, loadMore, limit, offset, hasMore, onSuccess, onFailure, onAbort, consecutiveFailures, isDevelopment]);
 
   const { setTarget } = useIntersectionObserver(
     () => {
@@ -204,10 +204,11 @@ export function useInfiniteScroll(loadMore: LoadFn, opts: UseInfiniteScrollOpts)
 
   // Cleanup effect to prevent memory leaks and excessive requests
   useEffect(() => {
+    const controller = controllerRef.current;
     return () => {
       // Abort any pending requests on unmount
-      if (controllerRef.current) {
-        controllerRef.current.abort('component-unmount');
+      if (controller) {
+        controller.abort('component-unmount');
       }
       // Clear any pending timeouts
       clearStarvation();

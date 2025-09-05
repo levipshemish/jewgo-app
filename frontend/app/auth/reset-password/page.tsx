@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -46,9 +46,9 @@ export default function ResetPasswordPage() {
         router.push('/auth/signin');
       }, 3000);
       
-    } catch (error) {
+            } catch (resetError) {
       setError("Failed to reset password. Please try again.");
-      console.error('Password reset error:', error);
+      console.error('Password reset error:', resetError);
     } finally {
       setIsLoading(false);
     }
@@ -133,5 +133,13 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { validateRedirectUrl, isPrivateRelayEmail } from '@/lib/utils/auth-utils';
+// import { cookies } from 'next/headers'; // TODO: Implement cookie handling
+import { validateRedirectUrl } from '@/lib/utils/auth-utils';
+// import { isPrivateRelayEmail } from '@/lib/utils/auth-utils'; // TODO: Implement email validation
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

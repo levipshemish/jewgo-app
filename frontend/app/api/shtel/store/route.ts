@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendUrl } from '@/lib';
+// import { getBackendUrl } from '@/lib'; // TODO: Implement backend URL
 // PostgreSQL auth - using backend API instead of Supabase
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * @param request - NextRequest object
  * @returns JSON response with store data
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // PostgreSQL auth - shtel store not implemented yet
     return NextResponse.json(

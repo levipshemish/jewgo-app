@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse} from 'next/server';
+// import { 
+//   checkRateLimit} from '@/lib/rate-limiting'; // TODO: Implement rate limiting
 import { 
-  checkRateLimit} from '@/lib/rate-limiting';
-import { 
-  validateTrustedIP, generateCorrelationId} from '@/lib/utils/auth-utils';
-import { validateCSRFServer, hashIPForPrivacy} from '@/lib/utils/auth-utils.server';
+  generateCorrelationId} from '@/lib/utils/auth-utils';
+// import { 
+//   validateTrustedIP} from '@/lib/utils/auth-utils'; // TODO: Implement IP validation
+// import { validateCSRFServer, hashIPForPrivacy} from '@/lib/utils/auth-utils.server'; // TODO: Implement security features
 import { 
   ALLOWED_ORIGINS, getCORSHeaders} from '@/lib/config/environment';
 import { initializeServer} from '@/lib/server-init';

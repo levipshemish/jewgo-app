@@ -148,7 +148,7 @@ function EateryNamePageContent() {
   const [error, setError] = useState<string | null>(null)
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null)
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown')
-  const [locationError, setLocationError] = useState<string | null>(null)
+  const [_locationError, setLocationError] = useState<string | null>(null) // TODO: Implement location error handling
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewsPagination, setReviewsPagination] = useState<any>(null)
@@ -494,9 +494,9 @@ function EateryNamePageContent() {
           if (permission.state === 'granted' && !userLocation) {
             handleLocationRequest();
           }
-        } catch (error) {
+        } catch (locationError) {
           // Silently handle permission setup errors
-          console.error('Error setting up location permissions:', error);
+          console.error('Error setting up location permissions:', locationError);
         }
       }
     };
@@ -517,7 +517,7 @@ function EateryNamePageContent() {
   // Note: getUserLocation function was removed, location is handled by handleLocationRequest
 
   // Map eatery data to listing format
-  const listingData = eatery ? mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission) : undefined
+  const _listingData = eatery ? mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission) : undefined // TODO: Use listing data
 
   // Render loading state
   if (loading) {

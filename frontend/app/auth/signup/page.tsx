@@ -2,7 +2,8 @@
 
 import { appLogger } from '@/lib/utils/logger';
 import Link from "next/link";
-import { FormEvent, useState, Suspense, useEffect } from "react";
+import { FormEvent, useState, Suspense } from "react";
+// import { useEffect } from "react"; // TODO: Implement useEffect functionality
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
@@ -16,7 +17,7 @@ function SignUpFormWithParams() {
   return <SignUpForm redirectTo={next} />;
 }
 
-function SignUpForm({ redirectTo }: { redirectTo: string }) {
+function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -69,7 +70,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
     
     try {
       // Register with PostgreSQL auth
-      const result = await postgresAuth.register({
+      const _result = await postgresAuth.register({ // TODO: Use registration result
         email,
         password,
         name: name || undefined

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendUrl } from '@/lib';
+// import { getBackendUrl } from '@/lib'; // TODO: Implement backend URL
 // PostgreSQL auth - using backend API instead of Supabase
 
 export const dynamic = 'force-dynamic';
