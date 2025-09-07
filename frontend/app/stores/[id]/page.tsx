@@ -58,10 +58,10 @@ function StoreDetailContent() {
   // Use the new location utility system
   const {
     userLocation,
-    permissionStatus,
-    isLoading: locationLoading,
-    error: locationError,
-    requestLocation
+    permissionStatus: _permissionStatus,
+    isLoading: _locationLoading,
+    error: _locationError,
+    requestLocation: _requestLocation
   } = useLocationData({
     fallbackText: 'Get Location'
   })
@@ -132,7 +132,7 @@ function StoreDetailContent() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Store Not Found</h2>
-        <p className="text-gray-600 text-center mb-6">The store you're looking for doesn't exist.</p>
+        <p className="text-gray-600 text-center mb-6">The store you&apos;re looking for doesn&apos;t exist.</p>
         <button
           onClick={() => router.push('/stores')}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -148,7 +148,7 @@ function StoreDetailContent() {
   if (store.business_hours) {
     try {
       parsedHours = JSON.parse(store.business_hours);
-    } catch (e) {
+    } catch (_e) {
       // If parsing fails, use the raw string
       parsedHours = store.business_hours;
     }

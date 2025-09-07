@@ -191,7 +191,7 @@ class PostgresAuthClient {
     return data as T;
   }
 
-  private saveTokens(tokens: AuthTokens): void {
+  private saveTokens(_tokens: AuthTokens): void {
     // Deprecated: tokens are set as HttpOnly cookies by backend
     this.accessToken = null;
     this.refreshToken = null;
@@ -452,6 +452,19 @@ class PostgresAuthClient {
   async guestLogin(): Promise<AuthResponse> {
     try { await this.getCsrf(); } catch {}
     const response = await this.request('/guest', { method: 'POST' });
+    const result: AuthResponse = await this.handleResponse(response);
+    return result;
+  }
+
+  /**
+   * Upgrade current guest session to an email/password account
+   */
+  async upgradeGuest(data: { email: string; password: string; name?: string }): Promise<AuthResponse> {
+    try { await this.getCsrf(); } catch {}
+    const response = await this.request('/upgrade-email', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
     const result: AuthResponse = await this.handleResponse(response);
     return result;
   }

@@ -38,9 +38,9 @@ export default function EateryGridWithLocation({
   showDistance: _showDistance = true,
   showRating: _showRating = true,
   showServices: _showServices = true,
-  scrollContainerRef,
+  scrollContainerRef: _scrollContainerRef,
   useRealData = true,
-  activeFilters = {},
+  activeFilters: _activeFilters = {},
   onCardClick
 }: EateryGridWithLocationProps) {
   const [restaurants, setRestaurants] = useState<EateryWithLocation[]>([]);
@@ -56,7 +56,7 @@ export default function EateryGridWithLocation({
     permissionStatus,
     isLoading: locationLoading,
     error: locationError,
-    requestLocation,
+    requestLocation: _requestLocation,
     transformItems,
     sortItems,
     getItemDisplayText
@@ -79,7 +79,7 @@ export default function EateryGridWithLocation({
   // Fetch restaurants from API
   const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
-      const apiUrl = new URL('/api/restaurants-with-filters', window.location.origin);
+      const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
       apiUrl.searchParams.set('limit', limit.toString());
       apiUrl.searchParams.set('offset', offset.toString());
 

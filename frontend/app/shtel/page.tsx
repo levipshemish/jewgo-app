@@ -10,7 +10,7 @@ import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
-import { generateMockShtetl, type MockShtetl } from "@/lib/mockData/shtetl"
+import { generateMockShtetl, type MockShtetl as _MockShtetl } from "@/lib/mockData/shtetl"
 import LocationAwarePage from "@/components/LocationAwarePage"
 
 // Shtetl listing type
@@ -84,11 +84,11 @@ const fetchShtetlListings = async (limit: number, params?: string, timeoutMs: nu
 
 function ShtelPageContent() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [showDistance] = useState(true)
-  const [showRating] = useState(true)
-  const [showServices] = useState(true)
+  const [_showDistance] = useState(true)
+  const [_showRating] = useState(true)
+  const [_showServices] = useState(true)
   const [activeTab, setActiveTab] = useState<string>("shtetl")
-  const [showFilters, setShowFilters] = useState(false)
+  const [_showFilters, setShowFilters] = useState(false)
   const [listings, setListings] = useState<ShtetlListing[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -99,10 +99,10 @@ function ShtelPageContent() {
   
   // Use the new location data hook
   const {
-    userLocation,
-    isLoading: locationLoading,
-    requestLocation,
-    getItemDisplayText
+    userLocation: _userLocation,
+    isLoading: _locationLoading,
+    requestLocation: _requestLocation,
+    getItemDisplayText: _getItemDisplayText
   } = useLocationData({
     fallbackText: 'Get Location'
   })

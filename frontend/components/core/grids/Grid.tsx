@@ -90,9 +90,9 @@ interface RealShul {
 export default function Grid({ 
   category = "all", 
   searchQuery = "",
-  showDistance = true, 
-  showRating = true, 
-  showServices = true,
+  showDistance: _showDistance = true, 
+  showRating: _showRating = true, 
+  showServices: _showServices = true,
   scrollContainerRef,
   userLocation,
   useRealData = false,
@@ -111,7 +111,7 @@ export default function Grid({
   const fetchItems = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
       // Build API URL with parameters based on data type
-      const endpoint = dataType === 'shuls' ? '/api/synagogues' : '/api/restaurants-with-filters'
+      const endpoint = dataType === 'shuls' ? '/api/synagogues' : '/api/restaurants/unified'
       const apiUrl = new URL(endpoint, window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('offset', offset.toString())
@@ -421,8 +421,8 @@ export default function Grid({
       imageUrl: item.image_url || item.logo_url || "/images/default-restaurant.webp",
       title: item.name && typeof item.name === 'string' ? item.name : 'Unnamed Item',
       badge: ratingText,
-      subtitle: subtitle,
-      additionalText: distanceText ? parseFloat(distanceText.replace(/[^\d.]/g, '')) + ' mi away' : '',
+      subtitle,
+      additionalText: distanceText ? `${parseFloat(distanceText.replace(/[^\d.]/g, ''))} mi away` : '',
       showHeart: true,
       isLiked: false,
       kosherCategory: item.denomination || item.kosher_category || item.cuisine || '',

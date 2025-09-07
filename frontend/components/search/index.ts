@@ -6,5 +6,3 @@ export { RecentSearches } from './RecentSearches';
 export { QuickFilters } from './QuickFilters';
 export { AgencyFilters } from './AgencyFilters';
 export { DietaryFilters } from './DietaryFilters';
-export { AdvancedFiltersRefactored } from './AdvancedFiltersRefactored';
-export { default as SmartSearchRefactored } from './SmartSearchRefactored'; 

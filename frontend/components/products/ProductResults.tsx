@@ -5,7 +5,7 @@ import useSWR from 'swr';
 
 import UnifiedRestaurantCard from '@/components/restaurant/UnifiedRestaurantCard';
 import { AppliedFilters } from '@/lib/filters/filters.types';
-import { createFilterKey } from '@/lib/filters/serialize';
+import { createFilterKey } from '@/lib/filters/utils';
 import { Restaurant } from '@/lib/types/restaurant';
 
 interface ProductResultsProps {

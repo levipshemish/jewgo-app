@@ -45,14 +45,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // PostgreSQL auth - email upgrade not implemented yet
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Email upgrade not implemented for PostgreSQL auth' 
-      },
-      { status: 501 }
-    );
+    // Redirect with 307 to backend upgrade-email endpoint to upgrade guest → email
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const redirect = NextResponse.redirect(`${backendUrl}/api/auth/upgrade-email`, 307);
+    return redirect;
 
   } catch (error) {
     console.error('[Auth] Email upgrade error:', error);

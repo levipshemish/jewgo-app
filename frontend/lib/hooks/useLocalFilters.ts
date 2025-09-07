@@ -3,7 +3,7 @@
 import { useReducer, useCallback, useMemo, useTransition } from 'react';
 
 import { DraftFilters, AppliedFilters, FilterValue } from '@/lib/filters/filters.types';
-import { getActiveFilterCount } from '@/lib/filters/serialize';
+import { getActiveFilterCount } from '@/lib/filters/utils';
 
 interface FilterAction {
   type: 'SET_FILTER' | 'RESET_FILTERS' | 'CLEAR_ALL';

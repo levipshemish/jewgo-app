@@ -842,6 +842,133 @@ class PostgresAuthManager:
             logger.error(f"Password reset error: {e}")
             return False
 
+    def upgrade_guest_to_email(self, user_id: str, email: str, password: str, name: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Convert a guest account into a full email/password account.
+
+        - Ensures the current user is a guest.
+        - Validates email and password strength.
+        - Atomically updates user record to set email/password and mark is_guest = FALSE.
+        - Deactivates guest role and ensures 'user' role is active at level 1.
+        Returns updated user dict on success, None on failure.
+        """
+        try:
+            if not email or '@' not in email:
+                raise ValidationError("Valid email address is required")
+            email = email.lower().strip()
+
+            # Validate password
+            pw = self.password_security.validate_password_strength(password)
+            if not pw['is_valid']:
+                raise ValidationError(f"Password requirements not met: {'; '.join(pw['issues'])}")
+
+            password_hash = self.password_security.hash_password(password)
+
+            with self.db.connection_manager.session_scope() as session:
+                # Verify the current user is a guest
+                row = session.execute(
+                    text("SELECT id, is_guest FROM users WHERE id = :uid"),
+                    { 'uid': user_id }
+                ).fetchone()
+                if not row:
+                    raise ValidationError("User not found")
+                if not row.is_guest:
+                    raise ValidationError("Only guest accounts can be upgraded")
+
+                # Ensure email not taken by non-guest
+                existing = session.execute(
+                    text("SELECT id FROM users WHERE email = :email AND id <> :uid"),
+                    { 'email': email, 'uid': user_id }
+                ).fetchone()
+                if existing:
+                    raise ValidationError("Email address is already registered")
+
+                # Perform the upgrade
+                session.execute(
+                    text(
+                        """
+                        UPDATE users
+                        SET email = :email,
+                            name = COALESCE(:name, name),
+                            password_hash = :password_hash,
+                            email_verified = FALSE,
+                            is_guest = FALSE,
+                            verification_token = :verification_token,
+                            verification_expires = :verification_expires
+                        WHERE id = :uid
+                        """
+                    ),
+                    {
+                        'email': email,
+                        'name': name,
+                        'password_hash': password_hash,
+                        'verification_token': secrets.token_urlsafe(32),
+                        'verification_expires': datetime.utcnow() + timedelta(hours=24),
+                        'uid': user_id,
+                    }
+                )
+
+                # Deactivate guest role; ensure user role present and active
+                session.execute(
+                    text("UPDATE user_roles SET is_active = FALSE WHERE user_id = :uid AND role = 'guest' AND is_active = TRUE"),
+                    { 'uid': user_id }
+                )
+                session.execute(
+                    text(
+                        """
+                        INSERT INTO user_roles (user_id, role, level, granted_at, is_active)
+                        VALUES (:uid, 'user', 1, NOW(), TRUE)
+                        ON CONFLICT (user_id, role)
+                        DO UPDATE SET is_active = TRUE, level = EXCLUDED.level
+                        """
+                    ),
+                    { 'uid': user_id }
+                )
+
+                # Fetch updated basic info + roles
+                res = session.execute(
+                    text(
+                        """
+                        SELECT u.id, u.name, u.email, u.email_verified,
+                               COALESCE(
+                                   JSON_AGG(
+                                       JSON_BUILD_OBJECT('role', ur.role, 'level', ur.level)
+                                   ) FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
+                                   '[]'
+                               ) AS roles
+                        FROM users u
+                        LEFT JOIN user_roles ur ON u.id = ur.user_id
+                        WHERE u.id = :uid
+                        GROUP BY u.id, u.name, u.email, u.email_verified
+                        """
+                    ),
+                    { 'uid': user_id }
+                ).fetchone()
+
+                import json as _json
+                roles = _json.loads(res.roles) if res and res.roles else []
+
+                # Send verification email best-effort
+                try:
+                    from services.email_service import send_email_verification
+                    send_email_verification(email, None, name or "User")
+                except Exception:
+                    pass
+
+                self._log_auth_event(user_id, 'guest_upgraded', True, {'email': email})
+
+                return {
+                    'user_id': res.id,
+                    'name': res.name,
+                    'email': res.email,
+                    'email_verified': res.email_verified,
+                    'roles': roles,
+                }
+        except ValidationError:
+            raise
+        except Exception as e:
+            logger.error(f"Guest upgrade error: {e}")
+            return None
+
     def _log_auth_event(self, user_id: str, action: str, success: bool, details: Dict[str, Any] = None, ip_address: str = None):
         """Log authentication events for audit purposes."""
         try:

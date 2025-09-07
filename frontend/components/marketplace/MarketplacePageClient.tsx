@@ -167,7 +167,7 @@ function LocationDisplay() {
 
 
 export default function MarketplacePageClient() {
-  const [products, setProducts] = useState<MarketplaceListing[]>([])
+  const [_products, setProducts] = useState<MarketplaceListing[]>([])
   const [searchQuery, _setSearchQuery] = useState("")
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: "",
@@ -181,7 +181,7 @@ export default function MarketplacePageClient() {
   })
   const [loading, setLoading] = useState(true)
 
-  const [wishlist, setWishlist] = useState<MarketplaceListing[]>([])
+  const [_wishlist, setWishlist] = useState<MarketplaceListing[]>([])
 
   // Filter modal states
   const [showCategoryFilter, setShowCategoryFilter] = useState(false)
@@ -236,7 +236,7 @@ export default function MarketplacePageClient() {
 
 
 
-  const handleAddToWishlist = (product: MarketplaceListing) => {
+  const _handleAddToWishlist = (product: MarketplaceListing) => {
     setWishlist((prev) => {
       const exists = prev.find((p) => p.id === product.id)
       if (exists) {

@@ -177,10 +177,10 @@ function EateryIdPageContent() {
   const {
     userLocation,
     permissionStatus,
-    isLoading: locationLoading,
-    error: locationError,
+    isLoading: _locationLoading,
+    error: _locationError,
     requestLocation,
-    getItemDisplayText
+    getItemDisplayText: _getItemDisplayText
   } = useLocationData({
     fallbackText: 'Get Location'
   })
@@ -331,8 +331,8 @@ function EateryIdPageContent() {
                       finalRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
                     }
                   }
-                } catch (error) {
-                  console.error('Error calculating rating from Google reviews:', error);
+                } catch (err) {
+                  console.error('Error calculating rating from Google reviews:', err);
                 }
               }
             }
@@ -389,7 +389,7 @@ function EateryIdPageContent() {
               // Try to parse hours_of_operation as JSON or use it as is
               try {
                 return parseHoursFromJson(restaurantData.hours_of_operation)
-              } catch (error) {
+              } catch (err) {
                 console.log('Failed to parse hours_of_operation as JSON, using as text')
                 // If it's not JSON, try to create a simple hours structure
                 return parseHoursFromJson('{"weekday_text": []}')

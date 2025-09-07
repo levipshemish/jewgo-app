@@ -307,9 +307,39 @@ export async function GET(request: NextRequest) {
     
     const data = await response.json();
     
+    // Debug logging to see what rating data we're getting from backend
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Backend response data:', {
+        hasRestaurants: !!data.restaurants,
+        restaurantCount: data.restaurants?.length || 0,
+        message: data.message,
+        isSampleData: data.message?.includes('sample data'),
+        firstRestaurant: data.restaurants?.[0] || null,
+        ratingFields: data.restaurants?.[0] ? {
+          rating: data.restaurants[0].rating,
+          google_rating: data.restaurants[0].google_rating,
+          star_rating: data.restaurants[0].star_rating,
+          quality_rating: data.restaurants[0].quality_rating
+        } : null
+      });
+    }
+    
     // First sanitize all restaurant data, then filter out restaurants without images
     const allRestaurants = data.restaurants || data.data || data || [];
     const sanitizedRestaurants = sanitizeRestaurantData(allRestaurants);
+    
+    // Debug logging to see what happens after sanitization
+    if (process.env.NODE_ENV === 'development' && sanitizedRestaurants.length > 0) {
+      console.log('After sanitization:', {
+        firstRestaurant: sanitizedRestaurants[0],
+        ratingFields: {
+          rating: sanitizedRestaurants[0].rating,
+          google_rating: sanitizedRestaurants[0].google_rating,
+          star_rating: sanitizedRestaurants[0].star_rating,
+          quality_rating: sanitizedRestaurants[0].quality_rating
+        }
+      });
+    }
     
 
     
@@ -341,6 +371,19 @@ export async function GET(request: NextRequest) {
     // Calculate pagination metadata
     const totalCount = totalAvailable;
     const hasMore = offset + limit < totalCount;
+    
+    // Debug logging to see final response
+    if (process.env.NODE_ENV === 'development' && pagedRestaurants.length > 0) {
+      console.log('Final API response sample:', {
+        firstRestaurant: pagedRestaurants[0],
+        ratingFields: {
+          rating: pagedRestaurants[0].rating,
+          google_rating: pagedRestaurants[0].google_rating,
+          star_rating: pagedRestaurants[0].star_rating,
+          quality_rating: pagedRestaurants[0].quality_rating
+        }
+      });
+    }
     
     return NextResponse.json({
       success: true,

@@ -22,12 +22,8 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        if (postgresAuth.isAuthenticated()) {
-          const profile = await postgresAuth.getProfile();
-          setUser(profile);
-        } else {
-          setUser(null);
-        }
+        const profile = await postgresAuth.getProfile();
+        setUser(profile);
       } catch (error) {
         console.error('Auth check failed:', error);
         setUser(null);

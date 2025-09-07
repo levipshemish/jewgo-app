@@ -1,5 +1,5 @@
 "use client"
-import { useRef, RefObject } from "react"
+import { RefObject } from "react"
 import Grid from "@/components/core/grids/Grid"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 

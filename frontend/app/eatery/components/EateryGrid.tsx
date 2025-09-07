@@ -6,6 +6,8 @@ import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "../types"
 import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
+import { isRestaurantOpenDuringPeriod } from "@/lib/utils/hours"
+import { getBestAvailableRating, formatRating, getRatingWithFallback } from "@/lib/utils/ratingCalculation"
 
 // Import the mock data generator (fallback)
 import { generateMockRestaurants, type MockRestaurant } from "@/lib/mockData/restaurants"
@@ -78,8 +80,8 @@ export default function EateryGrid({
   // Real API function for restaurants with offset-based pagination for infinite scroll
   const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
-      // Build API URL with parameters
-      const apiUrl = new URL('/api/restaurants-with-filters', window.location.origin)
+      // Build API URL with parameters - use unified endpoint
+      const apiUrl = new URL('/api/restaurants/unified', window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('offset', offset.toString())
 
@@ -187,6 +189,11 @@ export default function EateryGrid({
       params.set('sortBy', 'distance');
       params.set('userLat', userLocation.latitude.toString());
       params.set('userLng', userLocation.longitude.toString());
+    }
+
+    // Add hours filter if specified
+    if (activeFilters?.hoursFilter) {
+      params.set('hoursFilter', activeFilters.hoursFilter);
     }
     
     return params.toString()
@@ -366,7 +373,7 @@ export default function EateryGrid({
     return () => container.removeEventListener("scroll", handleScroll)
   }, [loadMoreItems, scrollContainerRef])
 
-  // Filter transformed restaurants based on category and search
+  // Filter transformed restaurants based on category, search, and hours
   const filteredRestaurants = transformedRestaurants.filter(restaurant => {
     // Category filter
     if (category !== "all") {
@@ -378,12 +385,30 @@ export default function EateryGrid({
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      return (
+      const matchesSearch = (
         restaurant.name?.toLowerCase().includes(query) ||
         restaurant.address?.toLowerCase().includes(query) ||
         restaurant.kosher_category?.toLowerCase().includes(query) ||
         restaurant.cuisine?.toLowerCase().includes(query)
       )
+      if (!matchesSearch) {
+        return false
+      }
+    }
+
+    // Hours filter - check if restaurant is open during specified time period
+    if (activeFilters?.hoursFilter) {
+      // Check if restaurant has hours data
+      const hoursData = (restaurant as any).hours_of_operation || (restaurant as any).hours_json || (restaurant as any).hours;
+      if (!hoursData) {
+        return false // Exclude restaurants without hours data
+      }
+      
+      // Use the hours utility function to check if restaurant is open during the specified period
+      const isOpenDuringPeriod = isRestaurantOpenDuringPeriod(hoursData, activeFilters.hoursFilter as any);
+      if (!isOpenDuringPeriod) {
+        return false
+      }
     }
 
     return true
@@ -399,10 +424,44 @@ export default function EateryGrid({
     }
   }
 
-  // Memoize the toFixedRating function
-  const toFixedRating = useCallback((val: number | string | undefined) => {
-    const n = typeof val === 'number' ? val : Number.parseFloat(String(val ?? ''))
-    return Number.isFinite(n) ? n.toFixed(1) : ''
+  // Get the best available rating from restaurant data
+  const getRestaurantRating = useCallback((restaurant: LightRestaurant) => {
+    const rating = getBestAvailableRating(restaurant);
+    const formattedRating = formatRating(rating);
+    
+    // Enhanced debug logging to see what rating data we have for ALL restaurants
+    if (process.env.NODE_ENV === 'development') {
+      const hasGoogleReviews = !!(restaurant as any).google_reviews;
+      const googleReviewsLength = hasGoogleReviews ? (restaurant as any).google_reviews.length : 0;
+      
+      console.log(`Rating for ${restaurant.name}:`, {
+        id: restaurant.id,
+        google_rating: restaurant.google_rating,
+        rating: (restaurant as any).rating,
+        star_rating: (restaurant as any).star_rating,
+        quality_rating: (restaurant as any).quality_rating,
+        google_reviews: hasGoogleReviews ? `has reviews (${googleReviewsLength} chars)` : 'no reviews',
+        google_reviews_preview: hasGoogleReviews ? (restaurant as any).google_reviews.substring(0, 100) + '...' : null,
+        calculatedRating: rating,
+        formattedRating: formattedRating,
+        willShowBadge: !!formattedRating,
+        allFields: {
+          google_rating: restaurant.google_rating,
+          rating: (restaurant as any).rating,
+          star_rating: (restaurant as any).star_rating,
+          quality_rating: (restaurant as any).quality_rating,
+          google_reviews: (restaurant as any).google_reviews
+        }
+      });
+    }
+    
+    // For debugging: use fallback rating to see which restaurants are missing ratings
+    // TODO: Remove this fallback once we identify the issue
+    if (!formattedRating && process.env.NODE_ENV === 'development') {
+      return getRatingWithFallback(restaurant, 3.5);
+    }
+    
+    return formattedRating;
   }, [])
 
   if (filteredRestaurants.length === 0 && !loading) {
@@ -450,7 +509,7 @@ export default function EateryGrid({
                   id: String(restaurant.id),
                   imageUrl: restaurant.image_url,
                   title: restaurant.name,
-                  badge: toFixedRating(restaurant.google_rating),
+                  badge: getRestaurantRating(restaurant),
                   subtitle: restaurant.price_range || '',
                   additionalText: (restaurant as any).formattedDistance || '',
                   showHeart: true,

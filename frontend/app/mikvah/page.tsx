@@ -14,7 +14,7 @@ import { generateMockMikvah, type MockMikvah } from "@/lib/mockData/mikvah"
 import LocationAwarePage from "@/components/LocationAwarePage"
 
 // Mikvah type
-interface Mikvah {
+interface _Mikvah {
   id: number;
   name: string;
   description?: string;
@@ -109,11 +109,11 @@ const fetchMikvah = async (limit: number, params?: string, timeoutMs: number = 5
 
 function MikvahPageContent() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [showDistance] = useState(true)
-  const [showRating] = useState(true)
-  const [showServices] = useState(true)
+  const [_showDistance] = useState(true)
+  const [_showRating] = useState(true)
+  const [_showServices] = useState(true)
   const [activeTab, setActiveTab] = useState<string>("mikvah")
-  const [showFilters, setShowFilters] = useState(false)
+  const [_showFilters, setShowFilters] = useState(false)
   const [mikvah, setMikvah] = useState<MockMikvah[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -124,10 +124,10 @@ function MikvahPageContent() {
   
   // Use the new location data hook
   const {
-    userLocation,
-    isLoading: locationLoading,
-    requestLocation,
-    getItemDisplayText
+    userLocation: _userLocation,
+    isLoading: _locationLoading,
+    requestLocation: _requestLocation,
+    getItemDisplayText: _getItemDisplayText
   } = useLocationData({
     fallbackText: 'Get Location'
   })
@@ -202,11 +202,11 @@ function MikvahPageContent() {
     setShowFilters(true)
   }, [])
 
-  const handleCloseFilters = useCallback(() => {
+  const _handleCloseFilters = useCallback(() => {
     setShowFilters(false)
   }, [])
 
-  const handleApplyFilters = useCallback((filters: AppliedFilters) => {
+  const _handleApplyFilters = useCallback((filters: AppliedFilters) => {
     if (Object.keys(filters).length === 0) {
       clearAllFilters()
     } else {

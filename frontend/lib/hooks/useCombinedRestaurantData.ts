@@ -38,8 +38,14 @@ interface CombinedApiResponse {
     restaurants: Restaurant[];
     total: number;
     filterOptions: FilterOptions;
+    pagination?: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
   };
-  pagination: {
+  pagination?: {
     limit: number;
     offset: number;
     page: number;
@@ -271,13 +277,21 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       
       setLoading(true);
       setError(null);
-      const url = `/api/restaurants-with-filters?${key}`;
+      const url = `/api/restaurants/unified?${key}`;
       
       const response: CombinedApiResponse = await deduplicatedFetch(url);
       let receivedCount = 0;
       let hasMoreFromServer: boolean | undefined = undefined;
       
       if (response.success && response.data) {
+        // Handle filter options from unified response
+        if (response.data.filterOptions) {
+          setFilterOptions(response.data.filterOptions);
+        }
+        
+        // Handle pagination from unified response (pagination is top-level)
+        const pagination = (response.pagination as any) || {};
+        
         if (append) {
           // Append new restaurants to existing ones, avoiding duplicates
           // Normalize IDs to strings to avoid type-mismatch duplicates (e.g., 123 vs "123")
@@ -296,8 +310,8 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
           });
           
           // Update totalRestaurants when appending to maintain accurate count
-          if (response.data.total > 0) {
-            setTotalRestaurants(response.data.total);
+          if (pagination.total > 0) {
+            setTotalRestaurants(pagination.total);
           }
         } else {
           // Replace restaurants (default behavior)
@@ -308,27 +322,23 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
           setPageItems(response.data.restaurants);
           
           // Only update totalRestaurants on initial load, not when appending
-          setTotalRestaurants(response.data.total);
+          setTotalRestaurants(pagination.total || 0);
           // Ensure totalPages is always a valid number
-          const limit = Number((response as any).pagination?.limit) || itemsPerPage;
-          const total = Number(response.data.total) || 0;
-          const serverTotalPages = (response as any).pagination?.totalPages;
+          const limit = Number(pagination.limit) || itemsPerPage;
+          const total = Number(pagination.total) || 0;
           const computedTotalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
-          const safeTotalPages = Number.isFinite(serverTotalPages) && serverTotalPages > 0
-            ? serverTotalPages
-            : computedTotalPages;
-          setTotalPages(safeTotalPages);
+          setTotalPages(computedTotalPages);
         }
         
         // Track server hasMore if provided
-        if ((response as any).pagination && typeof (response as any).pagination.hasMore === 'boolean') {
-          hasMoreFromServer = (response as any).pagination.hasMore;
+        if (pagination && typeof pagination.hasMore === 'boolean') {
+          hasMoreFromServer = pagination.hasMore;
           setServerHasMore(hasMoreFromServer || false);
         } else {
           // Fallback: infer hasMore
           const returned = receivedCount;
-          const { limit = itemsPerPage, offset = (page - 1) * itemsPerPage } = (response as any).pagination || {};
-          const total = Number(response.data.total) || 0;
+          const { limit = itemsPerPage, offset = (page - 1) * itemsPerPage } = pagination || {};
+          const total = Number(pagination.total) || 0;
           
           if (total > 0) {
             // Use the total from the response to calculate hasMore

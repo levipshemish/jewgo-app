@@ -291,4 +291,68 @@ export function formatWeeklyHoursArray(hoursData: HoursData | string | null | un
       hours: 'Closed'
     };
   });
+}
+
+// Check if restaurant is open during a specific time period
+export function isRestaurantOpenDuringPeriod(
+  hoursData: HoursData | string | null | undefined, 
+  period: 'openNow' | 'morning' | 'afternoon' | 'evening' | 'lateNight'
+): boolean {
+  try {
+    const now = dayjs();
+    const currentTime = now.hour() * 60 + now.minute();
+    const today = now.format('dddd').toLowerCase();
+    
+    const parsedHours = parseHoursData(hoursData);
+    if (!parsedHours || parsedHours.length === 0) {
+      return false;
+    }
+    
+    // Find today's hours
+    const todayHours = parsedHours.find(h => h.day === today);
+    if (!todayHours) {
+      return false;
+    }
+    
+    const openMins = timeToMinutes(todayHours.open);
+    const closeMins = timeToMinutes(todayHours.close);
+    
+    // Define time periods in minutes
+    const timePeriods = {
+      openNow: { start: currentTime, end: currentTime + 1 }, // Check if open right now
+      morning: { start: 6 * 60, end: 12 * 60 }, // 6 AM - 12 PM
+      afternoon: { start: 12 * 60, end: 18 * 60 }, // 12 PM - 6 PM
+      evening: { start: 18 * 60, end: 22 * 60 }, // 6 PM - 10 PM
+      lateNight: { start: 22 * 60, end: 6 * 60 + 24 * 60 } // 10 PM - 6 AM (next day)
+    };
+    
+    const periodTimes = timePeriods[period];
+    
+    // Handle late night period that crosses midnight
+    if (period === 'lateNight') {
+      // Check if restaurant is open during late night hours (10 PM - midnight)
+      if (openMins <= 24 * 60 && closeMins >= 22 * 60) {
+        return true;
+      }
+      // Check if restaurant is open during early morning hours (midnight - 6 AM)
+      if (openMins <= 6 * 60 && closeMins >= 0) {
+        return true;
+      }
+      // Check if restaurant is open 24 hours
+      if (openMins === 0 && closeMins >= 24 * 60) {
+        return true;
+      }
+      return false;
+    }
+    
+    // For other periods, check if restaurant hours overlap with the period
+    const periodStart = periodTimes.start;
+    const periodEnd = periodTimes.end;
+    
+    // Check if restaurant is open during any part of the specified period
+    return (openMins < periodEnd && closeMins > periodStart);
+    
+  } catch {
+    return false;
+  }
 } 

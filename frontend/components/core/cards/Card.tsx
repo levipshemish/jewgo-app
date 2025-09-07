@@ -309,19 +309,20 @@ const Card = memo<CardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <div 
-        className="card-content pt-2 px-3 pb-3 flex flex-col bg-transparent"
+        className="card-content pt-2 px-3 pb-3 flex flex-col bg-transparent w-full"
         style={{
           transform: isScrolling ? 'none' : undefined,
           transition: isScrolling ? 'none' : undefined,
           animation: isScrolling ? 'none' : undefined
         }}
       >
-        <div className="flex justify-between items-start gap-1 mb-0 min-h-[16px]">
+        <div className="flex justify-between items-start gap-1 mb-0 min-h-[16px] w-full">
           <h3 
             className={cn(
               variantStyles.titleClass,
-              "text-sm font-semibold line-clamp-1 break-words min-w-0 text-black m-0 flex-1 transition-colors duration-200 group-hover:text-gray-900"
+              "text-sm font-semibold line-clamp-1 break-words min-w-0 text-black m-0 transition-colors duration-200 group-hover:text-gray-900"
             )}
+            style={{ flex: '1 1 0%', minWidth: 0 }}
             aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
@@ -329,20 +330,23 @@ const Card = memo<CardProps>(({
           {cardData.badge && (
             <div
               className={cn(
-                "inline-flex items-center bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm",
+                "flex items-center bg-transparent text-gray-700 font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent",
                 variantStyles.badgeClass
               )}
               style={{
                 transform: isScrolling ? 'none' : undefined,
                 transition: isScrolling ? 'none' : undefined,
-                animation: isScrolling ? 'none' : undefined
+                animation: isScrolling ? 'none' : undefined,
+                flexShrink: 0,
+                margin: 0,
+                padding: 0
               }}
               aria-label={`Rating: ${cardData.badge}`}
             >
               {showStarInBadge && (
-                <Star size={12} className="fill-yellow-400 text-yellow-400 flex-shrink-0" style={{ marginTop: '-1px' }} />
+                <Star size={12} className="fill-yellow-400 text-yellow-400 flex-shrink-0 mr-0.5" />
               )}
-              <span className="leading-none" style={{ marginTop: '1px' }}>{cardData.badge}</span>
+              <span className="leading-none">{cardData.badge}</span>
             </div>
           )}
         </div>

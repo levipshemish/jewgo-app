@@ -6,6 +6,7 @@ export interface Filters {
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
+  hoursFilter?: string; // 'openNow', 'morning', 'afternoon', 'evening', 'lateNight'
   
   /**
    * Canonical distance field in miles - preferred over all other distance fields
@@ -53,6 +54,7 @@ export interface FilterState {
   category?: string;
   businessTypes?: string[];
   nearMe?: boolean;
+  hoursFilter?: string; // 'openNow', 'morning', 'afternoon', 'evening', 'lateNight'
   
   /**
    * Canonical distance field in miles - preferred over all other distance fields
@@ -113,6 +115,7 @@ export interface AppliedFilters extends Filters {
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
+  hoursFilter?: string; // 'openNow', 'morning', 'afternoon', 'evening', 'lateNight'
   
   /**
    * Canonical distance field in miles - preferred over all other distance fields
@@ -183,6 +186,7 @@ export interface DraftFilters extends FilterState {
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
+  hoursFilter?: string; // 'openNow', 'morning', 'afternoon', 'evening', 'lateNight'
   
   /**
    * Canonical distance field in miles - preferred over all other distance fields

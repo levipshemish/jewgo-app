@@ -83,7 +83,7 @@ export function InteractiveRestaurantMap({
     // Create new user location marker
     userLocationMarkerRef.current = new google.maps.Marker({
       position: location,
-      map: map,
+      map,
       title: 'Your Location',
       icon: {
         path: google.maps.SymbolPath.CIRCLE,
@@ -130,7 +130,7 @@ export function InteractiveRestaurantMap({
           center: mapCenter || { lat: 25.7617, lng: -80.1918 }, // Miami default
           zoom: zoomLevel,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
-          mapId: mapId, // Required for Advanced Markers
+          mapId, // Required for Advanced Markers
           mapTypeControl: true,
           streetViewControl: true,
           fullscreenControl: true,
@@ -145,10 +145,7 @@ export function InteractiveRestaurantMap({
 
         mapInstanceRef.current = map;
 
-        // Create user location marker if user location is available
-        if (userLocation) {
-          createUserLocationMarker(map, userLocation);
-        }
+        // Note: user location marker is managed by a separate effect
 
         // Initialize directions service
         directionsServiceRef.current = new google.maps.DirectionsService();
@@ -211,13 +208,13 @@ export function InteractiveRestaurantMap({
 
   // Use marker management hook with proper SSR handling
   const {
-    markersRef,
-    markersMapRef,
-    clustererRef,
-    getRestaurantKey,
-    cleanupMarkers,
-    createMarker,
-    applyClustering
+    markersRef: _markersRef,
+    markersMapRef: _markersMapRef,
+    clustererRef: _clustererRef,
+    getRestaurantKey: _getRestaurantKey,
+    cleanupMarkers: _cleanupMarkers,
+    createMarker: _createMarker,
+    applyClustering: _applyClustering
   } = useMarkerManagement({
     map: mapInstanceRef.current,
     restaurants: restaurantsWithCoords,

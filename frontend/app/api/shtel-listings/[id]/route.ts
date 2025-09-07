@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getBackendUrl, createSuccessResponse } from '@/lib';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
 

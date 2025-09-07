@@ -10,7 +10,7 @@ import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
-import { generateMockStores, type MockStore } from "@/lib/mockData/stores"
+import { generateMockStores, type MockStore as _MockStore } from "@/lib/mockData/stores"
 import LocationAwarePage from "@/components/LocationAwarePage"
 
 // Store type
@@ -100,11 +100,11 @@ const fetchStores = async (limit: number, params?: string, timeoutMs: number = 5
 
 function StoresPageContent() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [showDistance] = useState(true)
-  const [showRating] = useState(true)
-  const [showServices] = useState(true)
+  const [_showDistance] = useState(true)
+  const [_showRating] = useState(true)
+  const [_showServices] = useState(true)
   const [activeTab, setActiveTab] = useState<string>("stores")
-  const [showFilters, setShowFilters] = useState(false)
+  const [_showFilters, setShowFilters] = useState(false)
   const [stores, setStores] = useState<Store[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -115,10 +115,10 @@ function StoresPageContent() {
   
   // Use the new location data hook
   const {
-    userLocation,
-    isLoading: locationLoading,
-    requestLocation,
-    getItemDisplayText
+    userLocation: _userLocation,
+    isLoading: _locationLoading,
+    requestLocation: _requestLocation,
+    getItemDisplayText: _getItemDisplayText
   } = useLocationData({
     fallbackText: 'Get Location'
   })

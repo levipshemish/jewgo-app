@@ -82,13 +82,11 @@ export async function POST(request: NextRequest) {
   // Parse body (no CAPTCHA token required)
   await request.json().catch(() => ({} as any));
 
-  // PostgreSQL auth doesn't support anonymous users
-  // Return error indicating anonymous auth is not supported
-  console.warn('Anonymous authentication not supported with PostgreSQL auth');
-  return NextResponse.json(
-    { error: 'ANON_SIGNIN_UNSUPPORTED', message: 'Anonymous authentication is not supported with PostgreSQL authentication' },
-    { status: 501, headers: baseHeaders }
-  );
+  // Redirect with 307 to backend guest login to preserve POST and headers
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+  const redirect = NextResponse.redirect(`${backendUrl}/api/auth/guest`, 307);
+  Object.entries(baseHeaders).forEach(([k, v]) => redirect.headers.set(k, v));
+  return redirect;
 
 }
 /* eslint-disable no-console */

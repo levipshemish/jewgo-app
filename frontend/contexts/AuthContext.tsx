@@ -26,14 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      if (postgresAuth.isAuthenticated()) {
-        const currentUser = await postgresAuth.getProfile();
-        setUser(currentUser);
-      } else {
-        setUser(null);
-      }
+      // Probe backend profile; 200 => authenticated, 401 => not
+      const currentUser = await postgresAuth.getProfile();
+      setUser(currentUser);
     } catch (error) {
-      console.error('Auth check error:', error);
+      // Treat any failure as unauthenticated for client UX
       setUser(null);
     } finally {
       setLoading(false);
@@ -72,20 +69,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      if (postgresAuth.isAuthenticated()) {
-        const currentUser = await postgresAuth.getProfile();
-        setUser(currentUser);
-      } else {
-        setUser(null);
-      }
+      const currentUser = await postgresAuth.getProfile();
+      setUser(currentUser);
     } catch (error) {
-      console.error('Refresh user error:', error);
       setUser(null);
     }
   };
 
   const isAuthenticated = () => {
-    return postgresAuth.isAuthenticated();
+    // In cookie-mode we cannot synchronously determine auth; reflect state
+    return !!user;
   };
 
   const value: AuthContextType = {

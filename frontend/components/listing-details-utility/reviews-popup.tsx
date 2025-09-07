@@ -51,7 +51,7 @@ function formatRelativeDate(dateString: string): string {
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
     return `${Math.floor(diffDays / 365)} years ago`;
-  } catch (error) {
+  } catch (_error) {
     return 'Recently';
   }
 }

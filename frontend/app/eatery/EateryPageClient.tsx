@@ -29,7 +29,7 @@ function EateryPageContent() {
     userLocation,
     isLoading: locationLoading,
     requestLocation,
-    permissionStatus,
+    permissionStatus: _permissionStatus,
   } = useLocationData({
     fallbackText: 'Get Location'
   })

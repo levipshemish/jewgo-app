@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, SlidersHorizontal, X, Search, Heart, Star } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal, X, Search, Star } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
@@ -76,7 +76,7 @@ export default function UnifiedLiveMapClient() {
   const [showRestaurantCard, setShowRestaurantCard] = useState(false);
 
   // Performance and optimization state
-  const [mapState, setMapState] = useState<MapState>({
+  const [_mapState, setMapState] = useState<MapState>({
     isLoadingMarkers: false,
     markerError: null,
     restaurantsWithCoords: [],
@@ -391,7 +391,7 @@ export default function UnifiedLiveMapClient() {
   }, []);
 
   // Transform restaurant data to match Card component's CardData interface
-  const transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
+  const _transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
     
@@ -791,8 +791,8 @@ export default function UnifiedLiveMapClient() {
                   setLocation(newLocation);
                   setMapCenter({ lat: newLocation.latitude, lng: newLocation.longitude });
                 },
-                (error) => {
-                  console.error('Error getting location:', error);
+                (err) => {
+                  console.error('Error getting location:', err);
                 }
               );
             }

@@ -20,7 +20,7 @@ export default function SessionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
   
-  const { user, isAuthenticated } = useAuth();
+  const { user: _user, isAuthenticated } = useAuth();
   const router = useRouter();
 
   // Redirect if not authenticated

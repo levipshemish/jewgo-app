@@ -34,7 +34,7 @@ function LocationAwareContent({
 }: LocationAwarePageProps) {
   const {
     userLocation,
-    permissionStatus,
+    permissionStatus: _permissionStatus,
     isLoading,
     requestLocation,
     shouldShowPopup,

@@ -10,7 +10,7 @@ function ResendVerificationForm() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const router = useRouter();
+  const _router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +57,11 @@ function ResendVerificationForm() {
             <div className="text-green-500 text-6xl mb-6">📧</div>
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Verification Email Sent!</h1>
             <p className="text-gray-600 mb-6">
-              We've sent a new verification email to <strong>{email}</strong>.
+              We&apos;ve sent a new verification email to <strong>{email}</strong>.
             </p>
             <p className="text-sm text-gray-500 mb-6">
               Please check your inbox and click the verification link to activate your account.
-              Don't forget to check your spam/junk folder if you don't see it.
+              Don&apos;t forget to check your spam/junk folder if you don&apos;t see it.
             </p>
             
             <div className="space-y-3">

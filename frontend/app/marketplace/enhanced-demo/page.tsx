@@ -202,7 +202,7 @@ const sampleListings: MarketplaceListing[] = [
 ];
 
 export default function EnhancedMarketplaceDemo() {
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [likedListings, setLikedListings] = useState<Set<string>>(new Set());
   const [variant, setVariant] = useState<'default' | 'compact' | 'featured'>('default');

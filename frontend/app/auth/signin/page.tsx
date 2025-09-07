@@ -19,6 +19,11 @@ function SignInForm() {
   const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
   const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
   const [csrfMessage, setCsrfMessage] = useState<string | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeEmail, setUpgradeEmail] = useState("");
+  const [upgradePassword, setUpgradePassword] = useState("");
+  const [upgradeName, setUpgradeName] = useState("");
+  const [upgradePending, setUpgradePending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
@@ -59,26 +64,19 @@ function SignInForm() {
     }
   }, [siteKey]);
 
-  // Check if user is already authenticated and redirect to eatery
+  // Check if user is already authenticated and redirect
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        // Check if user is authenticated via PostgreSQL auth
-        if (postgresAuth.isAuthenticated()) {
-          // User is authenticated, redirect to intended destination
-          router.push(redirectTo);
-          return;
-        }
-        
-        // User is not authenticated, show sign-in form
-        setIsCheckingAuth(false);
-      } catch (authError) {
-        appLogger.error('Error checking auth status', { error: String(authError) });
-        // On error, show sign-in form
+        // Probe backend: if profile returns 200, redirect
+        await postgresAuth.getProfile();
+        router.push(redirectTo);
+        return;
+      } catch {
+        // Not authenticated; show form
         setIsCheckingAuth(false);
       }
     };
-
     checkAuthStatus();
   }, [router, redirectTo]);
 
@@ -226,6 +224,29 @@ function SignInForm() {
     }
   };
 
+  // Upgrade current guest session to full account
+  const handleUpgradeGuest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setUpgradePending(true);
+    try {
+      if (!upgradeEmail || !upgradePassword) {
+        setError('Email and password are required to upgrade');
+        return;
+      }
+      await postgresAuth.upgradeGuest({ email: upgradeEmail, password: upgradePassword, name: upgradeName || undefined });
+      if (typeof window !== 'undefined') {
+        window.location.assign(redirectTo);
+      } else {
+        router.push(redirectTo);
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Failed to upgrade guest account');
+    } finally {
+      setUpgradePending(false);
+    }
+  };
+
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -363,7 +384,7 @@ function SignInForm() {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-3">
+          <div className="mt-6 grid grid-cols-1 gap-3">
               {/* Magic Link Sign-in */}
               <button
                 onClick={handleMagicLinkSignIn}
@@ -386,6 +407,52 @@ function SignInForm() {
               >
                 {csrfReady === false ? 'Guest temporarily unavailable' : 'Continue as Guest'}
               </button>
+
+              {/* Upgrade guest to full account */}
+              <div className="border rounded-md p-3 bg-white">
+                <button
+                  type="button"
+                  onClick={() => setShowUpgrade(v => !v)}
+                  className="w-full text-sm text-blue-600 hover:text-blue-700 text-left"
+                  aria-expanded={showUpgrade}
+                >
+                  {showUpgrade ? 'Hide' : 'Upgrade my guest account'}
+                </button>
+                {showUpgrade && (
+                  <form className="mt-3 space-y-3" onSubmit={handleUpgradeGuest}>
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      value={upgradeEmail}
+                      onChange={e => setUpgradeEmail(e.target.value)}
+                      required
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password (min 8 chars)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      value={upgradePassword}
+                      onChange={e => setUpgradePassword(e.target.value)}
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Full name (optional)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      value={upgradeName}
+                      onChange={e => setUpgradeName(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      disabled={upgradePending}
+                      className="w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {upgradePending ? 'Upgrading…' : 'Upgrade account'}
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         </div>

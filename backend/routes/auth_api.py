@@ -1074,6 +1074,74 @@ def reset_password():
         return jsonify({'error': 'Password reset failed'}), 500
 
 
+@auth_bp.route('/upgrade-email', methods=['POST'])
+@require_auth
+@rate_limit(max_requests=5, window_seconds=3600)
+def upgrade_email():
+    """Upgrade a guest account to a full email/password account.
+
+    Requires an authenticated guest session. Validates email + password,
+    converts the user row to non-guest, adjusts roles, and issues fresh cookies.
+    """
+    try:
+        data = request.get_json() or {}
+        email = (data.get('email') or '').strip().lower()
+        password = data.get('password') or ''
+        name = (data.get('name') or '').strip() or None
+
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        if not password:
+            return jsonify({'error': 'Password is required'}), 400
+
+        # Ensure current user is guest
+        from flask import g
+        user = g.user or {}
+        roles = user.get('roles') or []
+        if not any(r.get('role') == 'guest' for r in roles):
+            return jsonify({'error': 'Only guest accounts can be upgraded'}), 400
+
+        authm = get_postgres_auth()
+        upgraded = authm.upgrade_guest_to_email(user.get('user_id'), email, password, name)
+        if not upgraded:
+            return jsonify({'error': 'Upgrade failed'}), 400
+
+        # Issue fresh cookies for non-guest identity
+        base_resp = make_response(jsonify({}), 200)
+        tokens, access_ttl = create_authenticated_response(
+            base_resp,
+            auth_manager=authm,
+            user_id=upgraded['user_id'],
+            email=upgraded['email'],
+            roles=upgraded.get('roles', []),
+            is_guest=False,
+            request=request,
+        )
+
+        resp_body = {
+            'user': build_user_payload({
+                'user_id': upgraded['user_id'],
+                'name': upgraded.get('name'),
+                'email': upgraded['email'],
+                'email_verified': upgraded.get('email_verified', False),
+                'roles': upgraded.get('roles', []),
+            }),
+            'tokens': tokens,
+        }
+
+        resp = make_response(jsonify(resp_body), 200)
+        for k, v in base_resp.headers.items():
+            if k.lower().startswith('set-cookie'):
+                resp.headers.add('Set-Cookie', v)
+        return resp
+
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f"Upgrade email error: {e}")
+        return jsonify({'error': 'Upgrade failed'}), 500
+
+
 @auth_bp.route('/resend-verification', methods=['POST'])
 @rate_limit(max_requests=3, window_seconds=3600)  # 3 requests per hour
 @csrf_protect

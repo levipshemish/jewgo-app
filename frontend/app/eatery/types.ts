@@ -8,6 +8,10 @@ export interface LightRestaurant {
   image_url?: string;
   price_range?: string;
   google_rating?: number | string;
+  rating?: number | string;
+  star_rating?: number | string;
+  quality_rating?: number | string;
+  google_reviews?: string; // JSON string containing review data
   kosher_category?: string;
   cuisine?: string;
   is_open?: boolean;
