@@ -49,27 +49,11 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
  */
 export function getBestAvailableRating(restaurant: {
   google_rating?: number | string | null;
-  rating?: number | string | null;
-  star_rating?: number | string | null;
-  quality_rating?: number | string | null;
   google_reviews?: string | null;
   [key: string]: any; // Allow for additional fields
 }): number | null {
-  // Try direct rating fields in order of preference
-  const ratingFields = [
-    restaurant.google_rating,
-    restaurant.rating,
-    restaurant.star_rating,
-    restaurant.quality_rating,
-    // Try additional common rating field names
-    restaurant.overall_rating,
-    restaurant.average_rating,
-    restaurant.review_rating,
-    restaurant.score
-  ];
-
-  // Find the first valid rating (not null, undefined, or 0)
-  let rating = ratingFields.find(r => r !== null && r !== undefined && r !== 0);
+  // Try google_rating first (this is the main rating field in the database)
+  let rating = restaurant.google_rating;
   
   // Convert to number if it's a string
   if (rating && typeof rating === 'string') {
@@ -80,21 +64,6 @@ export function getBestAvailableRating(restaurant: {
   // If no direct rating found, try to calculate from google_reviews
   if (!rating && restaurant.google_reviews) {
     rating = calculateRatingFromGoogleReviews(restaurant.google_reviews);
-  }
-
-  // Additional fallback: try to find any field that looks like a rating
-  if (!rating) {
-    for (const [key, value] of Object.entries(restaurant)) {
-      if (key.toLowerCase().includes('rating') || key.toLowerCase().includes('score')) {
-        if (value && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value))))) {
-          const numValue = typeof value === 'number' ? value : parseFloat(value);
-          if (numValue > 0 && numValue <= 5) { // Reasonable rating range
-            rating = numValue;
-            break;
-          }
-        }
-      }
-    }
   }
 
   return rating as number | null;

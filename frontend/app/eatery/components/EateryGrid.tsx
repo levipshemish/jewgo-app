@@ -427,7 +427,21 @@ export default function EateryGrid({
   // Get the best available rating from restaurant data
   const getRestaurantRating = useCallback((restaurant: LightRestaurant) => {
     const rating = getBestAvailableRating(restaurant);
-    return formatRating(rating);
+    const formattedRating = formatRating(rating);
+    
+    // Debug logging to see what's happening with ratings
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Rating for ${restaurant.name} (ID: ${restaurant.id}):`, {
+        google_rating: restaurant.google_rating,
+        hasGoogleReviews: !!(restaurant as any).google_reviews,
+        googleReviewsLength: (restaurant as any).google_reviews ? (restaurant as any).google_reviews.length : 0,
+        calculatedRating: rating,
+        formattedRating: formattedRating,
+        willShowBadge: !!formattedRating
+      });
+    }
+    
+    return formattedRating;
   }, [])
 
   if (filteredRestaurants.length === 0 && !loading) {

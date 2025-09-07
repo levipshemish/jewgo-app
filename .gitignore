@@ -158,3 +158,4 @@ backend/venv_py311/
 **/coverage/
 **/lcov-report/
 coverage.xml
+backend/.venv311/
