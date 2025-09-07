@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
 import { InteractiveRestaurantMap } from '@/components/map/InteractiveRestaurantMap';
-import MapControls from '@/components/map/MapControls';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import Card from '@/components/core/cards/Card';
 // Remove old fetchRestaurants import - we'll use unified API directly
@@ -623,26 +622,6 @@ export default function UnifiedLiveMapClient() {
             className="h-full rounded-none shadow-none bg-transparent"
             showRatingBubbles={true}
             onMapStateUpdate={(state) => setMapState(state)}
-          />
-          
-          {/* Map Controls - Professional SVG icons */}
-          <MapControls
-            userLocation={userLocation}
-            showDirections={false} // Set to true if you want directions functionality
-            setShowDirections={() => {}} // No-op since we're not using directions
-            onLocationClick={() => {
-              if (userLocation) {
-                // Center map on user location
-                setMapCenter({ lat: userLocation.latitude, lng: userLocation.longitude });
-              } else {
-                // Request location
-                requestLocation();
-              }
-            }}
-            onClearDirections={() => {
-              // Clear any directions if needed
-              console.log('Clear directions clicked');
-            }}
           />
         </div>
       </div>
