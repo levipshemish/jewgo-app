@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, SlidersHorizontal, X, Search, Star } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal, X, Search } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
@@ -329,7 +329,7 @@ export default function UnifiedLiveMapClient() {
       setLoading(false);
       lastFetchTime.current = now;
     }
-  }, [allRestaurants.length, startTransition, CACHE_DURATION]);
+  }, [allRestaurants.length, startTransition, CACHE_DURATION, userLocation]);
 
   // Fetch data when component mounts
   useEffect(() => {

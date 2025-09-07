@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // In-memory cache for unified responses
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutes for unified data
-const FILTER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for filter options
+const _FILTER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for filter options
 
 // In-flight request deduplication
 const inflight = new Map<string, Promise<{ payload: any; headers: Record<string, string>; status?: number }>>();
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Create in-flight promise
     const p = (async (): Promise<{ payload: any; headers: Record<string, string>; status?: number }> => {
       // Get backend URL
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+      const _backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
       
       // Build unified backend request parameters
       const backendParams = new URLSearchParams();
@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
         backendParams.append('dietary', dietary);
       });
 
-      // Make single unified backend call
-      const backendResponse = await fetch(`${backendUrl}/api/v4/restaurants?${backendParams.toString()}`, {
+              // Make single unified backend call
+              const backendResponse = await fetch(`${_backendUrl}/api/v4/restaurants?${backendParams.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
       if (!backendResponse.ok) {
         // Fallback to separate calls if unified endpoint doesn't exist
-        return await fallbackToSeparateCalls(searchParams, backendUrl);
+        return await fallbackToSeparateCalls(searchParams, _backendUrl);
       }
 
       const backendData = await backendResponse.json();
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
             hasGoogleReviews: !!firstRestaurant.google_reviews,
             googleReviewsType: typeof firstRestaurant.google_reviews,
             googleReviewsLength: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.length : 0,
-            googleReviewsPreview: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.substring(0, 100) + '...' : null
+            googleReviewsPreview: firstRestaurant.google_reviews ? `${firstRestaurant.google_reviews.substring(0, 100)}...` : null
           }
         });
       }
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Fallback function to make separate calls if unified endpoint doesn't exist
-async function fallbackToSeparateCalls(searchParams: URLSearchParams, backendUrl: string) {
+async function fallbackToSeparateCalls(searchParams: URLSearchParams, _backendUrl: string) {
   try {
     // Make parallel calls to existing endpoints
     const baseUrl = process.env.NODE_ENV === 'development' 
@@ -200,7 +200,7 @@ async function fallbackToSeparateCalls(searchParams: URLSearchParams, backendUrl
             hasGoogleReviews: !!firstRestaurant.google_reviews,
             googleReviewsType: typeof firstRestaurant.google_reviews,
             googleReviewsLength: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.length : 0,
-            googleReviewsPreview: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.substring(0, 100) + '...' : null
+            googleReviewsPreview: firstRestaurant.google_reviews ? `${firstRestaurant.google_reviews.substring(0, 100)}...` : null
           }
         });
       }
