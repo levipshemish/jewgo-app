@@ -166,7 +166,6 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
               onAction={safeData.image.onAction}
               restaurantName={safeData.content?.leftText || safeData.title || "Restaurant"}
               allImages={safeData.image.allImages || []}
-              viewCount={safeData.header?.viewCount}
             />
           )}
 
@@ -177,6 +176,7 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
               kosherAgency={safeData.header?.kosherAgency}
               kosherAgencyWebsite={safeData.header?.kosherAgencyWebsite}
               shareCount={safeData.header?.shareCount}
+              viewCount={safeData.header?.viewCount}
               onBack={safeData.header?.onBack}
               onFavorite={safeData.header?.onFavorite}
               isFavorited={safeData.header?.isFavorited}

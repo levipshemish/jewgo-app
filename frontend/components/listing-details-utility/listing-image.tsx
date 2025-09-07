@@ -13,7 +13,6 @@ interface ListingImageProps {
   className?: string
   restaurantName?: string
   allImages?: string[]
-  viewCount?: number
 }
 
 export function ListingImage({ 
@@ -23,8 +22,7 @@ export function ListingImage({
   onAction, 
   className = "",
   restaurantName = "Restaurant",
-  allImages = [],
-  viewCount
+  allImages = []
 }: ListingImageProps) {
   const [showCarousel, setShowCarousel] = useState(false)
 
@@ -77,18 +75,6 @@ export function ListingImage({
         </div>
       )}
 
-      {/* View Count Tag - Bottom Left */}
-      {viewCount !== undefined && viewCount >= 0 && (
-        <div className="absolute bottom-4 left-4 bg-white text-gray-600 hover:bg-gray-50 hover:scale-105 transition-all rounded-full px-3 py-2 text-sm font-medium shadow-sm">
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-            </svg>
-            <span>{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
-          </span>
-        </div>
-      )}
 
       {/* View Gallery Button - Bottom Right */}
       {(onAction || allImages.length > 0) && (

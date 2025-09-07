@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui-listing-utility/button"
 import { X, ChevronLeft, ChevronRight } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 
 interface ImageCarouselPopupProps {
@@ -20,8 +20,6 @@ export function ImageCarouselPopup({
 }: ImageCarouselPopupProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
 
-  if (!isOpen || images.length === 0) return null
-
   const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length)
   }
@@ -34,9 +32,42 @@ export function ImageCarouselPopup({
     setCurrentIndex(index)
   }
 
+  // Handle keyboard events
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      } else if (event.key === 'ArrowLeft' && images.length > 1) {
+        setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
+      } else if (event.key === 'ArrowRight' && images.length > 1) {
+        setCurrentIndex((prev) => (prev + 1) % images.length)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+      // Prevent body scroll when popup is open
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen, onClose, images.length])
+
+  if (!isOpen || images.length === 0) return null
+
   return typeof window !== 'undefined' ? createPortal(
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-2 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200 max-h-[90vh]">
+    <div 
+      className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+      style={{ zIndex: 9999 }}
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-2 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200 max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -50,9 +81,9 @@ export function ImageCarouselPopup({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-7 w-7 p-0 hover:bg-gray-200 rounded-full"
+              className="h-8 w-8 p-0 hover:bg-gray-200 rounded-full text-black hover:text-black border border-gray-300 hover:border-gray-400 bg-white/80 hover:bg-white"
             >
-              <X size={14} />
+              <X size={16} />
             </Button>
           </div>
         </div>
@@ -135,7 +166,7 @@ export function ImageCarouselPopup({
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">
-              Click outside or press ESC to close
+              Click outside, press ESC, or use arrow keys to navigate
             </span>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">

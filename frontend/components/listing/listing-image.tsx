@@ -92,14 +92,13 @@ export function ListingImage({
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-gray-900">Gallery</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={handleCloseCarousel}
-                  className="h-7 w-7 p-0 hover:bg-gray-200 rounded-full"
+                  className="h-8 w-8 p-0 hover:bg-gray-200 rounded-full text-black hover:text-black border border-gray-300 hover:border-gray-400 bg-white/80 hover:bg-white flex items-center justify-center transition-colors"
+                  style={{ color: 'black' }}
                 >
-                  <X size={14} />
-                </Button>
+                  <X size={16} style={{ color: 'black' }} />
+                </button>
               </div>
             </div>
 

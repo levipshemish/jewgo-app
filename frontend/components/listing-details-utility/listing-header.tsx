@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, Heart, Share } from "lucide-react"
+import { ArrowLeft, Heart, Share, Eye } from "lucide-react"
 import { Button } from "@/components/ui-listing-utility/button"
 
 interface ListingHeaderProps {
@@ -8,6 +8,7 @@ interface ListingHeaderProps {
   kosherAgency?: string
   kosherAgencyWebsite?: string
   shareCount?: number
+  viewCount?: number
   onBack?: () => void
   onFavorite?: () => void
   isFavorited?: boolean
@@ -19,6 +20,7 @@ export function ListingHeader({
   kosherAgency, 
   kosherAgencyWebsite,
   shareCount,
+  viewCount,
   onBack, 
   onFavorite, 
   isFavorited = false,
@@ -103,29 +105,40 @@ export function ListingHeader({
           )}
 
           {/* Stats */}
-          {shareCount !== undefined && (
-            <button
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: 'Check out this restaurant!',
-                    url: window.location.href
-                  }).catch(console.error);
-                } else {
-                  // Fallback: copy to clipboard
-                  navigator.clipboard.writeText(window.location.href).then(() => {
-                    alert('Link copied to clipboard!');
-                  }).catch(() => {
-                    // Final fallback: prompt
-                    prompt('Copy this link:', window.location.href);
-                  });
-                }
-              }}
-              className="flex items-center justify-center text-black bg-white h-8 w-8 hover:bg-gray-50 transition-colors rounded -mt-1"
-            >
-              <Share className="h-4 w-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {/* View Count */}
+            {viewCount !== undefined && viewCount >= 0 && (
+              <div className="flex items-center gap-1 text-gray-600 text-sm">
+                <Eye className="h-4 w-4" />
+                <span>{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
+              </div>
+            )}
+            
+            {/* Share Button */}
+            {shareCount !== undefined && (
+              <button
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: 'Check out this restaurant!',
+                      url: window.location.href
+                    }).catch(console.error);
+                  } else {
+                    // Fallback: copy to clipboard
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                      alert('Link copied to clipboard!');
+                    }).catch(() => {
+                      // Final fallback: prompt
+                      prompt('Copy this link:', window.location.href);
+                    });
+                  }
+                }}
+                className="flex items-center justify-center text-black bg-white h-8 w-8 hover:bg-gray-50 transition-colors rounded -mt-1"
+              >
+                <Share className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
