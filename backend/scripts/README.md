@@ -73,6 +73,24 @@ The root crontab on the server contains:
 */10 * * * * /usr/local/bin/container-watchdog.sh >> /var/log/container-watchdog.log 2>&1
 ```
 
+### 5. `database-backup.sh`
+**Purpose**: Automated PostgreSQL database backups
+**Cron Schedule**: Daily at 3:00 AM UTC
+**Features**:
+- Creates compressed SQL dumps of the database
+- Automatic cleanup of old backups (30-day retention)
+- Comprehensive logging and error handling
+- Disk space monitoring
+
+### 6. `application-backup.sh`
+**Purpose**: Automated application code and configuration backups
+**Cron Schedule**: Daily at 4:00 AM UTC
+**Features**:
+- Creates compressed tar archives of application files
+- Excludes unnecessary files (node_modules, .git, logs)
+- Automatic cleanup of old backups (7-day retention)
+- Size reporting and logging
+
 ## Troubleshooting
 
 If the server goes down again:
@@ -88,3 +106,5 @@ If the server goes down again:
 - All scripts include comprehensive error handling and logging
 - Container restart policies prevent infinite restart loops
 - Health checks verify services are actually responding, not just running
+- Database backups are created daily and retained for 30 days
+- Application backups are created daily and retained for 7 days
