@@ -316,24 +316,7 @@ export function InteractiveRestaurantMap({
       {/* Map Container */}
       <div ref={mapRef} className="w-full h-full" />
       
-      {/* Map Controls */}
-      <div className="absolute top-4 left-4 z-10 space-y-2">
-        <button
-          onClick={getUserLocation}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="Get my location"
-        >
-          📍
-        </button>
-        
-        <button
-          onClick={clearDirections}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="Clear directions"
-        >
-          🗑️
-        </button>
-      </div>
+      {/* Map Controls - Removed emoji icons, using proper MapControls component instead */}
 
       {/* Restaurant Actions */}
       {selectedRestaurantId && (
