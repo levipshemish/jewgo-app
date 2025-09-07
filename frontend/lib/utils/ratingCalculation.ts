@@ -41,22 +41,60 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
   }
 
   try {
-    const reviews: Review[] = JSON.parse(googleReviewsJson);
+    // Parse the JSON string
+    const googleReviewsData = JSON.parse(googleReviewsJson);
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('calculateRatingFromGoogleReviews: Parsed reviews:', {
-        reviewCount: reviews.length,
-        reviews: reviews.map(r => ({ rating: r.rating, author: r.author }))
+      console.log('calculateRatingFromGoogleReviews: Parsed data:', {
+        dataType: typeof googleReviewsData,
+        isArray: Array.isArray(googleReviewsData),
+        hasReviews: !!(googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)),
+        directArray: Array.isArray(googleReviewsData) ? googleReviewsData.length : 0,
+        reviewsArray: googleReviewsData.reviews ? googleReviewsData.reviews.length : 0
       });
     }
     
-    const averageRating = calculateAverageRating(reviews);
+    // Handle different data structures - match the logic from individual eatery page
+    const reviewsArray = !googleReviewsData
+      ? []
+      : Array.isArray(googleReviewsData)
+        ? googleReviewsData
+        : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)
+            ? googleReviewsData.reviews
+            : []);
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('calculateRatingFromGoogleReviews: Average rating:', averageRating);
+      console.log('calculateRatingFromGoogleReviews: Final reviews array:', {
+        reviewCount: reviewsArray.length,
+        reviews: reviewsArray.map((r: any) => ({ rating: r.rating, author: r.author }))
+      });
     }
     
-    return averageRating;
+    if (reviewsArray.length > 0) {
+      const validRatings = reviewsArray
+        .map((review: any) => review.rating)
+        .filter((rating: any) => typeof rating === 'number' && rating > 0);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('calculateRatingFromGoogleReviews: Valid ratings:', validRatings);
+      }
+      
+      if (validRatings.length > 0) {
+        const averageRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('calculateRatingFromGoogleReviews: Average rating:', averageRating);
+        }
+        
+        return averageRating;
+      }
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('calculateRatingFromGoogleReviews: No valid ratings found');
+    }
+    
+    return null;
   } catch (error) {
     console.warn('Failed to parse Google reviews JSON:', error);
     if (process.env.NODE_ENV === 'development') {
