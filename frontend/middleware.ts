@@ -39,21 +39,12 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
     
-    // Check presence of access_token cookie only (cookie-mode)
-    const legacyEnabled = (process.env.NEXT_PUBLIC_LEGACY_AUTH_ENABLED || 'true').toLowerCase() === 'true';
-    const tokenCookie = request.cookies.get('access_token')?.value || (legacyEnabled ? request.cookies.get('auth_access_token')?.value : undefined);
-    if (!tokenCookie) {
-      return handleUnauthenticatedUser(request, isApi);
-    }
-
-    // Verify JWT token with backend
+    // Verify JWT token with backend using cookies only
+    // Skip cookie presence check to avoid cross-domain issues
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
       const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, {
-        credentials: 'include',
-        headers: {
-          Authorization: `Bearer ${tokenCookie}`,
-        },
+        credentials: 'include'
       });
 
       if (!verifyResponse.ok) {

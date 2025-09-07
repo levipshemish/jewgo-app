@@ -1,0 +1,282 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "JWT Authentication System Monitoring",
+    "description": "Comprehensive monitoring dashboard for JWT authentication system with refresh token rotation",
+    "tags": ["authentication", "security", "jwt", "tokens"],
+    "style": "dark",
+    "timezone": "utc",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Authentication Overview",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(auth_logins_total{result=\"success\"}[5m]) * 60",
+            "legendFormat": "Successful Logins/min"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 10 },
+                { "color": "red", "value": 50 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Login Success Rate",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(auth_logins_total{result=\"success\"}[5m]) / rate(auth_logins_total[5m]) * 100",
+            "legendFormat": "Success Rate %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "yellow", "value": 80 },
+                { "color": "green", "value": 95 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Active Sessions",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "auth_refresh_total - auth_logout_total",
+            "legendFormat": "Estimated Active Sessions"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Token Refresh Rate",
+        "type": "stat", 
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(auth_refresh_total{result=\"success\"}[5m]) * 60",
+            "legendFormat": "Refreshes/min"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Authentication Events Timeline",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+        "targets": [
+          {
+            "expr": "rate(auth_logins_total{result=\"success\"}[1m]) * 60",
+            "legendFormat": "Successful Logins"
+          },
+          {
+            "expr": "rate(auth_logins_total{result=\"failure\"}[1m]) * 60", 
+            "legendFormat": "Failed Logins"
+          },
+          {
+            "expr": "rate(auth_refresh_total{result=\"success\"}[1m]) * 60",
+            "legendFormat": "Token Refreshes"
+          },
+          {
+            "expr": "rate(auth_logout_total[1m]) * 60",
+            "legendFormat": "Logouts"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Authentication Latency",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(auth_operation_latency_seconds_bucket{operation=\"login\"}[5m]))",
+            "legendFormat": "Login P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(auth_operation_latency_seconds_bucket{operation=\"login\"}[5m]))",
+            "legendFormat": "Login P95"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(auth_refresh_latency_seconds_bucket[5m]))",
+            "legendFormat": "Refresh P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(auth_refresh_latency_seconds_bucket[5m]))",
+            "legendFormat": "Refresh P95"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Security Events",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(auth_refresh_total{result=\"reuse\"}[5m]) * 60",
+            "legendFormat": "Token Reuse Detected"
+          },
+          {
+            "expr": "rate(auth_errors_total{error_type=\"csrf_failed\"}[5m]) * 60",
+            "legendFormat": "CSRF Failures"
+          },
+          {
+            "expr": "rate(auth_errors_total{error_type=\"rate_limit\"}[5m]) * 60", 
+            "legendFormat": "Rate Limit Hits"
+          }
+        ],
+        "alert": {
+          "name": "High Security Events",
+          "message": "Unusual authentication security events detected",
+          "frequency": "30s",
+          "conditions": [
+            {
+              "query": { "queryType": "A", "refId": "A" },
+              "reducer": { "type": "last", "params": [] },
+              "evaluator": { "params": [5], "type": "gt" }
+            }
+          ]
+        }
+      },
+      {
+        "id": 8,
+        "title": "OAuth Events",
+        "type": "timeseries", 
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(auth_oauth_total{step=\"start\",result=\"success\"}[5m]) * 60",
+            "legendFormat": "OAuth Starts"
+          },
+          {
+            "expr": "rate(auth_oauth_total{step=\"callback\",result=\"success\"}[5m]) * 60",
+            "legendFormat": "OAuth Completions"
+          },
+          {
+            "expr": "rate(auth_oauth_total{result=\"failure\"}[5m]) * 60",
+            "legendFormat": "OAuth Failures"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Guest User Activity",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(auth_guest_total{event=\"created\"}[5m]) * 60", 
+            "legendFormat": "Guest Users Created"
+          },
+          {
+            "expr": "rate(auth_logins_total{method=\"guest\"}[5m]) * 60",
+            "legendFormat": "Guest Logins"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Password Reset Activity",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 18 },
+        "targets": [
+          {
+            "expr": "rate(auth_password_reset_total{event=\"requested\"}[5m]) * 60",
+            "legendFormat": "Reset Requests"
+          },
+          {
+            "expr": "rate(auth_password_reset_total{event=\"completed\"}[5m]) * 60",
+            "legendFormat": "Reset Completions"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Authentication Method Distribution",
+        "type": "piechart",
+        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 18 },
+        "targets": [
+          {
+            "expr": "sum by (method) (rate(auth_logins_total{result=\"success\"}[1h]))",
+            "legendFormat": "{{method}}"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Error Rate Heatmap",
+        "type": "heatmap",
+        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 18 },
+        "targets": [
+          {
+            "expr": "sum(rate(auth_errors_total[5m])) by (error_type)",
+            "legendFormat": "{{error_type}}"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(auth_logins_total, instance)",
+          "refresh": 1
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "changes(process_start_time_seconds[1h]) > 0"
+        }
+      ]
+    }
+  }
+}

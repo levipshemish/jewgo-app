@@ -45,7 +45,7 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock environment variables
-process.env.NEXT_PUBLIC_BACKEND_URL = getBackendUrl()
+process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api.jewgo.app'
 
 // Enhanced Supabase mocks for role-based testing
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'

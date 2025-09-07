@@ -195,14 +195,11 @@ def require_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            # Check for Authorization header
-            auth_header = request.headers.get('Authorization')
-            if not auth_header or not auth_header.startswith('Bearer '):
-                raise AuthenticationError("Bearer token required")
-            
-            token = auth_header.split(' ')[1]
+            # Extract token from Authorization header or cookies
+            from utils.auth_helpers import extract_token_from_request
+            token = extract_token_from_request(request)
             if not token:
-                raise AuthenticationError("Token required")
+                raise AuthenticationError("Authentication required")
             
             # Verify token using PostgreSQL auth
             auth_manager = get_postgres_auth()
@@ -354,21 +351,18 @@ def optional_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            # Check for Authorization header
-            auth_header = request.headers.get('Authorization')
-            if auth_header and auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
-                if token:
-                    # Verify token using PostgreSQL auth
-                    auth_manager = get_postgres_auth()
-                    user_info = auth_manager.verify_access_token(token)
-                    
-                    if user_info:
-                        # Add user info to Flask g context
-                        g.user = user_info
-                        g.user_id = user_info['user_id']
-                        g.user_roles = user_info.get('roles', [])
-                        logger.debug(f"Optional auth successful: {user_info['email']}")
+            # Extract token from header or cookies (optional)
+            from utils.auth_helpers import extract_token_from_request
+            token = extract_token_from_request(request)
+            if token:
+                # Verify token using PostgreSQL auth
+                auth_manager = get_postgres_auth()
+                user_info = auth_manager.verify_access_token(token)
+                if user_info:
+                    g.user = user_info
+                    g.user_id = user_info['user_id']
+                    g.user_roles = user_info.get('roles', [])
+                    logger.debug(f"Optional auth successful: {user_info['email']}")
         except Exception as e:
             logger.debug(f"Optional auth failed (ignored): {e}")
         

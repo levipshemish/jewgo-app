@@ -14,9 +14,15 @@ import LocationAwarePage from '@/components/LocationAwarePage'
  * Parse hours from the backend JSON format into EateryDB format
  */
 function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
+  console.log('=== PARSE HOURS FROM JSON DEBUG ===');
+  console.log('hoursData:', hoursData);
+  console.log('typeof hoursData:', typeof hoursData);
+  
   try {
     const parsed = typeof hoursData === 'string' ? JSON.parse(hoursData) : hoursData
+    console.log('parsed:', parsed);
     const weekdayText = parsed.weekday_text || []
+    console.log('weekdayText:', weekdayText);
     
     // Check if there are no hours data at all
     if (!weekdayText || weekdayText.length === 0) {
@@ -52,10 +58,12 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
     }
 
     weekdayText.forEach((dayText: string) => {
+      console.log('Processing dayText:', dayText)
       const dayMatch = dayText.match(/^(\w+):\s*(.+)$/i)
       if (dayMatch) {
         const dayName = dayMatch[1].toLowerCase()
         const rawTimeText = dayMatch[2].trim()
+        console.log('Day:', dayName, 'Raw time:', rawTimeText)
         
         if (dayMap[dayName]) {
           if (rawTimeText.toLowerCase() === 'closed') {
@@ -70,9 +78,13 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
               .replace(/\s+/g, ' ') // normalize multiple spaces
               .trim()
             
+            console.log('Normalized time:', normalizedTimeText)
+            
             // More flexible regex to handle various time formats
             const timeMatch = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+            console.log('Time match result:', timeMatch)
             if (timeMatch) {
+              console.log('Using primary time match')
               hours[dayMap[dayName]] = {
                 open: `${timeMatch[1]}:${timeMatch[2]} ${timeMatch[3]}`,
                 close: `${timeMatch[4]}:${timeMatch[5]} ${timeMatch[6]}`,
@@ -81,7 +93,9 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
             } else {
               // Try alternative format without AM/PM for first time
               const altTimeMatch = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+              console.log('Alt time match 1 result:', altTimeMatch)
               if (altTimeMatch) {
+                console.log('Using alt time match 1')
                 hours[dayMap[dayName]] = {
                   open: `${altTimeMatch[1]}:${altTimeMatch[2]}`,
                   close: `${altTimeMatch[3]}:${altTimeMatch[4]} ${altTimeMatch[5]}`,
@@ -90,7 +104,9 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
               } else {
                 // Try format with AM/PM for first time but not second (like "12:00 AM – 8:00")
                 const altTimeMatch2 = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–]\s*(\d{1,2}):(\d{2})/i)
+                console.log('Alt time match 2 result:', altTimeMatch2)
                 if (altTimeMatch2) {
+                  console.log('Using alt time match 2')
                   hours[dayMap[dayName]] = {
                     open: `${altTimeMatch2[1]}:${altTimeMatch2[2]} ${altTimeMatch2[3]}`,
                     close: `${altTimeMatch2[4]}:${altTimeMatch2[5]}`,
@@ -99,15 +115,16 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
                 } else {
                   // Try format with no AM/PM at all (like "12:00 – 8:00")
                   const altTimeMatch3 = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/i)
+                  console.log('Alt time match 3 result:', altTimeMatch3)
                   if (altTimeMatch3) {
-                    console.log('Alternative time match 3 found:', altTimeMatch3)
+                    console.log('Using alt time match 3')
                     hours[dayMap[dayName]] = {
                       open: `${altTimeMatch3[1]}:${altTimeMatch3[2]}`,
                       close: `${altTimeMatch3[3]}:${altTimeMatch3[4]}`,
                       closed: false
                     }
                   } else {
-                    console.log('No alternative time match found')
+                    console.log('No time match found for:', normalizedTimeText)
                     hours[dayMap[dayName]] = { open: '', close: '', closed: true }
                   }
                 }
@@ -118,7 +135,8 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
       }
     })
 
-    console.log('Parsed hours:', hours)
+    console.log('Final parsed hours:', hours)
+    console.log('===============================');
     return hours
   } catch (err) {
     console.error('Error parsing hours JSON:', err)
@@ -295,7 +313,48 @@ function EateryIdPageContent() {
           zip_code: restaurantData.zip_code || '',
           phone_number: restaurantData.phone_number || '',
           listing_type: restaurantData.listing_type || 'restaurant',
-          rating: restaurantData.google_rating ?? restaurantData.rating ?? restaurantData.star_rating ?? restaurantData.quality_rating ?? 0,
+          rating: (() => {
+            // First try the main rating fields
+            let finalRating = restaurantData.google_rating ?? restaurantData.rating ?? restaurantData.star_rating ?? restaurantData.quality_rating;
+            
+            // If no rating found, calculate from Google reviews
+            if (finalRating === null || finalRating === undefined) {
+              if (restaurantData.google_reviews) {
+                try {
+                  console.log('Google reviews data type:', typeof restaurantData.google_reviews);
+                  console.log('Google reviews data:', restaurantData.google_reviews);
+                  
+                  const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
+                  const googleReviewsData = parseGoogleReviews(restaurantData.google_reviews);
+                  
+                  const reviewsArray = !googleReviewsData
+                    ? []
+                    : Array.isArray(googleReviewsData)
+                      ? googleReviewsData
+                      : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)
+                          ? googleReviewsData.reviews
+                          : []);
+                  
+                  if (reviewsArray.length > 0) {
+                    const validRatings = reviewsArray
+                      .map((review: any) => review.rating)
+                      .filter((rating: any) => typeof rating === 'number' && rating > 0);
+                    
+                    if (validRatings.length > 0) {
+                      finalRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error calculating rating from Google reviews:', error);
+                }
+              }
+            }
+            
+            // Default to 0 if still no rating
+            finalRating = finalRating ?? 0;
+            
+            return finalRating;
+          })(),
           price_range: restaurantData.price_range || '$',
           kosher_type: restaurantData.kosher_category || '',
           kosher_agency: restaurantData.certifying_agency || '',
@@ -307,10 +366,10 @@ function EateryIdPageContent() {
             return certifications.join(', ') || restaurantData.kosher_certification || ''
           })(),
           images: (() => {
-            // Combine all available image sources with proper fallback handling
-            const { getFallbackImageUrl } = require('@/lib/utils/imageFallback');
+            // Extract image URLs from the images array
+            const imageUrls = restaurantData.images?.map((img: any) => img.image_url) || [];
             const allImages = [
-              ...(restaurantData.images || []),
+              ...imageUrls,
               ...(restaurantData.business_images || []),
               restaurantData.image_url
             ].filter(Boolean);
@@ -319,15 +378,14 @@ function EateryIdPageContent() {
               return ['/images/default-restaurant.webp'];
             }
             
-            // Process each image with fallback handling
-            return allImages.map(img => 
-              getFallbackImageUrl(img, restaurantData.kosher_category, { enableLogging: process.env.NODE_ENV === 'development' })
-            );
+            // Return raw image URLs - let the mapping handle fallback processing
+            return allImages;
           })(),
           hours: (() => {
             console.log('Processing hours data...')
             console.log('restaurantData.hours_parsed:', restaurantData.hours_parsed)
             console.log('restaurantData.hours_json:', restaurantData.hours_json)
+            console.log('restaurantData.hours_of_operation:', restaurantData.hours_of_operation)
             
             if (restaurantData.hours_parsed) {
               console.log('Using hours_parsed from restaurantData')
@@ -336,6 +394,16 @@ function EateryIdPageContent() {
             } else if (restaurantData.hours_json) {
               console.log('Using hours_json from restaurantData')
               return parseHoursFromJson(restaurantData.hours_json)
+            } else if (restaurantData.hours_of_operation) {
+              console.log('Using hours_of_operation from restaurantData')
+              // Try to parse hours_of_operation as JSON or use it as is
+              try {
+                return parseHoursFromJson(restaurantData.hours_of_operation)
+              } catch (error) {
+                console.log('Failed to parse hours_of_operation as JSON, using as text')
+                // If it's not JSON, try to create a simple hours structure
+                return parseHoursFromJson('{"weekday_text": []}')
+              }
             } else {
               console.log('No hours data available')
               return parseHoursFromJson('{"weekday_text": []}')
@@ -368,6 +436,12 @@ function EateryIdPageContent() {
         if (eateryData.id) {
           fetchReviews(eateryData.id, 0, 10) // Start with first 10 reviews
         }
+        
+        // Debug logging for rating and reviews
+        console.log('=== RATING AND REVIEWS DEBUG ===');
+        console.log('eateryData.rating:', eateryData.rating);
+        console.log('eateryData.google_reviews:', eateryData.google_reviews);
+        console.log('===============================');
       } catch (err) {
         console.error('Error fetching eatery data:', err)
         console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace')

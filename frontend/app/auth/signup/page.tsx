@@ -2,8 +2,7 @@
 
 import { appLogger } from '@/lib/utils/logger';
 import Link from "next/link";
-import { FormEvent, useState, Suspense } from "react";
-// import { useEffect } from "react"; // TODO: Implement useEffect functionality
+import { FormEvent, useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
@@ -25,12 +24,23 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
+  const [csrfMessage, setCsrfMessage] = useState<string | null>(null);
   const router = useRouter();
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   
   const handleGuestContinue = async () => {
     setError(null);
     try {
+      // Ensure CSRF is available before attempting guest login
+      try {
+        await postgresAuth.getCsrf();
+        setCsrfReady(true);
+      } catch (e: any) {
+        setCsrfReady(false);
+        setCsrfMessage('Authentication service is temporarily unavailable. Guest sessions are disabled.');
+        throw e;
+      }
       await postgresAuth.guestLogin();
       if (typeof window !== 'undefined') {
         window.location.assign(_redirectTo);
@@ -42,6 +52,29 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
       setError('Failed to start a guest session');
     }
   };
+
+  // Probe CSRF availability on mount
+  // We only use this to disable the guest button and display a banner
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await postgresAuth.getCsrf();
+        if (!cancelled) {
+          setCsrfReady(true);
+          setCsrfMessage(null);
+        }
+      } catch (e: any) {
+        const msg = e?.message || 'CSRF initialization failed';
+        appLogger.error('CSRF init failed (signup)', { error: String(msg) });
+        if (!cancelled) {
+          setCsrfReady(false);
+          setCsrfMessage('Authentication service is temporarily unavailable. Guest sessions are disabled.');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const onEmailSignUp = async (e: FormEvent) => {
     e.preventDefault();
@@ -132,6 +165,13 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
             {error}
+          </div>
+        )}
+
+        {/* CSRF/Service Banner */}
+        {csrfReady === false && csrfMessage && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded relative">
+            {csrfMessage}
           </div>
         )}
 
@@ -252,10 +292,11 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
           <div className="mt-4">
             <button
               onClick={handleGuestContinue}
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              disabled={csrfReady === false}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Start a temporary guest session"
             >
-              Continue as Guest
+              {csrfReady === false ? 'Guest temporarily unavailable' : 'Continue as Guest'}
             </button>
           </div>
         </div>

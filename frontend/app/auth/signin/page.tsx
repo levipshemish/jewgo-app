@@ -17,6 +17,8 @@ function SignInForm() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isEmailSigningIn, setIsEmailSigningIn] = useState(false);
   const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
+  const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
+  const [csrfMessage, setCsrfMessage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
@@ -79,6 +81,28 @@ function SignInForm() {
 
     checkAuthStatus();
   }, [router, redirectTo]);
+
+  // Probe CSRF availability on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await postgresAuth.getCsrf();
+        if (!cancelled) {
+          setCsrfReady(true);
+          setCsrfMessage(null);
+        }
+      } catch (e: any) {
+        const msg = e?.message || 'CSRF initialization failed';
+        appLogger.error('CSRF init failed', { error: String(msg) });
+        if (!cancelled) {
+          setCsrfReady(false);
+          setCsrfMessage('Authentication service is temporarily unavailable. Guest sessions are disabled.');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Handle form submission
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -181,6 +205,15 @@ function SignInForm() {
   const handleGuestContinue = async () => {
     setError(null);
     try {
+      // Ensure CSRF is available before attempting guest login
+      try {
+        await postgresAuth.getCsrf();
+        setCsrfReady(true);
+      } catch (e: any) {
+        setCsrfReady(false);
+        setCsrfMessage('Authentication service is temporarily unavailable. Guest sessions are disabled.');
+        throw e;
+      }
       await postgresAuth.guestLogin();
       if (typeof window !== 'undefined') {
         window.location.assign(redirectTo);
@@ -237,6 +270,13 @@ function SignInForm() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
               {error}
+            </div>
+          )}
+
+          {/* CSRF/Service Banner */}
+          {csrfReady === false && csrfMessage && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded relative">
+              {csrfMessage}
             </div>
           )}
 
@@ -340,10 +380,11 @@ function SignInForm() {
               {/* Continue as Guest */}
               <button
                 onClick={handleGuestContinue}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                disabled={csrfReady === false}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Start a temporary guest session"
               >
-                Continue as Guest
+                {csrfReady === false ? 'Guest temporarily unavailable' : 'Continue as Guest'}
               </button>
             </div>
           </div>

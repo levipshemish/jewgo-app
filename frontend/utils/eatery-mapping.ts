@@ -74,8 +74,11 @@ function formatPriceRange(priceRange?: string): string {
 }
 
 function formatRating(rating?: number): string {
-  if (rating === undefined || rating === null) return 'No rating'
-  return rating.toFixed(1)
+  if (rating === undefined || rating === null || rating === 0) {
+    return 'No rating'
+  }
+  
+  return rating.toFixed(1);
 }
 
 /**
@@ -137,7 +140,39 @@ export function mapEateryToListingData(
     // Content Section
     content: {
       leftText: eatery.name,
-      rightText: formatRating(eatery.rating),
+      rightText: formatRating((() => {
+        // Calculate rating from Google reviews if available, otherwise use eatery.rating
+        let calculatedRating = eatery.rating;
+        
+        if (eatery.google_reviews) {
+          try {
+            const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
+            const googleReviewsData = parseGoogleReviews(eatery.google_reviews);
+            
+            if (googleReviewsData) {
+              const reviewsArray = Array.isArray(googleReviewsData) 
+                ? googleReviewsData 
+                : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews) 
+                    ? googleReviewsData.reviews 
+                    : []);
+              
+              if (reviewsArray.length > 0) {
+                const validRatings = reviewsArray
+                  .map((review: any) => review.rating)
+                  .filter((rating: any) => typeof rating === 'number' && rating > 0);
+                
+                if (validRatings.length > 0) {
+                  calculatedRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error calculating rating from Google reviews:', error);
+          }
+        }
+        
+        return calculatedRating;
+      })()),
       leftAction: formatPriceRange(eatery.price_range),
       rightAction: (() => {
         const hasUserLocation = !!userLocation
@@ -160,7 +195,21 @@ export function mapEateryToListingData(
         }
       })(),
       rightIcon: undefined, // Remove map icon from rating line
-      onRightAction: onLocationRequest,
+      onRightAction: (() => {
+        const hasUserLocation = !!userLocation
+        const hasEateryLocation = !!(eatery.location?.latitude && eatery.location?.longitude)
+        
+        if (hasUserLocation && hasEateryLocation) {
+          // Open Google Maps with directions to the restaurant
+          return () => {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${eatery.location.latitude},${eatery.location.longitude}`
+            window.open(url, '_blank')
+          }
+        } else {
+          // If no location, request location permission
+          return onLocationRequest
+        }
+      })(),
       leftBold: true,
       leftTextSize: 'lg',
     },
@@ -205,7 +254,14 @@ export function mapEateryToListingData(
         },
         hoursInfo: {
           title: eatery.name,
-          hours: formatHoursForPopup(eatery.hours)
+          hours: (() => {
+            console.log('=== HOURS FORMATTING DEBUG ===');
+            console.log('eatery.hours:', eatery.hours);
+            const formattedHours = formatHoursForPopup(eatery.hours);
+            console.log('formattedHours:', formattedHours);
+            console.log('==============================');
+            return formattedHours;
+          })()
         }
       },
 
@@ -217,6 +273,11 @@ export function mapEateryToListingData(
     address: eatery.address,
     description: eatery.short_description,
     reviews: (() => {
+      // Debug logging
+      console.log('=== REVIEWS MAPPING DEBUG ===');
+      console.log('reviews parameter:', reviews);
+      console.log('eatery.google_reviews:', eatery.google_reviews);
+      
       // Handle both external reviews and Google reviews from eatery data
       const externalReviews = reviews?.map(review => ({
         id: review.id?.toString() || review.review_id?.toString() || Math.random().toString(),
@@ -229,39 +290,82 @@ export function mapEateryToListingData(
         relative_time_description: review.relative_time_description || null
       })) || []
       
+      console.log('externalReviews:', externalReviews);
+      
       // Parse Google reviews from eatery.google_reviews if it exists
       let googleReviews = []
       if (eatery.google_reviews) {
         try {
-          const googleReviewsData = typeof eatery.google_reviews === 'string' 
-            ? JSON.parse(eatery.google_reviews) 
-            : eatery.google_reviews
+          console.log('Eatery-mapping: Google reviews data type:', typeof eatery.google_reviews);
+          console.log('Eatery-mapping: Google reviews data:', eatery.google_reviews);
+          
+    const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
+    const googleReviewsData = parseGoogleReviews(eatery.google_reviews);
           
           // Handle both array format and nested reviews format
-          const reviewsArray = Array.isArray(googleReviewsData) 
-            ? googleReviewsData 
-            : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews) 
-                ? googleReviewsData.reviews 
-                : [])
+          const reviewsArray = !googleReviewsData
+            ? []
+            : Array.isArray(googleReviewsData)
+              ? googleReviewsData
+              : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)
+                  ? googleReviewsData.reviews
+                  : [])
           
           if (reviewsArray.length > 0) {
-            googleReviews = reviewsArray.map((review: any) => ({
-              id: review.google_review_id?.toString() || Math.random().toString(),
-              user: review.author_name || review.author || 'Anonymous',
-              rating: review.rating || 0,
-              comment: review.text || '',
-              date: review.time ? new Date(review.time * 1000).toISOString() : new Date().toISOString(),
-              source: 'google',
-              profile_photo_url: review.profile_photo_url || null,
-              relative_time_description: review.relative_time_description || null
-            }))
+            googleReviews = reviewsArray.map((review: any) => {
+              // Handle date conversion with validation
+              let reviewDate = new Date().toISOString(); // Default to now
+              
+              if (review.time) {
+                const timestampDate = new Date(review.time * 1000);
+                const now = new Date();
+                
+                // Validate that the timestamp is reasonable (not in the future, not too old)
+                const isInFuture = timestampDate > now;
+                const isTooOld = (now.getTime() - timestampDate.getTime()) > (10 * 365 * 24 * 60 * 60 * 1000); // 10 years
+                
+                if (!isInFuture && !isTooOld) {
+                  reviewDate = timestampDate.toISOString();
+                } else {
+                  console.warn('Invalid review timestamp:', {
+                    timestamp: review.time,
+                    date: timestampDate.toISOString(),
+                    isInFuture,
+                    isTooOld,
+                    relativeTime: review.relative_time_description
+                  });
+                }
+              }
+              
+              return {
+                id: review.google_review_id?.toString() || Math.random().toString(),
+                user: review.author_name || review.author || 'Anonymous',
+                rating: review.rating || 0,
+                comment: review.text || '',
+                date: reviewDate,
+                source: 'google',
+                profile_photo_url: review.profile_photo_url || null,
+                relative_time_description: review.relative_time_description || null
+              };
+            })
           }
         } catch (error) {
           console.error('Error parsing Google reviews:', error)
         }
       }
       
-      return [...externalReviews, ...googleReviews]
+      // Deduplicate reviews by ID to prevent showing the same review multiple times
+      const allReviews = [...externalReviews, ...googleReviews];
+      const uniqueReviews = allReviews.filter((review, index, self) => 
+        index === self.findIndex(r => r.id === review.id)
+      );
+      
+      console.log('googleReviews:', googleReviews);
+      console.log('externalReviews:', externalReviews);
+      console.log('allReviews (before dedup):', allReviews);
+      console.log('finalReviews (after dedup):', uniqueReviews);
+      console.log('===============================');
+      return uniqueReviews;
     })(),
                 reviewsPagination: undefined, // Will be set by the page component
                 onLoadMoreReviews: undefined, // Will be set by the page component

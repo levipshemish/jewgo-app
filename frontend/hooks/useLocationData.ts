@@ -144,8 +144,14 @@ export function useLocationData<T extends LocationWithDistance>(
 
   // Create transformer function
   const createTransformer = useMemo(() => {
-    return () => createLocationTransformer(userLocation);
-  }, [userLocation]);
+    return () => (item: T) => {
+      const locationItem = item as LocationWithDistance;
+      return {
+        ...item,
+        distance: formatLocationForDisplay(userLocation, locationItem, fallbackText)
+      } as T & { distance: string };
+    };
+  }, [userLocation, fallbackText]);
 
   return {
     userLocation,

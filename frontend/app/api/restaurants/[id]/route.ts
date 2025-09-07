@@ -89,37 +89,22 @@ export async function GET(
           listing_type: 'restaurant',
           latitude: 40.7128,
           longitude: -74.0060,
-          hours: {
-            monday: '9:00 AM - 10:00 PM',
-            tuesday: '9:00 AM - 10:00 PM',
-            wednesday: '9:00 AM - 10:00 PM',
-            thursday: '9:00 AM - 10:00 PM',
-            friday: '9:00 AM - 3:00 PM',
-            saturday: 'Closed',
-            sunday: '9:00 AM - 10:00 PM'
-          },
+          hours_json: JSON.stringify({
+            weekday_text: [
+              'Monday: 9:00 AM – 10:00 PM',
+              'Tuesday: 9:00 AM – 10:00 PM',
+              'Wednesday: 9:00 AM – 10:00 PM',
+              'Thursday: 9:00 AM – 10:00 PM',
+              'Friday: 9:00 AM – 3:00 PM',
+              'Saturday: Closed',
+              'Sunday: 9:00 AM – 10:00 PM'
+            ]
+          }),
           status: 'open',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // Include mock Google reviews for testing
-          google_reviews: JSON.stringify([
-            {
-              author_name: "John Doe",
-              rating: 5,
-              text: "Amazing kosher food! Great service and atmosphere.",
-              relative_time_description: "2 weeks ago",
-              time: Math.floor(Date.now() / 1000) - 1209600, // 2 weeks ago
-              profile_photo_url: "https://lh3.googleusercontent.com/a/default-user=s128-c0x00000000-cc-rp-mo"
-            },
-            {
-              author_name: "Sarah Smith",
-              rating: 4,
-              text: "Delicious food, but service could be faster.",
-              relative_time_description: "1 month ago",
-              time: Math.floor(Date.now() / 1000) - 2628000, // 1 month ago
-              profile_photo_url: "https://lh3.googleusercontent.com/a/default-user=s128-c0x00000000-cc-rp-mo"
-            }
-          ]),
+          // Include mock Google reviews for testing (with malformed JSON to test our fix)
+          google_reviews: "{'reviews': [{'google_review_id': 1751588673, 'author_name': 'Steven Marks', 'author_url': 'https://www.google.com/maps/contrib/112638545508327569853/reviews', 'rating': 5, 'relative_time_description': 'a month ago', 'text': 'I pulled off here on the spur of the moment from the Turnpike. The diner is right near the exit, inside a giant glass office building. First floor. Marie was super nice. She made me \"The Vincent\" for breakfast. It was a pita with avocado and egg and cheese and it was really good. She took great care to make sure I was all set up with hot sauce and stuff. I had a really nice experience there and she really made me feel welcome. Food was great.', 'time': 1751588673, 'translated': False, 'language': 'en', 'profile_photo_url': 'https://lh3.googleusercontent.com/a/ACg8ocK6vre50aSUSoigpjsKAQ6doCuAcAF46owqgqdAMtv0t99lBw=s128-c0x00000000-cc-rp-mo', 'rating_date': '2025-07-03 20:24:33'}, {'google_review_id': 1527091917, 'author_name': 'יוסף לופז', 'author_url': 'https://www.google.com/maps/contrib/100880724373164296561/reviews', 'rating': 5, 'relative_time_description': '7 years ago', 'text': \"Excellent kosher eatery. Excellent salads. This is by far the best hidden gem when it comes to kosher food. I couldn't recommend this place more.\", 'time': 1527091917, 'translated': False, 'language': 'en', 'profile_photo_url': 'https://lh3.googleusercontent.com/a-/ALV-UjUT7OpQ346OCSNeyBkaTS-GcECGo9KSStG0W96Jp7hhAIDbokdq=s128-c0x00000000-cc-rp-mo-ba5', 'rating_date': '2018-05-23 12:11:57'}], 'overall_rating': 4.7, 'total_reviews': 13, 'fetched_at': 1754681020.445987}",
           google_rating: 4.5,
           google_review_count: 2
         };

@@ -175,7 +175,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     
     // Mark as initialized to prevent premature saves
     setHasInitialized(true);
-  }, []);
+  }, [requestLocation]);
 
   // Save location data to localStorage whenever it changes (only save if we have valid data)
   useEffect(() => {
@@ -456,7 +456,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
 
     return false;
-  }, [userLocation, isLoading, permissionStatus, hasShownPopup, lastPopupShownTime]);
+  }, [userLocation, isLoading, permissionStatus, hasShownPopup]);
 
   const resetPopupState = useCallback(() => {
     setHasShownPopup(false);

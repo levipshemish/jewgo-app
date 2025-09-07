@@ -13,6 +13,8 @@ import traceback
 from datetime import datetime, timezone
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -56,6 +58,34 @@ def create_app():
     # Legacy Supabase JWKS/role manager hooks removed
     
     app = Flask(__name__)
+
+    # Initialize Flask-Limiter
+    # Get storage URI from environment or use memory fallback
+    storage_uri = os.environ.get("RATE_LIMIT_STORAGE_URI", "memory://")
+    
+    # TODO: Add ProxyFix middleware for accurate client IP detection when behind reverse proxy
+    # from werkzeug.middleware.proxy_fix import ProxyFix
+    # app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+    
+    # Initialize limiter with proper configuration
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=app,
+        storage_uri=storage_uri,
+        strategy="fixed-window",
+        default_limits=[]  # No default limits - apply per route as needed
+    )
+    
+    # Attach limiter to app for global access
+    app.limiter = limiter
+    
+    # Update the limiter bridge for route modules
+    try:
+        from utils.limiter import set_limiter
+        set_limiter(limiter)
+        logger.info("Flask-Limiter initialized and bridge updated")
+    except Exception as e:
+        logger.warning(f"Failed to update limiter bridge: {e}")
 
     # Register teardown handler to clear user context per request
     try:

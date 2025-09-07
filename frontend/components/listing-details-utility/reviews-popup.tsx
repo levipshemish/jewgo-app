@@ -38,6 +38,24 @@ interface ReviewsPopupProps {
 
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest'
 
+// Helper function to format relative dates
+function formatRelativeDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return `${Math.floor(diffDays / 365)} years ago`;
+  } catch (error) {
+    return 'Recently';
+  }
+}
+
 export function ReviewsPopup({
   isOpen,
   onClose,
@@ -203,7 +221,7 @@ export function ReviewsPopup({
                         </div>
                         <p className="text-sm text-gray-700 mb-2">{review.comment}</p>
                         <span className="text-xs text-gray-500">
-                          {review.relative_time_description || new Date(review.date).toLocaleDateString()}
+                          {review.relative_time_description || formatRelativeDate(review.date)}
                         </span>
                       </div>
                     </div>

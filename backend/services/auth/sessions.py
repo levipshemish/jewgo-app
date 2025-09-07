@@ -10,7 +10,11 @@ def _now():
 
 
 def _pepper() -> str:
-    return os.getenv("REFRESH_PEPPER", "dev_pepper")
+    p = os.getenv("REFRESH_PEPPER")
+    # In production, require an explicit pepper
+    if not p and os.getenv("ENVIRONMENT", "development").lower() == "production":
+        raise RuntimeError("REFRESH_PEPPER is required in production")
+    return p or "dev_pepper"
 
 
 def _hash_refresh(token: str) -> str:
@@ -132,4 +136,3 @@ def revoke_family(db_manager, *, fid: str) -> None:
     from sqlalchemy import text
     with db_manager.connection_manager.session_scope() as session:
         session.execute(text("UPDATE auth_sessions SET revoked_at = NOW() WHERE family_id = :fid AND revoked_at IS NULL"), {"fid": fid})
-

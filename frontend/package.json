@@ -140,6 +140,7 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sentry/nextjs": "^10.5.0",
+    "@swc/helpers": "^0.5.17",
     "@tanstack/react-virtual": "^3.13.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/ioredis": "^4.28.10",

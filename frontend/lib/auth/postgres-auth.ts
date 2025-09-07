@@ -132,26 +132,63 @@ class PostgresAuthClient {
    */
   public async getCsrf(): Promise<string> {
     const resp = await fetch(`${this.baseUrl}/api/auth/csrf`, { credentials: 'include', cache: 'no-store' });
-    const data = await resp.json();
-    if (resp.ok && data?.token) {
-      this.csrfToken = data.token as string;
-      return this.csrfToken;
+    // Try to parse JSON, but handle HTML/error bodies gracefully
+    const contentType = resp.headers.get('Content-Type') || '';
+    let token: string | null = null;
+    if (resp.ok) {
+      try {
+        if (contentType.includes('application/json')) {
+          const data = await resp.json();
+          token = data?.token ?? null;
+        } else {
+          // Unexpected content-type on success
+          const _ = await resp.text();
+          token = null;
+        }
+      } catch {
+        // JSON parse failed
+        token = null;
+      }
+      if (token) {
+        this.csrfToken = token;
+        return this.csrfToken;
+      }
     }
-    throw new PostgresAuthError('Failed to obtain CSRF token');
+
+    // Build a clearer error including status and a short body preview
+    let bodyPreview = '';
+    try { bodyPreview = (await resp.text()).slice(0, 120); } catch {}
+    throw new PostgresAuthError(
+      `Failed to obtain CSRF token (${resp.status}). ${bodyPreview}`,
+      'CSRF_ERROR',
+      resp.status,
+    );
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new PostgresAuthError(
-        data.error || 'Authentication request failed',
-        data.code,
-        response.status
-      );
+    let data: any = null;
+    let parsed = false;
+    const contentType = response.headers.get('Content-Type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+        parsed = true;
+      } catch {
+        parsed = false;
+      }
+    }
+    if (!parsed) {
+      // Fallback to text for clearer error messages on HTML/error pages
+      try { data = { error: (await response.text()).slice(0, 200) }; } catch { data = null; }
     }
 
-    return data;
+    if (!response.ok) {
+      const message = (data && (data.error || data.message)) || 'Authentication request failed';
+      const code = data && data.code ? String(data.code) : undefined;
+      throw new PostgresAuthError(message, code, response.status);
+    }
+
+    return data as T;
   }
 
   private saveTokens(tokens: AuthTokens): void {

@@ -159,8 +159,12 @@ export function ListingContent({
               variant="ghost" 
               size="sm" 
               onClick={onRightAction} 
-              className="text-sm text-gray-600 h-auto px-2 py-1 rounded-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors shadow-sm border border-gray-200/50"
+              className="text-sm text-gray-600 h-auto px-2 py-1 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors"
             >
+              {/* Show map icon for distance buttons (containing "miles", "ft", "km", "m") */}
+              {(rightAction && (rightAction.includes('miles') || rightAction.includes('ft') || rightAction.includes('km') || rightAction.includes('m'))) && (
+                <span className="inline-block mr-2">{renderIcon("map-pin")}</span>
+              )}
               {rightIcon && <span className="inline-block mr-2">{renderIcon(rightIcon)}</span>}
               {rightAction || ""}
             </Button>

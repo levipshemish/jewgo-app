@@ -19,7 +19,11 @@ This document outlines the comprehensive security measures implemented in the Je
 2. Set up deployment environment variables:
    - Vercel: Use Vercel dashboard environment variables
    - Netlify: Use Netlify environment variables panel
-   - Render: Use Render environment variables settings
+    - Render: Use Render environment variables settings
+3. Backend production auth requirements:
+   - `JWT_SECRET_KEY` (or `JWT_SECRET`) MUST be set (no dev fallback)
+   - `REFRESH_PEPPER` MUST be set (refresh-token hash hardening)
+   - Consider `COOKIE_DOMAIN` for cross-site setups (forces `SameSite=None; Secure`)
 
 ### 2. **HttpOnly Cookies & Session Security (PostgreSQL Auth)**
 
@@ -28,6 +32,7 @@ This document outlines the comprehensive security measures implemented in the Je
 - Secure cookie settings: `SameSite=Lax`, `Secure` in production
 - No localStorage token storage — tokens never touch client-side storage
 - Refresh rotation with family reuse detection and revocation
+- Refresh endpoint accepts cookie-based token (preferred); JSON body is optional for backward compatibility
 
 #### 📁 **Files:**
 - `lib/auth/postgres-auth.ts` — Cookie-mode client
@@ -153,6 +158,11 @@ NODE_ENV=production
 NEXT_PUBLIC_BACKEND_URL=https://api.jewgo.app
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
+JWT_SECRET_KEY=your-strong-secret
+REFRESH_PEPPER=your-strong-pepper
+ENVIRONMENT=production
+# For cross-site cookie deployments
+COOKIE_DOMAIN=.jewgo.app
 ```
 
 ### **Security Headers in Production:**

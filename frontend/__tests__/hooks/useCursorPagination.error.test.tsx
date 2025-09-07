@@ -7,7 +7,7 @@ function TestComp() {
   React.useEffect(() => {
     // Trigger a fetch with an invalid/expired cursor
     hook.fetchWithCursor('bad-cursor', '', {}, false);
-  }, []);
+  }, [hook]);
   return (
     <div>
       <div data-testid="error">{hook.error || ''}</div>

@@ -41,11 +41,18 @@ def register_postgres_auth(app: Flask):
         from routes.auth_api import auth_bp
         app.register_blueprint(auth_bp)
         logger.info("Auth API blueprint registered")
+        # Register auth middleware (auto cookie-based auth + refresh)
+        try:
+            from middleware.auth_middleware import register_auth_middleware
+            register_auth_middleware(app)
+            logger.info("Auth middleware registered")
+        except Exception as _e:
+            logger.info("Auth middleware not registered: %s", _e)
         
         # Register enhanced error handlers
         register_auth_error_handlers(app)
 
-        # Optional Prometheus metrics endpoint
+        # Optional Prometheus metrics endpoint (robust/noise-free)
         try:
             register_metrics_endpoint(app)
         except Exception as _e:
@@ -76,7 +83,7 @@ def register_auth_error_handlers(app: Flask):
         from flask import redirect, url_for
         try:
             return redirect(url_for('auth.login', next=request.url))
-        except:
+        except Exception:
             # If auth.login route doesn't exist, return JSON
             return jsonify({'error': 'Authentication required'}), 401
     
@@ -95,7 +102,7 @@ def register_auth_error_handlers(app: Flask):
     
     @app.errorhandler(429)
     def handle_rate_limit(error):
-        from flask import jsonify, request
+        from flask import jsonify
         
         retry_after = getattr(error, 'retry_after', 60)
         
@@ -127,6 +134,18 @@ def setup_jwt_config(app: Flask):
     app.config.setdefault('ACCOUNT_LOCKOUT_MINUTES', 15)
     
     logger.info("JWT configuration set up")
+
+
+def _validate_auth_env() -> None:
+    """Validate presence of critical auth environment variables and warn/error accordingly."""
+    jwt_secret = os.getenv('JWT_SECRET_KEY') or os.getenv('JWT_SECRET')
+    if not jwt_secret:
+        logger.error("Missing JWT secret. Set JWT_SECRET_KEY or JWT_SECRET.")
+        raise ValueError("JWT_SECRET_KEY (or JWT_SECRET) environment variable is required")
+    # Optional, but warn if reCAPTCHA enforcement requested without key
+    enforce_recaptcha = os.getenv('ENFORCE_RECAPTCHA_LOGIN', 'false').lower() == 'true'
+    if enforce_recaptcha and not os.getenv('RECAPTCHA_SECRET_KEY'):
+        logger.warning("ENFORCE_RECAPTCHA_LOGIN=true but RECAPTCHA_SECRET_KEY not set")
 
 
 def setup_security_headers(app: Flask):
@@ -169,7 +188,8 @@ def init_postgres_auth_app(app: Flask):
     logger.info("Initializing PostgreSQL authentication system...")
     
     try:
-        # Set up JWT configuration
+        # Validate env & set up JWT configuration
+        _validate_auth_env()
         setup_jwt_config(app)
         
         # Register auth system
@@ -182,11 +202,15 @@ def init_postgres_auth_app(app: Flask):
         @app.route('/api/auth/health')
         def auth_health():
             from flask import jsonify
+            from datetime import datetime, timezone
             return jsonify({
                 'status': 'healthy',
                 'auth_system': 'postgresql',
-                'timestamp': '2025-01-15T00:00:00Z'
+                'timestamp': datetime.now(timezone.utc).isoformat()
             })
+
+        # Add component health probes for auth services
+        _register_auth_service_health(app)
         
         logger.info("PostgreSQL authentication system initialized successfully")
         
@@ -274,3 +298,32 @@ def check_auth_migration_status(app: Flask = None):
 
 
 # Migration helpers - functions moved above
+
+
+def _register_auth_service_health(app: Flask) -> None:
+    """Register a detailed health endpoint for auth components."""
+    @app.route('/api/auth/health/services')
+    def auth_services_health():
+        from flask import jsonify
+        status = {
+            'tokens': False,
+            'csrf': False,
+            'cookies': True,  # cookie setting is static
+            'sessions': True,  # DB-backed; assume availability as app init succeeded
+            'recaptcha_configured': bool(os.getenv('RECAPTCHA_SECRET_KEY')),
+        }
+        try:
+            # Simple mint/verify round-trip for access token
+            from services.auth.tokens import mint_access, verify
+            at, _ttl = mint_access('health_user', 'health@example.com', roles=[])
+            payload = verify(at, expected_type='access')
+            status['tokens'] = bool(payload)
+        except Exception:
+            status['tokens'] = False
+        try:
+            from services.auth.csrf import issue as csrf_issue, validate as csrf_validate
+            # Cannot issue without a response; basic flag to indicate module availability
+            status['csrf'] = callable(csrf_issue) and callable(csrf_validate)
+        except Exception:
+            status['csrf'] = False
+        return jsonify({'status': 'ok', 'components': status})

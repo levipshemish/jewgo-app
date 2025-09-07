@@ -72,6 +72,22 @@ export async function fetchRestaurants({
     throw new Error("Malformed restaurants response");
   }
   
+  // Handle different API response formats
+  // Local API format: {success: boolean, restaurants: Restaurant[]}
+  // External API format: {count: number, data: Restaurant[]}
+  if (json.data && Array.isArray(json.data)) {
+    // External API format
+    return {
+      success: true,
+      restaurants: json.data,
+      totalPages: Math.ceil((json.count || json.data.length) / limit),
+      totalRestaurants: json.count || json.data.length,
+      page: page,
+      limit: limit
+    };
+  }
+  
+  // Local API format (fallback)
   return json as RestaurantsResponse;
 }
 

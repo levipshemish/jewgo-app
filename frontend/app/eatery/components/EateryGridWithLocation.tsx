@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, RefObject } from 'react';
 import Card from '@/components/core/cards/Card';
 import { Loader2, Search } from 'lucide-react';
 import { AppliedFilters } from '@/lib/filters/filters.types';
@@ -15,8 +15,10 @@ import type { LightRestaurant } from '../types';
 import { useLocationData } from '@/hooks/useLocationData';
 import { LocationWithDistance } from '@/lib/utils/location';
 
-// Extend LightRestaurant to include location data
-interface EateryWithLocation extends LightRestaurant, LocationWithDistance {}
+// Extend LightRestaurant to include location data, resolving the distance type conflict
+interface EateryWithLocation extends Omit<LightRestaurant, 'distance'>, Omit<LocationWithDistance, 'distance'> {
+  distance?: string; // Use string format for display (e.g., "1.5 miles")
+}
 
 interface EateryGridWithLocationProps {
   category?: string;
@@ -167,7 +169,7 @@ export default function EateryGridWithLocation({
     const sorted = sortItems(transformed);
     
     return sorted;
-  }, [restaurants, transformItems, sortItems]);
+  }, [restaurants, transformItems, sortItems, userLocation]);
 
   // Filter restaurants based on category and search
   const filteredRestaurants = useMemo(() => {
@@ -197,7 +199,12 @@ export default function EateryGridWithLocation({
   // Handle card click
   const handleCardClick = (restaurant: EateryWithLocation) => {
     if (onCardClick) {
-      onCardClick(restaurant);
+      // Convert EateryWithLocation back to LightRestaurant for callback compatibility
+      const lightRestaurant: LightRestaurant = {
+        ...restaurant,
+        distance: parseFloat(restaurant.distance || '0') || 0
+      };
+      onCardClick(lightRestaurant);
     } else {
       // Default navigation
       window.location.href = `/eatery/${restaurant.id}`;
@@ -205,9 +212,10 @@ export default function EateryGridWithLocation({
   };
 
   // Helper function to format rating
-  const toFixedRating = (rating: number | undefined): string => {
+  const toFixedRating = (rating: number | string | undefined): string => {
     if (rating === undefined || rating === null) return '';
-    return rating.toFixed(1);
+    const numRating = typeof rating === 'number' ? rating : Number.parseFloat(String(rating));
+    return Number.isFinite(numRating) ? numRating.toFixed(1) : '';
   };
 
   if (loading) {
@@ -283,7 +291,7 @@ export default function EateryGridWithLocation({
                   imageTag: restaurant.kosher_category || '',
                 }}
                 variant="default"
-                onClick={() => handleCardClick(restaurant)}
+                onCardClick={() => handleCardClick(restaurant)}
               />
             </div>
           );

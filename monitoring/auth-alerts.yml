@@ -1,0 +1,189 @@
+groups:
+  - name: jwt_authentication
+    rules:
+      # Critical Security Alerts
+      - alert: HighTokenReuseDetection
+        expr: rate(auth_refresh_total{result="reuse"}[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+          component: authentication
+        annotations:
+          summary: "High rate of refresh token reuse detected"
+          description: "{{ $value }} refresh token reuse attempts per second detected. This may indicate a security breach or token theft."
+          runbook_url: "https://wiki.company.com/auth-security-incidents"
+
+      - alert: AuthenticationSystemDown
+        expr: up{job="auth-service"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: authentication
+        annotations:
+          summary: "Authentication service is down"
+          description: "Authentication service has been down for more than 30 seconds"
+
+      - alert: HighLoginFailureRate
+        expr: rate(auth_logins_total{result="failure"}[5m]) / rate(auth_logins_total[5m]) > 0.3
+        for: 2m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High login failure rate detected"
+          description: "{{ $value | humanizePercentage }} of login attempts are failing over the last 5 minutes"
+
+      # Performance Alerts  
+      - alert: HighAuthenticationLatency
+        expr: histogram_quantile(0.95, rate(auth_operation_latency_seconds_bucket{operation="login"}[5m])) > 2.0
+        for: 3m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High authentication latency"
+          description: "95th percentile login latency is {{ $value }}s, above 2s threshold"
+
+      - alert: HighRefreshLatency
+        expr: histogram_quantile(0.95, rate(auth_refresh_latency_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High token refresh latency"
+          description: "95th percentile refresh latency is {{ $value }}s, above 1s threshold"
+
+      # Rate Limiting Alerts
+      - alert: RateLimitingTriggered
+        expr: rate(auth_errors_total{error_type="rate_limit"}[5m]) > 1
+        for: 1m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "Rate limiting frequently triggered"
+          description: "{{ $value }} rate limit violations per second detected"
+
+      # CSRF Protection Alerts
+      - alert: CSRFAttackAttempts
+        expr: rate(auth_errors_total{error_type="csrf_failed"}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "Potential CSRF attack attempts"
+          description: "{{ $value }} CSRF validation failures per second detected"
+
+      # Database Connectivity
+      - alert: AuthDatabaseErrors
+        expr: rate(auth_errors_total{error_type="database"}[5m]) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+          component: authentication
+        annotations:
+          summary: "Authentication database errors"
+          description: "Database errors detected in authentication system at {{ $value }}/sec"
+
+      # OAuth Issues
+      - alert: OAuthFailureRate
+        expr: rate(auth_oauth_total{result="failure"}[10m]) / rate(auth_oauth_total[10m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High OAuth failure rate"
+          description: "{{ $value | humanizePercentage }} of OAuth attempts are failing"
+
+      # Session Anomalies
+      - alert: UnusualTokenRefreshPattern
+        expr: rate(auth_refresh_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "Unusual token refresh pattern"
+          description: "Very high token refresh rate detected: {{ $value }}/sec"
+
+  - name: jwt_authentication_capacity
+    rules:
+      # Capacity Planning Alerts
+      - alert: HighConcurrentSessions
+        expr: (auth_refresh_total - auth_logout_total) > 10000
+        for: 5m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High number of concurrent sessions"
+          description: "Estimated {{ $value }} concurrent sessions, approaching capacity limits"
+
+      - alert: MemoryUsageHigh
+        expr: process_resident_memory_bytes{job="auth-service"} > 512 * 1024 * 1024
+        for: 3m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High memory usage in auth service"
+          description: "Auth service using {{ $value | humanizeBytes }} of memory"
+
+  - name: jwt_authentication_business
+    rules:
+      # Business Logic Alerts
+      - alert: NoUserRegistrations
+        expr: rate(auth_logins_total{method="password",result="success"}[1h]) == 0
+        for: 1h
+        labels:
+          severity: info
+          component: authentication
+        annotations:
+          summary: "No new user registrations"
+          description: "No new user registrations in the past hour"
+
+      - alert: HighGuestUserRatio
+        expr: rate(auth_guest_total{event="created"}[1h]) / rate(auth_logins_total{result="success"}[1h]) > 0.8
+        for: 30m
+        labels:
+          severity: info
+          component: authentication
+        annotations:
+          summary: "High ratio of guest users"
+          description: "{{ $value | humanizePercentage }} of recent logins are guest users"
+
+      - alert: PasswordResetSpike
+        expr: rate(auth_password_reset_total{event="requested"}[15m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "Spike in password reset requests"
+          description: "{{ $value }}/sec password reset requests, above normal threshold"
+
+  - name: jwt_authentication_maintenance
+    rules:
+      # Maintenance Alerts
+      - alert: ExpiredTokenCleanupNeeded
+        expr: time() - auth_last_cleanup_timestamp > 86400  # 24 hours
+        for: 1m
+        labels:
+          severity: info
+          component: authentication
+        annotations:
+          summary: "Token cleanup needed"
+          description: "Expired tokens haven't been cleaned up in 24+ hours"
+
+      - alert: MetricsCollectionDown
+        expr: absent(auth_logins_total)
+        for: 2m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Authentication metrics not being collected"
+          description: "No authentication metrics received for 2+ minutes"

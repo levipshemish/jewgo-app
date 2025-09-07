@@ -353,10 +353,31 @@ JWT_ACCESS_EXPIRE_HOURS=24
 ```bash
 DATABASE_URL=postgresql://...
 FLASK_ENV=development
+ENVIRONMENT=development
 SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret-key
 JWT_ACCESS_EXPIRE_HOURS=24
+# Required in production:
+# - JWT_SECRET_KEY (or JWT_SECRET)
+# - REFRESH_PEPPER              # used to hash refresh tokens safely
+# Optional but recommended in production:
+# - COOKIE_DOMAIN=your.domain   # cookies scoped to domain
+# - CSRF_ENABLED=true           # enforced automatically in production
+# - ACCESS_TTL_SECONDS=900      # 15m default
+# - REFRESH_TTL_SECONDS=3888000 # 45d default
+# - GUEST_REFRESH_TTL_SECONDS=604800 # 7d default for guests
+# OAuth (if using Google login)
+# - GOOGLE_CLIENT_ID=
+# - GOOGLE_CLIENT_SECRET=
 ```
+
+### Production Requirements (Auth)
+
+- JWT secrets: set `JWT_SECRET_KEY` (or `JWT_SECRET`) — required. In production the app fails closed if missing.
+- Refresh pepper: set `REFRESH_PEPPER` — required in production to protect stored refresh-token hashes.
+- Cookies: if frontend and backend are on different domains, set `COOKIE_DOMAIN` and ensure cookies use `SameSite=None; Secure` (enabled when `ENVIRONMENT=production`). With same-site setups, default `SameSite=Lax` works.
+- Refresh endpoint: `/api/auth/refresh` prefers the HttpOnly `refresh_token` cookie. The JSON body param remains optional for backward compatibility.
+- CSRF: enforced for mutating auth routes in production. Frontend obtains `/api/auth/csrf` then sends `X-CSRF-Token` automatically.
 
 ## 🚀 Deployment
 

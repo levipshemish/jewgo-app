@@ -29,6 +29,9 @@ MANIFEST
 
 # Virtual Environment
 venv/
+.venv/
+backend/.venv/
+frontend/.venv/
 scraper_env/
 env/
 ENV/

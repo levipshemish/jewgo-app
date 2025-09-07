@@ -4,7 +4,9 @@ Provides decorators for admin authorization via server-side roles.
 """
 
 from functools import wraps
-from flask import jsonify
+from typing import Optional, Dict, Any
+import os
+from flask import jsonify, request
 from utils.logging_config import get_logger
 from utils.rbac import require_auth, require_role_level
 

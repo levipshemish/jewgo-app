@@ -32,10 +32,9 @@ export function ListingImage({
   console.log('=== LISTING IMAGE DEBUG ===')
   console.log('src:', src)
   console.log('allImages:', allImages)
-  console.log('onAction:', onAction)
   console.log('allImages.length:', allImages.length)
-  console.log('Should show gallery button:', onAction || allImages.length > 0)
   console.log('==========================')
+
 
   const handleViewGallery = () => {
     if (allImages.length > 0) {
@@ -49,6 +48,7 @@ export function ListingImage({
     const target = e.target as HTMLImageElement;
     if (target.src !== '/images/default-restaurant.webp') {
       console.log(`🖼️ Image failed to load, using fallback:`, target.src);
+      console.log(`🖼️ Original src was:`, src);
       target.src = '/images/default-restaurant.webp';
       target.onerror = null; // Prevent infinite loops
     }

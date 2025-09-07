@@ -4,28 +4,31 @@ This module provides API endpoints for authenticated users to interact with
 the backend. These endpoints are not part of the new PostgreSQL auth routes.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from utils.logging_config import get_logger
 from utils.limiter import limiter
 from utils.rbac import require_auth as require_user_auth
-from utils.rbac import optional_auth as optional_user_auth
 from flask import g
+from services.rate_limit_keys import key_user_or_ip
+from services.http_cache import make_stable_etag, http_date
+import time
+from utils.error_handler import ValidationError, NotFoundError
+from utils.config_manager import config_manager
 
 
 def get_current_user():
-    user = getattr(g, 'user', None)
+    user = getattr(g, "user", None)
     if not user:
         return None
     return {
-        'id': getattr(g, 'user_id', None),
-        'email': user.get('email'),
+        "id": getattr(g, "user_id", None),
+        "email": user.get("email"),
     }
 
 
 def get_user_id():
-    return getattr(g, 'user_id', None)
-from utils.error_handler import ValidationError, NotFoundError
-from utils.config_manager import config_manager
+    return getattr(g, "user_id", None)
+
 
 logger = get_logger(__name__)
 # Create blueprint for user API routes
@@ -33,26 +36,55 @@ user_api = Blueprint("user_api", __name__, url_prefix="/api/user")
 
 
 @user_api.route("/profile", methods=["GET"])
+@limiter.limit("60 per minute", key_func=key_user_or_ip)
 @require_user_auth
 def get_user_profile():
     """
-    Get current user's profile information
+    Get current user's profile information with ETag support and caching headers
     Returns:
-        JSON with user profile data
+        JSON with user profile data or 304 Not Modified if ETag matches
     """
     try:
         user = get_current_user()
         if not user:
             raise NotFoundError("User not found")
-        # Return user profile (excluding sensitive information)
-        profile = {
+
+        # Build stable view with sorted roles for consistent ETag generation
+        user_roles = user.get("role", [])
+        if isinstance(user_roles, list):
+            user_roles = sorted(user_roles)
+
+        stable_view = {
             "id": user.get("id"),
             "email": user.get("email"),
-            "role": user.get("role"),
-            "user_metadata": user.get("user_metadata", {}),
-            "created_at": user.get("iat"),  # Token issued at time
+            "name": user.get("name"),
+            "avatar_url": user.get("avatar_url"),
+            "roles": user_roles,
+            "updated_at": user.get("iat"),  # Token issued at time
         }
-        return jsonify(profile)
+
+        # Generate ETag from stable view
+        etag = make_stable_etag(stable_view)
+
+        # Check If-None-Match header for conditional request
+        if_none_match = request.headers.get("If-None-Match")
+        if if_none_match and if_none_match == etag:
+            # Return 304 Not Modified with headers
+            response = make_response("", 304)
+            response.headers["ETag"] = etag
+            response.headers["Cache-Control"] = "private, max-age=30"
+            response.headers["Vary"] = "Authorization"
+            response.headers["Date"] = http_date(time.time())
+            return response
+
+        # Return 200 OK with profile data and headers
+        response = make_response(jsonify(stable_view))
+        response.headers["ETag"] = etag
+        response.headers["Cache-Control"] = "private, max-age=30"
+        response.headers["Vary"] = "Authorization"
+        response.headers["Date"] = http_date(time.time())
+        return response
+
     except NotFoundError as e:
         logger.warning(f"User not found: {e}")
         return jsonify({"error": str(e)}), 404

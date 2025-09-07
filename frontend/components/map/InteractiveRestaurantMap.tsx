@@ -158,22 +158,32 @@ export function InteractiveRestaurantMap({
     };
   }, [mapCenter, restaurantsWithCoords]);
 
-  // Use marker management hook
-  const {
-    // markersRef,
-    // markersMapRef,
-    // clustererRef,
-    // getRestaurantKey,
-    // cleanupMarkers,
-    // createMarker,
-    // applyClustering
-  } = useMarkerManagement({
-    map: mapInstanceRef.current,
-    restaurants: restaurantsWithCoords,
-    onRestaurantSelect,
-    selectedRestaurantId,
-    showRatingBubbles,
-  });
+  // Temporarily disable marker management to fix SSR issues
+  // TODO: Re-enable after fixing SSR compatibility
+  const markersRef = useRef([]);
+  const markersMapRef = useRef(new Map());
+  const clustererRef = useRef(null);
+  const getRestaurantKey = (restaurant: Restaurant) => String(restaurant.id);
+  const cleanupMarkers = () => {};
+  const createMarker = () => null;
+  const applyClustering = () => {};
+  
+  // Use marker management hook (disabled for now)
+  // const {
+  //   markersRef,
+  //   markersMapRef,
+  //   clustererRef,
+  //   getRestaurantKey,
+  //   cleanupMarkers,
+  //   createMarker,
+  //   applyClustering
+  // } = useMarkerManagement({
+  //   map: mapInstanceRef.current,
+  //   restaurants: restaurantsWithCoords,
+  //   onRestaurantSelect,
+  //   selectedRestaurantId,
+  //   showRatingBubbles,
+  // });
 
   // Update selected restaurant
   useEffect(() => {
@@ -300,6 +310,19 @@ export function InteractiveRestaurantMap({
             className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 transition-colors"
           >
             Get Directions
+          </button>
+        </div>
+      )}
+
+      {/* Map Error Display */}
+      {mapState.markerError && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 px-4 py-2 rounded-lg shadow-md bg-red-500 text-white">
+          {mapState.markerError}
+          <button
+            onClick={() => setMapState(prev => ({ ...prev, markerError: null }))}
+            className="ml-2 text-white hover:text-gray-200"
+          >
+            ×
           </button>
         </div>
       )}

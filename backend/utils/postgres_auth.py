@@ -13,7 +13,8 @@ import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
-from sqlalchemy import text, and_
+from sqlalchemy import text, and_, bindparam
+from sqlalchemy.types import JSON
 from sqlalchemy.exc import IntegrityError
 from utils.logging_config import get_logger
 from utils.error_handler import AuthenticationError, ValidationError
@@ -232,6 +233,20 @@ class PostgresAuthManager:
                 # Log user creation
                 self._log_auth_event(user_id, 'user_created', True, {'email': email})
                 
+                # Send email verification email
+                try:
+                    from services.email_service import send_email_verification
+                    
+                    email_sent = send_email_verification(email, verification_token, name or "User")
+                    
+                    if email_sent:
+                        logger.info(f"Verification email sent to {email}")
+                    else:
+                        logger.warning(f"Failed to send verification email to {email}")
+                        
+                except Exception as e:
+                    logger.error(f"Error sending verification email: {e}")
+                
                 logger.info(f"User created successfully: {email}")
                 
                 return {
@@ -285,7 +300,7 @@ class PostgresAuthManager:
                     self._log_auth_event(None, 'login_failed', False, {'email': email, 'reason': 'user_not_found'}, ip_address)
                     return None
                 
-                user_data = result._asdict()
+                user_data = dict(result._mapping)
                 user_id = user_data['id']
                 
                 # Check if account is locked
@@ -406,7 +421,7 @@ class PostgresAuthManager:
                 if not result:
                     return None
                 
-                user_data = result._asdict()
+                user_data = dict(result._mapping)
                 
                 # Parse roles from JSON
                 import json
@@ -457,7 +472,7 @@ class PostgresAuthManager:
                 if not result:
                     return None
                 
-                user_data = result._asdict()
+                user_data = dict(result._mapping)
                 
                 # Parse roles from JSON
                 import json
@@ -487,7 +502,7 @@ class PostgresAuthManager:
         """Get active user roles."""
         try:
             with self.db.connection_manager.session_scope() as session:
-                results = session.execute(
+                rows = session.execute(
                     text("""
                         SELECT role, level, granted_at, expires_at
                         FROM user_roles
@@ -497,9 +512,9 @@ class PostgresAuthManager:
                         ORDER BY level DESC
                     """),
                     {'user_id': user_id}
-                ).fetchall()
+                ).mappings().all()
                 
-                return [row._asdict() for row in results]
+                return list(rows)  # already list[dict]
                 
         except Exception as e:
             logger.error(f"Error getting user roles: {e}")
@@ -608,6 +623,27 @@ class PostgresAuthManager:
                     {'user_id': user_id}
                 )
                 
+                # Get user details for welcome email
+                user_details = session.execute(
+                    text("SELECT email, name FROM users WHERE id = :user_id"),
+                    {'user_id': user_id}
+                ).fetchone()
+                
+                # Send welcome email
+                try:
+                    from services.email_service import send_welcome_email
+                    
+                    if user_details:
+                        email_sent = send_welcome_email(user_details.email, user_details.name or "User")
+                        
+                        if email_sent:
+                            logger.info(f"Welcome email sent to {user_details.email}")
+                        else:
+                            logger.warning(f"Failed to send welcome email to {user_details.email}")
+                            
+                except Exception as e:
+                    logger.error(f"Error sending welcome email: {e}")
+                
                 self._log_auth_event(user_id, 'email_verified', True)
                 logger.info(f"Email verified for user {user_id}")
                 return True
@@ -668,23 +704,160 @@ class PostgresAuthManager:
             logger.error(f"Guest user creation error: {e}")
             raise AuthenticationError("Failed to create guest user account")
 
+    def initiate_password_reset(self, email: str, ip_address: str = None) -> bool:
+        """Initiate password reset process by generating reset token."""
+        try:
+            email = email.lower().strip()
+            
+            with self.db.connection_manager.session_scope() as session:
+                # Check if user exists (don't reveal existence in response)
+                result = session.execute(
+                    text("SELECT id FROM users WHERE email = :email AND is_guest = FALSE"),
+                    {'email': email}
+                ).fetchone()
+                
+                if not result:
+                    # Log attempt for monitoring but return success
+                    self._log_auth_event(None, 'password_reset_requested', False, 
+                                       {'email': email, 'reason': 'user_not_found'}, ip_address)
+                    return True  # Don't reveal user existence
+                
+                user_id = result.id
+                
+                # Generate secure reset token
+                reset_token = secrets.token_urlsafe(32)
+                reset_expires = datetime.utcnow() + timedelta(hours=1)  # 1 hour expiry
+                
+                # Clear any existing reset tokens and set new one
+                session.execute(
+                    text("""
+                        UPDATE users SET 
+                            reset_token = :reset_token,
+                            reset_expires = :reset_expires
+                        WHERE id = :user_id
+                    """),
+                    {
+                        'user_id': user_id,
+                        'reset_token': reset_token,
+                        'reset_expires': reset_expires
+                    }
+                )
+                
+                # Log successful request
+                self._log_auth_event(user_id, 'password_reset_requested', True, 
+                                   {'email': email}, ip_address)
+                
+                logger.info(f"Password reset token generated for user {user_id}")
+                
+                # Send password reset email
+                try:
+                    from services.email_service import send_password_reset_email
+                    
+                    # Get user name from database
+                    name_result = session.execute(
+                        text("SELECT name FROM users WHERE id = :user_id"),
+                        {'user_id': user_id}
+                    ).fetchone()
+                    user_name = name_result.name if name_result else "User"
+                    
+                    # Send the email
+                    email_sent = send_password_reset_email(email, reset_token, user_name)
+                    
+                    if email_sent:
+                        logger.info(f"Password reset email sent to {email}")
+                    else:
+                        logger.warning(f"Failed to send password reset email to {email}")
+                        
+                except Exception as e:
+                    logger.error(f"Error sending password reset email: {e}")
+                
+                # Never log sensitive reset tokens in production
+                if os.getenv('ENVIRONMENT', 'development').lower() != 'production':
+                    logger.info(f"[DEV ONLY] Reset token for {email}: {reset_token}")
+                
+                return True
+                
+        except Exception as e:
+            logger.error(f"Password reset initiation error: {e}")
+            return False
+
+    def reset_password_with_token(self, reset_token: str, new_password: str, ip_address: str = None) -> bool:
+        """Reset user password using valid reset token."""
+        try:
+            # Validate new password strength
+            password_validation = self.password_security.validate_password_strength(new_password)
+            if not password_validation['is_valid']:
+                raise ValidationError(f"Password requirements not met: {'; '.join(password_validation['issues'])}")
+            
+            with self.db.connection_manager.session_scope() as session:
+                # Find user with valid reset token
+                result = session.execute(
+                    text("""
+                        SELECT id, email FROM users 
+                        WHERE reset_token = :token 
+                        AND reset_expires > NOW()
+                        AND is_guest = FALSE
+                    """),
+                    {'token': reset_token}
+                ).fetchone()
+                
+                if not result:
+                    self._log_auth_event(None, 'password_reset_failed', False, 
+                                       {'reason': 'invalid_token'}, ip_address)
+                    return False
+                
+                user_id = result.id
+                email = result.email
+                
+                # Hash new password
+                new_password_hash = self.password_security.hash_password(new_password)
+                
+                # Update password and clear reset token
+                session.execute(
+                    text("""
+                        UPDATE users SET 
+                            password_hash = :password_hash,
+                            reset_token = NULL,
+                            reset_expires = NULL,
+                            failed_login_attempts = 0,
+                            locked_until = NULL
+                        WHERE id = :user_id
+                    """),
+                    {
+                        'user_id': user_id,
+                        'password_hash': new_password_hash
+                    }
+                )
+                
+                # Log successful password reset
+                self._log_auth_event(user_id, 'password_reset_completed', True, 
+                                   {'email': email}, ip_address)
+                
+                logger.info(f"Password reset completed for user {user_id}")
+                return True
+                
+        except ValidationError:
+            raise
+        except Exception as e:
+            logger.error(f"Password reset error: {e}")
+            return False
+
     def _log_auth_event(self, user_id: str, action: str, success: bool, details: Dict[str, Any] = None, ip_address: str = None):
         """Log authentication events for audit purposes."""
         try:
             with self.db.connection_manager.session_scope() as session:
-                session.execute(
-                    text("""
-                        INSERT INTO auth_audit_log (user_id, action, ip_address, success, details, created_at)
-                        VALUES (:user_id, :action, :ip_address, :success, :details, NOW())
-                    """),
-                    {
-                        'user_id': user_id,
-                        'action': action,
-                        'ip_address': ip_address,
-                        'success': success,
-                        'details': details or {}
-                    }
-                )
+                stmt = text("""
+                    INSERT INTO auth_audit_log (user_id, action, ip_address, success, details, created_at)
+                    VALUES (:user_id, :action, :ip_address, :success, :details, NOW())
+                """).bindparams(bindparam("details", type_=JSON))
+                
+                session.execute(stmt, {
+                    'user_id': user_id,
+                    'action': action,
+                    'ip_address': ip_address,
+                    'success': success,
+                    'details': details or {}
+                })
                 
         except Exception as e:
             logger.error(f"Failed to log auth event: {e}")

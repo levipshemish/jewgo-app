@@ -136,7 +136,7 @@ export function ListingActions({
                   variant="ghost"
                   size="sm"
                   onClick={_onLocationRequest}
-                  className="flex items-center justify-center gap-2 text-sm text-gray-600 font-medium h-auto p-0 hover:bg-gray-50 hover:text-gray-700 transition-colors group mx-auto rounded-full px-2 py-1 border border-gray-200"
+                  className="flex items-center justify-center gap-2 text-sm text-gray-600 font-medium h-auto p-0 hover:bg-gray-50 hover:text-gray-700 transition-colors group mx-auto rounded-full px-2 py-1"
                 >
                   <MapPin className="w-4 h-4" />
                   Get Location

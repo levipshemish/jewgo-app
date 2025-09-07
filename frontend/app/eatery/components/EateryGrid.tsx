@@ -40,56 +40,39 @@ export default function EateryGrid({
   const [page, setPage] = useState(0)
   const [backendError, setBackendError] = useState(false)
   const isRetryingRef = useRef(false)
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Debug userLocation changes
-  useEffect(() => {
-    console.log('EateryGrid userLocation changed:', {
-      hasUserLocation: !!userLocation,
-      userLocation,
-      timestamp: Date.now()
-    })
-  }, [userLocation])
-
-  // Transform restaurant data for UnifiedCard
-  const transformRestaurant = useCallback((restaurant: LightRestaurant) => {
+  // Transform restaurant data for UnifiedCard - memoized to prevent unnecessary recalculations
+  const transformRestaurant = useCallback((restaurant: LightRestaurant, userLoc: typeof userLocation) => {
     // Calculate distance if user location is available
     let distanceText = ''
-    console.log('EateryGrid transformRestaurant debug:', {
-      restaurantName: restaurant.name,
-      hasUserLocation: !!userLocation,
-      userLocation,
-      hasRestaurantLocation: !!(restaurant.latitude !== undefined && restaurant.longitude !== undefined),
-      restaurantLocation: { lat: restaurant.latitude, lng: restaurant.longitude },
-      fullRestaurantData: restaurant
-    })
     
-    if (userLocation && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
+    if (userLoc && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
       const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
+        userLoc.latitude,
+        userLoc.longitude,
         restaurant.latitude,
         restaurant.longitude
       )
       distanceText = formatDistance(distance)
-      console.log('EateryGrid calculated distance:', { distance, distanceText })
-    } else {
-      console.log('EateryGrid: No distance calculated - missing location data')
     }
 
-    const finalDistance = distanceText || (userLocation ? '' : restaurant.zip_code || '')
-    console.log('EateryGrid final distance:', finalDistance)
+    const finalDistance = distanceText || (userLoc ? '' : restaurant.zip_code || '')
 
     return {
       ...restaurant,
-      distance: finalDistance
+      distance: userLoc && restaurant.latitude !== undefined && restaurant.longitude !== undefined 
+        ? calculateDistance(userLoc.latitude, userLoc.longitude, restaurant.latitude, restaurant.longitude)
+        : 0,
+      // Store formatted distance separately for display
+      formattedDistance: finalDistance
     }
-  }, [userLocation])
+  }, [])
 
-  // Memoize transformed restaurants to ensure re-calculation when userLocation changes
+  // Memoize transformed restaurants - only recalculate when restaurants or userLocation actually changes
   const transformedRestaurants = useMemo(() => {
-    console.log('EateryGrid: Recalculating transformed restaurants due to userLocation change')
-    return restaurants.map(restaurant => transformRestaurant(restaurant))
-  }, [restaurants, transformRestaurant])
+    return restaurants.map(restaurant => transformRestaurant(restaurant, userLocation))
+  }, [restaurants, userLocation, transformRestaurant])
 
   // Real API function for restaurants with offset-based pagination for infinite scroll
   const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
@@ -108,13 +91,10 @@ export default function EateryGrid({
         })
       }
 
-      console.log('fetchRestaurants called with URL:', apiUrl.toString())
-
       // Add timeout to fetch (shorter than API timeout to fail fast)
       const controller = new AbortController()
       const timeoutId = setTimeout(() => {
         controller.abort()
-        console.log('Frontend timeout - aborting request')
       }, timeoutMs)
 
       const response = await fetch(apiUrl.toString(), {
@@ -126,8 +106,6 @@ export default function EateryGrid({
 
       clearTimeout(timeoutId)
 
-      console.log('fetchRestaurants response status:', response.status)
-
       if (!response.ok) {
         if (response.status >= 500) {
           throw new Error(`Backend server error: ${response.status}`)
@@ -138,7 +116,6 @@ export default function EateryGrid({
       }
 
       const data = await response.json()
-      console.log('fetchRestaurants response data:', data)
       
       if (data.success === false && data.message?.includes('temporarily unavailable')) {
         throw new Error('Backend service unavailable')
@@ -160,25 +137,13 @@ export default function EateryGrid({
       const restaurantsCount = data.data?.restaurants?.length || 0
       if (total === 0 && restaurantsCount === limit) {
         hasMoreData = true
-        console.log('Fallback: total is 0 but got full page, assuming hasMore = true')
       }
       
       // Additional fallback: If API says hasMore is false but we got a full page on first load,
       // override it to true (API might be too conservative)
       if (!hasMoreData && offset === 0 && restaurantsCount === limit) {
         hasMoreData = true
-        console.log('Fallback: API says no more but got full first page, overriding hasMore = true')
       }
-      
-      console.log('fetchRestaurants calculated hasMore:', hasMoreData, 'total:', total, 'currentOffset:', currentOffset, 'limit:', limit)
-      console.log('API response structure:', {
-        'data.total': data.data?.total,
-        'data.total (top level)': data.total,
-        'pagination.total': data.pagination?.total,
-        'pagination.hasMore': data.pagination?.hasMore,
-        'hasNext': data.hasNext,
-        'restaurants count': data.data?.restaurants?.length
-      })
       
       return {
         restaurants: data.data?.restaurants || [],
@@ -239,9 +204,7 @@ export default function EateryGrid({
 
   // Load more items in batches of 24
   const loadMoreItems = useCallback(async () => {
-    console.log('loadMoreItems called - loading:', loading, 'hasMore:', hasMore, 'page:', page);
     if (loading || !hasMore) {
-      console.log('loadMoreItems early return - loading:', loading, 'hasMore:', hasMore);
       return;
     }
 
@@ -252,9 +215,7 @@ export default function EateryGrid({
         // Try real API first
         const currentPage = page;
         const offset = currentPage * 24;
-        console.log('Loading more items - page:', currentPage, 'offset:', offset);
         const response = await fetchRestaurants(24, offset, buildSearchParams());
-        console.log('API response - hasMore:', response.hasMore, 'restaurants count:', response.restaurants.length);
         setRestaurants((prev) => [...prev, ...response.restaurants]);
         setHasMore(response.hasMore);
         setPage((prev) => prev + 1);
@@ -299,6 +260,95 @@ export default function EateryGrid({
     }
   }, [loading, hasMore, page, useRealData, backendError, fetchRestaurants, buildSearchParams]);
 
+  // Debounced effect for userLocation changes to prevent excessive API calls
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+    
+    debounceTimeoutRef.current = setTimeout(() => {
+      // Only reload if we have restaurants and userLocation changed
+      if (restaurants.length > 0) {
+        setRestaurants([])
+        setPage(0)
+        setHasMore(true)
+        setBackendError(false)
+        isRetryingRef.current = false
+        
+        const loadInitialItems = async () => {
+          if (isRetryingRef.current) return
+          
+          setLoading(true)
+          let currentRetryCount = 0
+          
+          const attemptFetch = async (): Promise<void> => {
+            try {
+              if (useRealData && currentRetryCount < 3) {
+                const response = await fetchRestaurants(24, 0, buildSearchParams())
+                setRestaurants(response.restaurants)
+                setHasMore(response.hasMore)
+                isRetryingRef.current = false
+                setPage(1)
+              } else {
+                await new Promise((resolve) => setTimeout(resolve, 1000))
+                const mockItems = generateMockRestaurants(24)
+                setRestaurants(mockItems)
+                setHasMore(true)
+                setPage(1)
+                
+                if (currentRetryCount >= 3) {
+                  setBackendError(true)
+                }
+              }
+            } catch (error) {
+              console.error('Error loading initial items:', error)
+              currentRetryCount++
+              
+              const isTimeoutError = error instanceof Error && 
+                (error.message.includes('timeout') || 
+                 error.message.includes('timed out') || 
+                 error.message.includes('unreachable'))
+              
+              if (isTimeoutError && currentRetryCount >= 2) {
+                setBackendError(true)
+                const mockItems = generateMockRestaurants(24)
+                setRestaurants(mockItems)
+                setHasMore(true)
+                setPage(1)
+                return
+              }
+              
+              if (currentRetryCount < 3) {
+                const delay = isTimeoutError ? 1000 : 2000
+                setTimeout(() => {
+                  attemptFetch()
+                }, delay)
+                return
+              } else {
+                setBackendError(true)
+                const mockItems = generateMockRestaurants(24)
+                setRestaurants(mockItems)
+                setHasMore(true)
+                setPage(1)
+              }
+            }
+          }
+          
+          await attemptFetch()
+          setLoading(false)
+        }
+        
+        loadInitialItems()
+      }
+    }, 500) // 500ms debounce
+    
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+    }
+  }, [userLocation, buildSearchParams, fetchRestaurants, restaurants.length, useRealData])
+
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
     setRestaurants([])
@@ -318,7 +368,6 @@ export default function EateryGrid({
           if (useRealData && currentRetryCount < 3) {
             // Try real API first
             const response = await fetchRestaurants(24, 0, buildSearchParams())
-            console.log('Initial load - API response - hasMore:', response.hasMore, 'restaurants count:', response.restaurants.length);
             setRestaurants(response.restaurants)
             setHasMore(response.hasMore)
             isRetryingRef.current = false
@@ -489,7 +538,7 @@ export default function EateryGrid({
                   title: restaurant.name,
                   badge: toFixedRating(restaurant.google_rating),
                   subtitle: restaurant.price_range || '',
-                  additionalText: restaurant.distance,
+                  additionalText: (restaurant as any).formattedDistance || '',
                   showHeart: true,
                   isLiked: false,
                   kosherCategory: restaurant.kosher_category || restaurant.cuisine || '',
