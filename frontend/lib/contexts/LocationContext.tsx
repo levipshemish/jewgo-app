@@ -435,7 +435,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
 
     // Check if location cache was cleared (no saved location data)
-    const savedLocationData = localStorage.getItem(LOCATION_STORAGE_KEY);
+    // Only access localStorage on client side
+    const savedLocationData = typeof window !== 'undefined' ? localStorage.getItem(LOCATION_STORAGE_KEY) : null;
     const cacheWasCleared = !savedLocationData;
 
     // Show popup if:
