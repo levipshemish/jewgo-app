@@ -28,7 +28,7 @@ interface UseMarkerManagementProps {
   map: google.maps.Map | null;
   restaurants: Restaurant[];
   onRestaurantSelect?: (restaurant: Restaurant) => void;
-  selectedRestaurantId?: string | null;
+  selectedRestaurantId?: number | null;
   showRatingBubbles?: boolean;
 }
 
@@ -335,7 +335,7 @@ export function useMarkerManagement({
 
     // Highlight new selection
     if (selectedRestaurantId) {
-      const data = markersMapRef.current.get(selectedRestaurantId);
+      const data = markersMapRef.current.get(selectedRestaurantId.toString());
       if (data?.marker) {
         // Highlight the selected marker
         if ('setZIndex' in data.marker) {
@@ -344,7 +344,7 @@ export function useMarkerManagement({
       }
     }
 
-    lastSelectedIdRef.current = selectedRestaurantId || null;
+    lastSelectedIdRef.current = selectedRestaurantId?.toString() || null;
   }, [selectedRestaurantId]);
 
   return {

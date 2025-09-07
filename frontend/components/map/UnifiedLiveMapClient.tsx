@@ -377,7 +377,7 @@ export default function UnifiedLiveMapClient() {
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
-    const restaurant = allRestaurants.find(r => parseInt(r.id.toString()) === restaurantId);
+    const restaurant = allRestaurants.find(r => r.id === restaurantId);
     setSelectedRestaurant(restaurant || null);
     setShowRestaurantCard(true);
   }, [allRestaurants]);
@@ -416,8 +416,9 @@ export default function UnifiedLiveMapClient() {
 
   // Transform restaurant data to match Card component's CardData interface
   const _transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
+    // Handle rating data - all rating fields are currently null in backend
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
-    const ratingText = rating ? rating.toFixed(1) : undefined;
+    const ratingText = rating && typeof rating === 'number' && !isNaN(rating) ? rating.toFixed(1) : undefined;
     
     // Calculate distance if user location is available and restaurant has coordinates
     let distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
@@ -432,6 +433,7 @@ export default function UnifiedLiveMapClient() {
     }
     
     // Try multiple price fields in order of preference
+    // Most price fields are currently null in backend, so we rely on price_range
     const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' 
       ? restaurant.price_range 
       : restaurant.avg_price && restaurant.avg_price.trim() !== ''
@@ -440,7 +442,7 @@ export default function UnifiedLiveMapClient() {
       ? `$${restaurant.min_avg_meal_cost}-${restaurant.max_avg_meal_cost}`
       : restaurant.min_avg_meal_cost
       ? `$${restaurant.min_avg_meal_cost}+`
-      : '';
+      : '$$'; // Default fallback since most restaurants have price_range
     
     // Debug logging for price range - show all possible price fields
     if (process.env.NODE_ENV === 'development') {
@@ -456,24 +458,28 @@ export default function UnifiedLiveMapClient() {
       });
     }
     
-    // Format address info for display
-    const addressParts = [restaurant.address, restaurant.city, restaurant.state].filter(Boolean);
+    // Format address info for display - handle null/undefined values
+    const addressParts = [
+      restaurant.address, 
+      restaurant.city, 
+      restaurant.state
+    ].filter(part => part && typeof part === 'string' && part.trim() !== '');
     const fullAddress = addressParts.join(', ');
     
     return {
       id: restaurant.id.toString(),
-      imageUrl: restaurant.image_url,
-      imageTag: restaurant.kosher_category,
-      title: restaurant.name,
+      imageUrl: restaurant.image_url || '/images/default-restaurant.webp', // Fallback for missing images
+      imageTag: restaurant.kosher_category || 'Unknown',
+      title: restaurant.name || 'Unknown Restaurant',
       badge: ratingText,
-      subtitle: priceRange || '$$', // Default to $$ if no price data available
+      subtitle: priceRange, // Now has proper fallback to '$$'
       additionalText: distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
-      kosherCategory: restaurant.kosher_category,
-      city: fullAddress || restaurant.city,
-      address: restaurant.address,
-      certifyingAgency: restaurant.certifying_agency,
+      kosherCategory: restaurant.kosher_category || 'Unknown',
+      city: fullAddress || restaurant.city || 'Unknown Location',
+      address: restaurant.address || '',
+      certifyingAgency: restaurant.certifying_agency || 'Unknown',
       distance: distanceText, // Add distance to the returned object
     };
   }, [userLocation, calculateDistance]);

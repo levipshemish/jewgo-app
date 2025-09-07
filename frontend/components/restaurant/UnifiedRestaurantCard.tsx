@@ -66,7 +66,7 @@ export default function UnifiedRestaurantCard({
     if (externalIsLiked !== undefined) {
       setIsLiked(externalIsLiked);
     } else {
-      setIsLiked(isFavorite(restaurant.id));
+      setIsLiked(isFavorite(restaurant.id.toString()));
     }
   }, [externalIsLiked, isFavorite, restaurant.id]);
 

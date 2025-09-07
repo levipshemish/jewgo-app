@@ -35,7 +35,7 @@ interface MapState {
 interface InteractiveRestaurantMapProps {
   restaurants: Restaurant[];
   userLocation?: { lat: number; lng: number } | null;
-  selectedRestaurantId?: string | null;
+  selectedRestaurantId?: number | null;
   onRestaurantSelect?: (restaurant: Restaurant) => void;
   mapCenter?: { lat: number; lng: number };
   className?: string;
@@ -225,7 +225,7 @@ export function InteractiveRestaurantMap({
 
   // Update selected restaurant
   useEffect(() => {
-    selectedRestaurantIdRef.current = selectedRestaurantId || null;
+    selectedRestaurantIdRef.current = selectedRestaurantId?.toString() || null;
   }, [selectedRestaurantId]);
 
   // Get directions to restaurant

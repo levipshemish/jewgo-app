@@ -3,7 +3,7 @@ import { Restaurant } from '@/lib/types/restaurant';
 // Mock restaurant data - moved to separate file to reduce webpack serialization issues
 export const mockRestaurants: Restaurant[] = [
   {
-    id: "1",
+    id: 1,
     name: 'Kosher Deli & Grill',
     address: '123 Main St',
     city: 'Miami Beach',
@@ -30,7 +30,7 @@ export const mockRestaurants: Restaurant[] = [
     }
   },
   {
-    id: "2",
+    id: 2,
     name: 'Miami Kosher Market',
     address: '456 Oak Ave',
     city: 'Miami Beach',
@@ -57,7 +57,7 @@ export const mockRestaurants: Restaurant[] = [
     }
   },
   {
-    id: "3",
+    id: 3,
     name: 'Kosher Pizza Palace',
     address: '789 Pine St',
     city: 'Miami',
@@ -84,7 +84,7 @@ export const mockRestaurants: Restaurant[] = [
     }
   },
   {
-    id: "4",
+    id: 4,
     name: 'Sushi Kosher Express',
     address: '321 Ocean Dr',
     city: 'Miami Beach',
@@ -111,7 +111,7 @@ export const mockRestaurants: Restaurant[] = [
     }
   },
   {
-    id: "5",
+    id: 5,
     name: 'Kosher Bakery & Cafe',
     address: '654 Biscayne Blvd',
     city: 'Miami',
@@ -138,7 +138,7 @@ export const mockRestaurants: Restaurant[] = [
     }
   },
   {
-    id: "6",
+    id: 6,
     name: 'Kosher Ice Cream Parlor',
     address: '987 Collins Ave',
     city: 'Miami Beach',
@@ -165,7 +165,7 @@ export const mockRestaurants: Restaurant[] = [
     }
   },
   {
-    id: "7",
+    id: 7,
     name: 'Kosher Steakhouse',
     address: '147 Lincoln Rd',
     city: 'Miami Beach',
@@ -192,7 +192,7 @@ export const mockRestaurants: Restaurant[] = [
     }
   },
   {
-    id: "8",
+    id: 8,
     name: 'Kosher Mediterranean Grill',
     address: '258 Washington Ave',
     city: 'Miami Beach',
