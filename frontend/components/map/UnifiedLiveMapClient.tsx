@@ -6,7 +6,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition
 
 import { InteractiveRestaurantMap } from '@/components/map/InteractiveRestaurantMap';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
-import { fetchRestaurants } from '@/lib/api/restaurants';
+import Card from '@/components/core/cards/Card';
+// Remove old fetchRestaurants import - we'll use unified API directly
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
 import { Restaurant } from '@/lib/types/restaurant';
 import { throttle as throttleFn } from '@/lib/utils/touchUtils';
@@ -216,13 +217,36 @@ export default function UnifiedLiveMapClient() {
       
       fetchAbortController.current = new AbortController();
       
-      const data = await fetchRestaurants({ limit: 1000, signal: fetchAbortController.current.signal });
+      // Use unified API endpoint like the eatery page
+      const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
+      apiUrl.searchParams.set('limit', '1000');
+      apiUrl.searchParams.set('offset', '0');
+      
+      // Add location if available
+      if (userLocation) {
+        apiUrl.searchParams.set('lat', userLocation.latitude.toString());
+        apiUrl.searchParams.set('lng', userLocation.longitude.toString());
+      }
+      
+      const response = await fetch(apiUrl.toString(), {
+        cache: "no-store",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: fetchAbortController.current.signal,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Backend error ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
       
       setLoadingStage('processing-data');
       setLoadingProgress(70);
 
       if (data && data.restaurants && Array.isArray(data.restaurants) && data.restaurants.length > 0) {
-        const validRestaurants = data.restaurants.filter(restaurant =>
+        const validRestaurants = data.restaurants.filter((restaurant: any) =>
           restaurant && typeof restaurant === 'object' && restaurant.id
         );
 
@@ -407,7 +431,30 @@ export default function UnifiedLiveMapClient() {
       distanceText = `${distance.toFixed(1)} mi`;
     }
     
-    const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
+    // Try multiple price fields in order of preference
+    const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' 
+      ? restaurant.price_range 
+      : restaurant.avg_price && restaurant.avg_price.trim() !== ''
+      ? restaurant.avg_price
+      : restaurant.min_avg_meal_cost && restaurant.max_avg_meal_cost
+      ? `$${restaurant.min_avg_meal_cost}-${restaurant.max_avg_meal_cost}`
+      : restaurant.min_avg_meal_cost
+      ? `$${restaurant.min_avg_meal_cost}+`
+      : '';
+    
+    // Debug logging for price range - show all possible price fields
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Restaurant price data for', restaurant.name, ':', {
+        price_range: restaurant.price_range,
+        avg_price: restaurant.avg_price,
+        min_avg_meal_cost: restaurant.min_avg_meal_cost,
+        max_avg_meal_cost: restaurant.max_avg_meal_cost,
+        processed_priceRange: priceRange,
+        allRestaurantKeys: Object.keys(restaurant).filter(key => key.toLowerCase().includes('price') || key.toLowerCase().includes('cost')),
+        // Show first few keys to understand the data structure
+        sampleKeys: Object.keys(restaurant).slice(0, 10)
+      });
+    }
     
     // Format address info for display
     const addressParts = [restaurant.address, restaurant.city, restaurant.state].filter(Boolean);
@@ -419,7 +466,7 @@ export default function UnifiedLiveMapClient() {
       imageTag: restaurant.kosher_category,
       title: restaurant.name,
       badge: ratingText,
-      subtitle: priceRange || 'Price Range',
+      subtitle: priceRange || '$$', // Default to $$ if no price data available
       additionalText: distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
@@ -520,7 +567,7 @@ export default function UnifiedLiveMapClient() {
   }
 
   return (
-    <div className="h-screen bg-white relative overflow-hidden">
+    <div className="h-screen bg-white relative">
       {/* Top Bar */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200 px-4 py-3">
         <div className="flex items-center space-x-3">
@@ -583,191 +630,39 @@ export default function UnifiedLiveMapClient() {
       {showRestaurantCard && selectedRestaurant && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-8 sm:right-8 max-w-sm mx-auto z-50">
           <div className="relative">
-            <div 
-              className="w-full bg-white shadow-2xl hover:shadow-3xl transition-shadow rounded-2xl aspect-[3/2] max-w-sm h-56 border border-gray-200 overflow-hidden cursor-pointer"
-              onClick={(e) => {
-                // Stop propagation to prevent closing the card
-                e.stopPropagation();
-                
+            <Card
+              data={_transformRestaurantToCardData(selectedRestaurant)}
+              onCardClick={() => {
                 // Use restaurant ID for routing (matches eatery/[id] structure)
                 router.push(`/eatery/${selectedRestaurant.id}`)
               }}
-            >
-              {/* Image Section - Taller for better visibility */}
-              <div className="relative w-full h-32 overflow-hidden">
-                {selectedRestaurant.image_url ? (
-                  <img
-                    src={selectedRestaurant.image_url}
-                    alt={selectedRestaurant.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <div className="text-gray-400 text-xs">No image</div>
-                  </div>
-                )}
-                
-                {/* Kosher Category Badge (Tag) - matches current eatery page exactly */}
-                {selectedRestaurant.kosher_category && (
-                  <div 
-                    className="absolute rounded-full flex items-center justify-center text-white cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      left: '8px',
-                      width: '80px',
-                      maxWidth: '80px',
-                      minWidth: '80px',
-                      height: '24px',
-                      maxHeight: '24px',
-                      minHeight: '24px',
-                      overflow: 'hidden',
-                      padding: '0 8px',
-                      fontSize: '12px',
-                      lineHeight: '1',
-                      fontWeight: '500',
-                      backgroundColor: 'rgba(17, 24, 39, 0.70)',
-                      color: '#ffffff',
-                      borderRadius: '9999px',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      zIndex: 10,
-                      contain: 'layout paint',
-                      transition: 'all 0.2s ease-out'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(17, 24, 39, 0.85)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(17, 24, 39, 0.70)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
-                    }}
-                  >
-                    {selectedRestaurant.kosher_category.charAt(0).toUpperCase() + selectedRestaurant.kosher_category.slice(1).toLowerCase()}
-                  </div>
-                )}
-                
-                {/* Heart Button - matches current eatery page exactly */}
-                <button
-                  className="absolute rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95"
-                  style={{
-                    position: 'absolute',
-                    top: '4px',
-                    right: '8px',
-                    width: '28px',
-                    maxWidth: '28px',
-                    minWidth: '28px',
-                    height: '28px',
-                    maxHeight: '28px',
-                    minHeight: '28px',
-                    backgroundColor: 'transparent',
-                    borderRadius: '50%',
-                    border: 'none',
-                    padding: '0',
-                    zIndex: 10,
-                    transition: 'all 0.2s ease-out',
-                    WebkitTapHighlightColor: 'transparent',
-                    touchAction: 'manipulation'
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleFavorite(selectedRestaurant);
-                  }}
-                >
-                  <svg 
-                    viewBox="0 0 24 24" 
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      color: 'rgb(156, 163, 175)', // light grey for default state
-                      fill: 'rgb(156, 163, 175)', // light grey fill for default state
-                      stroke: '#ffffff', // white outline
-                      strokeWidth: '1.5px',
-                      transition: 'all 0.2s ease-out',
-                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'rgb(239, 68, 68)';
-                      e.currentTarget.style.fill = 'rgb(239, 68, 68)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'rgb(156, 163, 175)';
-                      e.currentTarget.style.fill = 'rgb(156, 163, 175)';
-                    }}
-                  >
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                  </svg>
-                </button>
-                
-              </div>
-              
-              {/* Content Section - matches eatery page exactly */}
-              <div className="p-3 flex-1">
-                {/* Restaurant Name and Rating - Fixed height container with proper alignment */}
-                <div className="flex items-center justify-between w-full min-w-0 flex-shrink-0 h-8 mb-1 gap-2">
-                  <h3 
-                    className="font-bold text-gray-900 leading-tight flex-1 min-w-0 text-left text-base" 
-                    title={selectedRestaurant.name}
-                    style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      display: 'block'
-                    }}
-                  >
-                    {selectedRestaurant.name}
-                  </h3>
-                  
-                  {/* Rating - on same line as name */}
-                  {(() => {
-                    const rating = selectedRestaurant.rating || selectedRestaurant.star_rating || selectedRestaurant.google_rating || selectedRestaurant.quality_rating;
-                    return rating ? (
-                      <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: 'fit-content' }}>
-                        <Star className="fill-yellow-400 text-yellow-400 flex-shrink-0 w-3.5 h-3.5" />
-                        <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 text-sm">
-                          {rating.toFixed(1)}
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-                
-                {/* Price Range and Distance - Fixed height meta row with consistent alignment */}
-                <div className="flex items-center justify-between min-w-0 w-full flex-shrink-0 h-6 gap-2">
-                  <span className="text-gray-700 font-medium flex-shrink-0 text-sm">
-                    {selectedRestaurant.price_range || '$$'}
-                  </span>
-                  
-                  {(() => {
-                    // Calculate distance if not already available
-                    let distanceText = selectedRestaurant.distance;
-                    if (!distanceText && userLocation && selectedRestaurant.latitude && selectedRestaurant.longitude) {
-                      const distance = calculateDistance(
-                        userLocation.latitude, 
-                        userLocation.longitude, 
-                        selectedRestaurant.latitude, 
-                        selectedRestaurant.longitude
-                      );
-                      distanceText = `${distance.toFixed(1)} mi`;
-                    }
-                    
-                    return distanceText ? (
-                      <span className="text-gray-500 text-sm flex-1 text-right">
-                        {distanceText}
-                      </span>
-                    ) : null;
-                  })()}
-                </div>
-              </div>
-            </div>
+              onLikeToggle={(_id, _isLiked) => handleToggleFavorite(selectedRestaurant)}
+              variant="map"
+              showStarInBadge={true}
+              className=""
+            />
             
+            {/* Close Button - Overlay on top-right */}
+            <div className="absolute top-2 right-2 z-10">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloseRestaurantCard();
+                }}
+                className="w-8 h-8 border border-white/60 rounded-full transition-all duration-200 hover:scale-105 flex items-center justify-center active:scale-95 backdrop-blur-md shadow-lg hover:border-white/80 hover:backdrop-blur-lg"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                }}
+              >
+                <X className="w-4 h-4 text-white drop-shadow-sm hover:text-gray-200 transition-colors" />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* My Location Button */}
       {/* My Location Button */}
       <div className="fixed bottom-4 left-4 z-40">
         <button

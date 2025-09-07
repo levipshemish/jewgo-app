@@ -67,38 +67,38 @@ interface _Mikvah {
   listing_type?: string;
 }
 
-// Real API function for mikvah
+// Real API function for mikvah using unified API
 const fetchMikvah = async (limit: number, params?: string, timeoutMs: number = 5000) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
   try {
     const queryString = params ? `?${params}` : '';
-    const response = await fetch(`/api/mikvah${queryString}`, {
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const url = `/api/mikvah/unified${queryString}`;
+    
+    // Use unified API call with caching and deduplication
+    const { unifiedApiCall } = await import('@/lib/utils/unified-api');
+    const result = await unifiedApiCall(url, {
+      ttl: 5 * 60 * 1000, // 5 minutes cache (mikvah data changes infrequently)
+      deduplicate: true,
+      retry: true,
+      retryAttempts: 2,
+      timeout: timeoutMs,
     });
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch mikvah data');
     }
 
-    const data = await response.json();
+    const data = result.data;
     return {
-      mikvah: data.data || [],
+      mikvah: data.mikvahs || data.data || [],
       total: data.total || 0,
       page: data.page || 1,
-      limit: data.limit || limit
+      limit: data.limit || limit,
+      cached: result.cached || false,
+      performance: result.performance
     };
   } catch (error) {
-    clearTimeout(timeoutId);
     if (error instanceof Error) {
-      if (error.name === 'AbortError') {
+      if (error.name === 'AbortError' || error.message.includes('timeout')) {
         throw new Error('Request timeout - please check your connection');
       }
       throw error;

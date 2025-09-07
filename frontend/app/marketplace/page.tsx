@@ -49,16 +49,23 @@ async function fetchMarketplaceListings(limit: number = 50, offset: number = 0):
       offset: offset.toString(),
     });
 
-    const response = await fetch(`/api/marketplace?${params.toString()}`);
+    // Use unified API endpoint
+    const { unifiedApiCall } = await import('@/lib/utils/unified-api');
+    const result = await unifiedApiCall(`/api/marketplace/unified?${params.toString()}`, {
+      ttl: 30 * 1000, // 30 seconds cache (marketplace changes frequently)
+      deduplicate: true,
+      retry: true,
+      retryAttempts: 2,
+    });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch marketplace listings');
     }
 
-    const data: MarketplaceResponse = await response.json();
+    const data = result.data;
     
-    if (data.success && data.data?.listings) {
-      return data.data.listings;
+    if (data.success && (data.products || data.listings)) {
+      return data.products || data.listings || [];
     } else {
       throw new Error(data.message || 'Failed to fetch marketplace listings');
     }

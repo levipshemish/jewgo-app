@@ -42,38 +42,38 @@ interface ShtetlListing {
   reviewcount?: number;
 }
 
-// Real API function for shtetl listings
+// Real API function for shtetl listings using unified API
 const fetchShtetlListings = async (limit: number, params?: string, timeoutMs: number = 5000) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
   try {
     const queryString = params ? `?${params}` : '';
-    const response = await fetch(`/api/shtel-listings${queryString}`, {
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const url = `/api/shtel-listings/unified${queryString}`;
+    
+    // Use unified API call with caching and deduplication
+    const { unifiedApiCall } = await import('@/lib/utils/unified-api');
+    const result = await unifiedApiCall(url, {
+      ttl: 2 * 60 * 1000, // 2 minutes cache
+      deduplicate: true,
+      retry: true,
+      retryAttempts: 2,
+      timeout: timeoutMs,
     });
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch shtel listings');
     }
 
-    const data = await response.json();
+    const data = result.data;
     return {
-      listings: data.data || [],
+      listings: data.listings || data.data || [],
       total: data.total || 0,
       page: data.page || 1,
-      limit: data.limit || limit
+      limit: data.limit || limit,
+      cached: result.cached || false,
+      performance: result.performance
     };
   } catch (error) {
-    clearTimeout(timeoutId);
     if (error instanceof Error) {
-      if (error.name === 'AbortError') {
+      if (error.name === 'AbortError' || error.message.includes('timeout')) {
         throw new Error('Request timeout - please check your connection');
       }
       throw error;

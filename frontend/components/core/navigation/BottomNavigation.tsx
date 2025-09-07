@@ -109,7 +109,7 @@ export default function BottomNavigation({
       <motion.nav
         role="navigation"
         aria-label="Primary"
-        className="relative w-full overflow-hidden border-t border-gray-200/50 bg-white shadow-lg [contain:layout_paint_style]"
+        className="relative w-full overflow-hidden border-t border-gray-200/50 bg-white shadow-lg"
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30, delay: 0.05 }}

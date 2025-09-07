@@ -110,8 +110,19 @@ export default function Grid({
   // Real API function for synagogues with offset-based pagination for infinite scroll
   const fetchItems = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
-      // Build API URL with parameters based on data type
-      const endpoint = dataType === 'shuls' ? '/api/synagogues' : '/api/restaurants/unified'
+      // Build API URL with parameters based on data type - use unified endpoints
+      let endpoint: string;
+      switch (dataType) {
+        case 'shuls':
+          endpoint = '/api/synagogues/unified';
+          break;
+        case 'marketplace':
+          endpoint = '/api/marketplace/unified';
+          break;
+        default:
+          endpoint = '/api/restaurants/unified';
+      }
+      
       const apiUrl = new URL(endpoint, window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('offset', offset.toString())
@@ -127,34 +138,21 @@ export default function Grid({
 
       console.log('fetchItems called with URL:', apiUrl.toString())
 
-      // Add timeout to fetch (shorter than API timeout to fail fast)
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => {
-        controller.abort()
-        console.log('Frontend timeout - aborting request')
-      }, timeoutMs)
+      // Use unified API call with caching and deduplication
+      const { unifiedApiCall } = await import('@/lib/utils/unified-api');
+      const result = await unifiedApiCall(apiUrl.toString(), {
+        ttl: dataType === 'shuls' ? 5 * 60 * 1000 : 2 * 60 * 1000, // Longer cache for synagogues
+        deduplicate: true,
+        retry: true,
+        retryAttempts: 2,
+        timeout: timeoutMs,
+      });
 
-      const response = await fetch(apiUrl.toString(), {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      clearTimeout(timeoutId)
-
-      console.log('fetchItems response status:', response.status)
-
-      if (!response.ok) {
-        if (response.status >= 500) {
-          throw new Error(`Backend server error: ${response.status}`)
-        } else if (response.status >= 400) {
-          throw new Error(`Client error: ${response.status}`)
-        }
-        throw new Error(`HTTP error! status: ${response.status}`)
+      if (!result.success) {
+        throw new Error(result.error || 'API call failed');
       }
 
-      const data = await response.json()
+      const data = result.data;
       console.log('fetchItems response data:', data)
       
       if (data.success === false && data.message?.includes('temporarily unavailable')) {
@@ -169,10 +167,12 @@ export default function Grid({
       console.log('fetchItems calculated hasMore:', hasMoreData, 'total:', total, 'currentOffset:', currentOffset, 'limit:', limit)
       
       return {
-        items: data.synagogues || data.data?.restaurants || [],
+        items: data.synagogues || data.products || data.listings || data.data?.restaurants || [],
         total,
         hasMore: hasMoreData,
-        limit: data.limit || limit
+        limit: data.limit || limit,
+        cached: result.cached || false,
+        performance: result.performance
       }
 
     } catch (error) {

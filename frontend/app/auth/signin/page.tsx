@@ -8,6 +8,7 @@ import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
+import { useToast } from '@/components/ui/Toast';
 
 function SignInForm() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ function SignInForm() {
   const [upgradePassword, setUpgradePassword] = useState("");
   const [upgradeName, setUpgradeName] = useState("");
   const [upgradePending, setUpgradePending] = useState(false);
-  const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
+  const { showSuccess, showError } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
@@ -236,7 +237,7 @@ function SignInForm() {
         return;
       }
       await postgresAuth.upgradeGuest({ email: upgradeEmail, password: upgradePassword, name: upgradeName || undefined });
-      setUpgradeSuccess('Your account was upgraded successfully! Redirecting…');
+      showSuccess('Your account was upgraded successfully! Redirecting…');
       // Briefly show success banner then redirect
       setTimeout(() => {
         if (typeof window !== 'undefined') {
@@ -246,7 +247,9 @@ function SignInForm() {
         }
       }, 1200);
     } catch (e: any) {
-      setError(e?.message || 'Failed to upgrade guest account');
+      const msg = e?.message || 'Failed to upgrade guest account';
+      setError(msg);
+      showError(msg);
     } finally {
       setUpgradePending(false);
     }
@@ -306,12 +309,7 @@ function SignInForm() {
             </div>
           )}
 
-          {/* Upgrade Success */}
-          {upgradeSuccess && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
-              {upgradeSuccess}
-            </div>
-          )}
+          {/* Success toast handled via useToast */}
 
           {/* Success Message */}
           {magicStatus === 'sent' && (

@@ -202,22 +202,21 @@ export async function GET(request: NextRequest) {
     }
     const fullBackendUrl = `${backendUrl}/api/v4/restaurants?${queryParams}`;
     
-    // Fetch from backend API
-    const backendResponse = await fetch(fullBackendUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    // Use unified API call with caching and deduplication
+    const { unifiedApiCall } = await import('@/lib/utils/unified-api');
+    const result = await unifiedApiCall(fullBackendUrl, {
+      ttl: 2 * 60 * 1000, // 2 minutes cache
+      deduplicate: true,
+      retry: true,
+      retryAttempts: 2,
     });
     
-    if (!backendResponse.ok) {
+    if (!result.success) {
       // For server errors, return empty list with success status
-      if (backendResponse.status >= 500) {
-        return createSuccessResponse({ message: 'Restaurants retrieved successfully' });
-      }
-      throw new Error(`Backend API error: ${backendResponse.status}`);
+      return createSuccessResponse({ message: 'Restaurants retrieved successfully' });
     }
     
-    const backendData = await backendResponse.json();
+    const backendData = result.data;
     
     // Transform the backend response to match frontend expectations
     const transformedResponse = {
@@ -227,7 +226,9 @@ export async function GET(request: NextRequest) {
       totalRestaurants: backendData.total || 0,
       page: parseInt(page),
       limit: parseInt(limit),
-      message: backendData.message
+      message: backendData.message,
+      cached: result.cached,
+      performance: result.performance
     };
     
     return NextResponse.json(transformedResponse);

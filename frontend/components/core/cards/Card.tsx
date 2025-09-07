@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils/cn';
 import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
+import cardStyles from './Card.module.css';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
-import styles from './Card.module.css';
 
 // TypeScript Interfaces
 export interface CardData {
@@ -32,7 +32,7 @@ export interface CardProps {
   onCardClick?: (data: CardData) => void;
   className?: string;
   priority?: boolean;
-  variant?: 'default' | 'minimal' | 'enhanced';
+  variant?: 'default' | 'minimal' | 'enhanced' | 'map';
   showStarInBadge?: boolean;
   isScrolling?: boolean;
 }
@@ -179,6 +179,13 @@ const Card = memo<CardProps>(({
           titleClass: "text-base font-semibold",
           badgeClass: "text-sm px-3 py-1"
         };
+      case 'map':
+        return {
+          cardClass: "w-full bg-white shadow-2xl hover:shadow-3xl transition-shadow rounded-2xl aspect-[3/2] max-w-sm h-56 border border-gray-200 overflow-hidden",
+          imageClass: "h-40", // Increased from h-32 to h-40 (160px instead of 128px)6
+          titleClass: "text-lg font-semibold",
+          badgeClass: "text-xs px-2 py-1"
+        };
       default:
         return {
           cardClass: hasFullWidth ? "w-full rounded-2xl overflow-hidden p-0" : "w-[200px] rounded-2xl overflow-hidden p-0",
@@ -213,7 +220,7 @@ const Card = memo<CardProps>(({
       
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="relative w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-transparent border-0 shadow-none">
+        <div className={cn("relative w-full rounded-[20px] overflow-hidden bg-transparent border-0 shadow-none", variantStyles.imageClass)}>
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-transparent animate-pulse flex items-center justify-center">
@@ -259,10 +266,10 @@ const Card = memo<CardProps>(({
           </div>
         )}
 
-        {/* Image Tag - now positioned relative to image wrapper */}
+        {/* Image Tag - exact working version */}
         {cardData.imageTag && (
           <div
-            className={styles['card-tag']}
+            className={cardStyles['card-tag']}
             aria-label={`Tag: ${cardData.imageTag}`}
           >
             <span 
@@ -283,7 +290,7 @@ const Card = memo<CardProps>(({
         {/* Heart Button - positioned relative to image wrapper */}
         {cardData.showHeart && (
           <button
-            className={cn(styles['card-heart'], liked && styles.liked)}
+            className={cn(cardStyles['card-heart'], liked && cardStyles.liked)}
             onClick={(e) => {
               e.stopPropagation();
               handleLikeToggle();
@@ -309,7 +316,10 @@ const Card = memo<CardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <div 
-        className="card-content pt-2 px-3 pb-3 flex flex-col bg-transparent w-full"
+        className={cn(
+          "card-content flex flex-col bg-transparent w-full",
+          variant === 'map' ? "pt-2 px-3 pb-2" : "pt-2 px-3 pb-3"
+        )}
         style={{
           transform: isScrolling ? 'none' : undefined,
           transition: isScrolling ? 'none' : undefined,

@@ -146,7 +146,7 @@ export default function VirtualizedRestaurantList<T>(props: VirtualizedRestauran
                   left: 0,
                   width: '100%',
                   transform: `translateY(${vi.start}px)`,
-                  contain: 'layout style paint',
+                  /* Removed contain: layout style paint as it interferes with backdrop-filter effects */
                   willChange: 'transform',
                 }}
               >
@@ -162,14 +162,14 @@ export default function VirtualizedRestaurantList<T>(props: VirtualizedRestauran
         className={className}
         role={role}
         aria-label={ariaLabel}
-        style={{ contain: 'layout style paint', willChange: 'auto', transform: 'translateZ(0)', backfaceVisibility: 'hidden', perspective: '1000px' }}
+        style={{ willChange: 'auto', transform: 'translateZ(0)', backfaceVisibility: 'hidden', perspective: '1000px' }}
       >
         {items.map((item, index) => (
           <div
             key={itemKey(item, index)}
             className="w-full"
             role="gridcell"
-            style={{ contain: 'layout style paint', willChange: 'auto', transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
+            style={{ willChange: 'auto', transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
           >
             {renderItem(item, index)}
           </div>

@@ -6,6 +6,7 @@ import { FormEvent, useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
+import { useToast } from '@/components/ui/Toast';
 import { validatePassword } from "@/lib/utils/password-validation";
 
 // Separate component to handle search params with proper Suspense boundary
@@ -31,7 +32,7 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
   const [upgradePassword, setUpgradePassword] = useState("");
   const [upgradeName, setUpgradeName] = useState("");
   const [upgradePending, setUpgradePending] = useState(false);
-  const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
+  const { showSuccess, showError } = useToast();
   const router = useRouter();
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   
@@ -162,7 +163,7 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
         return;
       }
       await postgresAuth.upgradeGuest({ email: upgradeEmail, password: upgradePassword, name: upgradeName || undefined });
-      setUpgradeSuccess('Your account was upgraded successfully! Redirecting…');
+      showSuccess('Your account was upgraded successfully! Redirecting…');
       setTimeout(() => {
         if (typeof window !== 'undefined') {
           window.location.assign(_redirectTo);
@@ -171,7 +172,9 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
         }
       }, 1200);
     } catch (e: any) {
-      setError(e?.message || 'Failed to upgrade guest account');
+      const msg = e?.message || 'Failed to upgrade guest account';
+      setError(msg);
+      showError(msg);
     } finally {
       setUpgradePending(false);
     }
@@ -215,11 +218,7 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
             {success}
           </div>
         )}
-        {upgradeSuccess && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
-            {upgradeSuccess}
-          </div>
-        )}
+        {/* Success toast handled via useToast */}
 
         <form className="mt-8 space-y-6" onSubmit={onEmailSignUp}>
           <div className="rounded-md shadow-sm -space-y-px">

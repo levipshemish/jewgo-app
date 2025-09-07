@@ -99,7 +99,7 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
     console.warn('Failed to parse Google reviews JSON:', error);
     if (process.env.NODE_ENV === 'development') {
       console.log('calculateRatingFromGoogleReviews: JSON parse error:', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         jsonPreview: googleReviewsJson.substring(0, 200) + '...'
       });
     }

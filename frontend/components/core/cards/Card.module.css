@@ -1,47 +1,3 @@
-.card,
-.card::before,
-.card::after,
-.card *,
-.card *::before,
-.card *::after {
-  /* Ensure the card and all descendants (including pseudo-elements)
-     never introduce a surface color */
-  background: none !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: none;
-}
-
-.card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.imageWrapper {
-  line-height: 0; /* avoid baseline gap under images */
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/* Ensure images fully fill the wrapper without inline gaps */
-.imageWrapper img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-.content {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/* Tag badge retains its own surface */
-.tag {
-  /* Tag styles can go here */
-}
-
 /* Image tag positioning and styling - Working version from Aug 24 */
 .card-tag {
   position: absolute !important;
@@ -65,17 +21,14 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
+  text-align: center !important;
   text-rendering: optimizeLegibility !important;
   -webkit-text-size-adjust: 100% !important;
   text-size-adjust: 100% !important;
   transition: all 0.2s ease-out !important;
   transform: none !important;
-  /* Remove backdrop-filter to reduce repaint/flicker on some browsers */
-  /* backdrop-filter: blur(8px) !important; */
+  backdrop-filter: blur(8px) !important;
   z-index: 10 !important;
-  contain: layout paint !important;
 }
 
 .card-tag:hover {
@@ -98,13 +51,46 @@
     background-color: rgba(255, 255, 255, 0.14) !important;
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.22) !important;
-    /* backdrop-filter: blur(8px) !important; */
+    backdrop-filter: blur(8px) !important;
   }
   .card-tag:hover {
     background-color: rgba(255, 255, 255, 0.22) !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
   }
 }
+
+/* Kosher badge glassy styling - original working version with backdrop-filter */
+.kosher-badge {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.imageWrapper {
+  line-height: 0; /* avoid baseline gap under images */
+}
+
+/* Ensure images fully fill the wrapper without inline gaps */
+.imageWrapper img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  /* Removed background overrides */
+}
+
+/* Tag badge retains its own surface */
+.tag {
+  /* Tag styles can go here */
+}
+
+/* Removed old card-tag styles that were interfering with glassy design */
 
 /* Heart button positioning and styling - Working version from Aug 24 */
 .card-heart {
@@ -117,7 +103,7 @@
   height: 28px !important;
   max-height: 28px !important;
   min-height: 28px !important;
-  background-color: transparent !important;
+  /* Removed background override */
   border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
@@ -179,7 +165,7 @@
   transition: all 0.2s ease-out;
   
   /* Prevent layout shifts */
-  contain: layout style paint;
+  /* Removed contain: layout style paint as it interferes with backdrop-filter effects */
 }
 
 /* Optimize image rendering during scroll */
@@ -203,8 +189,7 @@
   will-change: auto !important;
 }
 
-/* Optimize tag and heart button positioning */
-.card-tag,
+/* Optimize heart button positioning */
 .card-heart {
   /* Hardware acceleration */
   transform: translateZ(0);

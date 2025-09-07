@@ -16,19 +16,35 @@ interface ProductResultsProps {
 }
 
 const fetcher = async (url: string, filters: AppliedFilters) => {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(filters),
+  // Convert filters to URL parameters for unified API
+  const params = new URLSearchParams();
+  
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, v.toString()));
+      } else {
+        params.append(key, value.toString());
+      }
+    }
+  });
+  
+  // Use unified API endpoint
+  const unifiedUrl = `/api/restaurants/unified?${params.toString()}`;
+  
+  const { unifiedApiCall } = await import('@/lib/utils/unified-api');
+  const result = await unifiedApiCall(unifiedUrl, {
+    ttl: 2 * 60 * 1000, // 2 minutes cache
+    deduplicate: true,
+    retry: true,
+    retryAttempts: 2,
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch restaurants');
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to fetch restaurants');
   }
 
-  return response.json();
+  return result.data;
 };
 
 const ProductResults: React.FC<ProductResultsProps> = ({ 
@@ -36,7 +52,7 @@ const ProductResults: React.FC<ProductResultsProps> = ({
   // Create a stable key for SWR based on applied filters
   const key = useMemo(() => {
     const filterKey = createFilterKey(appliedFilters);
-    return filterKey ? ['/api/restaurants/search', filterKey] : null;
+    return filterKey ? ['/api/restaurants/unified', filterKey] : null;
   }, [appliedFilters]);
 
   const { data, isLoading, isValidating, error } = useSWR(

@@ -14,8 +14,7 @@ body {
 
 /* Optimize scrolling performance */
 *:not(html):not(body) {
-  /* Scope containment to most elements; avoid on html/body to preserve scrolling */
-  contain: layout style;
+  /* Removed contain: layout style as it interferes with backdrop-filter effects */
 }
 
 html, body {
@@ -39,7 +38,7 @@ html, body {
 /* Optimize image rendering during scroll */
 img {
   /* Keep images simple; specific components handle perf hints */
-  contain: layout style paint;
+  /* Removed contain: layout style paint as it interferes with backdrop-filter effects */
 }
 
 /* Design System CSS Variables for Listing Utility Components */

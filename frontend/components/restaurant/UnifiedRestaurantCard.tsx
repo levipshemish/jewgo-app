@@ -12,6 +12,7 @@ import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { cn } from '@/lib/utils/cn';
 import { commonTypography, commonSpacing } from '@/lib/utils/commonStyles';
+import cardStyles from '@/components/core/cards/Card.module.css';
 import {
   formatPriceRange,
   formatPriceDollarSigns, 
@@ -131,17 +132,17 @@ export default function UnifiedRestaurantCard({
   const businessTypeIcon = getBusinessTypeIcon(businessType);
   const businessTypeColor = getBusinessTypeColor(businessType);
 
-  // Get kosher category color and styling
+  // Get kosher category color and styling - original working glassy version
   const getKosherCategoryStyle = () => {
     const category = restaurant.kosher_category?.toLowerCase();
     if (category === 'dairy') {
-      return 'bg-white text-[#ADD8E6] font-bold';
+      return 'text-white';
     } else if (category === 'meat') {
-      return 'bg-white text-[#A70000] font-bold';
+      return 'text-white';
     } else if (category === 'pareve') {
-      return 'bg-white text-[#FFCE6D] font-bold';
+      return 'text-white';
     } else {
-      return 'bg-white text-gray-500 font-bold';
+      return 'text-white';
     }
   };
 
@@ -250,9 +251,21 @@ export default function UnifiedRestaurantCard({
               className={cn(
                 "absolute rounded-full shadow-md font-medium truncate",
                 variant === 'eatery' 
-                  ? `top-3 left-3 text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] kosher-badge ${getKosherCategoryStyle()}`
+                  ? `top-3 left-3 text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] ${cardStyles['kosher-badge']} ${getKosherCategoryStyle()}`
                   : `top-2 left-2 px-1.5 py-0.5 ${commonTypography.badge} ${getKosherCategoryBadgeClasses(restaurant.kosher_category)}`
               )}
+              style={variant === 'eatery' ? {
+                backgroundColor: restaurant.kosher_category?.toLowerCase() === 'meat' 
+                  ? 'rgba(239, 68, 68, 0.7)' 
+                  : restaurant.kosher_category?.toLowerCase() === 'dairy'
+                  ? 'rgba(59, 130, 246, 0.7)'
+                  : restaurant.kosher_category?.toLowerCase() === 'pareve'
+                  ? 'rgba(234, 179, 8, 0.7)'
+                  : 'rgba(107, 114, 128, 0.7)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                isolation: 'isolate'
+              } : undefined}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
