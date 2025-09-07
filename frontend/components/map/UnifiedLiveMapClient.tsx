@@ -245,8 +245,8 @@ export default function UnifiedLiveMapClient() {
       setLoadingStage('processing-data');
       setLoadingProgress(70);
 
-      if (data && data.restaurants && Array.isArray(data.restaurants) && data.restaurants.length > 0) {
-        const validRestaurants = data.restaurants.filter((restaurant: any) =>
+      if (data && data.data && data.data.restaurants && Array.isArray(data.data.restaurants) && data.data.restaurants.length > 0) {
+        const validRestaurants = data.data.restaurants.filter((restaurant: any) =>
           restaurant && typeof restaurant === 'object' && restaurant.id
         );
 
