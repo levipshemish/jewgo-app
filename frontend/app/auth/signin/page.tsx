@@ -24,6 +24,7 @@ function SignInForm() {
   const [upgradePassword, setUpgradePassword] = useState("");
   const [upgradeName, setUpgradeName] = useState("");
   const [upgradePending, setUpgradePending] = useState(false);
+  const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
@@ -235,11 +236,15 @@ function SignInForm() {
         return;
       }
       await postgresAuth.upgradeGuest({ email: upgradeEmail, password: upgradePassword, name: upgradeName || undefined });
-      if (typeof window !== 'undefined') {
-        window.location.assign(redirectTo);
-      } else {
-        router.push(redirectTo);
-      }
+      setUpgradeSuccess('Your account was upgraded successfully! Redirecting…');
+      // Briefly show success banner then redirect
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.location.assign(redirectTo);
+        } else {
+          router.push(redirectTo);
+        }
+      }, 1200);
     } catch (e: any) {
       setError(e?.message || 'Failed to upgrade guest account');
     } finally {
@@ -298,6 +303,13 @@ function SignInForm() {
           {csrfReady === false && csrfMessage && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded relative">
               {csrfMessage}
+            </div>
+          )}
+
+          {/* Upgrade Success */}
+          {upgradeSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
+              {upgradeSuccess}
             </div>
           )}
 

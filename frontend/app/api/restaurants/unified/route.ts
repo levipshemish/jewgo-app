@@ -78,27 +78,6 @@ export async function GET(request: NextRequest) {
 
       const backendData = await backendResponse.json();
       
-      // Debug logging to see what rating data we're getting from unified backend
-      if (process.env.NODE_ENV === 'development' && backendData.restaurants && backendData.restaurants.length > 0) {
-        const firstRestaurant = backendData.restaurants[0];
-        console.log('Unified backend restaurant data sample:', {
-          firstRestaurant: firstRestaurant,
-          ratingFields: {
-            rating: firstRestaurant.rating,
-            google_rating: firstRestaurant.google_rating,
-            star_rating: firstRestaurant.star_rating,
-            quality_rating: firstRestaurant.quality_rating
-          },
-          googleReviews: {
-            hasGoogleReviews: !!firstRestaurant.google_reviews,
-            googleReviewsType: typeof firstRestaurant.google_reviews,
-            googleReviewsLength: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.length : 0,
-            googleReviewsPreview: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.substring(0, 100) + '...' : null,
-            googleReviewsFirstChar: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.charAt(0) : null,
-            googleReviewsLastChar: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.charAt(firstRestaurant.google_reviews.length - 1) : null
-          }
-        });
-      }
       
       // Transform response to match frontend expectations
       const unifiedResponse = {
@@ -193,30 +172,6 @@ async function fallbackToSeparateCalls(searchParams: URLSearchParams, backendUrl
       filterOptionsResponse.json()
     ]);
 
-    // Debug logging to see what rating data we're getting from fallback
-    if (process.env.NODE_ENV === 'development') {
-      const restaurants = restaurantsData.restaurants || restaurantsData.data?.restaurants || [];
-      if (restaurants.length > 0) {
-        const firstRestaurant = restaurants[0];
-        console.log('Fallback restaurant data sample:', {
-          firstRestaurant: firstRestaurant,
-          ratingFields: {
-            rating: firstRestaurant.rating,
-            google_rating: firstRestaurant.google_rating,
-            star_rating: firstRestaurant.star_rating,
-            quality_rating: firstRestaurant.quality_rating
-          },
-          googleReviews: {
-            hasGoogleReviews: !!firstRestaurant.google_reviews,
-            googleReviewsType: typeof firstRestaurant.google_reviews,
-            googleReviewsLength: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.length : 0,
-            googleReviewsPreview: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.substring(0, 100) + '...' : null,
-            googleReviewsFirstChar: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.charAt(0) : null,
-            googleReviewsLastChar: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.charAt(firstRestaurant.google_reviews.length - 1) : null
-          }
-        });
-      }
-    }
 
     // Combine the responses
     const unifiedResponse = {

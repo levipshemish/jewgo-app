@@ -27,31 +27,6 @@ export function calculateAverageRating(reviews: Review[]): number | null {
 }
 
 /**
- * Attempt to fix common JSON malformation issues
- */
-function attemptJsonFix(jsonString: string): string {
-  let fixed = jsonString.trim();
-  
-  // Remove any leading/trailing non-JSON characters
-  fixed = fixed.replace(/^[^{[]*/, '').replace(/[^}\]]*$/, '');
-  
-  // If it starts with a quote, try to unescape it
-  if (fixed.startsWith('"') && fixed.endsWith('"')) {
-    try {
-      fixed = JSON.parse(fixed);
-    } catch {
-      // If that fails, just remove the quotes
-      fixed = fixed.slice(1, -1);
-    }
-  }
-  
-  // Try to fix common escape issues
-  fixed = fixed.replace(/\\"/g, '"').replace(/\\'/g, "'");
-  
-  return fixed;
-}
-
-/**
  * Parse Google reviews JSON string and calculate average rating
  */
 export function calculateRatingFromGoogleReviews(googleReviewsJson: string): number | null {
@@ -63,27 +38,8 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
     const reviews: Review[] = JSON.parse(googleReviewsJson);
     return calculateAverageRating(reviews);
   } catch (error) {
-    // Enhanced error logging to see exactly what malformed JSON we're receiving
-    console.warn('Failed to parse Google reviews JSON:', {
-      error: error,
-      jsonString: googleReviewsJson,
-      jsonLength: googleReviewsJson.length,
-      jsonPreview: googleReviewsJson.substring(0, 200) + (googleReviewsJson.length > 200 ? '...' : ''),
-      jsonType: typeof googleReviewsJson,
-      jsonFirstChar: googleReviewsJson.charAt(0),
-      jsonLastChar: googleReviewsJson.charAt(googleReviewsJson.length - 1)
-    });
-    
-    // Try to fix common JSON issues and parse again
-    try {
-      const fixedJson = attemptJsonFix(googleReviewsJson);
-      const reviews: Review[] = JSON.parse(fixedJson);
-      console.log('Successfully parsed after JSON fix');
-      return calculateAverageRating(reviews);
-    } catch (secondError) {
-      console.warn('Failed to parse even after JSON fix attempt:', secondError);
-      return null;
-    }
+    console.warn('Failed to parse Google reviews JSON:', error);
+    return null;
   }
 }
 
@@ -156,21 +112,3 @@ export function formatRating(rating: number | string | null | undefined): string
   return Number.isFinite(num) && num > 0 ? num.toFixed(1) : '';
 }
 
-/**
- * Get rating with fallback - returns a default rating if no rating is found
- * Useful for debugging to see which restaurants are missing ratings
- */
-export function getRatingWithFallback(restaurant: any, fallbackRating: number = 3.5): string {
-  const rating = getBestAvailableRating(restaurant);
-  
-  if (rating) {
-    return formatRating(rating);
-  }
-  
-  // For debugging: show fallback rating to identify missing ratings
-  if (process.env.NODE_ENV === 'development') {
-    console.warn(`No rating found for ${restaurant.name} (ID: ${restaurant.id}), using fallback: ${fallbackRating}`);
-  }
-  
-  return formatRating(fallbackRating);
-}

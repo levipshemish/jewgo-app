@@ -466,6 +466,15 @@ class PostgresAuthClient {
       body: JSON.stringify(data),
     });
     const result: AuthResponse = await this.handleResponse(response);
+
+    // Best-effort hook: if/when merge endpoints exist, attempt to merge anon data
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+      // Try a soft ping to a hypothetical merge orchestrator; ignore failures
+      await fetch(`${backendUrl}/api/auth/prepare-merge`, { method: 'POST', credentials: 'include' }).catch(() => {});
+      await fetch(`${backendUrl}/api/auth/merge-anonymous`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    } catch {}
+
     return result;
   }
 }

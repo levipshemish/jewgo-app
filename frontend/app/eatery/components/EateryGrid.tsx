@@ -7,7 +7,7 @@ import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "../types"
 import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
 import { isRestaurantOpenDuringPeriod } from "@/lib/utils/hours"
-import { getBestAvailableRating, formatRating, getRatingWithFallback } from "@/lib/utils/ratingCalculation"
+import { getBestAvailableRating, formatRating } from "@/lib/utils/ratingCalculation"
 
 // Import the mock data generator (fallback)
 import { generateMockRestaurants, type MockRestaurant } from "@/lib/mockData/restaurants"
@@ -427,41 +427,7 @@ export default function EateryGrid({
   // Get the best available rating from restaurant data
   const getRestaurantRating = useCallback((restaurant: LightRestaurant) => {
     const rating = getBestAvailableRating(restaurant);
-    const formattedRating = formatRating(rating);
-    
-    // Enhanced debug logging to see what rating data we have for ALL restaurants
-    if (process.env.NODE_ENV === 'development') {
-      const hasGoogleReviews = !!(restaurant as any).google_reviews;
-      const googleReviewsLength = hasGoogleReviews ? (restaurant as any).google_reviews.length : 0;
-      
-      console.log(`Rating for ${restaurant.name}:`, {
-        id: restaurant.id,
-        google_rating: restaurant.google_rating,
-        rating: (restaurant as any).rating,
-        star_rating: (restaurant as any).star_rating,
-        quality_rating: (restaurant as any).quality_rating,
-        google_reviews: hasGoogleReviews ? `has reviews (${googleReviewsLength} chars)` : 'no reviews',
-        google_reviews_preview: hasGoogleReviews ? (restaurant as any).google_reviews.substring(0, 100) + '...' : null,
-        calculatedRating: rating,
-        formattedRating: formattedRating,
-        willShowBadge: !!formattedRating,
-        allFields: {
-          google_rating: restaurant.google_rating,
-          rating: (restaurant as any).rating,
-          star_rating: (restaurant as any).star_rating,
-          quality_rating: (restaurant as any).quality_rating,
-          google_reviews: (restaurant as any).google_reviews
-        }
-      });
-    }
-    
-    // For debugging: use fallback rating to see which restaurants are missing ratings
-    // TODO: Remove this fallback once we identify the issue
-    if (!formattedRating && process.env.NODE_ENV === 'development') {
-      return getRatingWithFallback(restaurant, 3.5);
-    }
-    
-    return formattedRating;
+    return formatRating(rating);
   }, [])
 
   if (filteredRestaurants.length === 0 && !loading) {
