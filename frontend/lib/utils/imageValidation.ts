@@ -102,7 +102,7 @@ export function filterValidImageUrls(urls: string[]): string[] {
     return [];
   }
   
-  return urls.filter(url => {
+  const validUrls = urls.filter(url => {
     if (!url || typeof url !== 'string') {
       return false;
     }
@@ -129,6 +129,9 @@ export function filterValidImageUrls(urls: string[]): string[] {
     // Google Places and Unsplash URLs are generally reliable
     return true;
   });
+
+  // Remove duplicate URLs using Set
+  return Array.from(new Set(validUrls));
 }
 
 /**
@@ -161,9 +164,12 @@ export function processRestaurantImages(
     return true;
   });
 
+  // Remove duplicate images using Set
+  const uniqueImages = Array.from(new Set(validImages));
+
   // If we have at least one real image, return all valid images up to maxImages
-  if (validImages.length > 0) {
-    return validImages.slice(0, Math.max(1, maxImages));
+  if (uniqueImages.length > 0) {
+    return uniqueImages.slice(0, Math.max(1, maxImages));
   }
 
   // No real images: use a single local placeholder to avoid a carousel of duplicates

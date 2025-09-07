@@ -13,7 +13,6 @@ import { throttle as throttleFn } from '@/lib/utils/touchUtils';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { favoritesManager } from '@/lib/utils/favorites';
-import MapCard from '@/components/map/MapCard';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
@@ -57,7 +56,8 @@ export default function UnifiedLiveMapClient() {
     userLocation,
     permissionStatus,
     isLoading: locationLoading,
-    requestLocation
+    requestLocation,
+    setLocation
   } = useLocation();
   
   // Use the shared advanced filters hook
@@ -377,7 +377,7 @@ export default function UnifiedLiveMapClient() {
     setSelectedRestaurant({ ...restaurant });
   }, []);
 
-  // Transform restaurant data to match MapCard's CardData interface
+  // Transform restaurant data to match Card component's CardData interface
   const transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -495,7 +495,7 @@ export default function UnifiedLiveMapClient() {
   }
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="h-screen bg-white relative overflow-hidden">
       {/* Top Bar */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200 px-4 py-3">
         <div className="flex items-center space-x-3">
@@ -531,8 +531,16 @@ export default function UnifiedLiveMapClient() {
       {/* Removed Tab Navigation - only showing map view */}
 
       {/* Main Content - Map Only */}
-      <div className="pt-16 pb-20">
-        <div className="h-[calc(100vh-4rem)]">
+      <div className="h-full">
+        <div 
+          className="h-full"
+          onClick={() => {
+            // Close card when clicking on map (outside of card)
+            if (showRestaurantCard) {
+              handleCloseRestaurantCard();
+            }
+          }}
+        >
           <InteractiveRestaurantMap
             restaurants={displayedRestaurants}
             userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
@@ -548,79 +556,140 @@ export default function UnifiedLiveMapClient() {
 
       {/* Restaurant Detail Card */}
       {showRestaurantCard && selectedRestaurant && (
-        <div className="fixed bottom-20 left-4 right-4 sm:left-8 sm:right-8 max-w-lg mx-auto z-50">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-8 sm:right-8 max-w-sm mx-auto z-50">
           <div className="relative">
-            <MapCard
-              data={transformRestaurantToCardData(selectedRestaurant)}
-              showStarInBadge={true}
-                              onCardClick={() => {
-                  // Create URL-friendly eatery name
-                  const eateryName = selectedRestaurant.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-                    .replace(/\s+/g, '-') // Replace spaces with hyphens
-                    .replace(/-+/g, '-') // Replace multiple hyphens with single
-                    .trim()
+            <div 
+              className="w-full bg-white shadow-2xl hover:shadow-3xl transition-shadow rounded-2xl aspect-[3/2] max-w-sm h-56 border border-gray-200 overflow-hidden cursor-pointer"
+              onClick={(e) => {
+                // Stop propagation to prevent closing the card
+                e.stopPropagation();
+                
+                // Use restaurant ID for routing (matches eatery/[id] structure)
+                router.push(`/eatery/${selectedRestaurant.id}`)
+              }}
+            >
+              {/* Image Section - Taller for better visibility */}
+              <div className="relative w-full h-32 overflow-hidden">
+                {selectedRestaurant.image_url ? (
+                  <img
+                    src={selectedRestaurant.image_url}
+                    alt={selectedRestaurant.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <div className="text-gray-400 text-xs">No image</div>
+                  </div>
+                )}
+                
+                {/* Kosher Category Badge (Tag) - matches eatery page */}
+                {selectedRestaurant.kosher_category && (
+                  <div className={`absolute top-3 left-3 text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] rounded-full shadow-md font-medium truncate ${
+                    selectedRestaurant.kosher_category.toLowerCase() === 'dairy' ? 'bg-white text-[#ADD8E6] font-bold' :
+                    selectedRestaurant.kosher_category.toLowerCase() === 'meat' ? 'bg-white text-[#A70000] font-bold' :
+                    selectedRestaurant.kosher_category.toLowerCase() === 'pareve' ? 'bg-white text-[#FFCE6D] font-bold' :
+                    'bg-white text-gray-500 font-bold'
+                  }`}>
+                    {selectedRestaurant.kosher_category}
+                  </div>
+                )}
+                
+                {/* Heart Button - matches eatery page style */}
+                <button
+                  className="absolute top-3 right-3 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite(selectedRestaurant);
+                  }}
+                >
+                  <span className="text-red-500 text-lg">♥</span>
+                </button>
+                
+              </div>
+              
+              {/* Content Section - matches eatery page exactly */}
+              <div className="p-3 flex-1">
+                {/* Restaurant Name - matches eatery page */}
+                <div className="flex items-start w-full min-w-0 flex-shrink-0 h-8 mb-1">
+                  <h3 
+                    className="font-bold text-gray-900 leading-tight w-full min-w-0 text-left text-base" 
+                    title={selectedRestaurant.name}
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'block'
+                    }}
+                  >
+                    {selectedRestaurant.name}
+                  </h3>
+                </div>
+                
+                {/* Price Range, Distance and Rating - matches eatery page */}
+                <div className="flex items-center justify-between min-w-0 w-full flex-shrink-0 h-6 gap-2">
+                  <span className="text-gray-700 font-medium flex-shrink-0 text-sm">
+                    {selectedRestaurant.price_range || '$$'}
+                  </span>
                   
-                  router.push(`/eatery/${eateryName}`)
-                }}
-              onLikeToggle={(_id, _isLiked) => handleToggleFavorite(selectedRestaurant)}
-              className="w-full shadow-2xl hover:shadow-3xl transition-shadow"
-            />
-            
-            {/* Close Button - Overlay on top-right */}
-            <div className="absolute top-2 right-2 z-10">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCloseRestaurantCard();
-                }}
-                className="w-8 h-8 border border-white/60 rounded-full transition-all duration-200 hover:scale-105 flex items-center justify-center active:scale-95 backdrop-blur-md shadow-lg hover:border-white/80 hover:backdrop-blur-lg"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-                }}
-              >
-                <X className="w-4 h-4 text-white drop-shadow-sm hover:text-gray-200 transition-colors" />
-              </button>
+                  {selectedRestaurant.distance && (
+                    <span className="text-gray-500 text-sm flex-1 text-right mr-2">
+                      {selectedRestaurant.distance}
+                    </span>
+                  )}
+                  
+                  <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: 'fit-content' }}>
+                    <span className="text-yellow-400 text-sm">★</span>
+                    <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 text-sm">
+                      {selectedRestaurant.rating ? selectedRestaurant.rating.toFixed(1) : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
+            
           </div>
         </div>
       )}
 
-      {/* Map Status */}
-      <div className="fixed bottom-4 left-4 z-40 pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
-          {mapState.markerError ? (
-            <div className="text-xs">
-              <div className="text-red-600 mb-1">{mapState.markerError}</div>
-              <button
-                onClick={() => {}}
-                className="text-blue-600 hover:text-blue-800 underline text-xs"
-              >
-                Retry
-              </button>
-            </div>
-          ) : (
-            <div className="text-xs font-medium text-gray-700">
-              {mapState.isLoadingMarkers ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                  <span>Loading markers...</span>
-                </div>
-              ) : (
-                <span>
-                  {mapState.restaurantsWithCoords.length > 0
-                    ? `${mapState.visibleCount ?? mapState.restaurantsWithCoords.length} in view`
-                    : 'No restaurants nearby'}
-                </span>
-              )}
-              {userLocation && (
-                <span className="text-blue-600 ml-2">📍 Your location</span>
-              )}
-            </div>
-          )}
-        </div>
+      {/* My Location Button */}
+      <div className="fixed bottom-4 left-4 z-40">
+        <button
+          onClick={() => {
+            if (userLocation) {
+              // Center map on user location with 5-mile zoom
+              setMapCenter({ lat: userLocation.latitude, lng: userLocation.longitude });
+              // Set zoom level for approximately 5-mile radius (zoom level 12-13)
+              // This will be handled by the InteractiveRestaurantMap component
+            } else {
+              // Request location permission
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  const newLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: Date.now()
+                  };
+                  // Update location context and center map
+                  setLocation(newLocation);
+                  setMapCenter({ lat: newLocation.latitude, lng: newLocation.longitude });
+                },
+                (error) => {
+                  console.error('Error getting location:', error);
+                }
+              );
+            }
+          }}
+          className="bg-white/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg hover:bg-white transition-colors pointer-events-auto"
+          title={userLocation ? "Center on my location" : "Get my location"}
+        >
+          <div className="flex items-center space-x-2">
+            <span className="text-lg">📍</span>
+            <span className="text-xs font-medium text-gray-700">
+              {userLocation ? "My Location" : "Find Me"}
+            </span>
+          </div>
+        </button>
       </div>
 
       {/* Filters Modal */}

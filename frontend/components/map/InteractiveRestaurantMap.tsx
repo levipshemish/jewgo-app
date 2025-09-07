@@ -58,6 +58,7 @@ export function InteractiveRestaurantMap({
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const selectedRestaurantIdRef = useRef<string | null>(null);
+  const userLocationMarkerRef = useRef<google.maps.Marker | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
   const [mapState, setMapState] = useState<MapState>({
     isLoadingMarkers: false,
@@ -71,6 +72,30 @@ export function InteractiveRestaurantMap({
     type,
     message,
   }), []);
+
+  // Create user location marker
+  const createUserLocationMarker = useCallback((map: google.maps.Map, location: { lat: number; lng: number }) => {
+    // Remove existing user location marker
+    if (userLocationMarkerRef.current) {
+      userLocationMarkerRef.current.setMap(null);
+    }
+
+    // Create new user location marker
+    userLocationMarkerRef.current = new google.maps.Marker({
+      position: location,
+      map: map,
+      title: 'Your Location',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#4285F4',
+        fillOpacity: 1,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 2,
+      },
+      zIndex: 1000, // Ensure it's above other markers
+    });
+  }, []);
 
   // Filter restaurants with coordinates
   const restaurantsWithCoords = useMemo((): Restaurant[] => {
@@ -92,10 +117,20 @@ export function InteractiveRestaurantMap({
           return;
         }
 
+        // Check if Map ID is available for Advanced Markers
+        const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID;
+        if (!mapId) {
+          console.warn('NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID not set. Advanced Markers will not be available.');
+        }
+
+        // Determine zoom level - use 13 for 5-mile radius when centering on user location
+        const zoomLevel = mapCenter ? 13 : 12;
+        
         const map = new google.maps.Map(mapRef.current, {
           center: mapCenter || { lat: 25.7617, lng: -80.1918 }, // Miami default
-          zoom: 12,
+          zoom: zoomLevel,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
+          mapId: mapId, // Required for Advanced Markers
           mapTypeControl: true,
           streetViewControl: true,
           fullscreenControl: true,
@@ -109,6 +144,11 @@ export function InteractiveRestaurantMap({
         }
 
         mapInstanceRef.current = map;
+
+        // Create user location marker if user location is available
+        if (userLocation) {
+          createUserLocationMarker(map, userLocation);
+        }
 
         // Initialize directions service
         directionsServiceRef.current = new google.maps.DirectionsService();
@@ -154,36 +194,37 @@ export function InteractiveRestaurantMap({
       if (mapInstanceRef.current) {
         mapInstanceRef.current = null;
       }
+      if (userLocationMarkerRef.current) {
+        userLocationMarkerRef.current.setMap(null);
+        userLocationMarkerRef.current = null;
+      }
       directionsServiceRef.current = null;
     };
   }, [mapCenter, restaurantsWithCoords]);
 
-  // Temporarily disable marker management to fix SSR issues
-  // TODO: Re-enable after fixing SSR compatibility
-  const markersRef = useRef([]);
-  const markersMapRef = useRef(new Map());
-  const clustererRef = useRef(null);
-  const getRestaurantKey = (restaurant: Restaurant) => String(restaurant.id);
-  const cleanupMarkers = () => {};
-  const createMarker = () => null;
-  const applyClustering = () => {};
-  
-  // Use marker management hook (disabled for now)
-  // const {
-  //   markersRef,
-  //   markersMapRef,
-  //   clustererRef,
-  //   getRestaurantKey,
-  //   cleanupMarkers,
-  //   createMarker,
-  //   applyClustering
-  // } = useMarkerManagement({
-  //   map: mapInstanceRef.current,
-  //   restaurants: restaurantsWithCoords,
-  //   onRestaurantSelect,
-  //   selectedRestaurantId,
-  //   showRatingBubbles,
-  // });
+  // Update user location marker when user location changes
+  useEffect(() => {
+    if (mapInstanceRef.current && userLocation) {
+      createUserLocationMarker(mapInstanceRef.current, userLocation);
+    }
+  }, [userLocation, createUserLocationMarker]);
+
+  // Use marker management hook with proper SSR handling
+  const {
+    markersRef,
+    markersMapRef,
+    clustererRef,
+    getRestaurantKey,
+    cleanupMarkers,
+    createMarker,
+    applyClustering
+  } = useMarkerManagement({
+    map: mapInstanceRef.current,
+    restaurants: restaurantsWithCoords,
+    onRestaurantSelect,
+    selectedRestaurantId,
+    showRatingBubbles,
+  });
 
   // Update selected restaurant
   useEffect(() => {

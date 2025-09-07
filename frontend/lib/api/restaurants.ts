@@ -77,13 +77,20 @@ export async function fetchRestaurants({
   // External API format: {count: number, data: Restaurant[]}
   if (json.data && Array.isArray(json.data)) {
     // External API format
+    const restaurants = sanitizeRestaurantData(json.data) as Restaurant[];
+    const countNumRaw = Number((json as any).count);
+    const total = Number.isFinite(countNumRaw) && countNumRaw >= 0
+      ? countNumRaw
+      : restaurants.length;
+    const safeLimit = limit > 0 ? limit : 1;
+
     return {
       success: true,
-      restaurants: json.data,
-      totalPages: Math.ceil((json.count || json.data.length) / limit),
-      totalRestaurants: json.count || json.data.length,
-      page: page,
-      limit: limit
+      restaurants,
+      totalPages: Math.ceil(total / safeLimit),
+      totalRestaurants: total,
+      page,
+      limit: safeLimit,
     };
   }
   

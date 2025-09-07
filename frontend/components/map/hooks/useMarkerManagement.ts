@@ -187,14 +187,22 @@ export function useMarkerManagement({
 
   // Create marker for restaurant
   const createMarker = useCallback((restaurant: Restaurant): google.maps.marker.AdvancedMarkerElement | google.maps.Marker => {
+    // Check if we're on the client side and have Google Maps loaded
+    if (typeof window === 'undefined' || !window.google?.maps) {
+      throw new Error('Google Maps not loaded');
+    }
+
     if (!restaurant.latitude || !restaurant.longitude) {
       throw new Error(`Restaurant ${restaurant.id} missing coordinates`);
     }
 
     const position = new google.maps.LatLng(restaurant.latitude, restaurant.longitude);
     
-    // Try to use AdvancedMarkerElement (modern API) first
-    if (google.maps.marker?.AdvancedMarkerElement) {
+    // Check if map has a valid Map ID for Advanced Markers
+    const hasMapId = map && (map as any).mapId;
+    
+    // Try to use AdvancedMarkerElement (modern API) first, but only if map has Map ID
+    if (google.maps.marker?.AdvancedMarkerElement && hasMapId) {
       const content = createMarkerContent(restaurant);
       
       const marker = new google.maps.marker.AdvancedMarkerElement({
@@ -212,6 +220,10 @@ export function useMarkerManagement({
       return marker;
     } else {
       // Fallback to classic Marker API
+      if (!hasMapId) {
+        console.warn('Map ID not available, using classic markers instead of Advanced Markers');
+      }
+      
       const marker = new google.maps.Marker({
         position,
         title: restaurant.name,
@@ -233,7 +245,8 @@ export function useMarkerManagement({
 
   // Apply clustering
   const applyClustering = useCallback(() => {
-    if (!map || !window.MarkerClusterer || clustererRef.current) {
+    // Check if we're on the client side and have the required dependencies
+    if (typeof window === 'undefined' || !map || !window.MarkerClusterer || clustererRef.current) {
       return;
     }
 
@@ -269,7 +282,8 @@ export function useMarkerManagement({
 
   // Update markers when restaurants change
   useEffect(() => {
-    if (!map) {
+    // Check if we're on the client side and have the required dependencies
+    if (typeof window === 'undefined' || !map || !window.google?.maps) {
       return;
     }
 

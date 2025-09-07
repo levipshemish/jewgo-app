@@ -127,7 +127,10 @@ export function mapEateryToListingData(
           eatery.image_url
         ].filter(Boolean);
         
-        return allImages.map(img => 
+        // Remove duplicate images using Set
+        const uniqueImages = Array.from(new Set(allImages));
+        
+        return uniqueImages.map(img => 
           getFallbackImageUrl(img, eatery.kosher_type, { enableLogging: process.env.NODE_ENV === 'development' })
         );
       })(),

@@ -25,6 +25,19 @@ jest.mock('@/lib/hooks/useFilterOptions', () => ({
     },
     loading: false,
     error: null,
+    refetch: jest.fn(),
+  }),
+  // Provide the lazy variant to match ModernFilterPopup usage
+  useLazyFilterOptions: () => ({
+    filterOptions: {
+      agencies: ['ORB', 'Kosher Miami'],
+      kosherCategories: ['Dairy', 'Meat', 'Pareve'],
+      priceRanges: ['$', '$$', '$$$'],
+    },
+    loading: false,
+    error: null,
+    refetch: jest.fn(),
+    trigger: jest.fn(),
   }),
 }));
 

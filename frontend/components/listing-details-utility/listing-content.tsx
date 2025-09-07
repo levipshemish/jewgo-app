@@ -73,6 +73,19 @@ function isRating(text: string): boolean {
          !text.includes('miles')
 }
 
+// Helper function to check if text looks like a distance action
+function isDistanceAction(text: string): boolean {
+  if (!text) return false
+  
+  // Normalize text to lowercase for case-insensitive matching
+  const normalizedText = text.toLowerCase().trim()
+  
+  // Pattern to match: number (with optional decimal) + recognized distance units
+  const distancePattern = /^\d+(\.\d+)?\s*(mi|miles|km|kilometers|m|meters|ft|feet)$/
+  
+  return distancePattern.test(normalizedText)
+}
+
 export function ListingContent({
   leftText,
   rightText,
@@ -161,9 +174,9 @@ export function ListingContent({
               onClick={onRightAction} 
               className="text-sm text-gray-600 h-auto px-2 py-1 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors"
             >
-              {/* Show map icon for distance buttons (containing "miles", "ft", "km", "m") */}
-              {(rightAction && (rightAction.includes('miles') || rightAction.includes('ft') || rightAction.includes('km') || rightAction.includes('m'))) && (
-                <span className="inline-block mr-2">{renderIcon("map-pin")}</span>
+              {/* Show map icon for distance actions */}
+              {rightAction && isDistanceAction(rightAction) && (
+                <span className="inline-block mr-2" aria-hidden="true">{renderIcon("map-pin")}</span>
               )}
               {rightIcon && <span className="inline-block mr-2">{renderIcon(rightIcon)}</span>}
               {rightAction || ""}

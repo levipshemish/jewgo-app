@@ -59,6 +59,101 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [hasShownPopup, setHasShownPopup] = useState(false);
   const [lastPopupShownTime, setLastPopupShownTime] = useState<number | null>(null);
 
+  const requestLocation = useCallback(() => {
+    // console.log('📍 LocationContext: requestLocation called', {
+    //   isLoading,
+    //   lastRequestTime,
+    //   timeSinceLastRequest: Date.now() - lastRequestTime
+    // });
+    
+    // Prevent multiple simultaneous requests
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    const minRequestInterval = 2000; // Allow retry after 2 seconds
+    
+    if (isLoading || timeSinceLastRequest < minRequestInterval) {
+      if (DEBUG) { debugLog('📍 LocationContext: Skipping request - too soon or already loading'); }
+      return;
+    }
+    
+    if (!navigator.geolocation) {
+      setPermissionStatus('unsupported');
+      setError('Geolocation is not supported by this browser');
+      return;
+    }
+
+    setLastRequestTime(now);
+    setIsLoading(true);
+    setError(null);
+
+    // Use timeout pattern to prevent hanging
+    const getPosition = () =>
+      new Promise<GeolocationPosition>((resolve, reject) => {
+        // Increase timeout to 10 seconds
+        const timeoutMs = 10000;
+        const kill = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+        
+        // Try with low accuracy first for faster response
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            clearTimeout(kill);
+            resolve(pos);
+          },
+          (err) => {
+            clearTimeout(kill);
+            // If it fails with low accuracy, don't retry with high accuracy
+            // as it will likely fail again and take longer
+            reject(err);
+          },
+          { 
+            enableHighAccuracy: false, // Use low accuracy for faster response
+            timeout: timeoutMs - 1000, // Browser timeout slightly less than our timeout
+            maximumAge: 300000 // Accept cached position up to 5 minutes old
+          }
+        );
+      });
+
+    (async () => {
+      try {
+        const position = await getPosition();
+        setIsLoading(false);
+        setPermissionStatus('granted');
+        const location: UserLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          timestamp: Date.now(),
+        };
+        if (DEBUG) { /* location obtained successfully */ }
+        setUserLocation(location);
+      } catch (locationError: any) {
+        setIsLoading(false);
+        let errorMessage = 'Unable to get your location';
+        
+        if (locationError.message === 'timeout') {
+          errorMessage = 'Location request timed out. Please try again.';
+          // Keep permission status as prompt so user can retry
+          setPermissionStatus('prompt');
+          if (DEBUG) { debugLog('📍 LocationContext: Location request timed out after 10 seconds'); }
+        } else if (locationError.code) {
+          switch (locationError.code) {
+            case locationError.PERMISSION_DENIED:
+              setPermissionStatus('denied');
+              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
+              break;
+            case locationError.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable. Please try again.';
+              break;
+            case locationError.TIMEOUT:
+              errorMessage = 'Location request timed out. Please try again.';
+              break;
+          }
+        }
+        
+        setError(errorMessage);
+      }
+    })();
+  }, [isLoading, lastRequestTime]);
+
   // Load location data and popup state from localStorage on mount and check actual browser permissions
   useEffect(() => {
     const savedLocationData = localStorage.getItem(LOCATION_STORAGE_KEY);
@@ -245,101 +340,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       if (DEBUG) { console.error('❌ LocationContext: Failed to save popup state:', _error); }
     }
   }, [hasInitialized, hasShownPopup, lastPopupShownTime]);
-
-  const requestLocation = useCallback(() => {
-    // console.log('📍 LocationContext: requestLocation called', {
-    //   isLoading,
-    //   lastRequestTime,
-    //   timeSinceLastRequest: Date.now() - lastRequestTime
-    // });
-    
-    // Prevent multiple simultaneous requests
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    const minRequestInterval = 2000; // Allow retry after 2 seconds
-    
-    if (isLoading || timeSinceLastRequest < minRequestInterval) {
-      if (DEBUG) { debugLog('📍 LocationContext: Skipping request - too soon or already loading'); }
-      return;
-    }
-    
-    if (!navigator.geolocation) {
-      setPermissionStatus('unsupported');
-      setError('Geolocation is not supported by this browser');
-      return;
-    }
-
-    setLastRequestTime(now);
-    setIsLoading(true);
-    setError(null);
-
-    // Use timeout pattern to prevent hanging
-    const getPosition = () =>
-      new Promise<GeolocationPosition>((resolve, reject) => {
-        // Increase timeout to 10 seconds
-        const timeoutMs = 10000;
-        const kill = setTimeout(() => reject(new Error('timeout')), timeoutMs);
-        
-        // Try with low accuracy first for faster response
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            clearTimeout(kill);
-            resolve(pos);
-          },
-          (err) => {
-            clearTimeout(kill);
-            // If it fails with low accuracy, don't retry with high accuracy
-            // as it will likely fail again and take longer
-            reject(err);
-          },
-          { 
-            enableHighAccuracy: false, // Use low accuracy for faster response
-            timeout: timeoutMs - 1000, // Browser timeout slightly less than our timeout
-            maximumAge: 300000 // Accept cached position up to 5 minutes old
-          }
-        );
-      });
-
-    (async () => {
-      try {
-        const position = await getPosition();
-        setIsLoading(false);
-        setPermissionStatus('granted');
-        const location: UserLocation = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          timestamp: Date.now(),
-        };
-        if (DEBUG) { /* location obtained successfully */ }
-        setUserLocation(location);
-      } catch (locationError: any) {
-        setIsLoading(false);
-        let errorMessage = 'Unable to get your location';
-        
-        if (locationError.message === 'timeout') {
-          errorMessage = 'Location request timed out. Please try again.';
-          // Keep permission status as prompt so user can retry
-          setPermissionStatus('prompt');
-          if (DEBUG) { debugLog('📍 LocationContext: Location request timed out after 10 seconds'); }
-        } else if (locationError.code) {
-          switch (locationError.code) {
-            case locationError.PERMISSION_DENIED:
-              setPermissionStatus('denied');
-              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-              break;
-            case locationError.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Please try again.';
-              break;
-            case locationError.TIMEOUT:
-              errorMessage = 'Location request timed out. Please try again.';
-              break;
-          }
-        }
-        
-        setError(errorMessage);
-      }
-    })();
-  }, [isLoading, lastRequestTime]);
 
   const setLocation = useCallback((location: UserLocation) => {
     setUserLocation(location);

@@ -5,6 +5,7 @@ import { Loader2, Search } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "../types"
+import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
 
 // Import the mock data generator (fallback)
 import { generateMockRestaurants, type MockRestaurant } from "@/lib/mockData/restaurants"
@@ -97,7 +98,7 @@ export default function EateryGrid({
         controller.abort()
       }, timeoutMs)
 
-      const response = await fetch(apiUrl.toString(), {
+      const data = await deduplicatedFetch(apiUrl.toString(), {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
@@ -105,17 +106,6 @@ export default function EateryGrid({
       })
 
       clearTimeout(timeoutId)
-
-      if (!response.ok) {
-        if (response.status >= 500) {
-          throw new Error(`Backend server error: ${response.status}`)
-        } else if (response.status >= 400) {
-          throw new Error(`Client error: ${response.status}`)
-        }
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
       
       if (data.success === false && data.message?.includes('temporarily unavailable')) {
         throw new Error('Backend service unavailable')
@@ -260,179 +250,103 @@ export default function EateryGrid({
     }
   }, [loading, hasMore, page, useRealData, backendError, fetchRestaurants, buildSearchParams]);
 
-  // Debounced effect for userLocation changes to prevent excessive API calls
+  // Unified effect for all data loading - prevents duplicate API calls
   useEffect(() => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current)
     }
     
     debounceTimeoutRef.current = setTimeout(() => {
-      // Only reload if we have restaurants and userLocation changed
-      if (restaurants.length > 0) {
-        setRestaurants([])
-        setPage(0)
-        setHasMore(true)
-        setBackendError(false)
-        isRetryingRef.current = false
+      // Reset state for new data load
+      setRestaurants([])
+      setPage(0)
+      setHasMore(true)
+      setBackendError(false)
+      isRetryingRef.current = false
+      
+      const loadInitialItems = async () => {
+        if (isRetryingRef.current) return
         
-        const loadInitialItems = async () => {
-          if (isRetryingRef.current) return
-          
-          setLoading(true)
-          let currentRetryCount = 0
-          
-          const attemptFetch = async (): Promise<void> => {
-            try {
-              if (useRealData && currentRetryCount < 3) {
-                const response = await fetchRestaurants(24, 0, buildSearchParams())
-                setRestaurants(response.restaurants)
-                setHasMore(response.hasMore)
-                isRetryingRef.current = false
-                setPage(1)
-              } else {
-                await new Promise((resolve) => setTimeout(resolve, 1000))
-                const mockItems = generateMockRestaurants(24)
-                setRestaurants(mockItems)
-                setHasMore(true)
-                setPage(1)
-                
-                if (currentRetryCount >= 3) {
-                  setBackendError(true)
-                }
-              }
-            } catch (error) {
-              console.error('Error loading initial items:', error)
-              currentRetryCount++
+        setLoading(true)
+        let currentRetryCount = 0
+        
+        const attemptFetch = async (): Promise<void> => {
+          try {
+            if (useRealData && currentRetryCount < 3) {
+              // Try real API first
+              const response = await fetchRestaurants(24, 0, buildSearchParams())
+              setRestaurants(response.restaurants)
+              setHasMore(response.hasMore)
+              isRetryingRef.current = false
+              setPage(1)
+            } else {
+              // Use mock data (fallback or when useRealData is false or max retries reached)
+              await new Promise((resolve) => setTimeout(resolve, 1000))
+              const mockItems = generateMockRestaurants(24)
+              setRestaurants(mockItems)
+              setHasMore(true)
+              setPage(1)
               
-              const isTimeoutError = error instanceof Error && 
-                (error.message.includes('timeout') || 
-                 error.message.includes('timed out') || 
-                 error.message.includes('unreachable'))
-              
-              if (isTimeoutError && currentRetryCount >= 2) {
+              if (currentRetryCount >= 3) {
+                console.log('Backend unreachable after 3 attempts, switching to mock data')
                 setBackendError(true)
-                const mockItems = generateMockRestaurants(24)
-                setRestaurants(mockItems)
-                setHasMore(true)
-                setPage(1)
-                return
-              }
-              
-              if (currentRetryCount < 3) {
-                const delay = isTimeoutError ? 1000 : 2000
-                setTimeout(() => {
-                  attemptFetch()
-                }, delay)
-                return
-              } else {
-                setBackendError(true)
-                const mockItems = generateMockRestaurants(24)
-                setRestaurants(mockItems)
-                setHasMore(true)
-                setPage(1)
               }
             }
+          } catch (error) {
+            console.error('Error loading initial items:', error)
+            currentRetryCount++
+            
+            // Check if it's a timeout error - fail faster for timeouts
+            const isTimeoutError = error instanceof Error && 
+              (error.message.includes('timeout') || 
+               error.message.includes('timed out') || 
+               error.message.includes('unreachable'))
+            
+            if (isTimeoutError && currentRetryCount >= 2) {
+              // Fail faster for timeout errors - only retry once
+              console.log('Timeout error detected, switching to mock data after 2 attempts')
+              setBackendError(true)
+              
+              const mockItems = generateMockRestaurants(24)
+              setRestaurants(mockItems)
+              setHasMore(true)
+              setPage(1)
+              return
+            }
+            
+            if (currentRetryCount < 3) {
+              // Retry after a delay (shorter for timeout errors)
+              const delay = isTimeoutError ? 1000 : 2000
+              setTimeout(() => {
+                attemptFetch()
+              }, delay)
+              return
+            } else {
+              // Max retries reached, fall back to mock data
+              console.log('Backend unreachable after 3 attempts, switching to mock data')
+              setBackendError(true)
+              
+              const mockItems = generateMockRestaurants(24)
+              setRestaurants(mockItems)
+              setHasMore(true)
+              setPage(1)
+            }
           }
-          
-          await attemptFetch()
-          setLoading(false)
         }
         
-        loadInitialItems()
+        await attemptFetch()
+        setLoading(false)
       }
-    }, 500) // 500ms debounce
+      
+      loadInitialItems()
+    }, 300) // Reduced debounce to 300ms for better responsiveness
     
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current)
       }
     }
-  }, [userLocation, buildSearchParams, fetchRestaurants, restaurants.length, useRealData])
-
-  // Load initial items when component mounts or category/search changes
-  useEffect(() => {
-    setRestaurants([])
-    setPage(0)
-    setHasMore(true)
-    setBackendError(false)
-    isRetryingRef.current = false
-    
-    const loadInitialItems = async () => {
-      if (isRetryingRef.current) return
-      
-      setLoading(true)
-      let currentRetryCount = 0
-      
-      const attemptFetch = async (): Promise<void> => {
-        try {
-          if (useRealData && currentRetryCount < 3) {
-            // Try real API first
-            const response = await fetchRestaurants(24, 0, buildSearchParams())
-            setRestaurants(response.restaurants)
-            setHasMore(response.hasMore)
-            isRetryingRef.current = false
-            setPage(1)
-          } else {
-            // Use mock data (fallback or when useRealData is false or max retries reached)
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-            const mockItems = generateMockRestaurants(24)
-            setRestaurants(mockItems)
-            setHasMore(true)
-            setPage(1)
-            
-            if (currentRetryCount >= 3) {
-              console.log('Backend unreachable after 3 attempts, switching to mock data')
-              setBackendError(true)
-            }
-          }
-        } catch (error) {
-          console.error('Error loading initial items:', error)
-          currentRetryCount++
-          
-          // Check if it's a timeout error - fail faster for timeouts
-          const isTimeoutError = error instanceof Error && 
-            (error.message.includes('timeout') || 
-             error.message.includes('timed out') || 
-             error.message.includes('unreachable'))
-          
-          if (isTimeoutError && currentRetryCount >= 2) {
-            // Fail faster for timeout errors - only retry once
-            console.log('Timeout error detected, switching to mock data after 2 attempts')
-            setBackendError(true)
-            
-            const mockItems = generateMockRestaurants(24)
-            setRestaurants(mockItems)
-            setHasMore(true)
-            setPage(1)
-            return
-          }
-          
-          if (currentRetryCount < 3) {
-            // Retry after a delay (shorter for timeout errors)
-            const delay = isTimeoutError ? 1000 : 2000
-            setTimeout(() => {
-              attemptFetch()
-            }, delay)
-            return
-          } else {
-            // Max retries reached, fall back to mock data
-            console.log('Backend unreachable after 3 attempts, switching to mock data')
-            setBackendError(true)
-            
-            const mockItems = generateMockRestaurants(24)
-            setRestaurants(mockItems)
-            setHasMore(true)
-            setPage(1)
-          }
-        }
-      }
-      
-      await attemptFetch()
-      setLoading(false)
-    }
-    
-    loadInitialItems()
-  }, [category, searchQuery, useRealData, buildSearchParams, fetchRestaurants, activeFilters])
+  }, [category, searchQuery, userLocation, activeFilters, useRealData, buildSearchParams, fetchRestaurants])
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {

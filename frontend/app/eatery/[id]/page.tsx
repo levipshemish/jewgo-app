@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from 'next/navigation'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ListingPage } from '@/components/listing-details-utility/listing-page'
 import { mapEateryToListingData } from '@/utils/eatery-mapping'
 import { EateryDB } from '@/types/listing'
@@ -9,6 +9,7 @@ import { useLocationData } from '@/hooks/useLocationData'
 import Link from 'next/link'
 import ErrorBoundary from '../components/ErrorBoundary'
 import LocationAwarePage from '@/components/LocationAwarePage'
+import { deduplicatedFetch } from '@/lib/utils/request-deduplication'
 
 /**
  * Parse hours from the backend JSON format into EateryDB format
@@ -170,6 +171,7 @@ function EateryIdPageContent() {
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewsPagination, setReviewsPagination] = useState<any>(null)
+  const isFetchingRef = useRef(false)
 
   // Use the new location utility system
   const {
@@ -193,21 +195,13 @@ function EateryIdPageContent() {
 
   const eateryId = params.id as string
 
-  // Fetch reviews for a restaurant
-  const fetchReviews = async (restaurantId: string, offset: number = 0, limit: number = 10) => {
+  // Fetch reviews for a restaurant with deduplication
+  const fetchReviews = useCallback(async (restaurantId: string, offset: number = 0, limit: number = 10) => {
     try {
       setReviewsLoading(true)
       
-      // Use the frontend API route for reviews
-      const response = await fetch(`/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
-      if (!response.ok) {
-        if (offset === 0) {
-          setReviews([])
-        }
-        return
-      }
-      
-      const data = await response.json()
+      // Use deduplicated fetch to prevent duplicate API calls
+      const data = await deduplicatedFetch(`/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
       
       if (data.success && data.data && data.data.reviews) {
         if (offset === 0) {
@@ -233,12 +227,18 @@ function EateryIdPageContent() {
     } finally {
       setReviewsLoading(false)
     }
-  }
+  }, [])
 
-  // Fetch eatery data by ID
+  // Fetch eatery data by ID - optimized to prevent duplicate calls
   useEffect(() => {
     const fetchEateryData = async () => {
+      // Prevent duplicate API calls
+      if (isFetchingRef.current) {
+        return
+      }
+      
       try {
+        isFetchingRef.current = true
         setLoading(true)
         setError(null)
 
@@ -247,27 +247,14 @@ function EateryIdPageContent() {
         if (isNaN(restaurantId)) {
           setError('Invalid restaurant ID')
           setLoading(false)
+          isFetchingRef.current = false
           return
         }
 
-        // Use the frontend API route for details
+        // Use deduplicated fetch for restaurant details
         const detailUrl = `/api/restaurants/${restaurantId}`
         
-        const detailResponse = await fetch(detailUrl)
-        
-        if (!detailResponse.ok) {
-          if (detailResponse.status === 404) {
-            setError('restaurant_not_found')
-          } else {
-            const errorText = await detailResponse.text()
-            console.error('Detail response error:', errorText)
-            throw new Error(`Failed to fetch restaurant details: ${detailResponse.status} - ${errorText}`)
-          }
-          setLoading(false)
-          return
-        }
-        
-        const detailData = await detailResponse.json()
+        const detailData = await deduplicatedFetch(detailUrl)
         
         // Extract restaurant data from the response
         let restaurantData = null
@@ -378,8 +365,11 @@ function EateryIdPageContent() {
               return ['/images/default-restaurant.webp'];
             }
             
-            // Return raw image URLs - let the mapping handle fallback processing
-            return allImages;
+            // Remove duplicate images using Set
+            const uniqueImages = Array.from(new Set(allImages));
+            
+            // Return deduplicated image URLs
+            return uniqueImages;
           })(),
           hours: (() => {
             console.log('Processing hours data...')
@@ -431,6 +421,7 @@ function EateryIdPageContent() {
 
         setEatery(eateryData)
         setLoading(false)
+        isFetchingRef.current = false
         
         // Fetch reviews for this restaurant
         if (eateryData.id) {
@@ -457,13 +448,14 @@ function EateryIdPageContent() {
         
         setError(errorMessage)
         setLoading(false)
+        isFetchingRef.current = false
       }
     }
 
     if (eateryId) {
       fetchEateryData()
     }
-  }, [eateryId])
+  }, [eateryId, fetchReviews])
 
   // Convert new location format to old format for compatibility with mapEateryToListingData
   const legacyUserLocation = userLocation ? {

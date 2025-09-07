@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { BackToTopButton } from '@/components/ui/BackToTopButton';
+import BackToTopButton from '@/components/common/BackToTopButton';
 
 // Mock IntersectionObserver
 const mockIntersectionObserver = jest.fn();
