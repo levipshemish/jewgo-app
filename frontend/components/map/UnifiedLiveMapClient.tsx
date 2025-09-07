@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, SlidersHorizontal, X, Search } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal, X, Search, Heart, Star } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
@@ -377,12 +377,36 @@ export default function UnifiedLiveMapClient() {
     setSelectedRestaurant({ ...restaurant });
   }, []);
 
+  // Calculate distance between two points in miles
+  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }, []);
+
   // Transform restaurant data to match Card component's CardData interface
   const transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
     
-    const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
+    // Calculate distance if user location is available and restaurant has coordinates
+    let distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
+    if (!distanceText && userLocation && restaurant.latitude && restaurant.longitude) {
+      const distance = calculateDistance(
+        userLocation.latitude, 
+        userLocation.longitude, 
+        restaurant.latitude, 
+        restaurant.longitude
+      );
+      distanceText = `${distance.toFixed(1)} mi`;
+    }
+    
     const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
     
     // Format address info for display
@@ -403,8 +427,9 @@ export default function UnifiedLiveMapClient() {
       city: fullAddress || restaurant.city,
       address: restaurant.address,
       certifyingAgency: restaurant.certifying_agency,
+      distance: distanceText, // Add distance to the returned object
     };
-  }, []);
+  }, [userLocation, calculateDistance]);
 
   const handleFilterChange = useCallback((filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
@@ -582,37 +607,109 @@ export default function UnifiedLiveMapClient() {
                   </div>
                 )}
                 
-                {/* Kosher Category Badge (Tag) - matches eatery page */}
+                {/* Kosher Category Badge (Tag) - matches current eatery page exactly */}
                 {selectedRestaurant.kosher_category && (
-                  <div className={`absolute top-3 left-3 text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] rounded-full shadow-md font-medium truncate ${
-                    selectedRestaurant.kosher_category.toLowerCase() === 'dairy' ? 'bg-white text-[#ADD8E6] font-bold' :
-                    selectedRestaurant.kosher_category.toLowerCase() === 'meat' ? 'bg-white text-[#A70000] font-bold' :
-                    selectedRestaurant.kosher_category.toLowerCase() === 'pareve' ? 'bg-white text-[#FFCE6D] font-bold' :
-                    'bg-white text-gray-500 font-bold'
-                  }`}>
-                    {selectedRestaurant.kosher_category}
+                  <div 
+                    className="absolute rounded-full flex items-center justify-center text-white cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      width: '80px',
+                      maxWidth: '80px',
+                      minWidth: '80px',
+                      height: '24px',
+                      maxHeight: '24px',
+                      minHeight: '24px',
+                      overflow: 'hidden',
+                      padding: '0 8px',
+                      fontSize: '12px',
+                      lineHeight: '1',
+                      fontWeight: '500',
+                      backgroundColor: 'rgba(17, 24, 39, 0.70)',
+                      color: '#ffffff',
+                      borderRadius: '9999px',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 10,
+                      contain: 'layout paint',
+                      transition: 'all 0.2s ease-out'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(17, 24, 39, 0.85)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(17, 24, 39, 0.70)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+                    }}
+                  >
+                    {selectedRestaurant.kosher_category.charAt(0).toUpperCase() + selectedRestaurant.kosher_category.slice(1).toLowerCase()}
                   </div>
                 )}
                 
-                {/* Heart Button - matches eatery page style */}
+                {/* Heart Button - matches current eatery page exactly */}
                 <button
-                  className="absolute top-3 right-3 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+                  className="absolute rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95"
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '8px',
+                    width: '28px',
+                    maxWidth: '28px',
+                    minWidth: '28px',
+                    height: '28px',
+                    maxHeight: '28px',
+                    minHeight: '28px',
+                    backgroundColor: 'transparent',
+                    borderRadius: '50%',
+                    border: 'none',
+                    padding: '0',
+                    zIndex: 10,
+                    transition: 'all 0.2s ease-out',
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation'
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleToggleFavorite(selectedRestaurant);
                   }}
                 >
-                  <span className="text-red-500 text-lg">♥</span>
+                  <svg 
+                    viewBox="0 0 24 24" 
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      color: 'rgb(156, 163, 175)', // light grey for default state
+                      fill: 'rgb(156, 163, 175)', // light grey fill for default state
+                      stroke: '#ffffff', // white outline
+                      strokeWidth: '1.5px',
+                      transition: 'all 0.2s ease-out',
+                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'rgb(239, 68, 68)';
+                      e.currentTarget.style.fill = 'rgb(239, 68, 68)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'rgb(156, 163, 175)';
+                      e.currentTarget.style.fill = 'rgb(156, 163, 175)';
+                    }}
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
                 </button>
                 
               </div>
               
               {/* Content Section - matches eatery page exactly */}
               <div className="p-3 flex-1">
-                {/* Restaurant Name - matches eatery page */}
-                <div className="flex items-start w-full min-w-0 flex-shrink-0 h-8 mb-1">
+                {/* Restaurant Name and Rating - Fixed height container with proper alignment */}
+                <div className="flex items-center justify-between w-full min-w-0 flex-shrink-0 h-8 mb-1 gap-2">
                   <h3 
-                    className="font-bold text-gray-900 leading-tight w-full min-w-0 text-left text-base" 
+                    className="font-bold text-gray-900 leading-tight flex-1 min-w-0 text-left text-base" 
                     title={selectedRestaurant.name}
                     style={{
                       overflow: 'hidden',
@@ -623,26 +720,46 @@ export default function UnifiedLiveMapClient() {
                   >
                     {selectedRestaurant.name}
                   </h3>
+                  
+                  {/* Rating - on same line as name */}
+                  {(() => {
+                    const rating = selectedRestaurant.rating || selectedRestaurant.star_rating || selectedRestaurant.google_rating || selectedRestaurant.quality_rating;
+                    return rating ? (
+                      <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: 'fit-content' }}>
+                        <Star className="fill-yellow-400 text-yellow-400 flex-shrink-0 w-3.5 h-3.5" />
+                        <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 text-sm">
+                          {rating.toFixed(1)}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
                 
-                {/* Price Range, Distance and Rating - matches eatery page */}
+                {/* Price Range and Distance - Fixed height meta row with consistent alignment */}
                 <div className="flex items-center justify-between min-w-0 w-full flex-shrink-0 h-6 gap-2">
                   <span className="text-gray-700 font-medium flex-shrink-0 text-sm">
                     {selectedRestaurant.price_range || '$$'}
                   </span>
                   
-                  {selectedRestaurant.distance && (
-                    <span className="text-gray-500 text-sm flex-1 text-right mr-2">
-                      {selectedRestaurant.distance}
-                    </span>
-                  )}
-                  
-                  <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: 'fit-content' }}>
-                    <span className="text-yellow-400 text-sm">★</span>
-                    <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 text-sm">
-                      {selectedRestaurant.rating ? selectedRestaurant.rating.toFixed(1) : 'N/A'}
-                    </span>
-                  </div>
+                  {(() => {
+                    // Calculate distance if not already available
+                    let distanceText = selectedRestaurant.distance;
+                    if (!distanceText && userLocation && selectedRestaurant.latitude && selectedRestaurant.longitude) {
+                      const distance = calculateDistance(
+                        userLocation.latitude, 
+                        userLocation.longitude, 
+                        selectedRestaurant.latitude, 
+                        selectedRestaurant.longitude
+                      );
+                      distanceText = `${distance.toFixed(1)} mi`;
+                    }
+                    
+                    return distanceText ? (
+                      <span className="text-gray-500 text-sm flex-1 text-right">
+                        {distanceText}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             </div>
