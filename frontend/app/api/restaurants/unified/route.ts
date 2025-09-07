@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Make single unified backend call
-      const backendResponse = await fetch(`${backendUrl}/api/v4/restaurants/unified?${backendParams.toString()}`, {
+      const backendResponse = await fetch(`${backendUrl}/api/v4/restaurants?${backendParams.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
         },
