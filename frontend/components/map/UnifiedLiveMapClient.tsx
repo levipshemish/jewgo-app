@@ -104,43 +104,6 @@ export default function UnifiedLiveMapClient() {
   // Constants
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  // Throttled bounds change handler
-  const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBounds) => {
-    // Clear existing timeout
-    if (boundsChangeTimeoutRef.current) {
-      clearTimeout(boundsChangeTimeoutRef.current);
-    }
-    
-    // Set new timeout to fetch data after user stops moving the map
-    boundsChangeTimeoutRef.current = setTimeout(() => {
-      // Check if we need to clear old markers (if user moved to a completely different area)
-      const currentBounds = bounds;
-      const ne = currentBounds.getNorthEast();
-      const sw = currentBounds.getSouthWest();
-      
-      // Clear markers that are far outside the current viewport (more than 2x the viewport size)
-      const latRange = ne.lat() - sw.lat();
-      const lngRange = ne.lng() - sw.lng();
-      const extendedNe = { lat: ne.lat() + latRange, lng: ne.lng() + lngRange };
-      const extendedSw = { lat: sw.lat() - latRange, lng: sw.lng() - lngRange };
-      
-      setAllRestaurants(prev => prev.filter(restaurant => {
-        const lat = restaurant.latitude;
-        const lng = restaurant.longitude;
-        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
-               lng >= extendedSw.lng && lng <= extendedNe.lng;
-      }));
-      
-      setDisplayedRestaurants(prev => prev.filter(restaurant => {
-        const lat = restaurant.latitude;
-        const lng = restaurant.longitude;
-        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
-               lng >= extendedSw.lng && lng <= extendedNe.lng;
-      }));
-      
-      fetchRestaurantsData(bounds);
-    }, 1000); // 1 second delay
-  }, [fetchRestaurantsData]);
 
   // Initialize component
   useEffect(() => {
@@ -404,6 +367,44 @@ export default function UnifiedLiveMapClient() {
       lastFetchTime.current = now;
     }
   }, [allRestaurants.length, startTransition, CACHE_DURATION, userLocation]);
+
+  // Throttled bounds change handler
+  const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBounds) => {
+    // Clear existing timeout
+    if (boundsChangeTimeoutRef.current) {
+      clearTimeout(boundsChangeTimeoutRef.current);
+    }
+    
+    // Set new timeout to fetch data after user stops moving the map
+    boundsChangeTimeoutRef.current = setTimeout(() => {
+      // Check if we need to clear old markers (if user moved to a completely different area)
+      const currentBounds = bounds;
+      const ne = currentBounds.getNorthEast();
+      const sw = currentBounds.getSouthWest();
+      
+      // Clear markers that are far outside the current viewport (more than 2x the viewport size)
+      const latRange = ne.lat() - sw.lat();
+      const lngRange = ne.lng() - sw.lng();
+      const extendedNe = { lat: ne.lat() + latRange, lng: ne.lng() + lngRange };
+      const extendedSw = { lat: sw.lat() - latRange, lng: sw.lng() - lngRange };
+      
+      setAllRestaurants(prev => prev.filter(restaurant => {
+        const lat = restaurant.latitude;
+        const lng = restaurant.longitude;
+        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+               lng >= extendedSw.lng && lng <= extendedNe.lng;
+      }));
+      
+      setDisplayedRestaurants(prev => prev.filter(restaurant => {
+        const lat = restaurant.latitude;
+        const lng = restaurant.longitude;
+        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+               lng >= extendedSw.lng && lng <= extendedNe.lng;
+      }));
+      
+      fetchRestaurantsData(bounds);
+    }, 1000); // 1 second delay
+  }, [fetchRestaurantsData]);
 
   // Fetch data when component mounts
   useEffect(() => {
