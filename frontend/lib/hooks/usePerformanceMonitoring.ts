@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface PerformanceMetric {
   name: string;
@@ -75,7 +75,7 @@ const DEFAULT_OPTIONS: Required<PerformanceMonitoringOptions> = {
 export function usePerformanceMonitoring(
   options: PerformanceMonitoringOptions = {}
 ): UsePerformanceMonitoringReturn {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const opts = useMemo(() => ({ ...DEFAULT_OPTIONS, ...options }), [options]);
   const [metrics, setMetrics] = useState<PerformanceMetric[]>([]);
   const [alerts, setAlerts] = useState<PerformanceAlert[]>([]);
   const activeTimersRef = useRef<Map<string, { startTime: number; category: PerformanceMetric['category'] }>>(new Map());
@@ -103,7 +103,7 @@ export function usePerformanceMonitoring(
         unit: 'ms',
       });
     };
-  }, [opts.enabled]);
+  }, [opts.enabled, recordMetric]);
 
   // Record a performance metric
   const recordMetric = useCallback((metric: Omit<PerformanceMetric, 'timestamp'>) => {
@@ -123,7 +123,7 @@ export function usePerformanceMonitoring(
     if (opts.alertOnSlowPerformance) {
       checkPerformanceAlerts(fullMetric);
     }
-  }, [opts.collectMetrics, opts.maxHistoryLength, opts.alertOnSlowPerformance]);
+  }, [opts.collectMetrics, opts.maxHistoryLength, opts.alertOnSlowPerformance, checkPerformanceAlerts]);
 
   // Check if a metric triggers any alerts
   const checkPerformanceAlerts = useCallback((metric: PerformanceMetric) => {
@@ -171,7 +171,7 @@ export function usePerformanceMonitoring(
       
       console.warn(`🚨 Performance Alert [${alert.type}]:`, alert.message);
     }
-  }, [opts.thresholds, opts.onAlert]);
+  }, [opts]);
 
   // Get average time for a specific metric
   const getAverageTime = useCallback((metricName: string): number => {
@@ -338,7 +338,7 @@ export function formatBytes(bytes: number): string {
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   if (bytes === 0) return '0 Bytes';
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
 }
 
 // Performance debugging helper

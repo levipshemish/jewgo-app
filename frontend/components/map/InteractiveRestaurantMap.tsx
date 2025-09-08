@@ -124,6 +124,7 @@ export function InteractiveRestaurantMap({
   // Initialize map
   useEffect(() => {
     let isMounted = true;
+    const currentMapRef = mapRef.current; // Capture ref at the beginning
 
     const initializeMap = async () => {
       try {
@@ -227,7 +228,6 @@ export function InteractiveRestaurantMap({
     return () => {
       isMounted = false;
       // Cleanup accessibility
-      const currentMapRef = mapRef.current;
       if (mapInstanceRef.current && (mapInstanceRef.current as any)._accessibilityHandler) {
         currentMapRef?.removeEventListener('keydown', (mapInstanceRef.current as any)._accessibilityHandler);
       }
