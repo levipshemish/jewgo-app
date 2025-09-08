@@ -1600,7 +1600,7 @@ def create_app(config_class=None):
                     503,
                 )
             
-            with db_manager.connection_manager.get_connection() as conn:
+            with db_manager.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(query, params)
                 rows = cursor.fetchall()
