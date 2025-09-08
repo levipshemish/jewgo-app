@@ -113,6 +113,31 @@ export default function UnifiedLiveMapClient() {
     
     // Set new timeout to fetch data after user stops moving the map
     boundsChangeTimeoutRef.current = setTimeout(() => {
+      // Check if we need to clear old markers (if user moved to a completely different area)
+      const currentBounds = bounds;
+      const ne = currentBounds.getNorthEast();
+      const sw = currentBounds.getSouthWest();
+      
+      // Clear markers that are far outside the current viewport (more than 2x the viewport size)
+      const latRange = ne.lat() - sw.lat();
+      const lngRange = ne.lng() - sw.lng();
+      const extendedNe = { lat: ne.lat() + latRange, lng: ne.lng() + lngRange };
+      const extendedSw = { lat: sw.lat() - latRange, lng: sw.lng() - lngRange };
+      
+      setAllRestaurants(prev => prev.filter(restaurant => {
+        const lat = restaurant.latitude;
+        const lng = restaurant.longitude;
+        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+               lng >= extendedSw.lng && lng <= extendedNe.lng;
+      }));
+      
+      setDisplayedRestaurants(prev => prev.filter(restaurant => {
+        const lat = restaurant.latitude;
+        const lng = restaurant.longitude;
+        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+               lng >= extendedSw.lng && lng <= extendedNe.lng;
+      }));
+      
       fetchRestaurantsData(bounds);
     }, 1000); // 1 second delay
   }, [fetchRestaurantsData]);
@@ -192,7 +217,10 @@ export default function UnifiedLiveMapClient() {
     const boundsKey = mapBounds ? `${mapBounds.getNorthEast().lat()},${mapBounds.getNorthEast().lng()},${mapBounds.getSouthWest().lat()},${mapBounds.getSouthWest().lng()}` : 'all';
     const cacheKey = `restaurants_cache_${boundsKey}`;
     
-    if (allRestaurants.length > 0 && (now - lastFetchTime.current) < CACHE_DURATION) {
+    // For viewport-based loading, we don't use cache since we're accumulating data
+    const shouldUseCache = !mapBounds;
+    
+    if (shouldUseCache && allRestaurants.length > 0 && (now - lastFetchTime.current) < CACHE_DURATION) {
       setLoadingProgress(100);
       setLoadingStage('complete');
       return;
@@ -285,22 +313,37 @@ export default function UnifiedLiveMapClient() {
 
         restaurantsRef.current = validRestaurants;
         
-        // Cache the data
+        // Cache the data (only for initial loads)
         setLoadingStage('caching-data');
         setLoadingProgress(90);
         
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(validRestaurants));
-          localStorage.setItem(`${cacheKey}_timestamp`, Date.now().toString());
-        } catch (_cacheError) {
-          // Cache storage failed, continue anyway
+        if (shouldUseCache) {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(validRestaurants));
+            localStorage.setItem(`${cacheKey}_timestamp`, Date.now().toString());
+          } catch (_cacheError) {
+            // Cache storage failed, continue anyway
+          }
         }
 
         startTransition(() => {
-          setAllRestaurants(validRestaurants);
-          setDisplayedRestaurants(validRestaurants);
-          
-
+          if (mapBounds) {
+            // Viewport-based loading: accumulate restaurants and deduplicate
+            setAllRestaurants(prev => {
+              const existingIds = new Set(prev.map(r => r.id));
+              const newRestaurants = validRestaurants.filter(r => !existingIds.has(r.id));
+              return [...prev, ...newRestaurants];
+            });
+            setDisplayedRestaurants(prev => {
+              const existingIds = new Set(prev.map(r => r.id));
+              const newRestaurants = validRestaurants.filter(r => !existingIds.has(r.id));
+              return [...prev, ...newRestaurants];
+            });
+          } else {
+            // Initial load: replace all restaurants
+            setAllRestaurants(validRestaurants);
+            setDisplayedRestaurants(validRestaurants);
+          }
         });
         
         setLoadingProgress(100);
