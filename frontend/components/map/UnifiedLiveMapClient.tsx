@@ -50,6 +50,9 @@ function isLatLngBounds(obj: any): obj is google.maps.LatLngBounds {
 }
 
 export default function UnifiedLiveMapClient() {
+  // Constants
+  const BASE_MAX_MARKERS = 300; // Base maximum markers
+  
   const searchParams = useSearchParams();
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -151,7 +154,6 @@ export default function UnifiedLiveMapClient() {
 
   // Constants
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-  const BASE_MAX_MARKERS = 300; // Base maximum markers
   // Reduce marker limit when memory usage is high
   const MAX_MARKERS = memoryInfo?.isHighUsage ? Math.floor(BASE_MAX_MARKERS * 0.6) : BASE_MAX_MARKERS;
 
