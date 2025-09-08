@@ -124,41 +124,40 @@ export function ListingActions({
 
           {/* Address Section - Always show */}
           {address && (
-            <div className="text-center">
+            <div className="flex justify-center w-full">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleAddressClick}
-                className="flex items-center justify-center gap-2 text-sm text-gray-900 font-bold h-auto p-0 hover:bg-blue-50 hover:text-blue-600 transition-colors group mx-auto rounded-full px-2 py-1"
+                className="flex items-center justify-center text-sm text-gray-900 font-bold h-auto p-0 hover:bg-blue-50 hover:text-blue-600 transition-colors group rounded-full px-2 py-1 text-center max-w-full"
               >
-                <MapPin className="w-4 h-4" />
-                {address}
+                <span className="text-center">{address}</span>
               </Button>
             </div>
           )}
 
           {/* Location/Distance Section */}
           {location && (
-            <div className="text-center">
+            <div className="flex justify-center w-full">
               {shouldShowDistance ? (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleAddressClick}
-                  className="flex items-center justify-center gap-2 text-sm text-blue-600 font-medium h-auto p-0 hover:bg-blue-50 hover:text-blue-700 transition-colors group mx-auto rounded-full px-2 py-1"
+                  className="flex items-center justify-center gap-1 text-sm text-blue-600 font-medium h-auto p-0 hover:bg-blue-50 hover:text-blue-700 transition-colors group rounded-full px-2 py-1 text-center max-w-full [&>svg]:px-0 [&>svg]:mx-0 [&>svg]:ml-0 [&>svg]:mr-0"
                 >
-                  <MapPin className="w-4 h-4" />
-                  {distance} away
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">{distance} away</span>
                 </Button>
               ) : _onLocationRequest ? (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={_onLocationRequest}
-                  className="flex items-center justify-center gap-2 text-sm text-gray-600 font-medium h-auto p-0 hover:bg-gray-50 hover:text-gray-700 transition-colors group mx-auto rounded-full px-2 py-1"
+                  className="flex items-center justify-center gap-1 text-sm text-gray-600 font-medium h-auto p-0 hover:bg-gray-50 hover:text-gray-700 transition-colors group rounded-full px-2 py-1 text-center max-w-full [&>svg]:px-0 [&>svg]:mx-0 [&>svg]:ml-0 [&>svg]:mr-0"
                 >
-                  <MapPin className="w-4 h-4" />
-                  Get Location
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">Get Location</span>
                 </Button>
               ) : null}
             </div>
