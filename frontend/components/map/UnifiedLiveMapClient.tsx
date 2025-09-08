@@ -81,23 +81,34 @@ export default function UnifiedLiveMapClient() {
   } = useAdvancedFilters();
 
   // Memory monitoring to prevent WebAssembly allocation issues
-  const { memoryInfo, forceCleanup } = useMemoryMonitoring({
+  const memoryMonitoringOptions = useMemo(() => ({
     checkIntervalMs: 30000, // Check every 30 seconds
     highUsageThreshold: 70,
     criticalUsageThreshold: 85,
-    onHighUsage: (info) => {
+    onHighUsage: (info: any) => {
       if (process.env.NODE_ENV === 'development') {
         console.warn('🗺️ Map memory usage high:', `${info.usagePercentage.toFixed(1)}%`);
       }
     },
-    onCriticalUsage: (info) => {
+    onCriticalUsage: (info: any) => {
       if (process.env.NODE_ENV === 'development') {
         console.error('🚨 Map memory usage critical:', `${info.usagePercentage.toFixed(1)}%`);
       }
-      // Trigger aggressive cleanup when memory usage is critical
-      forceCleanup();
+      // Note: forceCleanup will be called separately to avoid circular dependency
     },
-  });
+  }), []);
+
+  const { memoryInfo, forceCleanup } = useMemoryMonitoring(memoryMonitoringOptions);
+
+  // Handle critical memory usage separately to avoid circular dependency
+  useEffect(() => {
+    if (memoryInfo?.isCriticalUsage) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🧹 Triggering cleanup due to critical memory usage');
+      }
+      forceCleanup();
+    }
+  }, [memoryInfo?.isCriticalUsage, forceCleanup]);
 
   // Enhanced performance monitoring
   const {

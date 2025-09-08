@@ -43,7 +43,20 @@ const DEFAULT_OPTIONS: Required<MemoryMonitoringOptions> = {
 export function useMemoryMonitoring(
   options: MemoryMonitoringOptions = {}
 ): UseMemoryMonitoringReturn {
-  const opts = useMemo(() => ({ ...DEFAULT_OPTIONS, ...options }), [options]);
+  // Memoize options more carefully to prevent unnecessary re-renders
+  const opts = useMemo(() => {
+    const merged = { ...DEFAULT_OPTIONS, ...options };
+    // Only recreate if the actual values have changed
+    return merged;
+  }, [
+    options.checkIntervalMs,
+    options.highUsageThreshold,
+    options.criticalUsageThreshold,
+    options.enabled,
+    options.onHighUsage,
+    options.onCriticalUsage,
+    options.onMemoryPressure,
+  ]);
   const [memoryInfo, setMemoryInfo] = useState<MemoryInfo | null>(null);
   const [memoryHistory, setMemoryHistory] = useState<MemoryInfo[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
