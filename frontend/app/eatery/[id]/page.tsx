@@ -15,15 +15,21 @@ import { deduplicatedFetch } from '@/lib/utils/request-deduplication'
  * Parse hours from the backend JSON format into EateryDB format
  */
 function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
-  console.log('=== PARSE HOURS FROM JSON DEBUG ===');
-  console.log('hoursData:', hoursData);
-  console.log('typeof hoursData:', typeof hoursData);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('=== PARSE HOURS FROM JSON DEBUG ===');
+    console.log('hoursData:', hoursData);
+    console.log('typeof hoursData:', typeof hoursData);
+  }
   
   try {
     const parsed = typeof hoursData === 'string' ? JSON.parse(hoursData) : hoursData
-    console.log('parsed:', parsed);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('parsed:', parsed);
+    }
     const weekdayText = parsed.weekday_text || []
-    console.log('weekdayText:', weekdayText);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('weekdayText:', weekdayText);
+    }
     
     // Check if there are no hours data at all
     if (!weekdayText || weekdayText.length === 0) {

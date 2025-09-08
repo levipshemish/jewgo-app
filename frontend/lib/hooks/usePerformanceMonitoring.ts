@@ -347,19 +347,21 @@ export function formatBytes(bytes: number): string {
 export function logPerformanceMetrics(metrics: PerformanceMetric[]): void {
   if (process.env.NODE_ENV !== 'development') return;
 
-  console.group('📊 Performance Metrics');
-  
-  const categories = [...new Set(metrics.map(m => m.category))];
-  categories.forEach(category => {
-    const categoryMetrics = metrics.filter(m => m.category === category);
-    if (categoryMetrics.length === 0) return;
+  if (process.env.NODE_ENV === 'development') {
+    console.group('📊 Performance Metrics');
     
-    console.groupCollapsed(`${category} (${categoryMetrics.length} metrics)`);
-    categoryMetrics.forEach(metric => {
-      console.log(`${metric.name}: ${formatMetricValue(metric)}`);
+    const categories = [...new Set(metrics.map(m => m.category))];
+    categories.forEach(category => {
+      const categoryMetrics = metrics.filter(m => m.category === category);
+      if (categoryMetrics.length === 0) return;
+      
+      console.groupCollapsed(`${category} (${categoryMetrics.length} metrics)`);
+      categoryMetrics.forEach(metric => {
+        console.log(`${metric.name}: ${formatMetricValue(metric)}`);
+      });
+      console.groupEnd();
     });
+    
     console.groupEnd();
-  });
-  
-  console.groupEnd();
+  }
 }

@@ -124,10 +124,15 @@ export class MapErrorBoundary extends React.Component<MapErrorBoundaryProps, Map
 
     // Log error details for debugging
     if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.group('🗺️ Map Error Boundary');
+      // eslint-disable-next-line no-console
       console.error('Error:', error);
+      // eslint-disable-next-line no-console
       console.error('Error Info:', errorInfo);
+      // eslint-disable-next-line no-console
       console.error('Component Stack:', errorInfo.componentStack);
+      // eslint-disable-next-line no-console
       console.groupEnd();
     }
 

@@ -756,25 +756,31 @@ export default function UnifiedLiveMapClient() {
       if (process.env.NODE_ENV === 'development') {
         const summary = getPerformanceSummary();
         
-        if (process.env.NODE_ENV === 'development') {
-          console.group('📊 Map Performance Report');
-          console.log(`Total metrics collected: ${summary.totalMetrics}`);
-          console.log(`Average render time: ${summary.averageRenderTime.toFixed(1)}ms`);
-          console.log(`Average API time: ${summary.averageApiTime.toFixed(1)}ms`);
-          console.log(`Current memory usage: ${summary.currentMemoryUsage.toFixed(1)}%`);
-          
-          if (summary.slowOperations.length > 0) {
-            console.warn('Recent slow operations:', summary.slowOperations.map(op => 
-              `${op.name}: ${op.value.toFixed(1)}${op.unit}`
-            ));
-          }
-          
-          if (summary.recentAlerts.length > 0) {
-            console.warn('Recent performance alerts:', summary.recentAlerts.map(alert => alert.message));
-          }
-          
-          console.groupEnd();
+        // eslint-disable-next-line no-console
+        console.group('📊 Map Performance Report');
+        // eslint-disable-next-line no-console
+        console.log(`Total metrics collected: ${summary.totalMetrics}`);
+        // eslint-disable-next-line no-console
+        console.log(`Average render time: ${summary.averageRenderTime.toFixed(1)}ms`);
+        // eslint-disable-next-line no-console
+        console.log(`Average API time: ${summary.averageApiTime.toFixed(1)}ms`);
+        // eslint-disable-next-line no-console
+        console.log(`Current memory usage: ${summary.currentMemoryUsage.toFixed(1)}%`);
+        
+        if (summary.slowOperations.length > 0) {
+          // eslint-disable-next-line no-console
+          console.warn('Recent slow operations:', summary.slowOperations.map(op => 
+            `${op.name}: ${op.value.toFixed(1)}${op.unit}`
+          ));
         }
+        
+        if (summary.recentAlerts.length > 0) {
+          // eslint-disable-next-line no-console
+          console.warn('Recent performance alerts:', summary.recentAlerts.map(alert => alert.message));
+        }
+        
+        // eslint-disable-next-line no-console
+        console.groupEnd();
       }
     };
 
