@@ -1,0 +1,291 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "JewGo Infrastructure Monitoring",
+    "description": "System infrastructure metrics including CPU, memory, disk, and network",
+    "tags": ["jewgo", "infrastructure", "system"],
+    "style": "dark",
+    "timezone": "utc",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Load Average",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "node_load1",
+            "legendFormat": "1m Load"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 2 },
+                { "color": "red", "value": 4 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "CPU Usage",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 70 },
+                { "color": "red", "value": 90 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Memory Usage",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "legendFormat": "Memory Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 80 },
+                { "color": "red", "value": 90 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Disk Usage",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+        "targets": [
+          {
+            "expr": "(1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100",
+            "legendFormat": "Disk Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 80 },
+                { "color": "red", "value": 90 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "CPU Usage Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %"
+          },
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"user\"}[5m])) * 100)",
+            "legendFormat": "User CPU %"
+          },
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"system\"}[5m])) * 100)",
+            "legendFormat": "System CPU %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Memory Usage Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+        "targets": [
+          {
+            "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+            "legendFormat": "Used Memory"
+          },
+          {
+            "expr": "node_memory_MemAvailable_bytes",
+            "legendFormat": "Available Memory"
+          },
+          {
+            "expr": "node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes",
+            "legendFormat": "Used Swap"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Disk I/O",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(node_disk_read_bytes_total[5m])",
+            "legendFormat": "Read {{device}}"
+          },
+          {
+            "expr": "rate(node_disk_written_bytes_total[5m])",
+            "legendFormat": "Write {{device}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Bps"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Network I/O",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(node_network_receive_bytes_total[5m])",
+            "legendFormat": "Receive {{device}}"
+          },
+          {
+            "expr": "rate(node_network_transmit_bytes_total[5m])",
+            "legendFormat": "Transmit {{device}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Bps"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Network Errors",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(node_network_receive_errs_total[5m])",
+            "legendFormat": "Receive Errors {{device}}"
+          },
+          {
+            "expr": "rate(node_network_transmit_errs_total[5m])",
+            "legendFormat": "Transmit Errors {{device}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "File System Usage",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 18 },
+        "targets": [
+          {
+            "expr": "node_filesystem_size_bytes - node_filesystem_avail_bytes",
+            "legendFormat": "Used {{mountpoint}}"
+          },
+          {
+            "expr": "node_filesystem_avail_bytes",
+            "legendFormat": "Available {{mountpoint}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Process Count",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 12, "y": 18 },
+        "targets": [
+          {
+            "expr": "node_procs_running",
+            "legendFormat": "Running Processes"
+          },
+          {
+            "expr": "node_procs_blocked",
+            "legendFormat": "Blocked Processes"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(node_load1, instance)",
+          "refresh": 1
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "System Events",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "changes(node_boot_time_seconds[1h]) > 0"
+        }
+      ]
+    }
+  }
+}

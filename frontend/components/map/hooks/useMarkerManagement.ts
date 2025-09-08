@@ -120,14 +120,14 @@ export function useMarkerManagement({
           <!-- Star icon -->
           <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}" 
                 text-anchor="middle" 
-                font-family="Arial, sans-serif" 
+                font-family="var(--font-nunito), system-ui, sans-serif" 
                 font-size="8" 
                 fill="#FFD700">⭐</text>
           
           <!-- Rating text -->
           <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}" 
                 text-anchor="middle" 
-                font-family="Arial, sans-serif" 
+                font-family="var(--font-nunito), system-ui, sans-serif" 
                 font-size="10" 
                 font-weight="bold" 
                 fill="${isSelected ? 'white' : '#1a1a1a'}">
@@ -183,15 +183,8 @@ export function useMarkerManagement({
       }
     });
 
-    // Clear clusterer
-    if (clustererRef.current) {
-      // Clear markers from clusterer if method exists
-      const clusterer = clustererRef.current as any;
-      if (typeof clusterer.clearMarkers === 'function') {
-        clusterer.clearMarkers();
-      }
-      clustererRef.current = null;
-    }
+    // Clustering disabled: ensure clusterer stays null
+    clustererRef.current = null;
 
     // Clear refs
     markersRef.current = [];
@@ -262,9 +255,9 @@ export function useMarkerManagement({
                 rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
                 fill="${isSelected ? finalColor : 'white'}" stroke="${finalColor}" stroke-width="2" />
           <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}"
-                text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#FFD700">★</text>
+                text-anchor="middle" font-family="var(--font-nunito), system-ui, sans-serif" font-size="10" fill="#FFD700">★</text>
           <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}"
-                text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+                text-anchor="middle" font-family="var(--font-nunito), system-ui, sans-serif" font-size="12" font-weight="bold"
                 fill="${isSelected ? 'white' : '#1a1a1a'}">${rating}</text>
         </svg>
       `;
@@ -292,40 +285,9 @@ export function useMarkerManagement({
 
   // Apply clustering
   const applyClustering = useCallback(() => {
-    // Check if we're on the client side and have the required dependencies
-    if (typeof window === 'undefined' || !map || !window.MarkerClusterer || clustererRef.current) {
-      return;
-    }
-
-    // Create clusterer with optimized settings for memory usage
-    clustererRef.current = new (window.MarkerClusterer as any)(map, markersRef.current as any, {
-      gridSize: 60, // Larger grid size to reduce clustering overhead
-      maxZoom: 14, // Lower max zoom to force clustering at higher zoom levels
-      styles: [
-        {
-          url: '/images/cluster-1.png',
-          height: 35,
-          width: 35,
-          textColor: '#fff',
-          textSize: 12,
-        },
-        {
-          url: '/images/cluster-2.png',
-          height: 40,
-          width: 40,
-          textColor: '#fff',
-          textSize: 14,
-        },
-        {
-          url: '/images/cluster-3.png',
-          height: 45,
-          width: 45,
-          textColor: '#fff',
-          textSize: 16,
-        },
-      ],
-    });
-  }, [map]);
+    // Clustering intentionally disabled
+    return;
+  }, []);
 
   // Update markers when restaurants change
   useEffect(() => {
@@ -359,7 +321,7 @@ export function useMarkerManagement({
     markersRef.current = newMarkers;
     markersMapRef.current = newMarkersMap;
 
-    // Apply clustering
+    // Clustering disabled; no-op
     applyClustering();
   }, [map, restaurants, createMarker, getRestaurantKey, cleanupMarkers, applyClustering]);
 

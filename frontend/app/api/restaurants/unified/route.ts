@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const p = (async (): Promise<{ payload: any; headers: Record<string, string>; status?: number }> => {
       // Get backend URL
       const _backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+      console.log('DEBUG: Backend URL:', _backendUrl);
       
       // Build unified backend request parameters
       const backendParams = new URLSearchParams();
@@ -48,7 +49,9 @@ export async function GET(request: NextRequest) {
         'limit', 'offset', 'search', 'city', 'state', 'certifying_agency', 
         'kosher_category', 'is_cholov_yisroel', 'listing_type', 'price_min', 
         'price_max', 'min_rating', 'has_reviews', 'open_now', 'status', 
-        'lat', 'lng', 'max_distance_mi', 'sortBy', 'dietary'
+        'lat', 'lng', 'max_distance_mi', 'sortBy', 'dietary',
+        // Forward viewport bounds for map-based loading
+        'bounds_ne_lat', 'bounds_ne_lng', 'bounds_sw_lat', 'bounds_sw_lng'
       ];
       
       relevantParams.forEach(param => {
@@ -65,13 +68,17 @@ export async function GET(request: NextRequest) {
       });
 
               // Make single unified backend call
-              const backendResponse = await fetch(`${_backendUrl}/api/restaurants?${backendParams.toString()}`, {
+              const fullUrl = `${_backendUrl}/api/restaurants?${backendParams.toString()}`;
+              console.log('DEBUG: Calling backend URL:', fullUrl);
+              const backendResponse = await fetch(fullUrl, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('DEBUG: Backend response status:', backendResponse.status);
       if (!backendResponse.ok) {
+        console.log('DEBUG: Backend call failed, using fallback');
         // Fallback to separate calls if unified endpoint doesn't exist
         return await fallbackToSeparateCalls(searchParams, _backendUrl);
       }

@@ -103,6 +103,25 @@ export function ListingActions({
       <div className="p-0">
         <Stack gap={3}>
 
+          {/* Hours Section - Moved to top */}
+          {bottomAction && bottomAction.label && (
+            <Button
+              onClick={() => {
+                if (bottomAction.hoursInfo) {
+                  setShowHours(true)
+                } else {
+                  bottomAction.onClick?.()
+                }
+              }}
+              variant="secondary"
+              className="w-full bg-black hover:bg-gray-800 hover:scale-[1.02] active:scale-95 text-white rounded-full py-2 transition-all flex items-center justify-center gap-2"
+            >
+              {bottomAction.hoursInfo && <Clock size={16} />}
+              {bottomAction.label}
+              {bottomAction.hoursInfo && <ChevronDown size={16} />}
+            </Button>
+          )}
+
           {/* Address Section - Always show */}
           {address && (
             <div className="text-center">
@@ -241,25 +260,6 @@ export function ListingActions({
                 );
               })}
             </Cluster>
-          )}
-
-          {/* Bottom action */}
-          {bottomAction && bottomAction.label && (
-            <Button
-              onClick={() => {
-                if (bottomAction.hoursInfo) {
-                  setShowHours(true)
-                } else {
-                  bottomAction.onClick?.()
-                }
-              }}
-              variant="secondary"
-              className="w-full bg-black hover:bg-gray-800 hover:scale-[1.02] active:scale-95 text-white rounded-full py-2 transition-all flex items-center justify-center gap-2"
-            >
-              {bottomAction.hoursInfo && <Clock size={16} />}
-              {bottomAction.label}
-              {bottomAction.hoursInfo && <ChevronDown size={16} />}
-            </Button>
           )}
         </Stack>
       </div>

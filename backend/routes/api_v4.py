@@ -5,6 +5,14 @@ from typing import Any, Dict, Optional
 from flask import Blueprint, current_app, jsonify, request
 from utils.logging_config import get_logger
 from utils.limiter import limiter
+from utils.rate_limiter import (
+    public_read_limit,
+    authenticated_read_limit,
+    public_write_limit,
+    authenticated_write_limit,
+    search_limit,
+    admin_limit,
+)
 from werkzeug.exceptions import HTTPException
 
 logger = get_logger(__name__)
@@ -371,6 +379,7 @@ def not_found_response(message: str, resource_type: str = "resource"):
 # Restaurant Routes
 @safe_route("/restaurants", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
+@public_read_limit()
 def get_restaurants():
     """Get restaurants with optional filtering and pagination using v4 service."""
     try:
@@ -455,6 +464,7 @@ def get_restaurants():
 
 @safe_route("/restaurants/search", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
+@search_limit()
 def search_restaurants():
     """Search restaurants by query using unified search service."""
     try:
@@ -571,7 +581,7 @@ def get_restaurant(restaurant_id: int):
 
 @safe_route("/restaurants", methods=["POST"])
 @require_api_v4_flag("api_v4_restaurants")
-@limiter.limit("120/minute")
+@public_write_limit()
 def create_restaurant():
     """Create a new restaurant using v4 service."""
     try:

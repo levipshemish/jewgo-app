@@ -130,10 +130,12 @@ class DistanceFilteringService:
                 longitude=longitude,
                 max_distance_miles=max_distance_miles,
             )
-            # Build base query
+            # Build base query with specific fields
             base_query = """
             SELECT
-                *,
+                id, name, address, city, state, zip_code, phone, website,
+                latitude, longitude, cuisine_type, kosher_certification,
+                price_range, rating, review_count, hours, description,
                 earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%(lat)s, %(lng)s)) AS distance_meters
             FROM restaurants
             """

@@ -1,10 +1,10 @@
 // Temporarily disable Next.js font loader to avoid CSS syntax issues
 // Using CSS imports instead
-export const nexa = {
-  className: 'font-nexa',
-  variable: '--font-nexa',
+export const nunito = {
+  className: 'font-nunito',
+  variable: '--font-nunito',
   style: {
-    fontFamily: 'Nexa, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
+    fontFamily: 'Nunito, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
   },
 }
 

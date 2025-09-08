@@ -790,7 +790,7 @@ class EnhancedDatabaseManager:
             if session:
                 session.close()
     def get_all_places(
-        self, limit: int = 1000, offset: int = 0
+        self, limit: int = 50, offset: int = 0
     ) -> list[dict[str, Any]]:
         """Get all places from the consolidated restaurants table."""
         session = None

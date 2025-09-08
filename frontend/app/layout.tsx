@@ -17,7 +17,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
 
 // PostgreSQL Authentication - Migration from Supabase
-import { nexa } from './fonts'
+import { nunito } from './fonts'
 import { CustomHead } from './head'
 import { featureGuard } from '@/lib/feature-guard';
 import { ScrollProvider } from '@/lib/hooks/useScrollDetection';
@@ -95,7 +95,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" className={`${nexa.className} h-full`} data-scroll-behavior="smooth">
+    <html lang="en" className={`${nunito.className} h-full`} data-scroll-behavior="smooth">
       <head>
         {/* Viewport meta tag for proper mobile layout */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />

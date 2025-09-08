@@ -200,8 +200,8 @@ export default function EateryGrid({
         const response = await fetchRestaurants(24, nextCursor || undefined, buildSearchParams());
         setRestaurants((prev) => {
           // Deduplicate by id to prevent duplicate restaurants
-          const existingIds = new Set(prev.map(r => r.id));
-          const newRestaurants = response.restaurants.filter(r => !existingIds.has(r.id));
+          const existingIds = new Set(prev.map((r: LightRestaurant) => r.id));
+          const newRestaurants = response.restaurants.filter((r: LightRestaurant) => !existingIds.has(r.id));
           return [...prev, ...newRestaurants];
         });
         setHasMore(response.hasMore);
@@ -243,7 +243,7 @@ export default function EateryGrid({
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, useRealData, backendError, fetchRestaurants, buildSearchParams, restaurants.length]);
+  }, [loading, hasMore, useRealData, backendError, fetchRestaurants, buildSearchParams, restaurants.length, nextCursor]);
 
   // Unified effect for all data loading - prevents duplicate API calls
   useEffect(() => {
@@ -489,7 +489,7 @@ export default function EateryGrid({
                 variant="default"
                 showStarInBadge={true}
                 onCardClick={() => handleCardClick(restaurant)}
-                priority={false}
+                priority={index === 0}
                 className="w-full h-full"
               />
             </div>

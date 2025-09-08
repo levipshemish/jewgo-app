@@ -1,0 +1,291 @@
+groups:
+  - name: jewgo_application
+    rules:
+      # Application Health Alerts
+      - alert: ApplicationDown
+        expr: up{job=~"jewgo-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "JewGo application service is down"
+          description: "{{ $labels.job }} service has been down for more than 1 minute"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "High error rate detected"
+          description: "{{ $value | humanizePercentage }} of requests are failing over the last 5 minutes"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2.0
+        for: 3m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High response time"
+          description: "95th percentile response time is {{ $value }}s, above 2s threshold"
+
+      - alert: LowThroughput
+        expr: rate(http_requests_total[5m]) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "Low application throughput"
+          description: "Request rate is {{ $value }}/sec, below normal threshold"
+
+  - name: jewgo_database
+    rules:
+      # Database Alerts
+      - alert: DatabaseConnectionFailure
+        expr: jewgo_database_connections_failed_total > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Database connection failures"
+          description: "{{ $value }} database connection failures detected"
+
+      - alert: HighDatabaseLatency
+        expr: histogram_quantile(0.95, rate(jewgo_database_query_duration_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database query latency"
+          description: "95th percentile database query time is {{ $value }}s"
+
+      - alert: DatabaseConnectionsHigh
+        expr: jewgo_database_connections_active > 80
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High number of database connections"
+          description: "{{ $value }} active database connections, approaching limit"
+
+      - alert: SlowQueries
+        expr: rate(jewgo_database_slow_queries_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "{{ $value }} slow queries per second"
+
+  - name: jewgo_search
+    rules:
+      # Search Performance Alerts
+      - alert: SearchServiceDown
+        expr: up{job="jewgo-search"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: search
+        annotations:
+          summary: "Search service is down"
+          description: "Search service has been unavailable for more than 1 minute"
+
+      - alert: HighSearchLatency
+        expr: histogram_quantile(0.95, rate(jewgo_search_duration_seconds_bucket[5m])) > 3.0
+        for: 3m
+        labels:
+          severity: warning
+          component: search
+        annotations:
+          summary: "High search latency"
+          description: "95th percentile search time is {{ $value }}s"
+
+      - alert: SearchFailureRate
+        expr: rate(jewgo_search_requests_total{status="error"}[5m]) / rate(jewgo_search_requests_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: search
+        annotations:
+          summary: "High search failure rate"
+          description: "{{ $value | humanizePercentage }} of search requests are failing"
+
+      - alert: NoSearchResults
+        expr: rate(jewgo_search_no_results_total[5m]) / rate(jewgo_search_requests_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: search
+        annotations:
+          summary: "High rate of searches with no results"
+          description: "{{ $value | humanizePercentage }} of searches return no results"
+
+  - name: jewgo_cache
+    rules:
+      # Cache Performance Alerts
+      - alert: CacheHitRateLow
+        expr: rate(jewgo_cache_hits_total[5m]) / rate(jewgo_cache_requests_total[5m]) < 0.7
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}, below 70% threshold"
+
+      - alert: CacheErrors
+        expr: rate(jewgo_cache_errors_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Cache errors detected"
+          description: "{{ $value }} cache errors per second"
+
+      - alert: CacheMemoryHigh
+        expr: jewgo_cache_memory_usage_bytes / jewgo_cache_memory_limit_bytes > 0.9
+        for: 2m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "High cache memory usage"
+          description: "Cache memory usage is {{ $value | humanizePercentage }} of limit"
+
+  - name: jewgo_business
+    rules:
+      # Business Metrics Alerts
+      - alert: NoNewUsers
+        expr: rate(jewgo_users_registered_total[1h]) == 0
+        for: 1h
+        labels:
+          severity: info
+          component: business
+        annotations:
+          summary: "No new user registrations"
+          description: "No new users have registered in the past hour"
+
+      - alert: LowRestaurantSearches
+        expr: rate(jewgo_restaurant_searches_total[1h]) < 1
+        for: 30m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "Low restaurant search activity"
+          description: "Only {{ $value }} restaurant searches per hour"
+
+      - alert: HighAPIUsage
+        expr: rate(jewgo_api_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "High API usage detected"
+          description: "{{ $value }} API requests per second, above normal threshold"
+
+      - alert: UnusualUserActivity
+        expr: rate(jewgo_user_actions_total[5m]) > 50
+        for: 3m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "Unusual user activity pattern"
+          description: "{{ $value }} user actions per second, above normal threshold"
+
+  - name: jewgo_security
+    rules:
+      # Security Alerts
+      - alert: HighFailedLogins
+        expr: rate(jewgo_auth_failed_logins_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High rate of failed login attempts"
+          description: "{{ $value }} failed login attempts per second"
+
+      - alert: BruteForceAttempt
+        expr: rate(jewgo_auth_failed_logins_total[1m]) > 10
+        for: 1m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Potential brute force attack"
+          description: "{{ $value }} failed login attempts per second, possible attack"
+
+      - alert: SuspiciousAPIUsage
+        expr: rate(jewgo_api_requests_total{status="unauthorized"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High rate of unauthorized API requests"
+          description: "{{ $value }} unauthorized API requests per second"
+
+      - alert: RateLimitExceeded
+        expr: rate(jewgo_rate_limit_exceeded_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Rate limiting frequently triggered"
+          description: "{{ $value }} rate limit violations per second"
+
+  - name: jewgo_infrastructure
+    rules:
+      # Infrastructure Alerts
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes / 1024 / 1024) > 1024
+        for: 3m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Process using {{ $value | humanizeBytes }} of memory"
+
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 3m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Only {{ $value | humanizePercentage }} disk space remaining"
+
+      - alert: NetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Network receive errors"
+          description: "{{ $value }} network receive errors per second"

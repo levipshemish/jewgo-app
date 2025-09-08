@@ -1,0 +1,258 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "JewGo Database Monitoring",
+    "description": "Database performance and health metrics for PostgreSQL and Redis",
+    "tags": ["jewgo", "database", "postgresql", "redis"],
+    "style": "dark",
+    "timezone": "utc",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "PostgreSQL Status",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "up{job=\"postgres\"}",
+            "legendFormat": "PostgreSQL"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Active Connections",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 50 },
+                { "color": "red", "value": 80 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Query Rate",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(pg_stat_database_tup_returned[5m])",
+            "legendFormat": "Queries/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Redis Status",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+        "targets": [
+          {
+            "expr": "up{job=\"redis\"}",
+            "legendFormat": "Redis"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "PostgreSQL Query Performance",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+        "targets": [
+          {
+            "expr": "rate(pg_stat_database_tup_returned[5m])",
+            "legendFormat": "Tuples Returned/sec"
+          },
+          {
+            "expr": "rate(pg_stat_database_tup_fetched[5m])",
+            "legendFormat": "Tuples Fetched/sec"
+          },
+          {
+            "expr": "rate(pg_stat_database_tup_inserted[5m])",
+            "legendFormat": "Tuples Inserted/sec"
+          },
+          {
+            "expr": "rate(pg_stat_database_tup_updated[5m])",
+            "legendFormat": "Tuples Updated/sec"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "PostgreSQL Connection Stats",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends",
+            "legendFormat": "Active Connections"
+          },
+          {
+            "expr": "pg_stat_database_xact_commit",
+            "legendFormat": "Committed Transactions"
+          },
+          {
+            "expr": "pg_stat_database_xact_rollback",
+            "legendFormat": "Rolled Back Transactions"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Redis Memory Usage",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 12 },
+        "targets": [
+          {
+            "expr": "redis_memory_used_bytes",
+            "legendFormat": "Used Memory"
+          },
+          {
+            "expr": "redis_memory_max_bytes",
+            "legendFormat": "Max Memory"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Redis Operations",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(redis_commands_processed_total[5m])",
+            "legendFormat": "Commands/sec"
+          },
+          {
+            "expr": "rate(redis_keyspace_hits_total[5m])",
+            "legendFormat": "Cache Hits/sec"
+          },
+          {
+            "expr": "rate(redis_keyspace_misses_total[5m])",
+            "legendFormat": "Cache Misses/sec"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Redis Connected Clients",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 12 },
+        "targets": [
+          {
+            "expr": "redis_connected_clients",
+            "legendFormat": "Connected Clients"
+          },
+          {
+            "expr": "redis_connected_slaves",
+            "legendFormat": "Connected Slaves"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Database Size",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 0, "y": 18 },
+        "targets": [
+          {
+            "expr": "pg_database_size_bytes",
+            "legendFormat": "Database Size - {{datname}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Slow Queries",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 12, "x": 12, "y": 18 },
+        "targets": [
+          {
+            "expr": "rate(jewgo_database_slow_queries_total[5m])",
+            "legendFormat": "Slow Queries/sec"
+          },
+          {
+            "expr": "jewgo_database_connection_errors_total",
+            "legendFormat": "Connection Errors"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "database",
+          "type": "query",
+          "query": "label_values(pg_database_size_bytes, datname)",
+          "refresh": 1
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Database Events",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "changes(pg_stat_database_xact_commit[1h]) > 0"
+        }
+      ]
+    }
+  }
+}

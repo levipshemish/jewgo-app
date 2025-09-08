@@ -59,7 +59,7 @@ export function createVerificationEmail(token: string, name: string): string {
   const verificationUrl = `${baseUrl}/auth/verify?token=${token}`
   
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="font-family: 'Nunito', system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Welcome to JewGo!</h2>
       <p>Hi ${name},</p>
       <p>Thank you for creating an account with JewGo. Please verify your email address by clicking the button below:</p>
@@ -91,7 +91,7 @@ export function createPasswordResetEmail(token: string, name: string): string {
   const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
   
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="font-family: 'Nunito', system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Password Reset Request</h2>
       <p>Hi ${name},</p>
       <p>We received a request to reset your password for your JewGo account. Click the button below to reset your password:</p>
@@ -122,7 +122,7 @@ export function createPasswordResetEmail(token: string, name: string): string {
 
 export function createPasswordChangedEmail(name: string): string {
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="font-family: 'Nunito', system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Password Changed Successfully</h2>
       <p>Hi ${name},</p>
       <p>Your JewGo account password has been successfully changed.</p>

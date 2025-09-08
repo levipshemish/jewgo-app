@@ -299,7 +299,7 @@ function MarketplacePageContent() {
                     variant="default"
                     showStarInBadge={true}
                     onCardClick={() => router.push(`/marketplace/${listing.id}`)}
-                    priority={false}
+                    priority={index === 0}
                     className="w-full h-full"
                   />
                 </div>

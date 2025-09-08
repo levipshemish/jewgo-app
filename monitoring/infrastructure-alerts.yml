@@ -1,0 +1,371 @@
+groups:
+  - name: infrastructure_system
+    rules:
+      # System Resource Alerts
+      - alert: HighSystemLoad
+        expr: node_load1 > 4
+        for: 3m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High system load average"
+          description: "System load average is {{ $value }}, above 4.0 threshold"
+
+      - alert: SystemLoadCritical
+        expr: node_load1 > 8
+        for: 1m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Critical system load average"
+          description: "System load average is {{ $value }}, above 8.0 threshold"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "High system memory usage"
+          description: "System memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: HighSwapUsage
+        expr: (1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High swap usage"
+          description: "Swap usage is {{ $value | humanizePercentage }}"
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.mountpoint }}"
+
+      - alert: DiskSpaceWarning
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Disk space warning"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.mountpoint }}"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 3m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 1m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Critical CPU usage"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+  - name: infrastructure_network
+    rules:
+      # Network Alerts
+      - alert: NetworkInterfaceDown
+        expr: node_network_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: network
+        annotations:
+          summary: "Network interface down"
+          description: "Network interface {{ $labels.device }} is down"
+
+      - alert: HighNetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "High network error rate"
+          description: "{{ $value }} network errors per second on {{ $labels.device }}"
+
+      - alert: HighNetworkDrops
+        expr: rate(node_network_receive_drop_total[5m]) + rate(node_network_transmit_drop_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "High network drop rate"
+          description: "{{ $value }} network drops per second on {{ $labels.device }}"
+
+      - alert: UnusualNetworkTraffic
+        expr: rate(node_network_receive_bytes_total[5m]) > 1000000000  # 1GB/s
+        for: 2m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "Unusual network traffic"
+          description: "High network traffic: {{ $value | humanizeBytes }}/s on {{ $labels.device }}"
+
+  - name: infrastructure_services
+    rules:
+      # Service Health Alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: service
+        annotations:
+          summary: "Service is down"
+          description: "{{ $labels.job }} service on {{ $labels.instance }} is down"
+
+      - alert: ServiceRestart
+        expr: changes(process_start_time_seconds[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          component: service
+        annotations:
+          summary: "Service restarted"
+          description: "{{ $labels.job }} service on {{ $labels.instance }} has restarted"
+
+      - alert: ServiceHighRestartRate
+        expr: changes(process_start_time_seconds[1h]) > 3
+        for: 0m
+        labels:
+          severity: critical
+          component: service
+        annotations:
+          summary: "Service restarting frequently"
+          description: "{{ $labels.job }} service on {{ $labels.instance }} has restarted {{ $value }} times in the last hour"
+
+  - name: infrastructure_containers
+    rules:
+      # Container Alerts
+      - alert: ContainerHighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9
+        for: 2m
+        labels:
+          severity: warning
+          component: container
+        annotations:
+          summary: "Container high memory usage"
+          description: "Container {{ $labels.name }} memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: ContainerHighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 3m
+        labels:
+          severity: warning
+          component: container
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: ContainerRestarting
+        expr: rate(container_start_time_seconds[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          component: container
+        annotations:
+          summary: "Container restarted"
+          description: "Container {{ $labels.name }} has restarted"
+
+      - alert: ContainerOOMKilled
+        expr: increase(container_oom_kills_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          component: container
+        annotations:
+          summary: "Container OOM killed"
+          description: "Container {{ $labels.name }} was killed due to out of memory"
+
+  - name: infrastructure_database
+    rules:
+      # Database Infrastructure Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database is not responding"
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL high connection count"
+          description: "PostgreSQL using {{ $value | humanizePercentage }} of max connections"
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_database_tup_returned[5m]) / rate(pg_stat_database_tup_fetched[5m]) < 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL slow queries"
+          description: "Low query efficiency detected"
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache is not responding"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 2m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}"
+
+  - name: infrastructure_nginx
+    rules:
+      # Nginx Alerts
+      - alert: NginxDown
+        expr: up{job="nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: nginx
+        annotations:
+          summary: "Nginx is down"
+          description: "Nginx reverse proxy is not responding"
+
+      - alert: NginxHighErrorRate
+        expr: rate(nginx_http_requests_total{status=~"5.."}[5m]) / rate(nginx_http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          component: nginx
+        annotations:
+          summary: "Nginx high error rate"
+          description: "{{ $value | humanizePercentage }} of Nginx requests are 5xx errors"
+
+      - alert: NginxHighResponseTime
+        expr: histogram_quantile(0.95, rate(nginx_http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          component: nginx
+        annotations:
+          summary: "Nginx high response time"
+          description: "95th percentile Nginx response time is {{ $value }}s"
+
+      - alert: NginxHighActiveConnections
+        expr: nginx_connections_active > 1000
+        for: 2m
+        labels:
+          severity: warning
+          component: nginx
+        annotations:
+          summary: "Nginx high active connections"
+          description: "{{ $value }} active connections to Nginx"
+
+  - name: infrastructure_monitoring
+    rules:
+      # Monitoring System Alerts
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus monitoring system is not responding"
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana dashboard is not responding"
+
+      - alert: AlertManagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "AlertManager is down"
+          description: "AlertManager is not responding"
+
+      - alert: PrometheusHighMemoryUsage
+        expr: prometheus_tsdb_head_series > 1000000
+        for: 2m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Prometheus high memory usage"
+          description: "Prometheus has {{ $value }} active time series"
+
+      - alert: PrometheusHighIngestionRate
+        expr: rate(prometheus_tsdb_symbol_table_size_bytes[5m]) > 1000000
+        for: 2m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Prometheus high ingestion rate"
+          description: "High metric ingestion rate detected"
+
+      - alert: ScrapeTargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Scrape target is down"
+          description: "Target {{ $labels.instance }} of job {{ $labels.job }} is down"
+
+      - alert: HighScrapeFailureRate
+        expr: rate(prometheus_target_scrapes_failed_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "High scrape failure rate"
+          description: "{{ $value }} scrape failures per second"

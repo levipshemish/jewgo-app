@@ -375,16 +375,27 @@ class ShtetlMessageService:
         store_id: str,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> MessageAnalytics:
         """Get message analytics for a store."""
         try:
             analytics = MessageAnalytics()
-            # Base query
-            base_query = "SELECT * FROM shtetl_messages WHERE store_id = %s"
+            # Base query with pagination
+            base_query = """
+            SELECT id, store_id, sender_name, sender_email, message_text, 
+                   message_status, created_at, updated_at
+            FROM shtetl_messages 
+            WHERE store_id = %s
+            """
             params = [store_id]
             if start_date and end_date:
                 base_query += " AND created_at >= %s AND created_at <= %s"
                 params.extend([start_date, end_date])
+            
+            # Add pagination
+            base_query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+            params.extend([limit, offset])
             # Total messages
             total_query = """
                 SELECT COUNT(*) as total_messages

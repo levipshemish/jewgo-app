@@ -244,7 +244,11 @@ class ShtetlMarketplaceService(BaseService):
 
         with self.db_manager.connection_manager.get_session_context() as session:
             query = """
-                SELECT s.*,
+                SELECT s.id, s.title, s.description, s.price, s.currency, s.category,
+                       s.subcategory, s.transaction_type, s.is_gemach, s.kosher_agency,
+                       s.holiday_category, s.city, s.state, s.zip_code, s.phone,
+                       s.email, s.images, s.status, s.created_at, s.updated_at,
+                       s.seller_name, s.seller_user_id, s.seller_email,
                        CASE WHEN s.seller_user_id IS NOT NULL THEN 'registered' ELSE 'guest' END as seller_type
                 FROM shtetl_marketplace s
                 WHERE s.id = :listing_id AND s.status != 'deleted'

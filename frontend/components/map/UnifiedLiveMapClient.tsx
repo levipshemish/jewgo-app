@@ -40,6 +40,12 @@ interface PerformanceMetrics {
   cacheHitRate: number;
 }
 
+type PlainBounds = { ne: { lat: number; lng: number }; sw: { lat: number; lng: number } };
+
+function isLatLngBounds(obj: any): obj is google.maps.LatLngBounds {
+  return obj && typeof obj.getNorthEast === 'function' && typeof obj.getSouthWest === 'function';
+}
+
 export default function UnifiedLiveMapClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -183,7 +189,7 @@ export default function UnifiedLiveMapClient() {
   }, [mounted, userLocation, locationPromptShown, permissionStatus]);
 
   // Optimized data fetching with viewport-based loading
-  const fetchRestaurantsData = useCallback(async (mapBounds?: google.maps.LatLngBounds) => {
+  const fetchRestaurantsData = useCallback(async (mapBounds?: google.maps.LatLngBounds | PlainBounds) => {
     // Prevent multiple simultaneous fetches
     if (isFetchingRef.current) {
       return;
@@ -192,7 +198,35 @@ export default function UnifiedLiveMapClient() {
     const now = Date.now();
     
     // Check if we have recent data for the same viewport
-    const boundsKey = mapBounds ? `${mapBounds.getNorthEast().lat()},${mapBounds.getNorthEast().lng()},${mapBounds.getSouthWest().lat()},${mapBounds.getSouthWest().lng()}` : 'all';
+    // Normalize bounds (accept google bounds or plain numbers)
+    let neLat: number | null = null;
+    let neLng: number | null = null;
+    let swLat: number | null = null;
+    let swLng: number | null = null;
+    if (mapBounds) {
+      if (isLatLngBounds(mapBounds)) {
+        const ne = mapBounds.getNorthEast();
+        const sw = mapBounds.getSouthWest();
+        neLat = ne.lat(); neLng = ne.lng(); swLat = sw.lat(); swLng = sw.lng();
+      } else {
+        const pb = mapBounds as Partial<PlainBounds>;
+        const hasPlain = pb && pb.ne && pb.sw 
+          && typeof pb.ne.lat === 'number' && typeof pb.ne.lng === 'number'
+          && typeof pb.sw.lat === 'number' && typeof pb.sw.lng === 'number';
+        if (hasPlain) {
+          neLat = pb.ne!.lat as number;
+          neLng = pb.ne!.lng as number;
+          swLat = pb.sw!.lat as number;
+          swLng = pb.sw!.lng as number;
+        } else {
+          // Invalid bounds payload; ignore and treat as no-bounds
+          neLat = neLng = swLat = swLng = null;
+        }
+      }
+    }
+    const boundsKey = (neLat !== null && neLng !== null && swLat !== null && swLng !== null)
+      ? `${neLat.toFixed(3)},${neLng.toFixed(3)},${swLat.toFixed(3)},${swLng.toFixed(3)}`
+      : 'all';
     const cacheKey = `restaurants_cache_${boundsKey}`;
     
     // For viewport-based loading, we don't use cache since we're accumulating data
@@ -246,36 +280,40 @@ export default function UnifiedLiveMapClient() {
       
       fetchAbortController.current = new AbortController();
       
-      // Use cursor-based endpoint with viewport bounds for efficient loading
-      const apiUrl = new URL('https://api.jewgo.app/api/restaurants');
+      // Route via unified API for consistency and caching
+      const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
       apiUrl.searchParams.set('limit', '200'); // Reduced limit to prevent memory issues
       
       // Add viewport bounds if provided
-      if (mapBounds) {
-        const ne = mapBounds.getNorthEast();
-        const sw = mapBounds.getSouthWest();
-        apiUrl.searchParams.set('bounds_ne_lat', ne.lat().toString());
-        apiUrl.searchParams.set('bounds_ne_lng', ne.lng().toString());
-        apiUrl.searchParams.set('bounds_sw_lat', sw.lat().toString());
-        apiUrl.searchParams.set('bounds_sw_lng', sw.lng().toString());
+      if (neLat !== null && neLng !== null && swLat !== null && swLng !== null) {
+        apiUrl.searchParams.set('bounds_ne_lat', neLat.toString());
+        apiUrl.searchParams.set('bounds_ne_lng', neLng.toString());
+        apiUrl.searchParams.set('bounds_sw_lat', swLat.toString());
+        apiUrl.searchParams.set('bounds_sw_lng', swLng.toString());
         
         // Clear markers that are far outside the current viewport (more than 2x the viewport size)
-        const latRange = ne.lat() - sw.lat();
-        const lngRange = ne.lng() - sw.lng();
-        const extendedNe = { lat: ne.lat() + latRange, lng: ne.lng() + lngRange };
-        const extendedSw = { lat: sw.lat() - latRange, lng: sw.lng() - lngRange };
+        const latRange = neLat - swLat;
+        const lngRange = neLng - swLng;
+        const extendedNe = { lat: neLat + latRange, lng: neLng + lngRange };
+        const extendedSw = { lat: swLat - latRange, lng: swLng - lngRange };
         
         setAllRestaurants(prev => prev.filter(restaurant => {
           const lat = restaurant.latitude;
           const lng = restaurant.longitude;
-          return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+          if (typeof lat !== 'number' || typeof lng !== 'number') {
+            return false;
+          }
+          return lat >= extendedSw.lat && lat <= extendedNe.lat &&
                  lng >= extendedSw.lng && lng <= extendedNe.lng;
         }));
         
         setDisplayedRestaurants(prev => prev.filter(restaurant => {
           const lat = restaurant.latitude;
           const lng = restaurant.longitude;
-          return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+          if (typeof lat !== 'number' || typeof lng !== 'number') {
+            return false;
+          }
+          return lat >= extendedSw.lat && lat <= extendedNe.lat &&
                  lng >= extendedSw.lng && lng <= extendedNe.lng;
         }));
       }
@@ -297,9 +335,10 @@ export default function UnifiedLiveMapClient() {
       setLoadingStage('processing-data');
       setLoadingProgress(70);
 
-      // Handle cursor-based response format
-      if (data && data.items && Array.isArray(data.items) && data.items.length > 0) {
-        const validRestaurantsRaw = data.items.filter((restaurant: any) =>
+      // Handle response format (unified or direct)
+      const items: any[] = (data?.data?.restaurants) || data?.restaurants || data?.items || [];
+      if (Array.isArray(items) && items.length > 0) {
+        const validRestaurantsRaw = items.filter((restaurant: any) =>
           restaurant && typeof restaurant === 'object' && restaurant.id
         );
 
@@ -331,7 +370,7 @@ export default function UnifiedLiveMapClient() {
         }
 
         startTransition(() => {
-          if (mapBounds) {
+          if (neLat !== null) {
             // Viewport-based loading: accumulate restaurants and deduplicate
             setAllRestaurants(prev => {
               const existingIds = new Set(prev.map(r => r.id));
@@ -383,8 +422,8 @@ export default function UnifiedLiveMapClient() {
       
       setLoadingStage('error');
       
-      // Try to use stale cache as fallback
-      const staleCache = localStorage.getItem('restaurants_cache');
+      // Try to use stale cache as fallback (same key)
+      const staleCache = localStorage.getItem(cacheKey);
       if (staleCache) {
         try {
           setLoadingStage('loading-stale-cache');
@@ -416,18 +455,50 @@ export default function UnifiedLiveMapClient() {
     }
   }, [startTransition, CACHE_DURATION]);
 
-  // Throttled bounds change handler
+  // Throttled bounds change handler with movement threshold and per-bounds cooldown
+  const lastBoundsRef = useRef<{ ne: { lat: number; lng: number }; sw: { lat: number; lng: number } } | null>(null);
+  const lastBoundsFetchTimeByKeyRef = useRef<Map<string, number>>(new Map());
   const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBounds) => {
     // Clear existing timeout
     if (boundsChangeTimeoutRef.current) {
       clearTimeout(boundsChangeTimeoutRef.current);
     }
-    
-    // Set new timeout to fetch data after user stops moving the map
+
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    const latSpan = Math.max(0.000001, ne.lat() - sw.lat());
+    const lngSpan = Math.max(0.000001, ne.lng() - sw.lng());
+    const centerLat = sw.lat() + latSpan / 2;
+    const centerLng = sw.lng() + lngSpan / 2;
+
+    let smallChange = false;
+    if (lastBoundsRef.current) {
+      const prev = lastBoundsRef.current;
+      const prevLatSpan = Math.max(0.000001, prev.ne.lat - prev.sw.lat);
+      const prevLngSpan = Math.max(0.000001, prev.ne.lng - prev.sw.lng);
+      const prevCenterLat = prev.sw.lat + prevLatSpan / 2;
+      const prevCenterLng = prev.sw.lng + prevLngSpan / 2;
+
+      const centerLatDelta = Math.abs(centerLat - prevCenterLat) / prevLatSpan;
+      const centerLngDelta = Math.abs(centerLng - prevCenterLng) / prevLngSpan;
+      const spanLatDelta = Math.abs(latSpan - prevLatSpan) / prevLatSpan;
+      const spanLngDelta = Math.abs(lngSpan - prevLngSpan) / prevLngSpan;
+
+      smallChange = (centerLatDelta < 0.15 && centerLngDelta < 0.15 && spanLatDelta < 0.15 && spanLngDelta < 0.15);
+    }
+
     boundsChangeTimeoutRef.current = setTimeout(() => {
+      const boundsKey = `${ne.lat().toFixed(3)},${ne.lng().toFixed(3)},${sw.lat().toFixed(3)},${sw.lng().toFixed(3)}`;
+      const lastForKey = lastBoundsFetchTimeByKeyRef.current.get(boundsKey) || 0;
+      const nowTs = Date.now();
+      if (smallChange && nowTs - lastForKey < 45000) {
+        return;
+      }
+      lastBoundsRef.current = { ne: { lat: ne.lat(), lng: ne.lng() }, sw: { lat: sw.lat(), lng: sw.lng() } };
+      lastBoundsFetchTimeByKeyRef.current.set(boundsKey, nowTs);
       fetchRestaurantsData(bounds);
-    }, 1000); // 1 second delay
-  }, []);
+    }, 650); // debounce ~650ms
+  }, [fetchRestaurantsData]);
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -665,7 +736,7 @@ export default function UnifiedLiveMapClient() {
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Unable to Load Restaurants</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={fetchRestaurantsData}
+            onClick={() => fetchRestaurantsData()}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again

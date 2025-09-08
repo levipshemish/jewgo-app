@@ -234,6 +234,7 @@ const Card = memo<CardProps>(({
             src={heroImageUrl}
             alt={cardData.title || 'Product image'}
             fill
+            priority={priority}
             className={cn(
               "object-cover transition-transform duration-300 opacity-100 rounded-2xl",
               "group-hover:scale-105"
@@ -248,7 +249,6 @@ const Card = memo<CardProps>(({
             }}
             sizes="(max-width: 768px) 45vw, 200px"
             unoptimized={false}
-            priority={priority}
           />
         )}
 

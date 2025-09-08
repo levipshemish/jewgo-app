@@ -128,9 +128,9 @@ module.exports = {
       },
       
       fontFamily: {
-        sans: ['var(--font-nexa)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-nexa)', 'system-ui', 'sans-serif'],
-        nexa: ['var(--font-nexa)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-nunito)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-nunito)', 'system-ui', 'sans-serif'],
+        nunito: ['var(--font-nunito)', 'system-ui', 'sans-serif'],
       },
       
       // Extended animation

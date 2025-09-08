@@ -1,329 +1,230 @@
+#!/usr/bin/env python3
 """
-Rate limiting utility for API endpoints.
-
-This module provides rate limiting functionality to protect against abuse
-and ensure fair usage of API resources.
+Enhanced Rate Limiting for JewGo API
+===================================
+This module provides comprehensive rate limiting with:
+- Per-user rate limiting
+- Per-IP rate limiting
+- Endpoint-specific limits
+- Redis-based distributed rate limiting
+- Graceful degradation
 """
 
 import time
 import hashlib
+from typing import Dict, Optional, Tuple
 from functools import wraps
-from typing import Optional, Dict, Any
-from flask import request, jsonify
+from flask import request, jsonify, g
+import redis
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-class InMemoryRateLimiter:
-    """
-    Simple in-memory rate limiter using sliding window.
-    For production, consider using Redis for distributed rate limiting.
-    """
+class RateLimiter:
+    """Advanced rate limiter with Redis backend."""
     
-    def __init__(self):
-        self.requests = {}  # {key: [(timestamp, count), ...]}
-        self.cleanup_interval = 300  # Clean up old entries every 5 minutes
-        self.last_cleanup = time.time()
-    
-    def _cleanup_old_entries(self):
-        """Remove old entries to prevent memory leaks."""
-        current_time = time.time()
-        if current_time - self.last_cleanup < self.cleanup_interval:
-            return
-        
-        # Remove entries older than 1 hour
-        cutoff_time = current_time - 3600
-        keys_to_remove = []
-        
-        for key, timestamps in self.requests.items():
-            # Filter out old timestamps
-            self.requests[key] = [ts for ts in timestamps if ts > cutoff_time]
+    def __init__(self, redis_url: str = None):
+        """Initialize the rate limiter."""
+        try:
+            if redis_url:
+                self.redis = redis.from_url(redis_url)
+            else:
+                # Use environment variables
+                import os
+                redis_host = os.getenv("REDIS_HOST", "localhost")
+                redis_port = int(os.getenv("REDIS_PORT", 6379))
+                redis_password = os.getenv("REDIS_PASSWORD")
+                redis_db = int(os.getenv("REDIS_DB", 0))
+                
+                self.redis = redis.Redis(
+                    host=redis_host,
+                    port=redis_port,
+                    password=redis_password,
+                    db=redis_db,
+                    decode_responses=True
+                )
             
-            # Mark empty keys for removal
-            if not self.requests[key]:
-                keys_to_remove.append(key)
-        
-        # Remove empty keys
-        for key in keys_to_remove:
-            del self.requests[key]
-        
-        self.last_cleanup = current_time
-        logger.debug(f"Rate limiter cleanup: removed {len(keys_to_remove)} empty keys")
+            # Test connection
+            self.redis.ping()
+            self.connected = True
+            logger.info("Rate limiter initialized with Redis")
+        except Exception as e:
+            logger.warning(f"Redis not available for rate limiting: {e}")
+            self.redis = None
+            self.connected = False
     
-    def is_allowed(self, key: str, max_requests: int, window_seconds: int) -> bool:
+    def _get_client_id(self) -> str:
+        """Get unique client identifier (user ID or IP)."""
+        # Try to get user ID from Flask g context
+        if hasattr(g, 'user_id') and g.user_id:
+            return f"user:{g.user_id}"
+        
+        # Fallback to IP address
+        return f"ip:{request.remote_addr}"
+    
+    def _get_rate_limit_key(self, endpoint: str, client_id: str, window: int) -> str:
+        """Generate rate limit key."""
+        # Create time window
+        current_window = int(time.time() // window)
+        return f"rate_limit:{endpoint}:{client_id}:{current_window}"
+    
+    def check_rate_limit(
+        self, 
+        endpoint: str, 
+        limit: int, 
+        window: int = 60,
+        client_id: str = None
+    ) -> Tuple[bool, Dict[str, int]]:
         """
-        Check if request is allowed under rate limit.
+        Check if request is within rate limit.
         
         Args:
-            key: Unique identifier for rate limiting (e.g., IP address, user ID)
-            max_requests: Maximum number of requests allowed
-            window_seconds: Time window in seconds
-            
+            endpoint: API endpoint name
+            limit: Maximum requests per window
+            window: Time window in seconds
+            client_id: Optional client ID (defaults to user/IP)
+        
         Returns:
-            True if request is allowed, False otherwise
+            Tuple of (is_allowed, rate_limit_info)
         """
-        current_time = time.time()
-        window_start = current_time - window_seconds
+        if not self.connected:
+            # If Redis is not available, allow all requests
+            return True, {'limit': limit, 'remaining': limit, 'reset': int(time.time() + window)}
         
-        # Clean up old entries periodically
-        self._cleanup_old_entries()
+        client_id = client_id or self._get_client_id()
+        key = self._get_rate_limit_key(endpoint, client_id, window)
         
-        # Get existing requests for this key
-        if key not in self.requests:
-            self.requests[key] = []
-        
-        # Filter requests within the current window
-        recent_requests = [ts for ts in self.requests[key] if ts > window_start]
-        
-        # Check if we're under the limit
-        if len(recent_requests) < max_requests:
-            # Add current request timestamp
-            recent_requests.append(current_time)
-            self.requests[key] = recent_requests
-            return True
-        
-        # Update the list (remove old timestamps)
-        self.requests[key] = recent_requests
-        return False
-    
-    def get_remaining_requests(self, key: str, max_requests: int, window_seconds: int) -> int:
-        """Get number of remaining requests in current window."""
-        current_time = time.time()
-        window_start = current_time - window_seconds
-        
-        if key not in self.requests:
-            return max_requests
-        
-        recent_requests = [ts for ts in self.requests[key] if ts > window_start]
-        return max(0, max_requests - len(recent_requests))
-    
-    def get_reset_time(self, key: str, window_seconds: int) -> Optional[float]:
-        """Get timestamp when the rate limit resets."""
-        if key not in self.requests or not self.requests[key]:
-            return None
-        
-        # Find the oldest request in the current window
-        current_time = time.time()
-        window_start = current_time - window_seconds
-        recent_requests = [ts for ts in self.requests[key] if ts > window_start]
-        
-        if not recent_requests:
-            return None
-        
-        # The limit resets when the oldest request falls out of the window
-        oldest_request = min(recent_requests)
-        return oldest_request + window_seconds
+        try:
+            # Use Redis pipeline for atomic operations
+            pipe = self.redis.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, window)
+            results = pipe.execute()
+            
+            current_count = results[0]
+            
+            if current_count > limit:
+                # Rate limit exceeded
+                return False, {
+                    'limit': limit,
+                    'remaining': 0,
+                    'reset': int(time.time() + window),
+                    'current': current_count
+                }
+            
+            return True, {
+                'limit': limit,
+                'remaining': max(0, limit - current_count),
+                'reset': int(time.time() + window),
+                'current': current_count
+            }
+            
+        except Exception as e:
+            logger.error(f"Rate limit check error: {e}")
+            # On error, allow the request
+            return True, {'limit': limit, 'remaining': limit, 'reset': int(time.time() + window)}
 
 
 # Global rate limiter instance
-rate_limiter = InMemoryRateLimiter()
+rate_limiter = RateLimiter()
 
 
-def get_rate_limit_key(identifier: str = None) -> str:
-    """
-    Generate rate limit key based on request context.
-    
-    Args:
-        identifier: Custom identifier (e.g., user ID)
-        
-    Returns:
-        Hashed key for rate limiting
-    """
-    if identifier:
-        key_parts = [identifier]
-    else:
-        # Use IP address and endpoint as default
-        ip_address = request.remote_addr
-        if request.headers.get('X-Forwarded-For'):
-            ip_address = request.headers.get('X-Forwarded-For').split(',')[0].strip()
-        elif request.headers.get('X-Real-IP'):
-            ip_address = request.headers.get('X-Real-IP')
-        
-        endpoint = request.endpoint or 'unknown'
-        key_parts = [ip_address, endpoint]
-    
-    # Create hash of the key parts for consistent length
-    key_string = '|'.join(key_parts)
-    return hashlib.sha256(key_string.encode()).hexdigest()[:32]
-
-
-def rate_limit(max_requests: int, window_seconds: int, identifier: str = None, skip_if_auth: bool = False):
+def rate_limit(limit: int, window: int = 60, per: str = 'user'):
     """
     Decorator for rate limiting API endpoints.
     
     Args:
-        max_requests: Maximum number of requests allowed
-        window_seconds: Time window in seconds
-        identifier: Custom identifier for rate limiting (default: IP + endpoint)
-        skip_if_auth: Skip rate limiting for authenticated users
+        limit: Maximum requests per window
+        window: Time window in seconds
+        per: Rate limit per 'user' or 'ip'
     """
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            try:
-                # Skip rate limiting for authenticated users if requested
-                if skip_if_auth:
-                    auth_header = request.headers.get('Authorization')
-                    if auth_header and auth_header.startswith('Bearer '):
-                        # Let authentication decorator handle token validation
-                        return f(*args, **kwargs)
-                
-                # Generate rate limit key
-                key = get_rate_limit_key(identifier)
-                
-                # Check rate limit
-                if not rate_limiter.is_allowed(key, max_requests, window_seconds):
-                    # Get additional info for response headers
-                    remaining = rate_limiter.get_remaining_requests(key, max_requests, window_seconds)
-                    reset_time = rate_limiter.get_reset_time(key, window_seconds)
-                    
-                    response = jsonify({
-                        'error': 'Rate limit exceeded',
-                        'message': f'Maximum {max_requests} requests per {window_seconds} seconds',
-                        'retry_after': int(reset_time - time.time()) if reset_time else window_seconds
-                    })
-                    
-                    # Add rate limit headers
-                    response.headers['X-RateLimit-Limit'] = str(max_requests)
-                    response.headers['X-RateLimit-Remaining'] = str(remaining)
-                    response.headers['X-RateLimit-Window'] = str(window_seconds)
-                    
-                    if reset_time:
-                        response.headers['X-RateLimit-Reset'] = str(int(reset_time))
-                        response.headers['Retry-After'] = str(int(reset_time - time.time()))
-                    
-                    logger.warning(f"Rate limit exceeded for key: {key[:8]}...")
-                    return response, 429
-                
-                # Add rate limit headers to successful responses
-                remaining = rate_limiter.get_remaining_requests(key, max_requests, window_seconds)
-                reset_time = rate_limiter.get_reset_time(key, window_seconds)
-                
-                # Call the original function
-                response = f(*args, **kwargs)
-                
-                # Add headers to response if it's a tuple (response, status_code)
-                if isinstance(response, tuple):
-                    response_obj, status_code = response
-                    if hasattr(response_obj, 'headers'):
-                        response_obj.headers['X-RateLimit-Limit'] = str(max_requests)
-                        response_obj.headers['X-RateLimit-Remaining'] = str(remaining)
-                        response_obj.headers['X-RateLimit-Window'] = str(window_seconds)
-                        if reset_time:
-                            response_obj.headers['X-RateLimit-Reset'] = str(int(reset_time))
-                    return response_obj, status_code
-                elif hasattr(response, 'headers'):
-                    response.headers['X-RateLimit-Limit'] = str(max_requests)
-                    response.headers['X-RateLimit-Remaining'] = str(remaining)
-                    response.headers['X-RateLimit-Window'] = str(window_seconds)
-                    if reset_time:
-                        response.headers['X-RateLimit-Reset'] = str(int(reset_time))
-                
-                return response
-                
-            except Exception as e:
-                logger.error(f"Rate limiting error: {e}")
-                # Don't block request if rate limiting fails
-                return f(*args, **kwargs)
-        
-        return decorated_function
-    return decorator
-
-
-def rate_limit_by_user(max_requests: int, window_seconds: int):
-    """
-    Rate limit by authenticated user ID.
-    Requires authentication decorator to be applied first.
-    """
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            try:
-                from flask import g
-                user_id = getattr(g, 'user_id', None)
-                
-                if not user_id:
-                    # Fall back to IP-based rate limiting
-                    return rate_limit(max_requests, window_seconds)(f)(*args, **kwargs)
-                
-                # Use user ID as identifier
-                key = get_rate_limit_key(user_id)
-                
-                if not rate_limiter.is_allowed(key, max_requests, window_seconds):
-                    remaining = rate_limiter.get_remaining_requests(key, max_requests, window_seconds)
-                    reset_time = rate_limiter.get_reset_time(key, window_seconds)
-                    
-                    response = jsonify({
-                        'error': 'Rate limit exceeded',
-                        'message': f'Maximum {max_requests} requests per {window_seconds} seconds per user'
-                    })
-                    
-                    response.headers['X-RateLimit-Limit'] = str(max_requests)
-                    response.headers['X-RateLimit-Remaining'] = str(remaining)
-                    response.headers['X-RateLimit-Window'] = str(window_seconds)
-                    
-                    if reset_time:
-                        response.headers['X-RateLimit-Reset'] = str(int(reset_time))
-                        response.headers['Retry-After'] = str(int(reset_time - time.time()))
-                    
-                    logger.warning(f"User rate limit exceeded: {user_id}")
-                    return response, 429
-                
-                return f(*args, **kwargs)
-                
-            except Exception as e:
-                logger.error(f"User rate limiting error: {e}")
-                return f(*args, **kwargs)
-        
-        return decorated_function
-    return decorator
-
-
-def get_rate_limit_status(identifier: str = None) -> Dict[str, Any]:
-    """
-    Get current rate limit status for debugging/monitoring.
-    
-    Args:
-        identifier: Custom identifier (default: current request context)
-        
-    Returns:
-        Dictionary with rate limit information
-    """
-    try:
-        key = get_rate_limit_key(identifier)
-        current_time = time.time()
-        
-        # Get info for common limits (this is just for debugging)
-        limits = [
-            {'name': 'auth_login', 'max_requests': 10, 'window_seconds': 900},
-            {'name': 'auth_register', 'max_requests': 5, 'window_seconds': 3600},
-            {'name': 'default', 'max_requests': 100, 'window_seconds': 3600}
-        ]
-        
-        status = {
-            'key': key[:8] + '...',  # Truncated for security
-            'current_time': current_time,
-            'limits': []
-        }
-        
-        for limit in limits:
-            remaining = rate_limiter.get_remaining_requests(
-                key, limit['max_requests'], limit['window_seconds']
-            )
-            reset_time = rate_limiter.get_reset_time(key, limit['window_seconds'])
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Get client identifier
+            if per == 'user' and hasattr(g, 'user_id') and g.user_id:
+                client_id = f"user:{g.user_id}"
+            else:
+                client_id = f"ip:{request.remote_addr}"
             
-            status['limits'].append({
-                'name': limit['name'],
-                'max_requests': limit['max_requests'],
-                'window_seconds': limit['window_seconds'],
-                'remaining': remaining,
-                'reset_time': reset_time,
-                'seconds_until_reset': int(reset_time - current_time) if reset_time else None
-            })
+            # Check rate limit
+            endpoint = f"{request.endpoint}:{request.method}"
+            is_allowed, rate_info = rate_limiter.check_rate_limit(
+                endpoint, limit, window, client_id
+            )
+            
+            if not is_allowed:
+                logger.warning(
+                    f"Rate limit exceeded for {client_id} on {endpoint}",
+                    client_id=client_id,
+                    endpoint=endpoint,
+                    rate_info=rate_info
+                )
+                
+                return jsonify({
+                    'error': 'Rate limit exceeded',
+                    'message': f'Too many requests. Limit: {rate_info["limit"]} per {window} seconds',
+                    'rate_limit': rate_info
+                }), 429
+            
+            # Add rate limit headers to response
+            response = func(*args, **kwargs)
+            if hasattr(response, 'headers'):
+                response.headers['X-RateLimit-Limit'] = str(rate_info['limit'])
+                response.headers['X-RateLimit-Remaining'] = str(rate_info['remaining'])
+                response.headers['X-RateLimit-Reset'] = str(rate_info['reset'])
+            
+            return response
         
-        return status
-        
-    except Exception as e:
-        logger.error(f"Error getting rate limit status: {e}")
-        return {'error': str(e)}
+        return wrapper
+    return decorator
+
+
+# Predefined rate limits for different endpoint types
+RATE_LIMITS = {
+    'public_read': {'limit': 100, 'window': 60, 'per': 'ip'},      # 100/min per IP
+    'authenticated_read': {'limit': 500, 'window': 60, 'per': 'user'},  # 500/min per user
+    'public_write': {'limit': 10, 'window': 60, 'per': 'ip'},      # 10/min per IP
+    'authenticated_write': {'limit': 60, 'window': 60, 'per': 'user'},  # 60/min per user
+    'search': {'limit': 30, 'window': 60, 'per': 'ip'},           # 30/min per IP
+    'admin': {'limit': 1000, 'window': 60, 'per': 'user'},        # 1000/min per user
+}
+
+
+def public_read_limit():
+    """Rate limit for public read operations."""
+    return rate_limit(**RATE_LIMITS['public_read'])
+
+
+def authenticated_read_limit():
+    """Rate limit for authenticated read operations."""
+    return rate_limit(**RATE_LIMITS['authenticated_read'])
+
+
+def public_write_limit():
+    """Rate limit for public write operations."""
+    return rate_limit(**RATE_LIMITS['public_write'])
+
+
+def authenticated_write_limit():
+    """Rate limit for authenticated write operations."""
+    return rate_limit(**RATE_LIMITS['authenticated_write'])
+
+
+def search_limit():
+    """Rate limit for search operations."""
+    return rate_limit(**RATE_LIMITS['search'])
+
+
+def admin_limit():
+    """Rate limit for admin operations."""
+    return rate_limit(**RATE_LIMITS['admin'])
+
+
+def get_rate_limit_stats() -> Dict[str, any]:
+    """Get rate limiting statistics."""
+    return {
+        'redis_connected': rate_limiter.connected,
+        'limits': RATE_LIMITS
+    }

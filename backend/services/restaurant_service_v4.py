@@ -1,6 +1,7 @@
 import json
 from typing import Any
 from services.base_service import BaseService
+from services.enhanced_restaurant_cache import restaurant_cache
 from utils.error_handler import NotFoundError, ValidationError, DatabaseError
 from utils.error_handler_v2 import (
     handle_database_operation,
@@ -22,27 +23,39 @@ class RestaurantServiceV4(BaseService):
         limit: int = 100,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
-        """Get all restaurants with optional filtering.
+        """Get all restaurants with optional filtering and caching.
         Args:
             filters: Optional dict with filter criteria (location, cuisine_type, etc.)
         Returns:
             List of restaurant dictionaries
         """
         self.log_operation("get_all_restaurants", filters=filters)
-        context = create_error_context(filters=filters)
-        # Handle database operation with specific error handling
-        restaurants = handle_database_operation(
-            operation=lambda: self.db_manager.get_restaurants(
-                limit=limit,
-                offset=offset,
-                as_dict=True,
-                filters=self._process_restaurant_filters(filters or {}),
-            ),
-            operation_name="get_all_restaurants",
-            context=context,
+        
+        # Use enhanced caching
+        def fetch_restaurants():
+            context = create_error_context(filters=filters)
+            return handle_database_operation(
+                operation=lambda: self.db_manager.get_restaurants(
+                    limit=limit,
+                    offset=offset,
+                    as_dict=True,
+                    filters=self._process_restaurant_filters(filters or {}),
+                ),
+                operation_name="get_all_restaurants",
+                context=context,
+            )
+        
+        # Get restaurants with caching
+        restaurants = restaurant_cache.get_restaurants_cached(
+            filters=filters,
+            limit=limit,
+            offset=offset,
+            fetch_func=fetch_restaurants
         )
+        
         if restaurants is None:
             return []
+        
         # Apply any post-processing (e.g., add computed fields, format data)
         processed_restaurants = self._process_restaurant_list(restaurants)
         self.logger.info(

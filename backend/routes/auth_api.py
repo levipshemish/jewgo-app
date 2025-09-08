@@ -371,7 +371,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['POST'])
-@rate_limit(max_requests=10, window_seconds=900)  # 10 login attempts per 15 minutes
+@rate_limit(max_requests=5, window_seconds=300)  # 5 login attempts per 5 minutes
 @csrf_protect
 def login():
     """Authenticate user and return tokens."""

@@ -73,7 +73,7 @@ export default function Header({
                       <h1 
                         className="text-sm sm:text-base lg:text-lg font-bold text-[#292B2D] tracking-wide"
                         style={{ 
-                          fontFamily: '"Comic Sans MS", "Chalkboard SE", "Marker Felt", "Arial Rounded MT Bold", "Helvetica Rounded", sans-serif',
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                           fontWeight: '700',
                           letterSpacing: '0.025em',
                           fontStyle: 'normal'

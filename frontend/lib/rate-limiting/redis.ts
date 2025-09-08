@@ -15,9 +15,9 @@ const RATE_LIMITS = {
     window_daily: 86400, // 24 hours
   },
   email_auth: {
-    max_requests: process.env.NODE_ENV === 'development' ? 100 : 10,
+    max_requests: process.env.NODE_ENV === 'development' ? 100 : 5, // Reduced from 10 to 5
     window: process.env.NODE_ENV === 'development' ? 60 : 300, // 1 minute in dev, 5 minutes in prod
-    max_requests_daily: process.env.NODE_ENV === 'development' ? 1000 : 100,
+    max_requests_daily: process.env.NODE_ENV === 'development' ? 1000 : 50, // Reduced from 100 to 50
     window_daily: 86400, // 24 hours
   },
   password_reset: {

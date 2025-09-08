@@ -96,10 +96,10 @@ export const rateLimitConfigs = {
     maxRequests: 20, // Increased from 5 to 20
     message: 'Too many authentication attempts. Please try again later.'
   },
-  // Much more lenient for API calls
+  // Secure API rate limits
   api: {
     windowMs: 1 * 60 * 1000, // 1 minute
-    maxRequests: 1000, // Increased from 200 to 1000
+    maxRequests: 100, // Reduced from 1000 for security
     message: 'Too many requests. Please slow down.'
   },
   // Very strict for password reset
