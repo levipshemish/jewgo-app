@@ -3,7 +3,7 @@
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
-import { cn } from "@/lib-listing-utility/utils"
+import { cn } from "@/lib/utils/cn"
 import { buttonVariants } from "@/components/ui-listing-utility/button"
 
 function AlertDialog({

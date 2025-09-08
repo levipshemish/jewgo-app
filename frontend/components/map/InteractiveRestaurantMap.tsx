@@ -287,11 +287,11 @@ export function InteractiveRestaurantMap({
   // Announce loading states
   useEffect(() => {
     if (mapState.isLoadingMarkers) {
-      announceLoadingState('loading', 'restaurant markers');
+      _announceLoadingState('loading', 'restaurant markers');
     } else if (mapState.markerError) {
-      announceLoadingState('error', 'restaurant markers');
+      _announceLoadingState('error', 'restaurant markers');
     } else {
-      announceLoadingState('loaded', 'restaurant markers');
+      _announceLoadingState('loaded', 'restaurant markers');
     }
   }, [mapState.isLoadingMarkers, mapState.markerError]);
 

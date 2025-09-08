@@ -80,51 +80,6 @@ export function usePerformanceMonitoring(
   const [alerts, setAlerts] = useState<PerformanceAlert[]>([]);
   const activeTimersRef = useRef<Map<string, { startTime: number; category: PerformanceMetric['category'] }>>(new Map());
 
-  // Start a performance timer
-  const startTimer = useCallback((name: string, category: PerformanceMetric['category'] = 'custom') => {
-    if (!opts.enabled) return () => {};
-
-    const startTime = performance.now();
-    activeTimersRef.current.set(name, { startTime, category });
-
-    return () => {
-      const timer = activeTimersRef.current.get(name);
-      if (!timer) return;
-
-      const endTime = performance.now();
-      const duration = endTime - timer.startTime;
-      
-      activeTimersRef.current.delete(name);
-      
-      recordMetric({
-        name,
-        value: duration,
-        category: timer.category,
-        unit: 'ms',
-      });
-    };
-  }, [opts.enabled, recordMetric]);
-
-  // Record a performance metric
-  const recordMetric = useCallback((metric: Omit<PerformanceMetric, 'timestamp'>) => {
-    if (!opts.collectMetrics) return;
-
-    const fullMetric: PerformanceMetric = {
-      ...metric,
-      timestamp: Date.now(),
-    };
-
-    setMetrics(prev => {
-      const updated = [...prev, fullMetric].slice(-opts.maxHistoryLength);
-      return updated;
-    });
-
-    // Check for performance alerts
-    if (opts.alertOnSlowPerformance) {
-      checkPerformanceAlerts(fullMetric);
-    }
-  }, [opts.collectMetrics, opts.maxHistoryLength, opts.alertOnSlowPerformance, checkPerformanceAlerts]);
-
   // Check if a metric triggers any alerts
   const checkPerformanceAlerts = useCallback((metric: PerformanceMetric) => {
     const thresholds = opts.thresholds as PerformanceThresholds;
@@ -134,8 +89,8 @@ export function usePerformanceMonitoring(
       case 'rendering':
         if (metric.value > thresholds.slowRender) {
           alert = {
-            type: metric.value > thresholds.slowRender * 2 ? 'critical' : 'warning',
-            message: `Slow rendering detected: ${metric.name} took ${metric.value.toFixed(1)}ms`,
+            type: metric.value > thresholds.slowRender * 1.5 ? 'critical' : 'warning',
+            message: `Slow render detected: ${metric.name} took ${metric.value.toFixed(1)}ms`,
             metric,
             threshold: thresholds.slowRender,
           };
@@ -163,6 +118,17 @@ export function usePerformanceMonitoring(
           };
         }
         break;
+      
+      case 'interaction':
+        if (metric.value > thresholds.slowRender) {
+          alert = {
+            type: metric.value > thresholds.slowRender * 1.5 ? 'critical' : 'warning',
+            message: `Slow interaction detected: ${metric.name} took ${metric.value.toFixed(1)}ms`,
+            metric,
+            threshold: thresholds.slowRender,
+          };
+        }
+        break;
     }
 
     if (alert) {
@@ -174,6 +140,51 @@ export function usePerformanceMonitoring(
       }
     }
   }, [opts]);
+
+  // Record a performance metric
+  const recordMetric = useCallback((metric: Omit<PerformanceMetric, 'timestamp'>) => {
+    if (!opts.collectMetrics) return;
+
+    const fullMetric: PerformanceMetric = {
+      ...metric,
+      timestamp: Date.now(),
+    };
+
+    setMetrics(prev => {
+      const updated = [...prev, fullMetric].slice(-opts.maxHistoryLength);
+      return updated;
+    });
+
+    // Check for performance alerts
+    if (opts.alertOnSlowPerformance) {
+      checkPerformanceAlerts(fullMetric);
+    }
+  }, [opts.collectMetrics, opts.maxHistoryLength, opts.alertOnSlowPerformance, checkPerformanceAlerts]);
+
+  // Start a performance timer
+  const startTimer = useCallback((name: string, category: PerformanceMetric['category'] = 'custom') => {
+    if (!opts.enabled) return () => {};
+
+    const startTime = performance.now();
+    activeTimersRef.current.set(name, { startTime, category });
+
+    return () => {
+      const timer = activeTimersRef.current.get(name);
+      if (!timer) return;
+
+      const endTime = performance.now();
+      const duration = endTime - timer.startTime;
+      
+      activeTimersRef.current.delete(name);
+      
+      recordMetric({
+        name,
+        value: duration,
+        category: timer.category,
+        unit: 'ms',
+      });
+    };
+  }, [opts.enabled, recordMetric]);
 
   // Get average time for a specific metric
   const getAverageTime = useCallback((metricName: string): number => {
@@ -350,7 +361,7 @@ export function logPerformanceMetrics(metrics: PerformanceMetric[]): void {
   if (process.env.NODE_ENV === 'development') {
     console.group('📊 Performance Metrics');
     
-    const categories = [...new Set(metrics.map(m => m.category))];
+    const categories = Array.from(new Set(metrics.map(m => m.category)));
     categories.forEach(category => {
       const categoryMetrics = metrics.filter(m => m.category === category);
       if (categoryMetrics.length === 0) return;
