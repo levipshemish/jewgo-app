@@ -52,7 +52,7 @@ function renderIcon(icon: React.ReactNode | string | undefined) {
   
   if (typeof icon === 'string') {
     const IconComponent = iconMap[icon as keyof typeof iconMap]
-    return IconComponent ? <IconComponent className="h-3 w-3" /> : null
+    return IconComponent ? <IconComponent className="h-4 w-4" /> : null
   }
   
   return icon

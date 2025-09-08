@@ -134,13 +134,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         {/* Scrollable container with snap */}
         <div
           ref={scrollContainerRef}
-          className="flex overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory touch-pan-y select-none h-full"
+          className="flex overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory select-none h-full"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
             overscrollBehaviorX: 'contain',
-            touchAction: 'pan-y'
+            touchAction: 'pan-x pan-y'
           }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -186,10 +186,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
           ))}
         </div>
 
-        {/* Image Counter */}
-        <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white dynamic-spacing-sm dynamic-rounded-md dynamic-text-xs font-medium z-20">
-          {currentIndex + 1}/{allImages.length}
-        </div>
 
         {/* Navigation Arrows - Desktop Only */}
         {allImages.length > 1 && (
@@ -216,24 +212,24 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
       </div>
 
-      {/* Dots Indicator - Below Image */}
-      {allImages.length > 1 && (
-        <div className="flex justify-center space-x-3 py-3">
-          {allImages.slice(0, 5).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${
-                index === currentIndex 
-                  ? 'bg-white shadow-md' 
-                  : 'bg-white bg-opacity-60 hover:bg-opacity-80'
-              }`}
-              aria-label={`Go to image ${index + 1}`}
-              aria-current={index === currentIndex ? 'true' : 'false'}
-            />
-          ))}
-        </div>
-      )}
+        {/* Dots Indicator - Bottom Center Overlay */}
+        {allImages.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+            {allImages.slice(0, 5).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 ${
+                  index === currentIndex 
+                    ? 'bg-white shadow-sm' 
+                    : 'bg-white bg-opacity-50 hover:bg-opacity-70'
+                }`}
+                aria-label={`Go to image ${index + 1}`}
+                aria-current={index === currentIndex ? 'true' : 'false'}
+              />
+            ))}
+          </div>
+        )}
     </div>
   );
 };

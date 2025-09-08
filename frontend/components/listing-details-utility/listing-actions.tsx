@@ -2,9 +2,140 @@
 
 import { Button } from "@/components/ui-listing-utility/button"
 import { useState } from "react"
-import { createPortal } from "react-dom"
-import { ChevronDown, Clock, X, MapPin } from "lucide-react"
+import { ChevronDown, Clock, MapPin, Globe, Globe2, Phone, Mail, ShoppingCart } from "lucide-react"
 import { Stack, Cluster } from "@/components/ui-listing-utility/spacing"
+
+// Utility function to determine restaurant status
+function getRestaurantStatus(hoursArray: any[]) {
+  if (!hoursArray || !Array.isArray(hoursArray) || hoursArray.length === 0) {
+    return {
+      status: 'unknown',
+      statusText: 'Hours not available',
+      statusColor: 'text-gray-500',
+      nextTime: '',
+      nextTimeLabel: ''
+    }
+  }
+
+  const now = new Date()
+  const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() // 'monday', 'tuesday', etc.
+  const currentTime = now.getHours() * 60 + now.getMinutes() // minutes since midnight
+  
+  // Find today's hours from the array
+  const todayHours = hoursArray.find(h => h.day.toLowerCase() === currentDay)
+  
+  if (!todayHours || todayHours.time.toLowerCase().includes('closed')) {
+    // Find next opening day
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    const currentDayIndex = days.indexOf(currentDay)
+    
+    for (let i = 1; i <= 7; i++) {
+      const nextDayIndex = (currentDayIndex + i) % 7
+      const nextDay = days[nextDayIndex]
+      const nextDayHours = hoursArray.find(h => h.day.toLowerCase() === nextDay)
+      
+      if (nextDayHours && !nextDayHours.time.toLowerCase().includes('closed')) {
+        // Extract opening time from the time string
+        const timeMatch = nextDayHours.time.match(/(\d{1,2}:\d{2}\s*[AP]M)/)
+        const nextOpenTime = timeMatch ? timeMatch[1] : nextDayHours.time.split(' - ')[0]
+        
+        return {
+          status: 'closed',
+          statusText: 'Closed',
+          statusColor: 'text-red-500',
+          nextTime: nextOpenTime,
+          nextTimeLabel: `Opens ${nextDay === currentDay ? 'today' : nextDay}`
+        }
+      }
+    }
+    
+    return {
+      status: 'closed',
+      statusText: 'Closed',
+      statusColor: 'text-red-500',
+      nextTime: '',
+      nextTimeLabel: 'Hours not available'
+    }
+  }
+  
+  // Parse the time string (e.g., "9:00 AM - 10:00 PM")
+  const timeParts = todayHours.time.split(' - ')
+  if (timeParts.length !== 2) {
+    return {
+      status: 'unknown',
+      statusText: 'Hours not available',
+      statusColor: 'text-gray-500',
+      nextTime: '',
+      nextTimeLabel: ''
+    }
+  }
+  
+  const openTimeStr = timeParts[0].trim()
+  const closeTimeStr = timeParts[1].trim()
+  
+  // Convert time strings to minutes
+  const timeToMinutes = (timeStr: string) => {
+    if (!timeStr) return 0
+    const [time, period] = timeStr.split(' ')
+    const [hours, minutes] = time.split(':').map(Number)
+    let totalMinutes = hours * 60 + minutes
+    if (period === 'PM' && hours !== 12) totalMinutes += 12 * 60
+    if (period === 'AM' && hours === 12) totalMinutes -= 12 * 60
+    return totalMinutes
+  }
+  
+  const openTime = timeToMinutes(openTimeStr)
+  const closeTime = timeToMinutes(closeTimeStr)
+  
+  if (currentTime >= openTime && currentTime < closeTime) {
+    return {
+      status: 'open',
+      statusText: 'Open',
+      statusColor: 'text-green-500',
+      nextTime: closeTimeStr,
+      nextTimeLabel: 'Closes'
+    }
+  } else if (currentTime < openTime) {
+    return {
+      status: 'closed',
+      statusText: 'Closed',
+      statusColor: 'text-red-500',
+      nextTime: openTimeStr,
+      nextTimeLabel: 'Opens'
+    }
+  } else {
+    // Closed for today, find next opening
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    const currentDayIndex = days.indexOf(currentDay)
+    
+    for (let i = 1; i <= 7; i++) {
+      const nextDayIndex = (currentDayIndex + i) % 7
+      const nextDay = days[nextDayIndex]
+      const nextDayHours = hoursArray.find(h => h.day.toLowerCase() === nextDay)
+      
+      if (nextDayHours && !nextDayHours.time.toLowerCase().includes('closed')) {
+        const timeMatch = nextDayHours.time.match(/(\d{1,2}:\d{2}\s*[AP]M)/)
+        const nextOpenTime = timeMatch ? timeMatch[1] : nextDayHours.time.split(' - ')[0]
+        
+        return {
+          status: 'closed',
+          statusText: 'Closed',
+          statusColor: 'text-red-500',
+          nextTime: nextOpenTime,
+          nextTimeLabel: `Opens ${nextDay}`
+        }
+      }
+    }
+    
+    return {
+      status: 'closed',
+      statusText: 'Closed',
+      statusColor: 'text-red-500',
+      nextTime: '',
+      nextTimeLabel: 'Hours not available'
+    }
+  }
+}
 
 interface ListingActionsProps {
   primaryAction?: {
@@ -105,21 +236,72 @@ export function ListingActions({
 
           {/* Hours Section - Moved to top */}
           {bottomAction && bottomAction.label && (
-            <Button
-              onClick={() => {
-                if (bottomAction.hoursInfo) {
-                  setShowHours(true)
-                } else {
-                  bottomAction.onClick?.()
-                }
-              }}
-              variant="secondary"
-              className="w-full bg-black hover:bg-gray-800 hover:scale-[1.02] active:scale-95 text-white rounded-full py-2 transition-all flex items-center justify-center gap-2"
-            >
-              {bottomAction.hoursInfo && <Clock size={16} />}
-              {bottomAction.label}
-              {bottomAction.hoursInfo && <ChevronDown size={16} />}
-            </Button>
+            <div className="w-full">
+              <Button
+                onClick={() => {
+                  if (bottomAction.hoursInfo) {
+                    setShowHours(!showHours)
+                  } else {
+                    bottomAction.onClick?.()
+                  }
+                }}
+                variant="secondary"
+                className="w-full bg-gray-200 hover:bg-gray-300 hover:scale-[1.02] active:scale-95 text-gray-800 rounded-full py-2 transition-all flex items-center justify-center gap-2"
+              >
+                {bottomAction.hoursInfo && <Clock size={16} />}
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-sm font-medium">Hours:</span>
+                  <span className={`text-sm font-semibold ${(() => {
+                    const status = getRestaurantStatus(bottomAction.hoursInfo?.hours || [])
+                    return status.statusColor
+                  })()}`}>
+                    {(() => {
+                      const status = getRestaurantStatus(bottomAction.hoursInfo?.hours || [])
+                      return status.statusText
+                    })()}
+                  </span>
+                  {(() => {
+                    const status = getRestaurantStatus(bottomAction.hoursInfo?.hours || [])
+                    if (status.nextTime && status.nextTimeLabel) {
+                      return (
+                        <span className="text-sm text-gray-600 font-medium">
+                          {status.nextTimeLabel}: {status.nextTime}
+                        </span>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
+                {bottomAction.hoursInfo && (
+                  <ChevronDown 
+                    size={16} 
+                    className={`transition-transform duration-200 ${showHours ? 'rotate-180' : ''}`} 
+                  />
+                )}
+              </Button>
+              
+              {/* Hours dropdown */}
+              {bottomAction.hoursInfo && showHours && (
+                <div className="mt-2 mx-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                  <div className="p-3">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">{bottomAction.hoursInfo.title}</h3>
+                    <div className="space-y-1">
+                      {bottomAction.hoursInfo.hours.map((item) => (
+                        <div
+                          key={`hours-${item.day}-${item.time}`}
+                          className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-b-0"
+                        >
+                          <span className="text-gray-600 font-medium text-sm">{item.day}</span>
+                          <span className="text-gray-900 font-semibold bg-gray-50 px-2 py-0.5 rounded-full text-xs">
+                            {item.time}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Address Section - Always show */}
@@ -167,8 +349,9 @@ export function ListingActions({
           {primaryAction && primaryAction.label && primaryAction.onClick && (
             <Button
               onClick={primaryAction.onClick}
-              className="w-full bg-green-500 hover:bg-green-600 hover:scale-[1.02] active:scale-[0.98] text-white rounded-full py-3 transition-all shadow-lg"
+              className="w-full bg-green-500 hover:bg-green-600 hover:scale-[1.02] active:scale-[0.98] text-white rounded-full py-3 transition-all shadow-lg flex items-center justify-center gap-2"
             >
+              <ShoppingCart className="w-5 h-5 text-white" />
               {primaryAction.label}
             </Button>
           )}
@@ -176,18 +359,33 @@ export function ListingActions({
           {/* Secondary action buttons */}
           {secondaryActions.length > 0 && (
             <Cluster gap={3}>
-              {secondaryActions.map((action) => (
-                action.label && action.onClick && (
+              {secondaryActions.map((action) => {
+                // Determine the appropriate icon based on action label
+                const getActionIcon = (label?: string) => {
+                  if (!label) return null;
+                  const lowerLabel = label.toLowerCase();
+                  if (lowerLabel.includes('website') || lowerLabel.includes('web')) {
+                    return <Globe size={16} />;
+                  } else if (lowerLabel.includes('call') || lowerLabel.includes('phone')) {
+                    return <Phone size={16} />;
+                  } else if (lowerLabel.includes('email') || lowerLabel.includes('mail')) {
+                    return <Mail size={16} />;
+                  }
+                  return null;
+                };
+
+                return action.label && action.onClick && (
                   <Button
                     key={action.label}
                     variant="secondary"
                     onClick={action.onClick}
-                    className="bg-black hover:bg-gray-800 hover:scale-105 active:scale-95 text-white rounded-full px-3 sm:px-4 py-1 text-sm transition-all flex-1"
+                    className="bg-black hover:bg-gray-800 hover:scale-105 active:scale-95 text-white rounded-full px-3 sm:px-4 py-1 text-sm transition-all flex-1 flex items-center justify-center gap-2"
                   >
+                    {getActionIcon(action.label)}
                     {action.label}
                   </Button>
                 )
-              ))}
+              })}
             </Cluster>
           )}
 
@@ -263,44 +461,6 @@ export function ListingActions({
         </Stack>
       </div>
 
-      {bottomAction?.hoursInfo && showHours && (
-        typeof window !== 'undefined' ? createPortal(
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
-            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-2 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-gray-900">{bottomAction.hoursInfo.title}</h3>
-                <button
-                  onClick={() => setShowHours(false)}
-                  className="h-7 w-7 p-0 hover:bg-gray-200 rounded-full text-black hover:text-gray-800 flex items-center justify-center"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-
-            {/* Hours content */}
-            <div className="p-4">
-              <div className="space-y-2">
-                {bottomAction.hoursInfo.hours.map((item) => (
-                  <div
-                    key={`hours-${item.day}-${item.time}`}
-                    className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-b-0"
-                  >
-                    <span className="text-gray-600 font-medium text-sm">{item.day}</span>
-                    <span className="text-gray-900 font-semibold bg-gray-50 px-2 py-0.5 rounded-full text-xs">
-                      {item.time}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      ) : null
-      )}
     </>
   )
 }
