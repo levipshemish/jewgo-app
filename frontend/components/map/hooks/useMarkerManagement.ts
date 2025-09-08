@@ -173,21 +173,36 @@ export function useMarkerManagement({
 
   // Clean up markers
   const cleanupMarkers = useCallback(() => {
-    // Remove markers from map
-    markersRef.current.forEach(marker => {
-      if ('map' in marker) {
-        (marker as any).map = null;
-      } else if ('setMap' in marker) {
-        (marker as google.maps.Marker).setMap(null);
-      }
-    });
+    // Remove markers from map with proper null checks
+    if (markersRef.current && Array.isArray(markersRef.current)) {
+      markersRef.current.forEach(marker => {
+        if (marker) {
+          try {
+            if ('map' in marker && marker.map) {
+              (marker as any).map = null;
+            } else if ('setMap' in marker && typeof (marker as google.maps.Marker).setMap === 'function') {
+              (marker as google.maps.Marker).setMap(null);
+            }
+          } catch (error) {
+            // Silently handle cleanup errors to prevent crashes
+            console.warn('Marker cleanup error:', error);
+          }
+        }
+      });
+    }
 
     // Clustering disabled: ensure clusterer stays null
-    clustererRef.current = null;
+    if (clustererRef.current) {
+      clustererRef.current = null;
+    }
 
-    // Clear refs
-    markersRef.current = [];
-    markersMapRef.current.clear();
+    // Clear refs safely
+    if (markersRef.current) {
+      markersRef.current = [];
+    }
+    if (markersMapRef.current) {
+      markersMapRef.current.clear();
+    }
   }, []);
 
   // Create marker for restaurant - removed dependencies to prevent recreation

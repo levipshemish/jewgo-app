@@ -80,6 +80,7 @@ export function usePerformanceMonitoring(
     const merged = { ...DEFAULT_OPTIONS, ...options };
     return merged;
   }, [
+    options,
     options.enabled,
     options.collectMetrics,
     options.alertOnSlowPerformance,

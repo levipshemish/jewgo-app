@@ -70,6 +70,19 @@ export function InteractiveRestaurantMap({
     visibleCount: null,
   });
 
+  // Use refs to capture current values for event handlers to avoid dependency issues
+  const restaurantsWithCoordsRef = useRef<Restaurant[]>([]);
+  const keyboardSelectedIndexRef = useRef<number>(-1);
+  
+  // Update refs when values change
+  useEffect(() => {
+    restaurantsWithCoordsRef.current = restaurantsWithCoords;
+  }, [restaurantsWithCoords]);
+  
+  useEffect(() => {
+    keyboardSelectedIndexRef.current = keyboardSelectedIndex;
+  }, [keyboardSelectedIndex]);
+
   // Create notification helper
   const _createNotification = useCallback((type: 'success' | 'error' | 'info', message: string): Notification => ({
     type,
@@ -172,12 +185,12 @@ export function InteractiveRestaurantMap({
           const handleKeyDown = (event: KeyboardEvent) => {
             handleKeyboardNavigation(
               event,
-              restaurantsWithCoords,
-              keyboardSelectedIndex,
+              restaurantsWithCoordsRef.current,
+              keyboardSelectedIndexRef.current,
               (newIndex) => {
                 setKeyboardSelectedIndex(newIndex);
-                if (newIndex >= 0 && newIndex < restaurantsWithCoords.length) {
-                  const restaurant = restaurantsWithCoords[newIndex];
+                if (newIndex >= 0 && newIndex < restaurantsWithCoordsRef.current.length) {
+                  const restaurant = restaurantsWithCoordsRef.current[newIndex];
                   onRestaurantSelect?.(restaurant);
                   announceRestaurantSelection(restaurant.name || 'Unknown restaurant');
                 }

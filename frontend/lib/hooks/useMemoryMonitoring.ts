@@ -49,6 +49,7 @@ export function useMemoryMonitoring(
     // Only recreate if the actual values have changed
     return merged;
   }, [
+    options,
     options.checkIntervalMs,
     options.highUsageThreshold,
     options.criticalUsageThreshold,
