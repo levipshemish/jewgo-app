@@ -1430,7 +1430,6 @@ def create_app(config_class=None):
             
             # Set as_of timestamp for session stability
             if not as_of:
-                from datetime import datetime
                 as_of = datetime.utcnow().isoformat() + 'Z'
             # Build cache key
             cache_key = f"restaurants:{request.query_string.decode()}"
@@ -1631,8 +1630,8 @@ def create_app(config_class=None):
                     next_cursor = base64.b64encode(json.dumps(cursor_data).encode('utf-8')).decode('utf-8')
                 
                 # Build response
-            response_data = {
-                "success": True,
+                response_data = {
+                    "success": True,
                     "items": restaurants,
                     "next_cursor": next_cursor,
                     "origin": {"lat": lat, "lng": lng} if lat and lng else None,
