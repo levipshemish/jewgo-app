@@ -109,6 +109,13 @@ export default function UnifiedLiveMapClient() {
   useEffect(() => {
     setMounted(true);
     loadStartTime.current = performance.now();
+    
+    // Cleanup function to clear timeout on unmount
+    return () => {
+      if (boundsChangeTimeoutRef.current) {
+        clearTimeout(boundsChangeTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Handle URL parameters for deep linking
@@ -237,6 +244,26 @@ export default function UnifiedLiveMapClient() {
         apiUrl.searchParams.set('bounds_ne_lng', ne.lng().toString());
         apiUrl.searchParams.set('bounds_sw_lat', sw.lat().toString());
         apiUrl.searchParams.set('bounds_sw_lng', sw.lng().toString());
+        
+        // Clear markers that are far outside the current viewport (more than 2x the viewport size)
+        const latRange = ne.lat() - sw.lat();
+        const lngRange = ne.lng() - sw.lng();
+        const extendedNe = { lat: ne.lat() + latRange, lng: ne.lng() + lngRange };
+        const extendedSw = { lat: sw.lat() - latRange, lng: sw.lng() - lngRange };
+        
+        setAllRestaurants(prev => prev.filter(restaurant => {
+          const lat = restaurant.latitude;
+          const lng = restaurant.longitude;
+          return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+                 lng >= extendedSw.lng && lng <= extendedNe.lng;
+        }));
+        
+        setDisplayedRestaurants(prev => prev.filter(restaurant => {
+          const lat = restaurant.latitude;
+          const lng = restaurant.longitude;
+          return lat >= extendedSw.lat && lat <= extendedNe.lat && 
+                 lng >= extendedSw.lng && lng <= extendedNe.lng;
+        }));
       }
       
       const response = await fetch(apiUrl.toString(), {
@@ -377,34 +404,9 @@ export default function UnifiedLiveMapClient() {
     
     // Set new timeout to fetch data after user stops moving the map
     boundsChangeTimeoutRef.current = setTimeout(() => {
-      // Check if we need to clear old markers (if user moved to a completely different area)
-      const currentBounds = bounds;
-      const ne = currentBounds.getNorthEast();
-      const sw = currentBounds.getSouthWest();
-      
-      // Clear markers that are far outside the current viewport (more than 2x the viewport size)
-      const latRange = ne.lat() - sw.lat();
-      const lngRange = ne.lng() - sw.lng();
-      const extendedNe = { lat: ne.lat() + latRange, lng: ne.lng() + lngRange };
-      const extendedSw = { lat: sw.lat() - latRange, lng: sw.lng() - lngRange };
-      
-      setAllRestaurants(prev => prev.filter(restaurant => {
-        const lat = restaurant.latitude;
-        const lng = restaurant.longitude;
-        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
-               lng >= extendedSw.lng && lng <= extendedNe.lng;
-      }));
-      
-      setDisplayedRestaurants(prev => prev.filter(restaurant => {
-        const lat = restaurant.latitude;
-        const lng = restaurant.longitude;
-        return lat >= extendedSw.lat && lat <= extendedNe.lat && 
-               lng >= extendedSw.lng && lng <= extendedNe.lng;
-      }));
-      
       fetchRestaurantsData(bounds);
     }, 1000); // 1 second delay
-  }, [fetchRestaurantsData]);
+  }, []);
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -448,7 +450,7 @@ export default function UnifiedLiveMapClient() {
       },
     };
     throttledPost(message);
-  }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost]);
+  }, [searchQuery, activeFilters, userLocation, throttledPost]);
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
