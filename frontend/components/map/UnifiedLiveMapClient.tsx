@@ -514,6 +514,7 @@ export default function UnifiedLiveMapClient() {
   useEffect(() => {
     const unsubscribe = subscribe(({ type, payload }) => {
       if (type === 'FILTER_RESTAURANTS_RESULT') {
+        console.log('🔧 Filter worker result:', payload.restaurants?.length, 'restaurants');
         startTransition(() => {
           const newRestaurants = payload.restaurants || [];
           setDisplayedRestaurants(newRestaurants);
@@ -528,13 +529,15 @@ export default function UnifiedLiveMapClient() {
     postToWorker(message);
   }, 120), []);
 
-  // Apply filters via worker
+  // Apply filters via worker  
   useEffect(() => {
     // Don't process if there are no restaurants to filter or if still loading initial data
     if (allRestaurants.length === 0 || loading) {
+      console.log('⏸️ Skipping filter, restaurants:', allRestaurants.length, 'loading:', loading);
       return;
     }
     
+    console.log('🔍 Applying filters to', allRestaurants.length, 'restaurants');
     const message: FilterWorkerMessage = {
       type: 'FILTER_RESTAURANTS',
       payload: {
@@ -545,7 +548,7 @@ export default function UnifiedLiveMapClient() {
       },
     };
     throttledPost(message);
-  }, [searchQuery, activeFilters, userLocation, throttledPost, loading]);
+  }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost, loading]); // Add allRestaurants back
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
@@ -688,8 +691,6 @@ export default function UnifiedLiveMapClient() {
   }, []);
 
   // Removed handleTabChange since we're only showing map view
-
-  // Utility functions
 
 
   // const hasActiveFilters = useMemo(() => {

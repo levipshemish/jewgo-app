@@ -1,0 +1,45 @@
+# Use Python 3.11 slim image
+FROM python:3.11-slim
+
+# Install system dependencies including git
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    git \
+    fonts-liberation \
+    fonts-unifont \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory to match host directory structure
+WORKDIR /home/ubuntu
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright browsers (if playwright is in requirements)
+RUN if command -v playwright >/dev/null 2>&1; then playwright install chromium; fi
+
+# Copy source code
+COPY . .
+
+# Copy environment file if provided (relative to build context)
+ARG ENV_FILE=.env
+
+# Create non-root user with same UID as host user
+RUN useradd -m -u 1000 ubuntu && chown -R ubuntu:ubuntu /home/ubuntu
+USER ubuntu
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Default command
+CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"]

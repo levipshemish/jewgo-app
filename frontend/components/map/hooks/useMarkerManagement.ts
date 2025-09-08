@@ -287,6 +287,9 @@ export function useMarkerManagement({
     return;
   }, []);
 
+  // Smart marker update - only recreate when restaurant IDs actually change
+  const lastRestaurantIdsRef = useRef<string>('');
+  
   // Update markers when restaurants change
   useEffect(() => {
     // Check if we're on the client side and have the required dependencies
@@ -294,6 +297,19 @@ export function useMarkerManagement({
       return;
     }
 
+    // Create a stable string representation of restaurant IDs to check for actual changes
+    const currentIds = restaurants.map(r => r.id).sort().join(',');
+    
+    // Only recreate markers if the restaurant IDs actually changed
+    if (currentIds === lastRestaurantIdsRef.current) {
+      console.log('⏭️ Skipping marker recreation - same restaurants');
+      return;
+    }
+    
+    console.log('🔄 useMarkerManagement: Recreating markers, restaurants:', restaurants.length);
+    console.log('🧹 Cleaning up existing markers');
+    lastRestaurantIdsRef.current = currentIds;
+    
     // Clean up existing markers
     cleanupMarkers();
 
@@ -319,6 +335,8 @@ export function useMarkerManagement({
     // Update refs
     markersRef.current = newMarkers;
     markersMapRef.current = newMarkersMap;
+    
+    console.log('✅ Created', newMarkers.length, 'markers');
 
     // Clustering disabled; no-op
     applyClustering();
