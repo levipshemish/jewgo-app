@@ -1603,11 +1603,11 @@ def create_app(config_class=None):
             
             with db_manager.connection_manager.get_connection() as conn:
                 cursor = conn.cursor()
-                    cursor.execute(query, params)
+                cursor.execute(query, params)
                 rows = cursor.fetchall()
                 
                 # Get column names
-                    columns = [desc[0] for desc in cursor.description]
+                columns = [desc[0] for desc in cursor.description]
                 
                 # Convert rows to dictionaries
                 restaurants = []
