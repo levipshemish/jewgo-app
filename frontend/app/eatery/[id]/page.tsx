@@ -388,7 +388,7 @@ function EateryIdPageContent() {
               // Try to parse hours_of_operation as JSON or use it as is
               try {
                 return parseHoursFromJson(restaurantData.hours_of_operation)
-              } catch (err) {
+              } catch (_err) {
                 console.log('Failed to parse hours_of_operation as JSON, using as text')
                 // If it's not JSON, try to create a simple hours structure
                 return parseHoursFromJson('{"weekday_text": []}')

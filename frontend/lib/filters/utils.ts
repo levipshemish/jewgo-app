@@ -32,7 +32,7 @@ export function createFilterKey(filters: Record<string, any>): string {
  * Counts the number of active (non-empty) filters
  */
 export function getActiveFilterCount(filters: Record<string, any>): number {
-  return Object.entries(filters).reduce((count, [key, value]) => {
+  return Object.entries(filters).reduce((count, [_key, value]) => {
     if (value === undefined || value === null || value === '') {
       return count;
     }

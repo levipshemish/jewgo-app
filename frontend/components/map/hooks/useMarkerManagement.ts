@@ -79,7 +79,7 @@ export function useMarkerManagement({
     
     const rating = getRating(restaurant);
     // Compute distance text for display in bubble
-    const distanceText = (() => {
+    const _distanceText = (() => {
       if (restaurant.distance && typeof restaurant.distance === 'string' && restaurant.distance.trim() !== '') {
         return restaurant.distance;
       }
@@ -225,10 +225,6 @@ export function useMarkerManagement({
       return marker;
     } else {
       // Fallback to classic Marker API — render rating bubble via SVG icon so ratings show without Map ID
-      if (!hasMapId) {
-        // eslint-disable-next-line no-console
-        console.warn('Map ID not available, using classic markers with rating bubbles');
-      }
 
       // Build a small rating bubble as an SVG icon
       const markerColor = getMarkerColor(restaurant.kosher_category);
@@ -297,19 +293,14 @@ export function useMarkerManagement({
       return;
     }
 
-    // Create a stable string representation of restaurant IDs to check for actual changes
+    // Smart comparison - check if restaurant IDs have actually changed
     const currentIds = restaurants.map(r => r.id).sort().join(',');
-    
-    // Only recreate markers if the restaurant IDs actually changed
     if (currentIds === lastRestaurantIdsRef.current) {
-      console.log('⏭️ Skipping marker recreation - same restaurants');
+      // IDs haven't changed, no need to recreate markers
       return;
     }
-    
-    console.log('🔄 useMarkerManagement: Recreating markers, restaurants:', restaurants.length);
-    console.log('🧹 Cleaning up existing markers');
     lastRestaurantIdsRef.current = currentIds;
-    
+
     // Clean up existing markers
     cleanupMarkers();
 
@@ -328,21 +319,19 @@ export function useMarkerManagement({
           map,
         });
       } catch (_error) {
-        // console.warn(`Failed to create marker for restaurant ${restaurant.id}:`, error);
+        // Silently skip markers that can't be created
       }
     });
 
     // Update refs
     markersRef.current = newMarkers;
     markersMapRef.current = newMarkersMap;
-    
-    console.log('✅ Created', newMarkers.length, 'markers');
 
     // Clustering disabled; no-op
     applyClustering();
-  }, [map, restaurants, createMarker, getRestaurantKey, cleanupMarkers, applyClustering]); // Note: selectedRestaurantId removed to prevent recreation
+  }, [map, restaurants, createMarker, getRestaurantKey, cleanupMarkers, applyClustering, selectedRestaurantId]); // Include selectedRestaurantId dependency
 
-  // Handle selected restaurant - optimized to only update visual styling
+  // Handle selected restaurant - update both z-index and visual appearance
   useEffect(() => {
     if (selectedRestaurantId === lastSelectedIdRef.current) {
       return;
@@ -353,12 +342,46 @@ export function useMarkerManagement({
       const prevKey = `restaurant-${lastSelectedIdRef.current}`;
       const prevData = markersMapRef.current.get(prevKey);
       if (prevData?.marker) {
-        // Reset marker to default appearance
+        // Reset z-index
         if ('setZIndex' in prevData.marker) {
           (prevData.marker as any).setZIndex(1);
         }
-        // Note: For full visual update (color change), would need marker content update
-        // Currently only updating z-index for performance
+        // Update visual appearance for Advanced Markers
+        if ('content' in prevData.marker) {
+          const content = createMarkerContent(prevData.restaurant, false);
+          (prevData.marker as any).content = content;
+        }
+        // Update visual appearance for Classic Markers  
+        else if ('setIcon' in prevData.marker) {
+          const markerColor = getMarkerColor(prevData.restaurant.kosher_category);
+          const rawRating = prevData.restaurant.quality_rating ?? 
+            prevData.restaurant.rating ?? 
+            prevData.restaurant.star_rating ?? 
+            prevData.restaurant.google_rating;
+          const ratingNum = typeof rawRating === 'string' ? parseFloat(rawRating) : rawRating;
+          const rating = ratingNum && ratingNum > 0 ? Number(ratingNum).toFixed(1) : '0.0';
+          
+          const bubbleWidth = 48;
+          const bubbleHeight = 28;
+          const svg = `
+            <svg width="${bubbleWidth}" height="${bubbleHeight}" viewBox="0 0 ${bubbleWidth} ${bubbleHeight}" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="${bubbleWidth - 4}" height="${bubbleHeight - 4}"
+                    rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
+                    fill="white" stroke="${markerColor}" stroke-width="2" />
+              <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}"
+                    text-anchor="middle" font-family="var(--font-nunito), system-ui, sans-serif" font-size="10" fill="#FFD700">★</text>
+              <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}"
+                    text-anchor="middle" font-family="var(--font-nunito), system-ui, sans-serif" font-size="12" font-weight="bold"
+                    fill="#1a1a1a">${rating}</text>
+            </svg>
+          `;
+          
+          (prevData.marker as google.maps.Marker).setIcon({
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+            scaledSize: new google.maps.Size(bubbleWidth, bubbleHeight),
+            anchor: new google.maps.Point(Math.round(bubbleWidth / 2), Math.round(bubbleHeight / 2))
+          });
+        }
       }
     }
 
@@ -367,17 +390,52 @@ export function useMarkerManagement({
       const selectedKey = `restaurant-${selectedRestaurantId}`;
       const data = markersMapRef.current.get(selectedKey);
       if (data?.marker) {
-        // Highlight the selected marker
+        // Update z-index
         if ('setZIndex' in data.marker) {
           (data.marker as any).setZIndex(1000);
         }
-        // Note: For full visual update (color change), would need marker content update
-        // Currently only updating z-index for performance
+        // Update visual appearance for Advanced Markers
+        if ('content' in data.marker) {
+          const content = createMarkerContent(data.restaurant, true);
+          (data.marker as any).content = content;
+        }
+        // Update visual appearance for Classic Markers
+        else if ('setIcon' in data.marker) {
+          const _markerColor = getMarkerColor(data.restaurant.kosher_category);
+          const finalColor = '#FFD700'; // Gold for selected
+          const rawRating = data.restaurant.quality_rating ?? 
+            data.restaurant.rating ?? 
+            data.restaurant.star_rating ?? 
+            data.restaurant.google_rating;
+          const ratingNum = typeof rawRating === 'string' ? parseFloat(rawRating) : rawRating;
+          const rating = ratingNum && ratingNum > 0 ? Number(ratingNum).toFixed(1) : '0.0';
+          
+          const bubbleWidth = 56;
+          const bubbleHeight = 32;
+          const svg = `
+            <svg width="${bubbleWidth}" height="${bubbleHeight}" viewBox="0 0 ${bubbleWidth} ${bubbleHeight}" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="${bubbleWidth - 4}" height="${bubbleHeight - 4}"
+                    rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
+                    fill="${finalColor}" stroke="${finalColor}" stroke-width="2" />
+              <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}"
+                    text-anchor="middle" font-family="var(--font-nunito), system-ui, sans-serif" font-size="10" fill="#FFD700">★</text>
+              <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}"
+                    text-anchor="middle" font-family="var(--font-nunito), system-ui, sans-serif" font-size="12" font-weight="bold"
+                    fill="white">${rating}</text>
+            </svg>
+          `;
+          
+          (data.marker as google.maps.Marker).setIcon({
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+            scaledSize: new google.maps.Size(bubbleWidth, bubbleHeight),
+            anchor: new google.maps.Point(Math.round(bubbleWidth / 2), Math.round(bubbleHeight / 2))
+          });
+        }
       }
     }
 
     lastSelectedIdRef.current = selectedRestaurantId?.toString() || null;
-  }, [selectedRestaurantId]);
+  }, [selectedRestaurantId, createMarkerContent]);
 
   // Cleanup on unmount
   useEffect(() => {

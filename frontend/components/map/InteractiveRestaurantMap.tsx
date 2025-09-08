@@ -8,6 +8,7 @@ import { loadMaps } from '@/lib/maps/loader';
 import { Restaurant } from '@/lib/types/restaurant';
 import { performanceMonitor } from '@/lib/utils/performanceOptimization';
 import { safeFilter } from '@/lib/utils/validation';
+import { useMapAccessibility, announceLoadingState } from '@/lib/hooks/useMapAccessibility';
 
 import { useMarkerManagement } from './hooks/useMarkerManagement';
 
@@ -61,6 +62,7 @@ export function InteractiveRestaurantMap({
   const selectedRestaurantIdRef = useRef<string | null>(null);
   const userLocationMarkerRef = useRef<google.maps.Marker | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
+  const [keyboardSelectedIndex, setKeyboardSelectedIndex] = useState<number>(-1);
   const [mapState, setMapState] = useState<MapState>({
     isLoadingMarkers: false,
     markerError: null,
@@ -69,7 +71,7 @@ export function InteractiveRestaurantMap({
   });
 
   // Create notification helper
-  const createNotification = useCallback((type: 'success' | 'error' | 'info', message: string): Notification => ({
+  const _createNotification = useCallback((type: 'success' | 'error' | 'info', message: string): Notification => ({
     type,
     message,
   }), []);
@@ -106,6 +108,19 @@ export function InteractiveRestaurantMap({
     });
   }, [restaurants]);
 
+  // Accessibility features
+  const {
+    announceMapUpdate,
+    announceRestaurantSelection,
+    handleKeyboardNavigation,
+    setUpAriaLabels,
+    cleanupAccessibility,
+  } = useMapAccessibility({
+    enabled: true,
+    announceMapUpdates: true,
+    enableKeyboardNavigation: true,
+  });
+
   // Initialize map
   useEffect(() => {
     let isMounted = true;
@@ -120,9 +135,6 @@ export function InteractiveRestaurantMap({
 
         // Check if Map ID is available for Advanced Markers
         const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID;
-        if (!mapId) {
-          console.warn('NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID not set. Advanced Markers will not be available.');
-        }
 
         // Determine zoom level - use 13 for 5-mile radius when centering on user location
         const zoomLevel = mapCenter ? 13 : 12;
@@ -145,6 +157,33 @@ export function InteractiveRestaurantMap({
         }
 
         mapInstanceRef.current = map;
+
+        // Set up accessibility features
+        if (mapRef.current) {
+          setUpAriaLabels(mapRef.current);
+          
+          // Add keyboard navigation
+          const handleKeyDown = (event: KeyboardEvent) => {
+            handleKeyboardNavigation(
+              event,
+              restaurantsWithCoords,
+              keyboardSelectedIndex,
+              (newIndex) => {
+                setKeyboardSelectedIndex(newIndex);
+                if (newIndex >= 0 && newIndex < restaurantsWithCoords.length) {
+                  const restaurant = restaurantsWithCoords[newIndex];
+                  onRestaurantSelect?.(restaurant);
+                  announceRestaurantSelection(restaurant.name || 'Unknown restaurant');
+                }
+              }
+            );
+          };
+
+          mapRef.current.addEventListener('keydown', handleKeyDown);
+          
+          // Store the handler for cleanup
+          (map as any)._accessibilityHandler = handleKeyDown;
+        }
 
         // Note: user location marker is managed by a separate effect
 
@@ -170,12 +209,12 @@ export function InteractiveRestaurantMap({
           visibleCount: restaurantsWithCoords.length,
         }));
 
-      } catch (error) {
+      } catch (_error) {
         if (!isMounted) {
           return;
         }
         
-        console.error('Failed to initialize map:', error);
+        // Map initialization failed
         setMapState(prev => ({
           ...prev,
           markerError: 'Failed to load map',
@@ -196,7 +235,7 @@ export function InteractiveRestaurantMap({
         userLocationMarkerRef.current = null;
       }
     };
-  }, [mapCenter]); // Remove onBoundsChanged to prevent map reinitialization
+  }, [mapCenter, onBoundsChanged, restaurantsWithCoords]); // Include dependencies to prevent stale closures
 
   // Update user location marker when user location changes
   useEffect(() => {

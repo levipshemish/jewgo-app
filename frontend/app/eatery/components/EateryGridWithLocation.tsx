@@ -46,9 +46,9 @@ export default function EateryGridWithLocation({
   const [restaurants, setRestaurants] = useState<EateryWithLocation[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
+  const [_page, setPage] = useState(0);
   const [backendError, setBackendError] = useState(false);
-  const isRetryingRef = useRef(false);
+  const _isRetryingRef = useRef(false);
 
   // Use the new location utility hook
   const {

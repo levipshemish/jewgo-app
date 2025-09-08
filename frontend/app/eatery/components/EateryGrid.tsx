@@ -121,15 +121,15 @@ export default function EateryGrid({
 
       // Handle cursor-based endpoint response format
       const responseRestaurants = data.items || []
-      const nextCursor = data.next_cursor
-      const hasMoreData = !!nextCursor
+      const newNextCursor = data.next_cursor
+      const hasMoreData = !!newNextCursor
       
-      console.log('fetchRestaurants cursor response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', nextCursor)
+      console.log('fetchRestaurants cursor response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', newNextCursor)
       
       return {
         restaurants: responseRestaurants,
         hasMore: hasMoreData,
-        nextCursor: nextCursor,
+        nextCursor: newNextCursor,
         limit: data.limit || limit
       }
 
@@ -425,7 +425,7 @@ export default function EateryGrid({
         hasGoogleReviews: !!(restaurant as any).google_reviews,
         googleReviewsLength: (restaurant as any).google_reviews ? (restaurant as any).google_reviews.length : 0,
         calculatedRating: rating,
-        formattedRating: formattedRating,
+        formattedRating,
         willShowBadge: !!formattedRating
       });
     }

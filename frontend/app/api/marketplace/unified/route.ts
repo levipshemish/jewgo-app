@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     
     if (!result.success) {
       // Return fallback response for errors
-      const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
+      const _currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
       const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
       
       return NextResponse.json({
@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
     const transformedResponse = {
       success: backendData.success !== false,
       products: backendData.products || backendData.listings || [],
-      total: total,
+      total,
       page: currentPage,
       limit: limitNum,
-      totalPages: totalPages,
+      totalPages,
       hasNext: currentOffset + limitNum < total,
       hasPrev: currentOffset > 0,
       message: backendData.message || 'Marketplace data retrieved successfully',

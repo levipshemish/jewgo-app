@@ -246,8 +246,8 @@ function SignInForm() {
           router.push(redirectTo);
         }
       }, 1200);
-    } catch (e: any) {
-      const msg = e?.message || 'Failed to upgrade guest account';
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to upgrade guest account';
       setError(msg);
       showError(msg);
     } finally {

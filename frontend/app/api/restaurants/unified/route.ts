@@ -80,22 +80,7 @@ export async function GET(request: NextRequest) {
 
       const backendData = await backendResponse.json();
       
-      // Debug logging to see what rating data we're getting from backend
-      const items = backendData.items || backendData.restaurants || [];
-      if (process.env.NODE_ENV === 'development' && items.length > 0) {
-        const firstRestaurant = items[0];
-        console.log('Backend restaurant data sample:', {
-          name: firstRestaurant.name,
-          id: firstRestaurant.id,
-          google_rating: firstRestaurant.google_rating,
-          googleReviews: {
-            hasGoogleReviews: !!firstRestaurant.google_reviews,
-            googleReviewsType: typeof firstRestaurant.google_reviews,
-            googleReviewsLength: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.length : 0,
-            googleReviewsPreview: firstRestaurant.google_reviews ? `${firstRestaurant.google_reviews.substring(0, 100)}...` : null
-          }
-        });
-      }
+      const _items = backendData.items || backendData.restaurants || [];
       
       // Transform response to match frontend expectations
       // Backend returns 'items' array, but frontend expects 'restaurants'
@@ -144,8 +129,8 @@ export async function GET(request: NextRequest) {
       inflight.delete(cacheKey);
     }
 
-  } catch (error) {
-    console.error('Error in unified restaurants endpoint:', error);
+  } catch (_error) {
+    // Error in unified restaurants endpoint
     
     // Return empty response on error
     return NextResponse.json({
@@ -193,24 +178,6 @@ async function fallbackToSeparateCalls(searchParams: URLSearchParams, _backendUr
       filterOptionsResponse.json()
     ]);
 
-    // Debug logging to see what rating data we're getting from fallback
-    if (process.env.NODE_ENV === 'development') {
-      const restaurants = restaurantsData.restaurants || restaurantsData.data?.restaurants || [];
-      if (restaurants.length > 0) {
-        const firstRestaurant = restaurants[0];
-        console.log('Fallback restaurant data sample:', {
-          name: firstRestaurant.name,
-          id: firstRestaurant.id,
-          google_rating: firstRestaurant.google_rating,
-          googleReviews: {
-            hasGoogleReviews: !!firstRestaurant.google_reviews,
-            googleReviewsType: typeof firstRestaurant.google_reviews,
-            googleReviewsLength: firstRestaurant.google_reviews ? firstRestaurant.google_reviews.length : 0,
-            googleReviewsPreview: firstRestaurant.google_reviews ? `${firstRestaurant.google_reviews.substring(0, 100)}...` : null
-          }
-        });
-      }
-    }
 
     // Combine the responses
     const unifiedResponse = {
@@ -238,7 +205,7 @@ async function fallbackToSeparateCalls(searchParams: URLSearchParams, _backendUr
       }
     };
   } catch (error) {
-    console.error('Error in fallback calls:', error);
+    // Error in fallback calls
     throw error;
   }
 }

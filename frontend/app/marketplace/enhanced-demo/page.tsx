@@ -219,7 +219,7 @@ export default function EnhancedMarketplaceDemo() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLike = (listing: MarketplaceListing) => {
+  const _handleLike = (listing: MarketplaceListing) => {
     setLikedListings(prev => {
       const newSet = new Set(prev);
       if (newSet.has(listing.id)) {

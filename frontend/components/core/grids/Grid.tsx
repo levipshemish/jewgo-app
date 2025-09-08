@@ -168,9 +168,9 @@ export default function Grid({
       
       return {
         items: data.synagogues || data.products || data.listings || data.data?.restaurants || [],
-        total: total,
+        total,
         hasMore: hasMoreData,
-        limit: limit,
+        limit,
         cached: result.cached || false,
         performance: result.performance
       }
@@ -315,7 +315,7 @@ export default function Grid({
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, page, useRealData, backendError, fetchItems, buildSearchParams]);
+  }, [loading, hasMore, page, useRealData, backendError, fetchItems, buildSearchParams, items.length]);
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {

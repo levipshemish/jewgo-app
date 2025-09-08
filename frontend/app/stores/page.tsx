@@ -197,11 +197,11 @@ function StoresPageContent() {
     setShowFilters(true)
   }, [])
 
-  const handleCloseFilters = useCallback(() => {
+  const _handleCloseFilters = useCallback(() => {
     setShowFilters(false)
   }, [])
 
-  const handleApplyFilters = useCallback((filters: AppliedFilters) => {
+  const _handleApplyFilters = useCallback((filters: AppliedFilters) => {
     if (Object.keys(filters).length === 0) {
       clearAllFilters()
     } else {

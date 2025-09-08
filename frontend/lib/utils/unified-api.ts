@@ -331,7 +331,7 @@ export function getUnifiedApiMetrics() {
   return {
     ...performanceMetrics,
     cacheHitRate: performanceMetrics.requestCount > 0 
-      ? (performanceMetrics.cacheHits / performanceMetrics.requestCount * 100).toFixed(2) + '%'
+      ? `${(performanceMetrics.cacheHits / performanceMetrics.requestCount * 100).toFixed(2)}%`
       : '0%',
     cacheSize: responseCache.size,
   };

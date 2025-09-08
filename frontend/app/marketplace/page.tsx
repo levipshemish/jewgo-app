@@ -32,7 +32,7 @@ interface MarketplaceListing {
   distance_miles?: number;
 }
 
-interface MarketplaceResponse {
+interface _MarketplaceResponse {
   success: boolean;
   data: {
     listings: MarketplaceListing[];
@@ -44,7 +44,7 @@ interface MarketplaceResponse {
 }
 
 // Fetch marketplace listings
-async function fetchMarketplaceListings(limit: number = 50, offset: number = 0, userLocation?: { latitude: number; longitude: number } | null): Promise<MarketplaceListing[]> {
+async function fetchMarketplaceListings(limit: number = 50, offset: number = 0, _userLocation?: { latitude: number; longitude: number } | null): Promise<MarketplaceListing[]> {
   try {
     const params = new URLSearchParams({
       limit: limit.toString(),

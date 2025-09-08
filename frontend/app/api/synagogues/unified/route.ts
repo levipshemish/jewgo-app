@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUnifiedSynagogueData } from '@/lib/utils/unified-api';
+import { getUnifiedSynagogueData as _getUnifiedSynagogueData } from '@/lib/utils/unified-api';
 
 export async function GET(request: NextRequest) {
   try {
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     
     if (!result.success) {
       // Return fallback response for errors
-      const currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
+      const _currentOffset = offset ? parseInt(offset) : (parseInt(page) - 1) * parseInt(limit);
       const currentPage = offset ? Math.floor(parseInt(offset) / parseInt(limit)) + 1 : parseInt(page);
       
       return NextResponse.json({
@@ -133,10 +133,10 @@ export async function GET(request: NextRequest) {
     const transformedResponse = {
       success: responseData.success !== false,
       synagogues: responseData.synagogues || [],
-      total: total,
+      total,
       page: currentPage,
       limit: limitNum,
-      totalPages: totalPages,
+      totalPages,
       hasNext: currentOffset + limitNum < total,
       hasPrev: currentOffset > 0,
       message: responseData.message || 'Synagogues retrieved successfully',

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
 import { InteractiveRestaurantMap } from '@/components/map/InteractiveRestaurantMap';
+import MapErrorBoundary from '@/components/map/MapErrorBoundary';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import Card from '@/components/core/cards/Card';
 // Remove old fetchRestaurants import - we'll use unified API directly
@@ -13,6 +14,7 @@ import { Restaurant } from '@/lib/types/restaurant';
 import { throttle as throttleFn } from '@/lib/utils/touchUtils';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
+import { useMemoryMonitoring } from '@/lib/hooks/useMemoryMonitoring';
 import { favoritesManager } from '@/lib/utils/favorites';
 
 // Removed VirtualRestaurantList import since we're only showing map view
@@ -73,6 +75,21 @@ export default function UnifiedLiveMapClient() {
     setFilter,
     clearAllFilters
   } = useAdvancedFilters();
+
+  // Memory monitoring to prevent WebAssembly allocation issues
+  const { memoryInfo, forceCleanup } = useMemoryMonitoring({
+    checkIntervalMs: 30000, // Check every 30 seconds
+    highUsageThreshold: 70,
+    criticalUsageThreshold: 85,
+    onHighUsage: (info) => {
+      console.warn('🗺️ Map memory usage high:', `${info.usagePercentage.toFixed(1)}%`);
+    },
+    onCriticalUsage: (info) => {
+      console.error('🚨 Map memory usage critical:', `${info.usagePercentage.toFixed(1)}%`);
+      // Trigger aggressive cleanup when memory usage is critical
+      forceCleanup();
+    },
+  });
   
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
   // Removed activeTab state since we're only showing map view
@@ -111,7 +128,9 @@ export default function UnifiedLiveMapClient() {
 
   // Constants
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-  const MAX_MARKERS = 300; // Maximum markers to prevent memory issues
+  const BASE_MAX_MARKERS = 300; // Base maximum markers
+  // Reduce marker limit when memory usage is high
+  const MAX_MARKERS = memoryInfo?.isHighUsage ? Math.floor(BASE_MAX_MARKERS * 0.6) : BASE_MAX_MARKERS;
 
 
   // Initialize component
@@ -126,6 +145,34 @@ export default function UnifiedLiveMapClient() {
       }
     };
   }, []);
+
+  // Memory pressure response - clear caches and reduce data when memory is critical
+  useEffect(() => {
+    if (memoryInfo?.isCriticalUsage) {
+      console.log('🧹 Critical memory usage detected, clearing caches...');
+      
+      // Clear localStorage cache to free up memory
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith('restaurants_cache_')) {
+            localStorage.removeItem(key);
+            localStorage.removeItem(`${key}_timestamp`);
+          }
+        });
+      } catch (error) {
+        console.warn('Failed to clear localStorage cache:', error);
+      }
+
+      // Reduce restaurant count immediately if we have too many
+      if (allRestaurants.length > MAX_MARKERS) {
+        console.log(`🗺️ Reducing restaurants from ${allRestaurants.length} to ${MAX_MARKERS} due to memory pressure`);
+        const reducedRestaurants = allRestaurants.slice(0, MAX_MARKERS);
+        setAllRestaurants(reducedRestaurants);
+        setDisplayedRestaurants(prev => prev.slice(0, MAX_MARKERS));
+      }
+    }
+  }, [memoryInfo?.isCriticalUsage, allRestaurants.length, MAX_MARKERS]);
 
   // Handle URL parameters for deep linking
   useEffect(() => {
@@ -189,7 +236,7 @@ export default function UnifiedLiveMapClient() {
   }, [mounted, userLocation, locationPromptShown, permissionStatus]);
 
   // Optimized data fetching with viewport-based loading
-  const fetchRestaurantsData = useCallback(async (mapBounds?: google.maps.LatLngBounds | PlainBounds) => {
+  const fetchRestaurantsData = useCallback(async (mapBounds?: google.maps.LatLngBounds | PlainBounds, isInitialLoad = false) => {
     // Prevent multiple simultaneous fetches
     if (isFetchingRef.current) {
       return;
@@ -245,10 +292,15 @@ export default function UnifiedLiveMapClient() {
     
     try {
       isFetchingRef.current = true;
-      setLoading(true);
+      
+      // Only set loading state for initial loads, not for bounds changes
+      if (isInitialLoad) {
+        setLoading(true);
+        setLoadingStage('checking-cache');
+        setLoadingProgress(10);
+      }
+      
       setError(null);
-      setLoadingStage('checking-cache');
-      setLoadingProgress(10);
 
       // Check cache first
       const cachedData = localStorage.getItem(cacheKey);
@@ -256,22 +308,33 @@ export default function UnifiedLiveMapClient() {
       const cacheAge = cacheTimestamp ? Date.now() - parseInt(cacheTimestamp) : Infinity;
       
       if (cachedData && cacheAge < CACHE_DURATION) {
-        setLoadingStage('loading-from-cache');
-        setLoadingProgress(50);
+        if (isInitialLoad) {
+          setLoadingStage('loading-from-cache');
+          setLoadingProgress(50);
+        }
         
         const restaurants = JSON.parse(cachedData);
         restaurantsRef.current = restaurants;
-        setAllRestaurants(restaurants);
-        setDisplayedRestaurants(restaurants);
+        
+        // Batch state updates to prevent multiple re-renders
+        React.startTransition(() => {
+          setAllRestaurants(restaurants);
+          setDisplayedRestaurants(restaurants);
+        });
         setPerformanceMetrics(prev => ({ ...prev, cacheHitRate: 1 }));
-        setLoadingProgress(100);
-        setLoadingStage('complete');
+        
+        if (isInitialLoad) {
+          setLoadingProgress(100);
+          setLoadingStage('complete');
+        }
         return;
       }
 
       // Fetch fresh data
-      setLoadingStage('fetching-data');
-      setLoadingProgress(30);
+      if (isInitialLoad) {
+        setLoadingStage('fetching-data');
+        setLoadingProgress(30);
+      }
       
       // Cancel any ongoing fetch
       if (fetchAbortController.current) {
@@ -297,7 +360,8 @@ export default function UnifiedLiveMapClient() {
         const extendedNe = { lat: neLat + latRange, lng: neLng + lngRange };
         const extendedSw = { lat: swLat - latRange, lng: swLng - lngRange };
         
-        setAllRestaurants(prev => prev.filter(restaurant => {
+        // Batch viewport filtering to prevent multiple re-renders
+        const viewportFilterFn = (restaurant: Restaurant) => {
           const lat = restaurant.latitude;
           const lng = restaurant.longitude;
           if (typeof lat !== 'number' || typeof lng !== 'number') {
@@ -305,17 +369,12 @@ export default function UnifiedLiveMapClient() {
           }
           return lat >= extendedSw.lat && lat <= extendedNe.lat &&
                  lng >= extendedSw.lng && lng <= extendedNe.lng;
-        }));
+        };
         
-        setDisplayedRestaurants(prev => prev.filter(restaurant => {
-          const lat = restaurant.latitude;
-          const lng = restaurant.longitude;
-          if (typeof lat !== 'number' || typeof lng !== 'number') {
-            return false;
-          }
-          return lat >= extendedSw.lat && lat <= extendedNe.lat &&
-                 lng >= extendedSw.lng && lng <= extendedNe.lng;
-        }));
+        React.startTransition(() => {
+          setAllRestaurants(prev => prev.filter(viewportFilterFn));
+          setDisplayedRestaurants(prev => prev.filter(viewportFilterFn));
+        });
       }
       
       const response = await fetch(apiUrl.toString(), {
@@ -332,8 +391,10 @@ export default function UnifiedLiveMapClient() {
       
       const data = await response.json();
       
-      setLoadingStage('processing-data');
-      setLoadingProgress(70);
+      if (isInitialLoad) {
+        setLoadingStage('processing-data');
+        setLoadingProgress(70);
+      }
 
       // Handle response format (unified or direct)
       const items: any[] = (data?.data?.restaurants) || data?.restaurants || data?.items || [];
@@ -357,8 +418,10 @@ export default function UnifiedLiveMapClient() {
         restaurantsRef.current = validRestaurants;
         
         // Cache the data (only for initial loads)
-        setLoadingStage('caching-data');
-        setLoadingProgress(90);
+        if (isInitialLoad) {
+          setLoadingStage('caching-data');
+          setLoadingProgress(90);
+        }
         
         if (shouldUseCache) {
           try {
@@ -372,31 +435,34 @@ export default function UnifiedLiveMapClient() {
         startTransition(() => {
           if (neLat !== null) {
             // Viewport-based loading: accumulate restaurants and deduplicate
-            setAllRestaurants(prev => {
+            const updateFn = (prev: Restaurant[]) => {
               const existingIds = new Set(prev.map(r => r.id));
               const newRestaurants = validRestaurants.filter(r => !existingIds.has(r.id));
               const combined = [...prev, ...newRestaurants];
               // Limit total markers to prevent memory issues
               return combined.slice(0, MAX_MARKERS);
-            });
-            setDisplayedRestaurants(prev => {
-              const existingIds = new Set(prev.map(r => r.id));
-              const newRestaurants = validRestaurants.filter(r => !existingIds.has(r.id));
-              const combined = [...prev, ...newRestaurants];
-              // Limit total markers to prevent memory issues
-              return combined.slice(0, MAX_MARKERS);
-            });
+            };
+            
+            // Batch state updates to prevent multiple re-renders
+            setAllRestaurants(updateFn);
+            setDisplayedRestaurants(updateFn);
+            
             // Update the last fetched bounds
             lastFetchBoundsRef.current = boundsKey;
           } else {
             // Initial load: replace all restaurants
-            setAllRestaurants(validRestaurants.slice(0, MAX_MARKERS));
-            setDisplayedRestaurants(validRestaurants.slice(0, MAX_MARKERS));
+            const finalRestaurants = validRestaurants.slice(0, MAX_MARKERS);
+            
+            // Batch state updates to prevent multiple re-renders
+            setAllRestaurants(finalRestaurants);
+            setDisplayedRestaurants(finalRestaurants);
           }
         });
         
-        setLoadingProgress(100);
-        setLoadingStage('complete');
+        if (isInitialLoad) {
+          setLoadingProgress(100);
+          setLoadingStage('complete');
+        }
         
         // Update performance metrics
         const loadTime = performance.now() - loadStartTime.current;
@@ -407,35 +473,55 @@ export default function UnifiedLiveMapClient() {
         }));
       } else {
         // Handle API error
-        setLoadingStage('loading-error');
-        setLoadingProgress(100);
+        if (isInitialLoad) {
+          setLoadingStage('loading-error');
+          setLoadingProgress(100);
+        }
         setError('Unable to connect to restaurant service. Please try again later.');
         restaurantsRef.current = [];
-        setAllRestaurants([]);
-        setDisplayedRestaurants([]);
-        setLoadingStage('complete');
+        
+        // Batch state updates to prevent multiple re-renders
+        React.startTransition(() => {
+          setAllRestaurants([]);
+          setDisplayedRestaurants([]);
+        });
+        
+        if (isInitialLoad) {
+          setLoadingStage('complete');
+        }
       }
     } catch (fetchError) {
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         return;
       }
       
-      setLoadingStage('error');
+      if (isInitialLoad) {
+        setLoadingStage('error');
+      }
       
       // Try to use stale cache as fallback (same key)
       const staleCache = localStorage.getItem(cacheKey);
       if (staleCache) {
         try {
-          setLoadingStage('loading-stale-cache');
-          setLoadingProgress(50);
+          if (isInitialLoad) {
+            setLoadingStage('loading-stale-cache');
+            setLoadingProgress(50);
+          }
           
           const restaurants = JSON.parse(staleCache);
           restaurantsRef.current = restaurants;
-          setAllRestaurants(restaurants);
-          setDisplayedRestaurants(restaurants);
+          
+          // Batch state updates to prevent multiple re-renders
+          React.startTransition(() => {
+            setAllRestaurants(restaurants);
+            setDisplayedRestaurants(restaurants);
+          });
           setError('Using cached data - API temporarily unavailable');
-          setLoadingProgress(100);
-          setLoadingStage('complete');
+          
+          if (isInitialLoad) {
+            setLoadingProgress(100);
+            setLoadingStage('complete');
+          }
           return;
         } catch (_parseError) {
           // Cache is corrupted
@@ -444,16 +530,28 @@ export default function UnifiedLiveMapClient() {
       
       setError('Failed to load restaurants. Please check your connection and try again.');
       restaurantsRef.current = [];
-      setAllRestaurants([]);
-      setDisplayedRestaurants([]);
-      setLoadingProgress(100);
-      setLoadingStage('error');
+      
+      // Batch state updates to prevent multiple re-renders
+      React.startTransition(() => {
+        setAllRestaurants([]);
+        setDisplayedRestaurants([]);
+      });
+      
+      if (isInitialLoad) {
+        setLoadingProgress(100);
+        setLoadingStage('error');
+      }
     } finally {
       isFetchingRef.current = false;
-      setLoading(false);
+      
+      // Only update loading state for initial loads
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+      
       lastFetchTime.current = now;
     }
-  }, []); // Remove dependencies to prevent recreation - startTransition is stable, CACHE_DURATION is constant
+  }, [CACHE_DURATION, allRestaurants.length]); // Include dependencies to prevent stale closures
 
   // Throttled bounds change handler with movement threshold and per-bounds cooldown
   const lastBoundsRef = useRef<{ ne: { lat: number; lng: number }; sw: { lat: number; lng: number } } | null>(null);
@@ -501,20 +599,19 @@ export default function UnifiedLiveMapClient() {
       lastBoundsFetchTimeByKeyRef.current.set(boundsKey, nowTs);
       fetchRestaurantsDataRef.current(bounds);
     }, 650); // debounce ~650ms
-  }, []); // Remove fetchRestaurantsData dependency to prevent recreation
+  }, []); // fetchRestaurantsData is stable via ref pattern
 
   // Fetch data when component mounts
   useEffect(() => {
     if (mounted) {
-      fetchRestaurantsData();
+      fetchRestaurantsData(undefined, true); // Mark as initial load
     }
-  }, [mounted]);
+  }, [mounted, fetchRestaurantsData]);
 
   // Worker-based filtering system
   useEffect(() => {
     const unsubscribe = subscribe(({ type, payload }) => {
       if (type === 'FILTER_RESTAURANTS_RESULT') {
-        console.log('🔧 Filter worker result:', payload.restaurants?.length, 'restaurants');
         startTransition(() => {
           const newRestaurants = payload.restaurants || [];
           setDisplayedRestaurants(newRestaurants);
@@ -533,11 +630,9 @@ export default function UnifiedLiveMapClient() {
   useEffect(() => {
     // Don't process if there are no restaurants to filter or if still loading initial data
     if (allRestaurants.length === 0 || loading) {
-      console.log('⏸️ Skipping filter, restaurants:', allRestaurants.length, 'loading:', loading);
       return;
     }
     
-    console.log('🔍 Applying filters to', allRestaurants.length, 'restaurants');
     const message: FilterWorkerMessage = {
       type: 'FILTER_RESTAURANTS',
       payload: {
@@ -548,7 +643,7 @@ export default function UnifiedLiveMapClient() {
       },
     };
     throttledPost(message);
-  }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost, loading]); // Add allRestaurants back
+  }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost, loading]);
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
@@ -560,6 +655,10 @@ export default function UnifiedLiveMapClient() {
   const handleCloseRestaurantCard = useCallback(() => {
     setShowRestaurantCard(false);
     setSelectedRestaurant(null);
+  }, []);
+
+  const handleMapStateUpdate = useCallback((state: MapState) => {
+    setMapState(state);
   }, []);
 
   const handleToggleFavorite = useCallback((restaurant: Restaurant) => {
@@ -624,19 +723,6 @@ export default function UnifiedLiveMapClient() {
       ? `$${restaurant.min_avg_meal_cost}+`
       : '$$'; // Default fallback since most restaurants have price_range
     
-    // Debug logging for price range - show all possible price fields
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Restaurant price data for', restaurant.name, ':', {
-        price_range: restaurant.price_range,
-        avg_price: restaurant.avg_price,
-        min_avg_meal_cost: restaurant.min_avg_meal_cost,
-        max_avg_meal_cost: restaurant.max_avg_meal_cost,
-        processed_priceRange: priceRange,
-        allRestaurantKeys: Object.keys(restaurant).filter(key => key.toLowerCase().includes('price') || key.toLowerCase().includes('cost')),
-        // Show first few keys to understand the data structure
-        sampleKeys: Object.keys(restaurant).slice(0, 10)
-      });
-    }
     
     // Format address info for display - handle null/undefined values
     const addressParts = [
@@ -816,17 +902,25 @@ export default function UnifiedLiveMapClient() {
             }
           }}
         >
-          <InteractiveRestaurantMap
-            restaurants={displayedRestaurants}
-            userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
-            selectedRestaurantId={selectedRestaurant?.id || null}
-            onRestaurantSelect={(restaurant) => handleRestaurantSelect(parseInt(restaurant.id.toString()))}
-            mapCenter={mapCenter || undefined}
-            className="h-full rounded-none shadow-none bg-transparent"
-            showRatingBubbles={true}
-            onMapStateUpdate={(state) => setMapState(state)}
-            onBoundsChanged={handleBoundsChanged}
-          />
+          <MapErrorBoundary
+            maxRetries={3}
+            onError={(error, errorInfo) => {
+              console.error('Map component error:', error);
+              // Could also report to monitoring service here
+            }}
+          >
+            <InteractiveRestaurantMap
+              restaurants={displayedRestaurants}
+              userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
+              selectedRestaurantId={selectedRestaurant?.id || null}
+              onRestaurantSelect={(restaurant) => handleRestaurantSelect(parseInt(restaurant.id.toString()))}
+              mapCenter={mapCenter || undefined}
+              className="h-full rounded-none shadow-none bg-transparent"
+              showRatingBubbles={true}
+              onMapStateUpdate={handleMapStateUpdate}
+              onBoundsChanged={handleBoundsChanged}
+            />
+          </MapErrorBoundary>
         </div>
       </div>
 
@@ -890,8 +984,8 @@ export default function UnifiedLiveMapClient() {
                   setLocation(newLocation);
                   setMapCenter({ lat: newLocation.latitude, lng: newLocation.longitude });
                 },
-                (err) => {
-                  console.error('Error getting location:', err);
+                () => {
+                  // Location access failed, continue without location
                 }
               );
             }

@@ -40,7 +40,7 @@ jewgo_frontend_info{version="1.0.0",environment="production"} 1
 `;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const prometheusMetrics = generatePrometheusMetrics();
     
