@@ -74,8 +74,8 @@ function formatPriceRange(priceRange?: string): string {
 }
 
 function formatRating(rating?: number): string {
-  if (rating === undefined || rating === null || rating === 0) {
-    return 'No rating'
+  if (rating === undefined || rating === null) {
+    return '0.0'
   }
   
   return rating.toFixed(1);
@@ -143,39 +143,7 @@ export function mapEateryToListingData(
     // Content Section
     content: {
       leftText: eatery.name,
-      rightText: formatRating((() => {
-        // Calculate rating from Google reviews if available, otherwise use eatery.rating
-        let calculatedRating = eatery.rating;
-        
-        if (eatery.google_reviews) {
-          try {
-            const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
-            const googleReviewsData = parseGoogleReviews(eatery.google_reviews);
-            
-            if (googleReviewsData) {
-              const reviewsArray = Array.isArray(googleReviewsData) 
-                ? googleReviewsData 
-                : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews) 
-                    ? googleReviewsData.reviews 
-                    : []);
-              
-              if (reviewsArray.length > 0) {
-                const validRatings = reviewsArray
-                  .map((review: any) => review.rating)
-                  .filter((rating: any) => typeof rating === 'number' && rating > 0);
-                
-                if (validRatings.length > 0) {
-                  calculatedRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Error calculating rating from Google reviews:', error);
-          }
-        }
-        
-        return calculatedRating;
-      })()),
+      rightText: formatRating(eatery.rating),
       leftAction: formatPriceRange(eatery.price_range),
       rightAction: (() => {
         const hasUserLocation = !!userLocation

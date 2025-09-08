@@ -28,6 +28,7 @@ export function calculateAverageRating(reviews: Review[]): number | null {
 
 /**
  * Parse Google reviews JSON string and calculate average rating
+ * Uses the same robust parsing logic as the individual eatery page
  */
 export function calculateRatingFromGoogleReviews(googleReviewsJson: string): number | null {
   if (!googleReviewsJson || typeof googleReviewsJson !== 'string') {
@@ -41,8 +42,9 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
   }
 
   try {
-    // Parse the JSON string
-    const googleReviewsData = JSON.parse(googleReviewsJson);
+    // Use the same robust parsing logic as the individual eatery page
+    const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
+    const googleReviewsData = parseGoogleReviews(googleReviewsJson);
     
     if (process.env.NODE_ENV === 'development') {
       console.log('calculateRatingFromGoogleReviews: Parsed data:', {
@@ -113,6 +115,9 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
  */
 export function getBestAvailableRating(restaurant: {
   google_rating?: number | string | null;
+  rating?: number | string | null;
+  star_rating?: number | string | null;
+  quality_rating?: number | string | null;
   google_reviews?: string | null;
   [key: string]: any; // Allow for additional fields
 }): number | null {
@@ -122,28 +127,43 @@ export function getBestAvailableRating(restaurant: {
       name: restaurant.name,
       id: restaurant.id,
       google_rating: restaurant.google_rating,
-      google_rating_type: typeof restaurant.google_rating,
+      rating: restaurant.rating,
+      star_rating: restaurant.star_rating,
+      quality_rating: restaurant.quality_rating,
       hasGoogleReviews: !!restaurant.google_reviews,
       googleReviewsLength: restaurant.google_reviews ? restaurant.google_reviews.length : 0
     });
   }
 
-  // Try google_rating first (this is the main rating field in the database)
-  let rating = restaurant.google_rating;
+  // Use google_rating as primary source for consistency between grid and detail pages
+  let rating = restaurant.google_rating ?? restaurant.rating ?? restaurant.star_rating ?? restaurant.quality_rating;
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('getBestAvailableRating: Rating fields check:', {
+      name: restaurant.name,
+      id: restaurant.id,
+      google_rating: restaurant.google_rating,
+      rating: restaurant.rating,
+      star_rating: restaurant.star_rating,
+      quality_rating: restaurant.quality_rating,
+      selectedRating: rating,
+      hasGoogleReviews: !!restaurant.google_reviews
+    });
+  }
+  
+  // Only calculate from Google reviews if no rating fields are available
+  if ((rating === null || rating === undefined) && restaurant.google_reviews) {
+    rating = calculateRatingFromGoogleReviews(restaurant.google_reviews);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('getBestAvailableRating: Calculated rating from google_reviews as fallback:', rating);
+    }
+  }
   
   // Convert to number if it's a string
   if (rating && typeof rating === 'string') {
     const numRating = parseFloat(rating);
     rating = isNaN(numRating) ? null : numRating;
-  }
-
-  // If no direct rating found, try to calculate from google_reviews
-  if (!rating && restaurant.google_reviews) {
-    rating = calculateRatingFromGoogleReviews(restaurant.google_reviews);
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Calculated rating from google_reviews:', rating);
-    }
   }
 
   if (process.env.NODE_ENV === 'development') {
@@ -154,14 +174,14 @@ export function getBestAvailableRating(restaurant: {
 }
 
 /**
- * Format rating to 1 decimal place, return empty string if invalid
+ * Format rating to 1 decimal place, return 0.0 if invalid
  */
 export function formatRating(rating: number | string | null | undefined): string {
   if (rating === null || rating === undefined) {
-    return '';
+    return '0.0';
   }
 
   const num = typeof rating === 'number' ? rating : parseFloat(String(rating));
-  return Number.isFinite(num) && num > 0 ? num.toFixed(1) : '';
+  return Number.isFinite(num) ? num.toFixed(1) : '0.0';
 }
 

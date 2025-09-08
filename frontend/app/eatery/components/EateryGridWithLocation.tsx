@@ -82,6 +82,7 @@ export default function EateryGridWithLocation({
       const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
       apiUrl.searchParams.set('limit', limit.toString());
       apiUrl.searchParams.set('offset', offset.toString());
+      apiUrl.searchParams.set('include_reviews', 'true'); // Include Google reviews for consistent rating calculation
 
       if (params) {
         const searchParams = new URLSearchParams(params);

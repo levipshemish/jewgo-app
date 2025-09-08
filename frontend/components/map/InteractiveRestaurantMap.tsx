@@ -57,8 +57,7 @@ export function InteractiveRestaurantMap({
 }: InteractiveRestaurantMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
-  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  // Removed directions-related refs since we now open Google Maps directly
   const selectedRestaurantIdRef = useRef<string | null>(null);
   const userLocationMarkerRef = useRef<google.maps.Marker | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
@@ -149,21 +148,11 @@ export function InteractiveRestaurantMap({
 
         // Note: user location marker is managed by a separate effect
 
-        // Initialize directions service
-        directionsServiceRef.current = new google.maps.DirectionsService();
-        directionsRendererRef.current = new google.maps.DirectionsRenderer({
-          suppressMarkers: true,
-          polylineOptions: {
-            strokeColor: '#4285F4',
-            strokeWeight: 4,
-            strokeOpacity: 0.8,
-          },
-        });
-        directionsRendererRef.current.setMap(map);
+        // Removed directions service initialization since we now open Google Maps directly
 
         // Add bounds change listener for viewport-based loading
         if (onBoundsChanged) {
-          const boundsChangedListener = map.addListener('bounds_changed', () => {
+          map.addListener('bounds_changed', () => {
             const bounds = map.getBounds();
             if (bounds) {
               onBoundsChanged(bounds);
@@ -199,10 +188,6 @@ export function InteractiveRestaurantMap({
     return () => {
       isMounted = false;
       // Cleanup map instances
-      if (directionsRendererRef.current) {
-        directionsRendererRef.current.setMap(null);
-        directionsRendererRef.current = null;
-      }
       if (mapInstanceRef.current) {
         mapInstanceRef.current = null;
       }
@@ -210,9 +195,8 @@ export function InteractiveRestaurantMap({
         userLocationMarkerRef.current.setMap(null);
         userLocationMarkerRef.current = null;
       }
-      directionsServiceRef.current = null;
     };
-  }, [mapCenter, restaurantsWithCoords]);
+  }, [mapCenter]); // Remove onBoundsChanged to prevent map reinitialization
 
   // Update user location marker when user location changes
   useEffect(() => {
@@ -243,73 +227,11 @@ export function InteractiveRestaurantMap({
     selectedRestaurantIdRef.current = selectedRestaurantId?.toString() || null;
   }, [selectedRestaurantId]);
 
-  // Get directions to restaurant
-  const getDirections = useCallback(async (restaurant: Restaurant) => {
-    if (!directionsServiceRef.current || !directionsRendererRef.current || !userLocation) {
-      setNotification(createNotification('error', 'Unable to get directions. Please check your location and try again.'));
-      return;
-    }
+  // Removed getDirections function since we now open Google Maps directly
 
-    try {
-      const request: google.maps.DirectionsRequest = {
-        origin: userLocation,
-        destination: { lat: restaurant.latitude!, lng: restaurant.longitude! },
-        travelMode: google.maps.TravelMode.DRIVING,
-      };
+  // Removed getUserLocation function since it's not used in this component
 
-      const result = await directionsServiceRef.current.route(request);
-      
-      if (result.routes && result.routes.length > 0) {
-        directionsRendererRef.current!.setDirections(result);
-        setNotification(createNotification('success', `Directions to ${restaurant.name} loaded successfully!`));
-      } else {
-        setNotification(createNotification('error', 'Unable to calculate directions. Please try again.'));
-      }
-    } catch (error) {
-      console.error('Directions error:', error);
-      setNotification(createNotification('error', 'Unable to calculate directions. Please try again.'));
-    }
-  }, [userLocation, createNotification]);
-
-  // Get user location
-  const getUserLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setNotification(createNotification('error', 'Geolocation is not supported by this browser.'));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setNotification(createNotification('success', 'Location obtained successfully!'));
-        
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.setCenter({ lat: latitude, lng: longitude });
-          mapInstanceRef.current.setZoom(15);
-        }
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setNotification(createNotification('error', 'Unable to get your location. Please check your location settings.'));
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000, // 5 minutes
-      }
-    );
-  }, [createNotification]);
-
-  // Clear directions
-  const clearDirections = useCallback(() => {
-    if (directionsRendererRef.current) {
-      directionsRendererRef.current.setDirections({ 
-        routes: [],
-        geocoded_waypoints: [],
-        request: {} as google.maps.DirectionsRequest
-      });
-    }
-  }, []);
+  // Removed clearDirections function since we no longer use Google Maps Directions API
 
   // Performance monitoring
   useEffect(() => {
@@ -333,22 +255,7 @@ export function InteractiveRestaurantMap({
       
       {/* Map Controls - Removed emoji icons, using proper MapControls component instead */}
 
-      {/* Restaurant Actions */}
-      {selectedRestaurantId && (
-        <div className="absolute top-4 right-4 z-10">
-          <button
-            onClick={() => {
-              const restaurant = restaurants.find(r => r.id === selectedRestaurantId);
-              if (restaurant) {
-                getDirections(restaurant);
-              }
-            }}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 transition-colors"
-          >
-            Get Directions
-          </button>
-        </div>
-      )}
+      {/* Restaurant Actions - Removed Get Directions button (moved to top right in UnifiedLiveMapClient) */}
 
       {/* Map Error Display */}
       {mapState.markerError && (

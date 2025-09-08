@@ -61,9 +61,8 @@ export function useMarkerManagement({
     return `restaurant-${restaurant.id}`;
   }, []);
 
-  // Create marker content
-  const createMarkerContent = useCallback((restaurant: Restaurant) => {
-    const isSelected = selectedRestaurantId === restaurant.id;
+  // Create marker content - removed selectedRestaurantId dependency to prevent recreating all markers on selection
+  const createMarkerContent = useCallback((restaurant: Restaurant, isSelected = false) => {
     const markerColor = getMarkerColor(restaurant.kosher_category);
     const finalColor = isSelected ? '#FFD700' : markerColor;
     
@@ -170,7 +169,7 @@ export function useMarkerManagement({
       `;
       return element;
     }
-  }, [selectedRestaurantId, showRatingBubbles]);
+  }, [showRatingBubbles]); // Removed selectedRestaurantId to prevent recreation
 
   // Clean up markers
   const cleanupMarkers = useCallback(() => {
@@ -191,8 +190,8 @@ export function useMarkerManagement({
     markersMapRef.current.clear();
   }, []);
 
-  // Create marker for restaurant
-  const createMarker = useCallback((restaurant: Restaurant): google.maps.marker.AdvancedMarkerElement | google.maps.Marker => {
+  // Create marker for restaurant - removed dependencies to prevent recreation
+  const createMarker = useCallback((restaurant: Restaurant, isSelected = false): google.maps.marker.AdvancedMarkerElement | google.maps.Marker => {
     // Check if we're on the client side and have Google Maps loaded
     if (typeof window === 'undefined' || !window.google?.maps) {
       throw new Error('Google Maps not loaded');
@@ -209,7 +208,7 @@ export function useMarkerManagement({
     
     // Try to use AdvancedMarkerElement (modern API) first, but only if map has Map ID
     if (google.maps.marker?.AdvancedMarkerElement && hasMapId) {
-      const content = createMarkerContent(restaurant);
+      const content = createMarkerContent(restaurant, isSelected);
       
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position,
@@ -232,7 +231,6 @@ export function useMarkerManagement({
       }
 
       // Build a small rating bubble as an SVG icon
-      const isSelected = selectedRestaurantId === restaurant.id;
       const markerColor = getMarkerColor(restaurant.kosher_category);
       const finalColor = isSelected ? '#FFD700' : markerColor;
 
@@ -281,7 +279,7 @@ export function useMarkerManagement({
 
       return marker;
     }
-  }, [map, onRestaurantSelect, createMarkerContent, selectedRestaurantId]);
+  }, [map, onRestaurantSelect, createMarkerContent]); // Removed selectedRestaurantId
 
   // Apply clustering
   const applyClustering = useCallback(() => {
@@ -305,7 +303,8 @@ export function useMarkerManagement({
 
     restaurants.forEach(restaurant => {
       try {
-        const marker = createMarker(restaurant);
+        const isSelected = selectedRestaurantId === restaurant.id;
+        const marker = createMarker(restaurant, isSelected);
         newMarkers.push(marker);
         newMarkersMap.set(getRestaurantKey(restaurant), {
           marker,
@@ -323,9 +322,9 @@ export function useMarkerManagement({
 
     // Clustering disabled; no-op
     applyClustering();
-  }, [map, restaurants, createMarker, getRestaurantKey, cleanupMarkers, applyClustering]);
+  }, [map, restaurants, createMarker, getRestaurantKey, cleanupMarkers, applyClustering]); // Note: selectedRestaurantId removed to prevent recreation
 
-  // Handle selected restaurant
+  // Handle selected restaurant - optimized to only update visual styling
   useEffect(() => {
     if (selectedRestaurantId === lastSelectedIdRef.current) {
       return;
@@ -333,23 +332,29 @@ export function useMarkerManagement({
 
     // Reset previous selection
     if (lastSelectedIdRef.current) {
-      const prevData = markersMapRef.current.get(lastSelectedIdRef.current);
+      const prevKey = `restaurant-${lastSelectedIdRef.current}`;
+      const prevData = markersMapRef.current.get(prevKey);
       if (prevData?.marker) {
         // Reset marker to default appearance
         if ('setZIndex' in prevData.marker) {
           (prevData.marker as any).setZIndex(1);
         }
+        // Note: For full visual update (color change), would need marker content update
+        // Currently only updating z-index for performance
       }
     }
 
     // Highlight new selection
     if (selectedRestaurantId) {
-      const data = markersMapRef.current.get(selectedRestaurantId.toString());
+      const selectedKey = `restaurant-${selectedRestaurantId}`;
+      const data = markersMapRef.current.get(selectedKey);
       if (data?.marker) {
         // Highlight the selected marker
         if ('setZIndex' in data.marker) {
           (data.marker as any).setZIndex(1000);
         }
+        // Note: For full visual update (color change), would need marker content update
+        // Currently only updating z-index for performance
       }
     }
 

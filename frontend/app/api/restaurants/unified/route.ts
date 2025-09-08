@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
     const p = (async (): Promise<{ payload: any; headers: Record<string, string>; status?: number }> => {
       // Get backend URL
       const _backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
-      console.log('DEBUG: Backend URL:', _backendUrl);
       
       // Build unified backend request parameters
       const backendParams = new URLSearchParams();
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
         'limit', 'offset', 'search', 'city', 'state', 'certifying_agency', 
         'kosher_category', 'is_cholov_yisroel', 'listing_type', 'price_min', 
         'price_max', 'min_rating', 'has_reviews', 'open_now', 'status', 
-        'lat', 'lng', 'max_distance_mi', 'sortBy', 'dietary',
+        'lat', 'lng', 'max_distance_mi', 'sortBy', 'dietary', 'include_reviews',
         // Forward viewport bounds for map-based loading
         'bounds_ne_lat', 'bounds_ne_lng', 'bounds_sw_lat', 'bounds_sw_lng'
       ];
@@ -68,17 +67,13 @@ export async function GET(request: NextRequest) {
       });
 
               // Make single unified backend call
-              const fullUrl = `${_backendUrl}/api/restaurants?${backendParams.toString()}`;
-              console.log('DEBUG: Calling backend URL:', fullUrl);
-              const backendResponse = await fetch(fullUrl, {
+              const backendResponse = await fetch(`${_backendUrl}/api/restaurants?${backendParams.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      console.log('DEBUG: Backend response status:', backendResponse.status);
       if (!backendResponse.ok) {
-        console.log('DEBUG: Backend call failed, using fallback');
         // Fallback to separate calls if unified endpoint doesn't exist
         return await fallbackToSeparateCalls(searchParams, _backendUrl);
       }
@@ -86,8 +81,9 @@ export async function GET(request: NextRequest) {
       const backendData = await backendResponse.json();
       
       // Debug logging to see what rating data we're getting from backend
-      if (process.env.NODE_ENV === 'development' && backendData.restaurants && backendData.restaurants.length > 0) {
-        const firstRestaurant = backendData.restaurants[0];
+      const items = backendData.items || backendData.restaurants || [];
+      if (process.env.NODE_ENV === 'development' && items.length > 0) {
+        const firstRestaurant = items[0];
         console.log('Backend restaurant data sample:', {
           name: firstRestaurant.name,
           id: firstRestaurant.id,
@@ -102,16 +98,19 @@ export async function GET(request: NextRequest) {
       }
       
       // Transform response to match frontend expectations
+      // Backend returns 'items' array, but frontend expects 'restaurants'
+      const restaurants = backendData.items || backendData.restaurants || [];
+      
       const unifiedResponse = {
         success: true,
         data: {
-          restaurants: backendData.restaurants || [],
+          restaurants,
           filterOptions: backendData.filterOptions || {},
           pagination: {
-            total: backendData.total || 0,
+            total: backendData.total || restaurants.length,
             limit: parseInt(searchParams.get('limit') || '24'),
             offset: parseInt(searchParams.get('offset') || '0'),
-            hasMore: backendData.hasMore || false
+            hasMore: !!backendData.next_cursor || false
           }
         },
         message: 'Unified data retrieved successfully'

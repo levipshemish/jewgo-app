@@ -301,39 +301,38 @@ function EateryIdPageContent() {
           phone_number: restaurantData.phone_number || '',
           listing_type: restaurantData.listing_type || 'restaurant',
           rating: (() => {
-            // First try the main rating fields
+            // Use google_rating as primary source for consistency with grid
             let finalRating = restaurantData.google_rating ?? restaurantData.rating ?? restaurantData.star_rating ?? restaurantData.quality_rating;
             
-            // If no rating found, calculate from Google reviews
-            if (finalRating === null || finalRating === undefined) {
-              if (restaurantData.google_reviews) {
-                try {
-                  console.log('Google reviews data type:', typeof restaurantData.google_reviews);
-                  console.log('Google reviews data:', restaurantData.google_reviews);
+            // Only calculate from Google reviews if no rating fields are available
+            if ((finalRating === null || finalRating === undefined) && restaurantData.google_reviews) {
+              try {
+                console.log('Google reviews data type:', typeof restaurantData.google_reviews);
+                console.log('Google reviews data:', restaurantData.google_reviews);
+                
+                const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
+                const googleReviewsData = parseGoogleReviews(restaurantData.google_reviews);
+                
+                const reviewsArray = !googleReviewsData
+                  ? []
+                  : Array.isArray(googleReviewsData)
+                  ? googleReviewsData
+                  : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)
+                      ? googleReviewsData.reviews
+                      : []);
+                
+                if (reviewsArray.length > 0) {
+                  const validRatings = reviewsArray
+                    .map((review: any) => review.rating)
+                    .filter((rating: any) => typeof rating === 'number' && rating > 0);
                   
-                  const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
-                  const googleReviewsData = parseGoogleReviews(restaurantData.google_reviews);
-                  
-                  const reviewsArray = !googleReviewsData
-                    ? []
-                    : Array.isArray(googleReviewsData)
-                      ? googleReviewsData
-                      : (googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)
-                          ? googleReviewsData.reviews
-                          : []);
-                  
-                  if (reviewsArray.length > 0) {
-                    const validRatings = reviewsArray
-                      .map((review: any) => review.rating)
-                      .filter((rating: any) => typeof rating === 'number' && rating > 0);
-                    
-                    if (validRatings.length > 0) {
-                      finalRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
-                    }
+                  if (validRatings.length > 0) {
+                    finalRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
+                    console.log('Calculated rating from Google reviews as fallback:', finalRating);
                   }
-                } catch (err) {
-                  console.error('Error calculating rating from Google reviews:', err);
                 }
+              } catch (err) {
+                console.error('Error calculating rating from Google reviews:', err);
               }
             }
             
@@ -430,7 +429,16 @@ function EateryIdPageContent() {
         
         // Debug logging for rating and reviews
         console.log('=== RATING AND REVIEWS DEBUG ===');
-        console.log('eateryData.rating:', eateryData.rating);
+        console.log('Restaurant data rating fields:', {
+          id: restaurantData.id,
+          name: restaurantData.name,
+          google_rating: restaurantData.google_rating,
+          rating: restaurantData.rating,
+          star_rating: restaurantData.star_rating,
+          quality_rating: restaurantData.quality_rating,
+          hasGoogleReviews: !!restaurantData.google_reviews
+        });
+        console.log('Final eateryData.rating:', eateryData.rating);
         console.log('eateryData.google_reviews:', eateryData.google_reviews);
         console.log('===============================');
       } catch (err) {

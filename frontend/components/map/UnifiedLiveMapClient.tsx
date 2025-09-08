@@ -453,11 +453,14 @@ export default function UnifiedLiveMapClient() {
       setLoading(false);
       lastFetchTime.current = now;
     }
-  }, [startTransition, CACHE_DURATION]);
+  }, []); // Remove dependencies to prevent recreation - startTransition is stable, CACHE_DURATION is constant
 
   // Throttled bounds change handler with movement threshold and per-bounds cooldown
   const lastBoundsRef = useRef<{ ne: { lat: number; lng: number }; sw: { lat: number; lng: number } } | null>(null);
   const lastBoundsFetchTimeByKeyRef = useRef<Map<string, number>>(new Map());
+  const fetchRestaurantsDataRef = useRef(fetchRestaurantsData);
+  fetchRestaurantsDataRef.current = fetchRestaurantsData;
+  
   const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBounds) => {
     // Clear existing timeout
     if (boundsChangeTimeoutRef.current) {
@@ -496,9 +499,9 @@ export default function UnifiedLiveMapClient() {
       }
       lastBoundsRef.current = { ne: { lat: ne.lat(), lng: ne.lng() }, sw: { lat: sw.lat(), lng: sw.lng() } };
       lastBoundsFetchTimeByKeyRef.current.set(boundsKey, nowTs);
-      fetchRestaurantsData(bounds);
+      fetchRestaurantsDataRef.current(bounds);
     }, 650); // debounce ~650ms
-  }, [fetchRestaurantsData]);
+  }, []); // Remove fetchRestaurantsData dependency to prevent recreation
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -527,8 +530,8 @@ export default function UnifiedLiveMapClient() {
 
   // Apply filters via worker
   useEffect(() => {
-    // Don't process if there are no restaurants to filter
-    if (allRestaurants.length === 0) {
+    // Don't process if there are no restaurants to filter or if still loading initial data
+    if (allRestaurants.length === 0 || loading) {
       return;
     }
     
@@ -542,7 +545,7 @@ export default function UnifiedLiveMapClient() {
       },
     };
     throttledPost(message);
-  }, [searchQuery, activeFilters, userLocation, throttledPost]);
+  }, [searchQuery, activeFilters, userLocation, throttledPost, loading]);
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
@@ -779,6 +782,25 @@ export default function UnifiedLiveMapClient() {
           </button>
         </div>
       </div>
+
+      {/* Get Directions Button - Top Right */}
+      {selectedRestaurant && selectedRestaurant.latitude && selectedRestaurant.longitude && (
+        <div className="absolute top-16 right-4 z-20">
+          <button
+            onClick={() => {
+              const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedRestaurant.latitude},${selectedRestaurant.longitude}`;
+              window.open(url, '_blank');
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            title={`Get directions to ${selectedRestaurant.name}`}
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm font-medium">Get Directions</span>
+          </button>
+        </div>
+      )}
 
       {/* Removed Tab Navigation - only showing map view */}
 

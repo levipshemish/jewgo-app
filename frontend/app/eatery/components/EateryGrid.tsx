@@ -83,6 +83,7 @@ export default function EateryGrid({
       // Build API URL with parameters - use direct backend endpoint for cursor-based pagination
       const apiUrl = new URL('https://api.jewgo.app/api/restaurants')
       apiUrl.searchParams.set('limit', limit.toString())
+      apiUrl.searchParams.set('include_reviews', 'true') // Include Google reviews for consistent rating calculation
       
       // Add cursor for pagination
       if (cursor) {
