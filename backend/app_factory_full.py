@@ -1478,96 +1478,32 @@ def create_app(config_class=None):
             #         performance_monitor.record_cache_miss('restaurants')
             # Build cursor-based query with distance sorting
             if lat is not None and lng is not None:
-                # Use PostGIS if available, otherwise fallback to Haversine
-                # Check if PostGIS is available
-                try:
-                    # Try PostGIS KNN approach first
-                    dist_sql = "ST_Distance(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography)"
-                    radius_predicate = ""
-                    if radius_m:
-                        radius_predicate = f" AND ST_DWithin(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography, {radius_m})"
-                    
-                    query = f"""
-                        WITH scored AS (
-                            SELECT id, name, address, city, state, zip_code,
-                                   phone_number, website, kosher_category,
-                                   certifying_agency, price_range, google_rating, google_review_count,
-                                   latitude, longitude, status, created_at, updated_at,
-                                   {dist_sql} AS dist_m
-                            FROM restaurants
-                            WHERE status = 'active' 
-                              AND latitude IS NOT NULL 
-                              AND longitude IS NOT NULL
-                              AND updated_at <= %s
-                              {radius_predicate}
-                        )
-                        SELECT * FROM scored
-                        WHERE (%s IS NULL)
-                           OR (dist_m > %s)
-                           OR (dist_m = %s AND id > %s)
-                        ORDER BY dist_m ASC, id ASC
-                        LIMIT %s
-                    """
-                    params = [lng, lat]  # ST_Point takes lng, lat
-                    if radius_m:
-                        params.extend([lng, lat])  # For ST_DWithin
-                    params.extend([as_of])  # For updated_at filter
-                    params.extend([last_dist_m, last_dist_m, last_dist_m, last_id, limit])
-                    
-                except Exception as e:
-                    logger.warning(f"PostGIS not available, falling back to Haversine: {e}")
-                    # Fallback to Haversine formula
-                    # First, calculate bounding box for prefiltering
-                    if radius_m:
-                        # Convert meters to degrees (approximate)
-                        lat_delta = radius_m / 111000  # 1 degree ≈ 111km
-                        lng_delta = radius_m / (111000 * abs(lat)) if lat != 0 else lat_delta
-                    else:
-                        # Use a large bounding box if no radius specified
-                        lat_delta = 10  # ~10 degrees
-                        lng_delta = 10
-                    
-                    query = f"""
-                        WITH candidates AS (
-                            SELECT id, name, address, city, state, zip_code,
-                                   phone_number, website, kosher_category,
-                                   certifying_agency, price_range, google_rating, google_review_count,
-                                   latitude, longitude, status, created_at, updated_at,
-                                   radians(latitude) AS rlat, radians(longitude) AS rlng,
-                                   radians(%s) AS rlat0, radians(%s) AS rlng0
-                            FROM restaurants
-                            WHERE status = 'active' 
-                              AND latitude IS NOT NULL 
-                              AND longitude IS NOT NULL
-                              AND latitude BETWEEN %s - %s AND %s + %s
-                              AND longitude BETWEEN %s - %s AND %s + %s
-                              AND updated_at <= %s
-                        ),
-                        scored AS (
-                            SELECT id, name, address, city, state, zip_code,
-                                   phone_number, website, kosher_category,
-                                   certifying_agency, price_range, google_rating, google_review_count,
-                                   latitude, longitude, status, created_at, updated_at,
-                                   2 * 6371000 * asin(
-                                       sqrt(
-                                           pow(sin((rlat - rlat0)/2),2) +
-                                           cos(rlat0)*cos(rlat)*pow(sin((rlng - rlng0)/2),2)
-                                       )
-                                   ) AS dist_m
-                            FROM candidates
-                        )
-                        SELECT * FROM scored
-                        WHERE (%s IS NULL)
-                           OR (dist_m > %s)
-                           OR (dist_m = %s AND id > %s)
-                        ORDER BY dist_m ASC, id ASC
-                        LIMIT %s
-                    """
-                    params = [lat, lng,  # For radians calculation
-                             lat, lat_delta, lat, lat_delta,  # Bounding box lat
-                             lng, lng_delta, lng, lng_delta,  # Bounding box lng
-                             as_of,  # For updated_at filter
-                             last_dist_m, last_dist_m, last_dist_m, last_id, limit]
+                # Use PostGIS for efficient distance calculation
+                query = f"""
+                    WITH scored AS (
+                        SELECT id, name, address, city, state, zip_code,
+                               phone_number, website, kosher_category,
+                               certifying_agency, price_range, google_rating, google_review_count,
+                               latitude, longitude, status, created_at, updated_at,
+                               ST_Distance(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography) AS dist_m
+                        FROM restaurants
+                        WHERE status = 'active' 
+                          AND geom IS NOT NULL
+                          AND updated_at <= %s
+                          {f'AND ST_DWithin(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography, {radius_m})' if radius_m else ''}
+                    )
+                    SELECT * FROM scored
+                    WHERE (%s IS NULL)
+                       OR (dist_m > %s)
+                       OR (dist_m = %s AND id > %s)
+                    ORDER BY dist_m ASC, id ASC
+                    LIMIT %s
+                """
+                params = [lng, lat]  # ST_Point takes lng, lat
+                if radius_m:
+                    params.extend([lng, lat])  # For ST_DWithin
+                params.extend([as_of])  # For updated_at filter
+                params.extend([last_dist_m, last_dist_m, last_dist_m, last_id, limit])
             else:
                 # No location provided, fallback to simple query
                 query = """
