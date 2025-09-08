@@ -40,6 +40,7 @@ export default function EateryGrid({
   const [restaurants, setRestaurants] = useState<LightRestaurant[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [backendError, setBackendError] = useState(false)
   const isRetryingRef = useRef(false)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -77,14 +78,18 @@ export default function EateryGrid({
   }, [restaurants, userLocation, transformRestaurant])
 
   // Real API function with cursor-based pagination
-  const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
+  const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, timeoutMs: number = 8000) => {
     try {
-      // Build API URL with parameters - use unified endpoint for now
-      const apiUrl = new URL('/api/restaurants/unified', window.location.origin)
+      // Build API URL with parameters - use direct backend endpoint for cursor-based pagination
+      const apiUrl = new URL('https://api.jewgo.app/api/restaurants')
       apiUrl.searchParams.set('limit', limit.toString())
-      apiUrl.searchParams.set('offset', offset.toString())
       
-      // For cursor-based pagination, we don't use offset
+      // Add cursor for pagination
+      if (cursor) {
+        apiUrl.searchParams.set('cursor', cursor)
+      }
+      
+      // Add location and other parameters
       if (params) {
         const searchParams = new URLSearchParams(params)
         searchParams.forEach((value, key) => {
@@ -113,17 +118,18 @@ export default function EateryGrid({
         throw new Error('Backend service unavailable')
       }
 
-      // Handle unified endpoint response format
-      const responseRestaurants = data.data?.restaurants || []
-      const total = data.data?.total || data.total || 0
-      const hasMoreData = data.data?.hasMore !== undefined ? data.data.hasMore : (offset + limit) < total
+      // Handle cursor-based endpoint response format
+      const responseRestaurants = data.items || []
+      const nextCursor = data.next_cursor
+      const hasMoreData = !!nextCursor
       
-      console.log('fetchRestaurants unified response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData)
+      console.log('fetchRestaurants cursor response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', nextCursor)
       
       return {
         restaurants: responseRestaurants,
         hasMore: hasMoreData,
-        limit: data.data?.limit || limit
+        nextCursor: nextCursor,
+        limit: data.limit || limit
       }
 
     } catch (error) {
@@ -171,10 +177,16 @@ export default function EateryGrid({
       params.set('hoursFilter', activeFilters.hoursFilter);
     }
     
+    // Add location parameters for distance sorting
+    if (userLocation) {
+      params.set('lat', userLocation.latitude.toString())
+      params.set('lng', userLocation.longitude.toString())
+    }
+    
     return params.toString()
-  }, [searchQuery, category, activeFilters])
+  }, [searchQuery, category, activeFilters, userLocation])
 
-  // Load more items using offset-based pagination
+  // Load more items using cursor-based pagination
   const loadMoreItems = useCallback(async () => {
     if (loading || !hasMore) {
       return;
@@ -184,12 +196,16 @@ export default function EateryGrid({
 
     try {
       if (useRealData && !backendError) {
-        // Try real API first with offset-based pagination
-        const currentPage = Math.floor(restaurants.length / 24);
-        const offset = currentPage * 24;
-        const response = await fetchRestaurants(24, offset, buildSearchParams());
-        setRestaurants((prev) => [...prev, ...response.restaurants]);
+        // Try real API first with cursor-based pagination
+        const response = await fetchRestaurants(24, nextCursor || undefined, buildSearchParams());
+        setRestaurants((prev) => {
+          // Deduplicate by id to prevent duplicate restaurants
+          const existingIds = new Set(prev.map(r => r.id));
+          const newRestaurants = response.restaurants.filter(r => !existingIds.has(r.id));
+          return [...prev, ...newRestaurants];
+        });
         setHasMore(response.hasMore);
+        setNextCursor(response.nextCursor || null);
       } else {
         // Use mock data (fallback or when backend is in error state)
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -239,6 +255,7 @@ export default function EateryGrid({
       // Reset state for new data load
       setRestaurants([])
       setHasMore(true)
+      setNextCursor(null)
       setBackendError(false)
       isRetryingRef.current = false
       
@@ -251,10 +268,11 @@ export default function EateryGrid({
         const attemptFetch = async (): Promise<void> => {
           try {
             if (useRealData && currentRetryCount < 3) {
-              // Try real API first with offset-based pagination
-              const response = await fetchRestaurants(24, 0, buildSearchParams())
+              // Try real API first with cursor-based pagination
+              const response = await fetchRestaurants(24, undefined, buildSearchParams())
               setRestaurants(response.restaurants)
               setHasMore(response.hasMore)
+              setNextCursor(response.nextCursor || null)
               isRetryingRef.current = false
             } else {
               // Use mock data (fallback or when useRealData is false or max retries reached)

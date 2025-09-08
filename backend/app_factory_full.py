@@ -483,9 +483,9 @@ def create_app(config_class=None):
         app=app,
         key_func=get_remote_address,
         default_limits=[
-            "1000 per minute",
-            "10000 per hour",
-        ],  # Very high limits for testing
+            "100 per minute",     # Reduced from 1000 for security
+            "1000 per hour",      # Reduced from 10000 for security
+        ],  # Secure production limits
         storage_uri=redis_url,
     )
     # Expose limiter to route modules via bridge
@@ -1484,7 +1484,7 @@ def create_app(config_class=None):
                         SELECT id, name, address, city, state, zip_code,
                                phone_number, website, kosher_category,
                                certifying_agency, price_range, google_rating, google_review_count,
-                               latitude, longitude, status, created_at, updated_at,
+                               latitude, longitude, status, created_at, updated_at, image_url,
                                ST_Distance(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography) AS dist_m
                         FROM restaurants
                         WHERE status = 'active' 
@@ -1505,20 +1505,21 @@ def create_app(config_class=None):
                 params.extend([as_of])  # For updated_at filter
                 params.extend([last_dist_m, last_dist_m, last_dist_m, last_id, limit])
             else:
-                # No location provided, fallback to simple query
+                # No location provided, fallback to simple query with cursor support
                 query = """
                     SELECT id, name, address, city, state, zip_code,
                            phone_number, website, kosher_category,
                            certifying_agency, price_range, google_rating, google_review_count,
-                           latitude, longitude, status, created_at, updated_at,
+                           latitude, longitude, status, created_at, updated_at, image_url,
                            NULL AS dist_m
                     FROM restaurants
                     WHERE status = 'active'
                       AND updated_at <= %s
+                      AND (%s IS NULL OR id > %s)
                     ORDER BY name ASC, id ASC
                     LIMIT %s
                 """
-                params = [as_of, limit]
+                params = [as_of, last_id, last_id, limit]
             # Apply additional filters (simplified for cursor-based approach)
             # Note: For complex filtering, consider moving to a separate endpoint
             # or implementing filter-aware cursor encoding
