@@ -1489,9 +1489,9 @@ def create_app(config_class=None):
                     
                     query = f"""
                         WITH scored AS (
-                            SELECT id, name, address, city, state, zip_code, country,
-                                   phone_number, website, email, cuisine_type, kosher_category,
-                                   certifying_agency, price_range, rating, review_count,
+                            SELECT id, name, address, city, state, zip_code,
+                                   phone_number, website, kosher_category,
+                                   certifying_agency, price_range, google_rating, google_review_count,
                                    latitude, longitude, status, created_at, updated_at,
                                    {dist_sql} AS dist_m
                             FROM restaurants
@@ -1529,9 +1529,9 @@ def create_app(config_class=None):
                     
                     query = f"""
                         WITH candidates AS (
-                            SELECT id, name, address, city, state, zip_code, country,
-                                   phone_number, website, email, cuisine_type, kosher_category,
-                                   certifying_agency, price_range, rating, review_count,
+                            SELECT id, name, address, city, state, zip_code,
+                                   phone_number, website, kosher_category,
+                                   certifying_agency, price_range, google_rating, google_review_count,
                                    latitude, longitude, status, created_at, updated_at,
                                    radians(latitude) AS rlat, radians(longitude) AS rlng,
                                    radians(%s) AS rlat0, radians(%s) AS rlng0
@@ -1544,9 +1544,9 @@ def create_app(config_class=None):
                               AND updated_at <= %s
                         ),
                         scored AS (
-                            SELECT id, name, address, city, state, zip_code, country,
-                                   phone_number, website, email, cuisine_type, kosher_category,
-                                   certifying_agency, price_range, rating, review_count,
+                            SELECT id, name, address, city, state, zip_code,
+                                   phone_number, website, kosher_category,
+                                   certifying_agency, price_range, google_rating, google_review_count,
                                    latitude, longitude, status, created_at, updated_at,
                                    2 * 6371000 * asin(
                                        sqrt(
@@ -1571,9 +1571,9 @@ def create_app(config_class=None):
             else:
                 # No location provided, fallback to simple query
                 query = """
-                    SELECT id, name, address, city, state, zip_code, country,
-                           phone_number, website, email, cuisine_type, kosher_category,
-                           certifying_agency, price_range, rating, review_count,
+                    SELECT id, name, address, city, state, zip_code,
+                           phone_number, website, kosher_category,
+                           certifying_agency, price_range, google_rating, google_review_count,
                            latitude, longitude, status, created_at, updated_at,
                            NULL AS dist_m
                     FROM restaurants
