@@ -56,10 +56,30 @@ export function ListingHeader({
     }
   }
 
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: 'Check out this restaurant!',
+          url: window.location.href
+        })
+        .catch(console.error)
+    } else {
+      navigator.clipboard
+        .writeText(window.location.href)
+        .then(() => {
+          alert('Link copied to clipboard!')
+        })
+        .catch(() => {
+          prompt('Copy this link:', window.location.href)
+        })
+    }
+  }
+
   return (
-    <div className="space-y-2 flex justify-center">
+    <div className="flex justify-center">
       {/* Single header bar with back, tags, kosher info, stats, and action buttons */}
-      <div className="inline-flex items-center gap-1 p-1 sm:p-2 px-2 sm:px-3 bg-white rounded-full mt-6 sm:mt-8">
+      <div className="inline-flex items-center gap-2 p-1 sm:p-2 px-2 sm:px-3 bg-white rounded-full mt-6 sm:mt-8">
         <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 hover:bg-white/50 transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -105,43 +125,25 @@ export function ListingHeader({
           )}
 
           {/* Stats */}
-          <div className="flex items-center gap-1">
-            {/* View Count */}
-            {viewCount !== undefined && viewCount >= 0 && (
-              <div className="flex items-center gap-1 text-gray-600 text-sm">
-                <Eye className="h-4 w-4" />
-                <span>{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
-              </div>
-            )}
-            
-            {/* Share Button */}
-            {shareCount !== undefined && (
-              <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: 'Check out this restaurant!',
-                      url: window.location.href
-                    }).catch(console.error);
-                  } else {
-                    // Fallback: copy to clipboard
-                    navigator.clipboard.writeText(window.location.href).then(() => {
-                      alert('Link copied to clipboard!');
-                    }).catch(() => {
-                      // Final fallback: prompt
-                      prompt('Copy this link:', window.location.href);
-                    });
-                  }
-                }}
-                className="flex items-center justify-center text-black bg-white h-8 w-8 hover:bg-gray-50 transition-colors rounded -mt-1"
-              >
-                <Share className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+          {viewCount !== undefined && viewCount >= 0 && (
+            <div className="flex items-center gap-1 text-gray-600 text-sm">
+              <Eye className="h-4 w-4" />
+              <span>{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          {shareCount !== undefined && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShare}
+              className="h-8 w-8 hover:bg-white/50 transition-colors"
+            >
+              <Share className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -149,7 +151,11 @@ export function ListingHeader({
             className="h-8 w-8 hover:bg-white/50 transition-colors group"
           >
             <Heart
-              className={`h-4 w-4 transition-colors ${isFavorited ? "fill-red-500 text-red-500" : "text-gray-700 group-hover:fill-red-500 group-hover:text-red-500"}`}
+              className={`h-4 w-4 transition-colors ${
+                isFavorited
+                  ? 'fill-red-500 text-red-500'
+                  : 'text-gray-700 group-hover:fill-red-500 group-hover:text-red-500'
+              }`}
             />
           </Button>
         </div>

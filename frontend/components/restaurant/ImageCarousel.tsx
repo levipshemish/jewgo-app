@@ -186,8 +186,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
           ))}
         </div>
 
-        {/* Image Counter - adjust offsets so it never sits on the white card overlap */}
-        <div className="absolute bottom-8 sm:bottom-10 md:bottom-20 lg:bottom-24 xl:bottom-28 right-4 bg-black bg-opacity-50 text-white dynamic-spacing-sm dynamic-rounded-md dynamic-text-xs font-medium z-20">
+        {/* Image Counter */}
+        <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white dynamic-spacing-sm dynamic-rounded-md dynamic-text-xs font-medium z-20">
           {currentIndex + 1}/{allImages.length}
         </div>
 

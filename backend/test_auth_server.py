@@ -37,14 +37,12 @@ def auth_health():
         "timestamp": "2025-09-02T23:27:00.000Z",
         "auth_system": "healthy",
         "components": {
-            "supabase_role_manager": "available",
-            "supabase_auth": "available",
             "environment": {
                 "NODE_ENV": os.getenv("NODE_ENV", "not_set"),
                 "FLASK_ENV": os.getenv("FLASK_ENV", "not_set"),
                 "ADMIN_DEV_BYPASS": os.getenv("ADMIN_DEV_BYPASS", "not_set"),
-                "SUPABASE_URL": "configured" if os.getenv("SUPABASE_URL") else "not_configured",
-                "SUPABASE_ANON_KEY": "configured" if os.getenv("SUPABASE_ANON_KEY") else "not_configured"
+                "POSTGRES_DB": os.getenv("POSTGRES_DB", "not_set"),
+                "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "not_set")
             }
         }
     })
@@ -76,7 +74,7 @@ def get_user_role():
         print(f"Environment: NODE_ENV={os.getenv('NODE_ENV')}, FLASK_ENV={os.getenv('FLASK_ENV')}, ADMIN_DEV_BYPASS={os.getenv('ADMIN_DEV_BYPASS')}")
         
         # For now, return a mock admin role for any valid token
-        # This allows testing without complex Supabase integration
+        # This allows testing without external integrations
         return jsonify({
             "success": True,
             "role": "super_admin",

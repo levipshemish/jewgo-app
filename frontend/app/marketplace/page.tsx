@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs } from '@/components/core';
@@ -8,6 +8,8 @@ import { ActionButtons } from '@/components/layout';
 import { ShulBottomNavigation } from '@/components/shuls';
 import Card from '@/components/core/cards/Card';
 import { generateMockShtetl, type MockShtetl } from '@/lib/mockData/shtetl';
+import { useLocationData } from '@/hooks/useLocationData';
+import LocationAwarePage from '@/components/LocationAwarePage';
 
 // Types
 interface MarketplaceListing {
@@ -42,12 +44,14 @@ interface MarketplaceResponse {
 }
 
 // Fetch marketplace listings
-async function fetchMarketplaceListings(limit: number = 50, offset: number = 0): Promise<MarketplaceListing[]> {
+async function fetchMarketplaceListings(limit: number = 50, offset: number = 0, userLocation?: { latitude: number; longitude: number } | null): Promise<MarketplaceListing[]> {
   try {
     const params = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),
     });
+
+    // Note: Distance sorting is now handled client-side for reliability
 
     // Use unified API endpoint
     const { unifiedApiCall } = await import('@/lib/utils/unified-api');
@@ -115,7 +119,7 @@ function mapMarketplaceToListingData(listing: MarketplaceListing) {
   };
 }
 
-export default function MarketplacePage() {
+function MarketplacePageContent() {
   const router = useRouter();
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,13 +129,23 @@ export default function MarketplacePage() {
   const [showFilters, setShowFilters] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Use the new location data hook
+  const {
+    userLocation,
+    isLoading: _locationLoading,
+    requestLocation: _requestLocation,
+    getItemDisplayText: _getItemDisplayText
+  } = useLocationData({
+    fallbackText: 'Get Location'
+  });
+
   // Load marketplace listings
-  const loadListings = async () => {
+  const loadListings = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       setBackendError(false);
-      const data = await fetchMarketplaceListings(50, 0);
+      const data = await fetchMarketplaceListings(50, 0, userLocation);
       setListings(data);
     } catch (err) {
       console.error('Error loading marketplace listings:', err);
@@ -147,11 +161,11 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userLocation]);
 
   useEffect(() => {
     loadListings();
-  }, []);
+  }, [loadListings]);
 
   // Handle search
   const handleSearch = (query: string) => {
@@ -371,5 +385,13 @@ export default function MarketplacePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <LocationAwarePage showLocationPrompt={true}>
+      <MarketplacePageContent />
+    </LocationAwarePage>
   );
 }

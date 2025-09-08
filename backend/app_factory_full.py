@@ -194,29 +194,6 @@ def _configure_logging() -> None:
     """Configure structured logging using unified logging configuration."""
     configure_logging()
 
-def _validate_supabase_config() -> None:
-    """Validate that Supabase authentication configuration is present."""
-    try:
-        required_supabase_vars = {
-            'SUPABASE_URL': os.environ.get('SUPABASE_URL'),
-            'SUPABASE_SERVICE_ROLE_KEY': os.environ.get('SUPABASE_SERVICE_ROLE_KEY'),
-            'SUPABASE_JWT_SECRET': os.environ.get('SUPABASE_JWT_SECRET'),
-        }
-        
-        missing_vars = [var for var, value in required_supabase_vars.items() if not value]
-        
-        if missing_vars:
-            logger.warning(
-                f"Missing Supabase configuration variables: {', '.join(missing_vars)}. "
-                "Admin authentication may not work properly."
-            )
-        else:
-            logger.info("Supabase authentication configuration validated successfully")
-            
-        # Legacy admin token check removed - feature has been deprecated
-            
-    except Exception as e:
-        logger.error(f"Error validating Supabase configuration: {e}")
 def _load_dependencies():
     """Load all required dependencies."""
     # Get logger for this function
@@ -276,8 +253,7 @@ def create_app(config_class=None):
     # Configure logging
     _configure_logging()
     
-    # Validate Supabase authentication configuration
-    _validate_supabase_config()
+    # Using PostgreSQL auth exclusively
     # Import required decorators early to avoid NameError
     try:
         from utils.feature_flags import require_feature_flag
@@ -298,25 +274,9 @@ def create_app(config_class=None):
     except Exception as e:
         logger.warning(f"Failed to register user context cleanup: {e}")
 
-    # Pre-warm JWKS and schedule refresh (guarded)
-    try:
-        from utils.supabase_auth import supabase_auth
-        # Pre-warm JWKS cache on startup
-        supabase_auth.pre_warm_jwks()
-        # Schedule periodic refresh if APScheduler available
-        supabase_auth.schedule_jwks_refresh()
-        logger.info("JWKS pre-warm and refresh scheduling initialized")
-    except Exception as e:
-        logger.warning(f"JWKS pre-warm/refresh setup failed: {e}")
+    # Legacy external JWKS integration removed
 
-    # Start admin role cache invalidation listener (guarded by env/psycopg2)
-    try:
-        from utils.supabase_role_manager import get_role_manager
-        rm = get_role_manager()
-        rm.start_cache_invalidation_listener()
-        logger.info("Admin role cache invalidation listener started (if enabled)")
-    except Exception as e:
-        logger.warning(f"Admin role cache invalidation listener not started: {e}")
+    # Legacy external role manager removed
     # Debug routes removed to avoid conflicts
     # Temporarily disable middleware for debugging
     # @app.before_request
@@ -1437,34 +1397,46 @@ def create_app(config_class=None):
     # API Routes
     @app.route("/api/restaurants", methods=["GET"])
     def get_restaurants():
-        """Get restaurants with advanced filtering and caching"""
+        """Get restaurants with cursor-based pagination and distance sorting"""
         try:
             start_time = datetime.now()
             # Parse and validate query parameters
             lat = request.args.get("lat", type=float)
             lng = request.args.get("lng", type=float)
-            max_distance_mi = request.args.get("max_distance_mi", type=float)
-            # Parse pagination parameters with explicit type conversion
+            radius_m = request.args.get("radius_m", type=float)  # radius in meters
+            cursor = request.args.get("cursor", type=str)
+            
+            # Parse pagination parameters
             try:
-                limit = int(request.args.get("limit", 50))
+                limit = min(int(request.args.get("limit", 30)), 100)  # Cap at 100
             except (ValueError, TypeError):
-                limit = 50
-            try:
-                page = int(request.args.get("page", 1))
-            except (ValueError, TypeError):
-                page = 1
-            try:
-                offset = int(request.args.get("offset", 0))
-            except (ValueError, TypeError):
-                offset = 0
-            # Calculate offset from page if page is provided
-            if page and page > 1:
-                offset = (page - 1) * limit
+                limit = 30
+            
+            # Decode cursor if provided
+            last_dist_m = None
+            last_id = None
+            as_of = None
+            if cursor:
+                try:
+                    import base64
+                    import json
+                    cursor_data = json.loads(base64.b64decode(cursor).decode('utf-8'))
+                    last_dist_m = cursor_data.get('dist_m')
+                    last_id = cursor_data.get('id')
+                    as_of = cursor_data.get('as_of')
+                except Exception as e:
+                    logger.warning(f"Invalid cursor: {e}")
+                    cursor = None
+            
+            # Set as_of timestamp for session stability
+            if not as_of:
+                from datetime import datetime
+                as_of = datetime.utcnow().isoformat() + 'Z'
             # Build cache key
             cache_key = f"restaurants:{request.query_string.decode()}"
             # Debug logging for pagination
             logger.info(
-                f"Pagination debug - page: {page}, limit: {limit}, offset: {offset}"
+                f"Cursor pagination - limit: {limit}, cursor: {cursor is not None}, lat: {lat}, lng: {lng}"
             )
             logger.info(f"Cache key: {cache_key}")
             logger.info(f"Request args: {dict(request.args)}")
@@ -1505,111 +1477,121 @@ def create_app(config_class=None):
             # 
             #     if 'performance_monitor' in locals():
             #         performance_monitor.record_cache_miss('restaurants')
-            # Build base query
-            query = "SELECT * FROM restaurants WHERE 1=1"
-            count_query = "SELECT COUNT(*) FROM restaurants WHERE 1=1"
-            params = []
-            count_params = []
-            # Apply distance filtering if coordinates provided
-            if lat is not None and lng is not None and max_distance_mi:
-                # Convert miles to meters for earth_distance function (1 mile = 1609.34 meters)
-                max_distance_meters = max_distance_mi * 1609.34
-                # Add distance calculation to SELECT
-                query = query.replace(
-                    "SELECT *",
-                    "SELECT *, (earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) / 1609.34) as distance_mi",
-                )
-                params.extend([lat, lng])
-                # Add distance filter to WHERE clause
-                query += " AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) <= %s"
-                params.extend([lat, lng, max_distance_meters])
-                # Apply same filter to count query
-                count_query += " AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) <= %s"
-                count_params.extend([lat, lng, max_distance_meters])
-                # Log distance filtering for monitoring
-                if hasattr(locals(), "performance_monitor"):
-                    performance_monitor.record_distance_filtering(
-                        lat, lng, max_distance_mi
-                    )
-            # Apply open now filtering
-            if open_now:
-                # For now, skip open_now filtering as it requires complex time/timezone logic
-                # TODO: Implement proper open now filtering based on restaurant hours
-                pass
-            # Apply additional filters from request
-            search_term = request.args.get("search")
-            if search_term:
-                search_pattern = f"%{search_term}%"
-                query += (
-                    " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
-                )
-                params.extend([search_pattern, search_pattern, search_pattern])
-                count_query += (
-                    " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
-                )
-                count_params.extend([search_pattern, search_pattern, search_pattern])
-            certifying_agency = request.args.get("certifying_agency")
-            if certifying_agency:
-                query += " AND certifying_agency = %s"
-                params.append(certifying_agency)
-                count_query += " AND certifying_agency = %s"
-                count_params.append(certifying_agency)
-            kosher_category = request.args.get("kosher_category")
-            if kosher_category:
-                query += " AND kosher_category = %s"
-                params.append(kosher_category)
-                count_query += " AND kosher_category = %s"
-                count_params.append(kosher_category)
-            listing_type = request.args.get("listing_type")
-            if listing_type:
-                query += " AND listing_type = %s"
-                params.append(listing_type)
-                count_query += " AND listing_type = %s"
-                count_params.append(listing_type)
-            min_rating = request.args.get("min_rating", type=float)
-            if min_rating:
-                query += " AND rating >= %s"
-                params.append(min_rating)
-                count_query += " AND rating >= %s"
-                count_params.append(min_rating)
-            price_min = request.args.get("price_min", type=int)
-            if price_min:
-                query += " AND min_avg_meal_cost >= %s"
-                params.append(price_min)
-                count_query += " AND min_avg_meal_cost >= %s"
-                count_params.append(price_min)
-            price_max = request.args.get("price_max", type=int)
-            if price_max:
-                query += " AND max_avg_meal_cost <= %s"
-                params.append(price_max)
-                count_query += " AND max_avg_meal_cost <= %s"
-                count_params.append(price_max)
-            # Add ordering BEFORE limit (correct SQL syntax)
+            # Build cursor-based query with distance sorting
             if lat is not None and lng is not None:
-                query += " ORDER BY distance_mi ASC"
+                # Use PostGIS if available, otherwise fallback to Haversine
+                # Check if PostGIS is available
+                try:
+                    # Try PostGIS KNN approach first
+                    dist_sql = "ST_Distance(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography)"
+                    radius_predicate = ""
+                    if radius_m:
+                        radius_predicate = f" AND ST_DWithin(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography, {radius_m})"
+                    
+                    query = f"""
+                        WITH scored AS (
+                            SELECT id, name, address, city, state, zip_code, country,
+                                   phone_number, website, email, cuisine_type, kosher_category,
+                                   certifying_agency, price_range, rating, review_count,
+                                   latitude, longitude, status, created_at, updated_at,
+                                   {dist_sql} AS dist_m
+                            FROM restaurants
+                            WHERE status = 'active' 
+                              AND latitude IS NOT NULL 
+                              AND longitude IS NOT NULL
+                              AND updated_at <= %s
+                              {radius_predicate}
+                        )
+                        SELECT * FROM scored
+                        WHERE (%s IS NULL)
+                           OR (dist_m > %s)
+                           OR (dist_m = %s AND id > %s)
+                        ORDER BY dist_m ASC, id ASC
+                        LIMIT %s
+                    """
+                    params = [lng, lat]  # ST_Point takes lng, lat
+                    if radius_m:
+                        params.extend([lng, lat])  # For ST_DWithin
+                    params.extend([as_of])  # For updated_at filter
+                    params.extend([last_dist_m, last_dist_m, last_dist_m, last_id, limit])
+                    
+                except Exception as e:
+                    logger.warning(f"PostGIS not available, falling back to Haversine: {e}")
+                    # Fallback to Haversine formula
+                    # First, calculate bounding box for prefiltering
+                    if radius_m:
+                        # Convert meters to degrees (approximate)
+                        lat_delta = radius_m / 111000  # 1 degree ≈ 111km
+                        lng_delta = radius_m / (111000 * abs(lat)) if lat != 0 else lat_delta
+                    else:
+                        # Use a large bounding box if no radius specified
+                        lat_delta = 10  # ~10 degrees
+                        lng_delta = 10
+                    
+                    query = f"""
+                        WITH candidates AS (
+                            SELECT id, name, address, city, state, zip_code, country,
+                                   phone_number, website, email, cuisine_type, kosher_category,
+                                   certifying_agency, price_range, rating, review_count,
+                                   latitude, longitude, status, created_at, updated_at,
+                                   radians(latitude) AS rlat, radians(longitude) AS rlng,
+                                   radians(%s) AS rlat0, radians(%s) AS rlng0
+                            FROM restaurants
+                            WHERE status = 'active' 
+                              AND latitude IS NOT NULL 
+                              AND longitude IS NOT NULL
+                              AND latitude BETWEEN %s - %s AND %s + %s
+                              AND longitude BETWEEN %s - %s AND %s + %s
+                              AND updated_at <= %s
+                        ),
+                        scored AS (
+                            SELECT id, name, address, city, state, zip_code, country,
+                                   phone_number, website, email, cuisine_type, kosher_category,
+                                   certifying_agency, price_range, rating, review_count,
+                                   latitude, longitude, status, created_at, updated_at,
+                                   2 * 6371000 * asin(
+                                       sqrt(
+                                           pow(sin((rlat - rlat0)/2),2) +
+                                           cos(rlat0)*cos(rlat)*pow(sin((rlng - rlng0)/2),2)
+                                       )
+                                   ) AS dist_m
+                            FROM candidates
+                        )
+                        SELECT * FROM scored
+                        WHERE (%s IS NULL)
+                           OR (dist_m > %s)
+                           OR (dist_m = %s AND id > %s)
+                        ORDER BY dist_m ASC, id ASC
+                        LIMIT %s
+                    """
+                    params = [lat, lng,  # For radians calculation
+                             lat, lat_delta, lat, lat_delta,  # Bounding box lat
+                             lng, lng_delta, lng, lng_delta,  # Bounding box lng
+                             as_of,  # For updated_at filter
+                             last_dist_m, last_dist_m, last_dist_m, last_id, limit]
             else:
-                query += " ORDER BY name ASC"
-            # Apply limit from request or use defaults based on optimization mode
-            if limit:
-                # Use explicit limit from request
-                query += f" LIMIT {min(limit, 1000)}"  # Cap at 1000 for safety
-            elif mobile_optimized:
-                if low_power_mode:
-                    # Reduce result set for low power mode
-                    query += " LIMIT 20"
-                elif slow_connection:
-                    # Reduce result set for slow connections
-                    query += " LIMIT 30"
-                else:
-                    # Default mobile optimization
-                    query += " LIMIT 50"
-            else:
-                # Desktop optimization
-                query += " LIMIT 100"
-            # Add offset for pagination
-            if offset > 0:
-                query += f" OFFSET {offset}"
-            # Execute query
+                # No location provided, fallback to simple query
+                query = """
+                    SELECT id, name, address, city, state, zip_code, country,
+                           phone_number, website, email, cuisine_type, kosher_category,
+                           certifying_agency, price_range, rating, review_count,
+                           latitude, longitude, status, created_at, updated_at,
+                           NULL AS dist_m
+                    FROM restaurants
+                    WHERE status = 'active'
+                      AND updated_at <= %s
+                    ORDER BY name ASC, id ASC
+                    LIMIT %s
+                """
+                params = [as_of, limit]
+            # Apply additional filters (simplified for cursor-based approach)
+            # Note: For complex filtering, consider moving to a separate endpoint
+            # or implementing filter-aware cursor encoding
+            
+            # Execute the query
+            logger.info(f"Executing query: {query}")
+            logger.info(f"Query params: {params}")
+            
             db_manager = get_db_manager()
             if not db_manager:
                 return (
@@ -1618,91 +1600,54 @@ def create_app(config_class=None):
                     ),
                     503,
                 )
-            with db_manager.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    # Debug logging
-                    logger.info(f"Executing query: {query}")
-                    logger.info(f"With params: {params}")
-                    logger.info(f"Final SQL with LIMIT/OFFSET: {query}")
-                    # Execute count query first to get total
-                    cursor.execute(count_query, count_params)
-                    total_count = cursor.fetchone()[0]
-                    # Execute main query
+            
+            with db_manager.connection_manager.get_connection() as conn:
+                cursor = conn.cursor()
                     cursor.execute(query, params)
-                    restaurants = cursor.fetchall()
-                    logger.info(
-                        f"Query returned {len(restaurants)} restaurants out of {total_count} total"
-                    )
-                    # Convert to list of dictionaries
+                rows = cursor.fetchall()
+                
+                # Get column names
                     columns = [desc[0] for desc in cursor.description]
-                    restaurants_data = []
-                    for row in restaurants:
-                        restaurant_dict = dict(zip(columns, row))
-                        # Format distance if available
-                        if "distance_mi" in restaurant_dict:
-                            # Format distance to 1 decimal place
-                            distance = restaurant_dict["distance_mi"]
-                            if distance < 1:
-                                restaurant_dict["distance_formatted"] = (
-                                    f"{distance * 5280:.0f} ft"
-                                )
-                            else:
-                                restaurant_dict["distance_formatted"] = (
-                                    f"{distance:.1f} mi"
-                                )
-                        # Check open now status if not already filtered
-                        if not open_now and restaurant_dict.get("hours_structured"):
-                            # TODO: Implement is_open_now logic
-                            restaurant_dict["is_open_now"] = None
-                        restaurants_data.append(restaurant_dict)
-            # Prepare response
+                
+                # Convert rows to dictionaries
+                restaurants = []
+                for row in rows:
+                    restaurant = dict(zip(columns, row))
+                    restaurants.append(restaurant)
+                
+                # Generate next cursor if we have a full page
+                next_cursor = None
+                if len(restaurants) == limit and restaurants:
+                    last_restaurant = restaurants[-1]
+                    import base64
+                    import json
+                    cursor_data = {
+                        "dist_m": last_restaurant.get('dist_m'),
+                        "id": last_restaurant['id'],
+                        "lat": lat,
+                        "lng": lng,
+                        "as_of": as_of
+                    }
+                    next_cursor = base64.b64encode(json.dumps(cursor_data).encode('utf-8')).decode('utf-8')
+                
+                # Build response
             response_data = {
                 "success": True,
-                "data": restaurants_data,
-                "count": len(restaurants_data),
-                "total": total_count,  # Add total count for pagination
-                "page": page,
-                "limit": limit or 50,
-                "offset": offset,
-                "filters_applied": {
-                    "distance_filtering": lat is not None
-                    and lng is not None
-                    and max_distance_mi,
-                    "open_now": open_now,
-                    "mobile_optimized": mobile_optimized,
-                    "low_power_mode": low_power_mode,
-                    "slow_connection": slow_connection,
-                },
-                "performance": {
-                    "query_time_ms": (datetime.now() - start_time).total_seconds()
-                    * 1000,
-                    "cache_hit": False,
-                },
-            }
-            logger.info(f"Returning {len(restaurants_data)} restaurants to frontend")
-            logger.info(f"Response data keys: {list(response_data.keys())}")
-            logger.info(
-                f"Response page: {response_data.get('page')}, limit: {response_data.get('limit')}, offset: {response_data.get('offset')}"
-            )
-            # Cache the result (skip if redis_cache not available)
-            # if 'redis_cache' in locals():
-            #     redis_cache.set(cache_key, response_data, ttl=300)  # 5 minutes
-            # Send real-time update via WebSocket (skip if service not available)
-            if "websocket_service" in locals():
-                websocket_service.broadcast_to_room(
-                    "restaurant_updates",
-                    {
-                        "type": "restaurant_list_update",
-                        "data": {
-                            "count": len(restaurants_data),
-                            "filters_applied": response_data["filters_applied"],
-                        },
-                    },
-                )
+                    "items": restaurants,
+                    "next_cursor": next_cursor,
+                    "origin": {"lat": lat, "lng": lng} if lat and lng else None,
+                    "as_of": as_of,
+                    "limit": limit
+                }
+                
+                # Log performance
+                execution_time = (datetime.now() - start_time).total_seconds()
+                logger.info(f"Query executed in {execution_time:.3f}s, returned {len(restaurants)} items")
+                
             return jsonify(response_data)
+                
         except Exception as e:
-            logger.error(f"Error fetching restaurants: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(f"Error in get_restaurants: {e}")
             return (
                 jsonify(
                     {

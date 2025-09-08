@@ -1,6 +1,6 @@
 """
 Authentication models for PostgreSQL-based authentication system (Version 2).
-This version works alongside existing NextAuth tables without conflicts.
+Designed to operate independently from legacy NextAuth tables.
 """
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Table
@@ -21,7 +21,7 @@ jewgo_user_roles = Table(
 )
 
 class JewGoUser(Base):
-    """JewGo User model for authentication (separate from existing NextAuth users)."""
+    """JewGo User model for authentication (independent schema)."""
     __tablename__ = 'jewgo_users'
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

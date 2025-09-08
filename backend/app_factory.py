@@ -55,7 +55,7 @@ def create_app():
     except Exception as e:
         logger.warning(f"Failed to load config.env: {e}")
     
-    # Legacy Supabase JWKS/role manager hooks removed
+    # Legacy external JWKS/role manager hooks removed
     
     app = Flask(__name__)
 

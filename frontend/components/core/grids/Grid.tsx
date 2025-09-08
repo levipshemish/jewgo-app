@@ -107,7 +107,7 @@ export default function Grid({
   const [backendError, setBackendError] = useState(false)
   const isRetryingRef = useRef(false)
 
-  // Real API function for synagogues with offset-based pagination for infinite scroll
+  // Real API function with cursor-based pagination
   const fetchItems = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
       // Build API URL with parameters based on data type - use unified endpoints
@@ -168,9 +168,9 @@ export default function Grid({
       
       return {
         items: data.synagogues || data.products || data.listings || data.data?.restaurants || [],
-        total,
+        total: total,
         hasMore: hasMoreData,
-        limit: data.limit || limit,
+        limit: limit,
         cached: result.cached || false,
         performance: result.performance
       }
@@ -189,14 +189,30 @@ export default function Grid({
     }
   }, [dataType])
 
-  // Build search parameters for API calls
-  const buildSearchParams = useCallback(() => {
+  // Build search parameters for cursor-based API calls
+  const buildSearchParams = useCallback((cursor?: string) => {
     const params = new URLSearchParams()
     
+    // Add location parameters for distance sorting
+    if (userLocation) {
+      params.set('lat', userLocation.latitude.toString())
+      params.set('lng', userLocation.longitude.toString())
+    }
+    
+    // Add cursor for pagination
+    if (cursor) {
+      params.set('cursor', cursor)
+    }
+    
+    // Set limit
+    params.set('limit', '30')
+    
+    // Add search query
     if (searchQuery && searchQuery.trim() !== '') {
       params.append('search', searchQuery.trim())
     }
     
+    // Add category filter
     if (category && category !== 'all') {
       if (dataType === 'shuls') {
         params.append('denomination', category)
@@ -219,8 +235,11 @@ export default function Grid({
       }
     }
     
-    return params.toString()
-  }, [searchQuery, category, activeFilters, dataType])
+    const paramString = params.toString();
+    console.log('Search params:', paramString);
+    console.log('User location:', userLocation);
+    return paramString
+  }, [searchQuery, category, activeFilters, dataType, userLocation])
 
   // Load more items in batches of 24
   const loadMoreItems = useCallback(async () => {
@@ -240,7 +259,16 @@ export default function Grid({
         console.log('Loading more items - page:', currentPage, 'offset:', offset);
         const response = await fetchItems(24, offset, buildSearchParams());
         console.log('API response - hasMore:', response.hasMore, 'items count:', response.items.length);
-        setItems((prev) => [...prev, ...response.items]);
+        console.log('Current items count before adding:', items.length);
+        console.log('New items IDs:', response.items.map((item: any) => item.id));
+        setItems((prev) => {
+          // Deduplicate items by ID to prevent duplicates
+          const existingIds = new Set(prev.map(item => item.id));
+          const uniqueNewItems = response.items.filter((item: any) => !existingIds.has(item.id));
+          const newItems = [...prev, ...uniqueNewItems];
+          console.log('Total items after adding (deduplicated):', newItems.length);
+          return newItems;
+        });
         setHasMore(response.hasMore);
         setPage((prev) => prev + 1);
       } else {
@@ -276,7 +304,12 @@ export default function Grid({
         }
       }
       
-      setItems((prev) => [...prev, ...newItems]);
+      setItems((prev) => {
+        // Deduplicate items by ID to prevent duplicates
+        const existingIds = new Set(prev.map(item => item.id));
+        const uniqueNewItems = newItems.filter((item: any) => !existingIds.has(item.id));
+        return [...prev, ...uniqueNewItems];
+      });
       setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
       setPage((prev) => prev + 1);
     } finally {
@@ -300,13 +333,14 @@ export default function Grid({
       
       const attemptFetch = async (): Promise<void> => {
         try {
-          if (useRealData && currentRetryCount < 3) {
-            const response = await fetchItems(24, 0, buildSearchParams())
-            console.log('Initial load - API response - hasMore:', response.hasMore, 'items count:', response.items.length);
-            setItems(response.items)
-            setHasMore(response.hasMore)
-            isRetryingRef.current = false
-            setPage(1)
+            if (useRealData && currentRetryCount < 3) {
+              const response = await fetchItems(24, 0, buildSearchParams())
+              console.log('Initial load - API response - hasMore:', response.hasMore, 'items count:', response.items.length);
+              console.log('Initial items IDs:', response.items.map((item: any) => item.id));
+              setItems(response.items)
+              setHasMore(response.hasMore)
+              isRetryingRef.current = false
+              setPage(1)
           } else {
             await new Promise((resolve) => setTimeout(resolve, 1000))
             const mockItems = generateMockShuls(24)
@@ -335,7 +369,6 @@ export default function Grid({
             const mockItems = generateMockShuls(24)
             setItems(mockItems)
             setHasMore(true)
-            setPage(1)
             return
           }
           
@@ -349,10 +382,10 @@ export default function Grid({
             console.log('Backend unreachable after 3 attempts, switching to mock data')
             setBackendError(true)
             
-            const mockItems = generateMockShuls(24)
-            setItems(mockItems)
-            setHasMore(true)
-            setPage(1)
+              const mockItems = generateMockShuls(24)
+              setItems(mockItems)
+              setHasMore(true)
+              setPage(1)
           }
         }
       }
@@ -362,7 +395,7 @@ export default function Grid({
     }
     
     loadInitialItems()
-  }, [category, searchQuery, useRealData, buildSearchParams, fetchItems, activeFilters])
+  }, [category, searchQuery, useRealData, fetchItems, activeFilters, userLocation, buildSearchParams])
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
@@ -468,6 +501,9 @@ export default function Grid({
     return true
   })
 
+  // Backend handles distance sorting, so we use filteredItems directly
+  const sortedItems = filteredItems
+
   // Handle card click
   const handleCardClick = (item: any) => {
     if (onCardClick) {
@@ -479,7 +515,7 @@ export default function Grid({
     }
   }
 
-  if (filteredItems.length === 0 && !loading) {
+  if (sortedItems.length === 0 && !loading) {
     return (
       <div className="text-center py-12">
         <Search className="mx-auto h-12 w-12 text-gray-400" />
@@ -516,7 +552,7 @@ export default function Grid({
       
       {/* Grid Layout */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {filteredItems.map((item, index) => (
+        {sortedItems.map((item: any, index: number) => (
           <div key={`item-${item.id}-${index}`}>
             <Card
               data={transformItem(item)}
@@ -538,7 +574,7 @@ export default function Grid({
       )}
 
       {/* Load More Button */}
-      {hasMore && !loading && filteredItems.length > 0 && (
+      {hasMore && !loading && sortedItems.length > 0 && (
         <div className="flex justify-center py-8">
           <button
             onClick={loadMoreItems}
@@ -550,9 +586,9 @@ export default function Grid({
       )}
 
       {/* End of Results */}
-      {!hasMore && filteredItems.length > 0 && (
+      {!hasMore && sortedItems.length > 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          Showing all {filteredItems.length} items
+          Showing all {sortedItems.length} items
         </div>
       )}
     </div>

@@ -1,8 +1,8 @@
 """
 Role-Based Access Control (RBAC) system for PostgreSQL authentication.
 
-This module provides comprehensive role and permission management to replace
-Supabase's built-in role system with a PostgreSQL-based approach.
+This module provides comprehensive role and permission management using
+PostgreSQL as the source of truth.
 """
 
 from typing import Dict, List, Set, Optional, Any

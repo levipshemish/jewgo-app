@@ -69,11 +69,23 @@ export function useMarkerManagement({
     
     // Get rating for bubble display
     const getRating = (restaurantItem: Restaurant) => {
-      const rating = restaurantItem.quality_rating || restaurantItem.rating || restaurantItem.star_rating || restaurantItem.google_rating;
-      return rating && rating > 0 ? rating : 0.0;
+      const rawRating =
+        restaurantItem.quality_rating ??
+        restaurantItem.rating ??
+        restaurantItem.star_rating ??
+        restaurantItem.google_rating;
+      const ratingNum = typeof rawRating === 'string' ? parseFloat(rawRating) : rawRating;
+      return ratingNum && ratingNum > 0 ? ratingNum : 0.0;
     };
     
     const rating = getRating(restaurant);
+    // Compute distance text for display in bubble
+    const distanceText = (() => {
+      if (restaurant.distance && typeof restaurant.distance === 'string' && restaurant.distance.trim() !== '') {
+        return restaurant.distance;
+      }
+      return restaurant.zip_code || '';
+    })();
     
     if (showRatingBubbles) {
       // Create glassy rating bubble content
@@ -121,6 +133,7 @@ export function useMarkerManagement({
                 fill="${isSelected ? 'white' : '#1a1a1a'}">
             ${rating.toFixed(1)}
           </text>
+          
         </svg>
       `;
       return element;
@@ -219,19 +232,53 @@ export function useMarkerManagement({
 
       return marker;
     } else {
-      // Fallback to classic Marker API
+      // Fallback to classic Marker API — render rating bubble via SVG icon so ratings show without Map ID
       if (!hasMapId) {
-        console.warn('Map ID not available, using classic markers instead of Advanced Markers');
+        // eslint-disable-next-line no-console
+        console.warn('Map ID not available, using classic markers with rating bubbles');
       }
-      
+
+      // Build a small rating bubble as an SVG icon
+      const isSelected = selectedRestaurantId === restaurant.id;
+      const markerColor = getMarkerColor(restaurant.kosher_category);
+      const finalColor = isSelected ? '#FFD700' : markerColor;
+
+      // Normalize rating similar to Advanced marker content
+      const rawRating =
+        (restaurant as any).quality_rating ??
+        (restaurant as any).rating ??
+        (restaurant as any).star_rating ??
+        (restaurant as any).google_rating;
+      const ratingNum = typeof rawRating === 'string' ? parseFloat(rawRating) : rawRating;
+      const rating = ratingNum && ratingNum > 0 ? Number(ratingNum).toFixed(1) : '0.0';
+
+      // Dimensions for the bubble
+      const bubbleWidth = isSelected ? 56 : 48;
+      const bubbleHeight = isSelected ? 32 : 28;
+
+      const svg = `
+        <svg width="${bubbleWidth}" height="${bubbleHeight}" viewBox="0 0 ${bubbleWidth} ${bubbleHeight}" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="${bubbleWidth - 4}" height="${bubbleHeight - 4}"
+                rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
+                fill="${isSelected ? finalColor : 'white'}" stroke="${finalColor}" stroke-width="2" />
+          <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}"
+                text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#FFD700">★</text>
+          <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}"
+                text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold"
+                fill="${isSelected ? 'white' : '#1a1a1a'}">${rating}</text>
+        </svg>
+      `;
+
       const marker = new google.maps.Marker({
         position,
         title: restaurant.name,
         map: map || undefined,
         icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" fill="#4285F4" stroke="#fff" stroke-width="2"/></svg>')}`,
-          scaledSize: new google.maps.Size(24, 24)
-        }
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+          scaledSize: new google.maps.Size(bubbleWidth, bubbleHeight),
+          anchor: new google.maps.Point(Math.round(bubbleWidth / 2), Math.round(bubbleHeight / 2))
+        },
+        zIndex: isSelected ? 1000 : undefined,
       });
 
       // Add click listener
@@ -241,7 +288,7 @@ export function useMarkerManagement({
 
       return marker;
     }
-  }, [map, onRestaurantSelect, createMarkerContent]);
+  }, [map, onRestaurantSelect, createMarkerContent, selectedRestaurantId]);
 
   // Apply clustering
   const applyClustering = useCallback(() => {

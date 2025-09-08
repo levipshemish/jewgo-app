@@ -326,7 +326,7 @@ class ConfigManager:
         # Check required security configuration
         security_config = self.get_security_config()
         # Legacy admin auth check removed - feature has been deprecated
-        # Check required external services (Supabase validation removed)
+        # Check required external services
         return errors
 
 

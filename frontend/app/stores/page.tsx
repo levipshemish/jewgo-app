@@ -115,7 +115,7 @@ function StoresPageContent() {
   
   // Use the new location data hook
   const {
-    userLocation: _userLocation,
+    userLocation,
     isLoading: _locationLoading,
     requestLocation: _requestLocation,
     getItemDisplayText: _getItemDisplayText
@@ -158,6 +158,8 @@ function StoresPageContent() {
           }
         })
         
+        // Note: Distance sorting is now handled client-side for reliability
+        
         params.append('limit', '50')
         
         const response = await fetchStores(50, params.toString())
@@ -181,7 +183,7 @@ function StoresPageContent() {
     }
     
     loadStores()
-  }, [searchQuery, activeFilters])
+  }, [searchQuery, activeFilters, userLocation])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)

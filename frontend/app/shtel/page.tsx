@@ -99,7 +99,7 @@ function ShtelPageContent() {
   
   // Use the new location data hook
   const {
-    userLocation: _userLocation,
+    userLocation,
     isLoading: _locationLoading,
     requestLocation: _requestLocation,
     getItemDisplayText: _getItemDisplayText
@@ -142,6 +142,8 @@ function ShtelPageContent() {
           }
         })
         
+        // Note: Distance sorting is now handled client-side for reliability
+        
         params.append('limit', '50')
         
         const response = await fetchShtetlListings(50, params.toString())
@@ -163,7 +165,7 @@ function ShtelPageContent() {
     }
     
     loadListings()
-  }, [searchQuery, activeFilters])
+  }, [searchQuery, activeFilters, userLocation])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)

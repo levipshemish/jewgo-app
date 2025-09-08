@@ -28,7 +28,7 @@ export function FontOptimizer({ children }: FontOptimizerProps) {
           const forceFontUsage = () => {
             // Create a test element to force font loading
             const testElement = document.createElement('div');
-            testElement.style.fontFamily = 'var(--font-roboto), system-ui, sans-serif';
+            testElement.style.fontFamily = 'var(--font-nexa), system-ui, sans-serif';
             testElement.style.position = 'absolute';
             testElement.style.visibility = 'hidden';
             testElement.style.pointerEvents = 'none';

@@ -129,7 +129,7 @@ def update_user_profile():
             raise ValidationError("avatar_url must be a string")
         if "phone" in update_data and not isinstance(update_data["phone"], str):
             raise ValidationError("phone must be a string")
-        # Here you would typically update the user's metadata in Supabase
+        # Here you would typically update the user's metadata in the database
         # For now, we'll just return the data that would be updated
         logger.info(f"User {user.get('id')} updating profile: {update_data}")
         return jsonify(

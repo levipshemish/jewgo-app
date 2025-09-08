@@ -27,7 +27,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from utils.logging_config import get_logger
 # Import models
-from .models import User, utc_now
+from .models import utc_now
 # Import ConfigManager at module level
 try:
     from utils.unified_database_config import UnifiedDatabaseConfig as ConfigManager

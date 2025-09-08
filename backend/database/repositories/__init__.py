@@ -2,7 +2,6 @@ from .google_review_repository import GoogleReviewRepository
 from .image_repository import ImageRepository
 from .restaurant_repository import RestaurantRepository
 from .review_repository import ReviewRepository
-from .user_repository import UserRepository
 
 """Database repositories package.
 This package contains repository classes that handle database operations
@@ -12,6 +11,5 @@ __all__ = [
     "GoogleReviewRepository",
     "RestaurantRepository",
     "ReviewRepository",
-    "UserRepository",
     "ImageRepository",
 ]

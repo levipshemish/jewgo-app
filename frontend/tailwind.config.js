@@ -128,10 +128,9 @@ module.exports = {
       },
       
       fontFamily: {
-        sans: ['var(--font-roboto)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-roboto)', 'system-ui', 'sans-serif'],
-        roboto: ['var(--font-roboto)', 'system-ui', 'sans-serif'],
-        'roboto-non-critical': ['var(--font-roboto-non-critical)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-nexa)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-nexa)', 'system-ui', 'sans-serif'],
+        nexa: ['var(--font-nexa)', 'system-ui', 'sans-serif'],
       },
       
       // Extended animation

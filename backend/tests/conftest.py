@@ -54,33 +54,31 @@ def setup_test_env(test_config):
 
 @pytest.fixture
 def mock_auth(test_config):
-    """Mock authentication for tests."""
+    """Legacy Supabase mock removed; provide a no-op mock structure."""
     if not test_config['enable_mocking']:
         return None
-    
-    with patch('utils.supabase_auth.verify_supabase_admin_role') as mock_verify:
-        mock_verify.return_value = {
-            'id': 'test-user-id',
-            'email': 'test@example.com',
-            'role': 'super_admin',
-            'permissions': ['all']
-        }
-        yield mock_verify
+    mock_verify = Mock()
+    mock_verify.return_value = {
+        'id': 'test-user-id',
+        'email': 'test@example.com',
+        'role': 'super_admin',
+        'permissions': ['all']
+    }
+    yield mock_verify
 
 @pytest.fixture
 def mock_supabase_user(test_config):
-    """Mock Supabase user for tests."""
+    """Legacy Supabase mock removed; provide a no-op mock user object."""
     if not test_config['enable_mocking']:
         return None
-    
-    with patch('utils.supabase_auth.get_current_supabase_user') as mock_user:
-        mock_user.return_value = {
-            'id': 'test-user-id',
-            'email': 'test@example.com',
-            'role': 'super_admin',
-            'permissions': ['all']
-        }
-        yield mock_user
+    mock_user = Mock()
+    mock_user.return_value = {
+        'id': 'test-user-id',
+        'email': 'test@example.com',
+        'role': 'super_admin',
+        'permissions': ['all']
+    }
+    yield mock_user
 
 
 @pytest.fixture

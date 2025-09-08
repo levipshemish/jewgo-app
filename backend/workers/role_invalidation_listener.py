@@ -246,14 +246,7 @@ class RoleInvalidationListener:
                 else:
                     logger.debug(f"No Redis cache found for user {user_id}")
             
-            # Invalidate in-process cache in role manager
-            try:
-                from utils.supabase_role_manager import get_role_manager
-                role_manager = get_role_manager()
-                role_manager.invalidate_user_role(user_id)
-                logger.debug(f"Invalidated in-process role cache for user {user_id}")
-            except Exception as e:
-                logger.warning(f"Failed to invalidate in-process cache for user {user_id}: {e}")
+            # Invalidate any in-process caches (legacy Supabase role manager removed)
             
             _metrics["cache_invalidations"] += 1
             

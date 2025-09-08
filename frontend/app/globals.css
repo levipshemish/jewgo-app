@@ -2,6 +2,26 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+@font-face {
+  font-family: 'Nexa';
+  src: url('/fonts/Nexa-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nexa';
+  src: url('/fonts/Nexa-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-nexa: 'Nexa';
+}
+
 /* Global scroll optimizations to prevent flickering */
 html {
   scroll-behavior: smooth;

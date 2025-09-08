@@ -246,9 +246,19 @@ export default function UnifiedLiveMapClient() {
       setLoadingProgress(70);
 
       if (data && data.data && data.data.restaurants && Array.isArray(data.data.restaurants) && data.data.restaurants.length > 0) {
-        const validRestaurants = data.data.restaurants.filter((restaurant: any) =>
+        const validRestaurantsRaw = data.data.restaurants.filter((restaurant: any) =>
           restaurant && typeof restaurant === 'object' && restaurant.id
         );
+
+        // Normalize rating using same logic as eatery page (including google_reviews fallback)
+        const { computeRestaurantRating } = await import('@/lib/utils/ratings');
+        const validRestaurants: Restaurant[] = validRestaurantsRaw.map((r: any) => {
+          const normalizedRating = computeRestaurantRating(r);
+          return {
+            ...r,
+            rating: normalizedRating,
+          } as Restaurant;
+        });
 
 
 
@@ -416,9 +426,14 @@ export default function UnifiedLiveMapClient() {
 
   // Transform restaurant data to match Card component's CardData interface
   const _transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
-    // Handle rating data - all rating fields are currently null in backend
-    const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
-    const ratingText = rating && typeof rating === 'number' && !isNaN(rating) ? rating.toFixed(1) : undefined;
+    // Normalize rating from various possible fields that may be string or number
+    const rawRating =
+      restaurant.rating ??
+      restaurant.star_rating ??
+      restaurant.google_rating ??
+      restaurant.quality_rating;
+    const ratingNum = typeof rawRating === 'string' ? parseFloat(rawRating) : rawRating;
+    const ratingText = typeof ratingNum === 'number' && !isNaN(ratingNum) ? ratingNum.toFixed(1) : undefined;
     
     // Calculate distance if user location is available and restaurant has coordinates
     let distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';

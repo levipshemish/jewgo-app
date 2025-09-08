@@ -23,8 +23,7 @@ def create_test_client(monkeypatch, super_admin: bool = True):
             'adminRole': 'super_admin' if super_admin else 'moderator',
         }
 
-    api_v4 = importlib.import_module('backend.routes.api_v4')
-    monkeypatch.setattr(api_v4, 'get_current_supabase_user', get_user, raising=False)
+    # Legacy Supabase accessor removed; routes use RBAC via PostgreSQL
 
     from backend.app_factory_full import create_app
     app, socketio = create_app()  # Unpack the tuple
@@ -98,4 +97,3 @@ class TestRoleEndpoints:
             'user_id': 'u1', 'role': 'moderator'
         })
         assert resp.status_code == 200
-

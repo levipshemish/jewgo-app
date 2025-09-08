@@ -94,7 +94,7 @@ except Exception:
         return f
 
 
-# RBAC-based authentication decorators and helpers (replacing Supabase usage)
+# RBAC-based authentication decorators and helpers
 from utils.rbac import require_auth as require_rbac_auth
 from utils.rbac import optional_auth as optional_rbac_auth
 
@@ -1285,17 +1285,26 @@ def admin_get_users():
             limit=limit, offset=(page - 1) * limit, filters=filters
         )
         total_count = service.get_users_count(filters=filters)
-        return success_response(
-            {
-                "users": users,
-                "pagination": {
-                    "page": page,
-                    "limit": limit,
-                    "total": total_count,
-                    "pages": (total_count + limit - 1) // limit,
-                },
+        # Normalize keys to camelCase for frontend
+        def camelize(u: dict) -> dict:
+            return {
+                "id": u.get("id"),
+                "name": u.get("name"),
+                "email": u.get("email"),
+                "emailVerified": bool(u.get("email_verified")) if "email_verified" in u else u.get("emailVerified"),
+                "isSuperAdmin": bool(u.get("is_super_admin")) if "is_super_admin" in u else u.get("isSuperAdmin"),
+                "createdAt": u.get("created_at") or u.get("createdAt"),
             }
-        )
+        users_camel = [camelize(u) for u in users]
+        return success_response({
+            "users": users_camel,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total_count,
+                "pages": (total_count + limit - 1) // limit,
+            },
+        })
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
@@ -1606,7 +1615,7 @@ def _revoke_role_and_respond(user_service, user_id: str, role: str, removed_by: 
 
 
 def _invalidate_role_cache_safe(user_id: str) -> None:
-    # No-op: Supabase role manager removed; RBAC data comes from PostgreSQL
+    # RBAC data comes from PostgreSQL
     return None
 
 

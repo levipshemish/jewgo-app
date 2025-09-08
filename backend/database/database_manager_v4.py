@@ -16,7 +16,6 @@ from .repositories import (
     ImageRepository,
     RestaurantRepository,
     ReviewRepository,
-    UserRepository,
 )
 
 # Import ConfigManager at module level
@@ -103,19 +102,13 @@ class DatabaseManager:
         self.restaurant_repo = RestaurantRepository(self.connection_manager)
         self.review_repo = ReviewRepository(self.connection_manager)
         self.google_review_repo = GoogleReviewRepository(self.connection_manager)
-        self.user_repo = UserRepository(self.connection_manager)
+        # Legacy user repository removed; using direct SQL for user operations
         self.image_repo = ImageRepository(self.connection_manager)
         
-        # Initialize Supabase configuration for role management
-        self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_service_role_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-        
-        if not self.supabase_url or not self.supabase_service_role_key:
-            logger.warning("Supabase configuration not found. Role management features will be disabled.")
-            self.supabase_enabled = False
-        else:
-            self.supabase_enabled = True
-            logger.info("Supabase configuration loaded for role management")
+        # Legacy external role management removed; using PostgreSQL exclusively
+        self.supabase_url = None
+        self.supabase_service_role_key = None
+        self.supabase_enabled = False
         
         logger.info("Database manager v4 initialized with repository pattern")
 
@@ -411,47 +404,160 @@ class DatabaseManager:
         offset: int = 0,
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
-        """Get users with optional filtering and pagination."""
-        users = self.user_repo.get_users(limit, offset, filters)
-        return [self._user_to_dict(user) for user in users]
+        """Get users with optional filtering and pagination (PostgreSQL auth tables)."""
+        from sqlalchemy import text as _text
+        where = []
+        params: Dict[str, Any] = {"limit": limit, "offset": offset}
+        if filters:
+            q = (filters.get("search") or "").strip()
+            if q:
+                params["q"] = f"%{q}%"
+                where.append("(u.name ILIKE :q OR u.email ILIKE :q)")
+            role = filters.get("role")
+            if role == "admin":
+                where.append("EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'super_admin' AND ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW()))")
+            elif role == "user":
+                where.append("NOT EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'super_admin' AND ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW()))")
+        where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+        sql = _text(
+            f"""
+            SELECT u.id, u.name, u.email, COALESCE(u.email_verified, FALSE) AS email_verified,
+                   u.created_at,
+                   EXISTS (
+                       SELECT 1 FROM user_roles ur
+                       WHERE ur.user_id = u.id AND ur.role='super_admin' AND ur.is_active=TRUE
+                         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
+                   ) AS is_super_admin
+            FROM users u
+            {where_sql}
+            ORDER BY u.created_at DESC
+            LIMIT :limit OFFSET :offset
+            """
+        )
+        with self.connection_manager.session_scope() as session:
+            rows = session.execute(sql, params).mappings().all()
+            return [
+                {
+                    "id": r["id"],
+                    "name": r.get("name"),
+                    "email": r.get("email"),
+                    "email_verified": bool(r.get("email_verified")),
+                    "created_at": r.get("created_at").isoformat() if r.get("created_at") else None,
+                    "is_super_admin": bool(r.get("is_super_admin")),
+                }
+                for r in rows
+            ]
 
     @handle_operation_with_fallback(fallback_value=0)
     def get_users_count(self, filters: Optional[Dict[str, Any]] = None) -> int:
         """Get total count of users with optional filtering."""
-        return self.user_repo.get_users_count(filters)
+        from sqlalchemy import text as _text
+        where = []
+        params: Dict[str, Any] = {}
+        if filters:
+            q = (filters.get("search") or "").strip()
+            if q:
+                params["q"] = f"%{q}%"
+                where.append("(u.name ILIKE :q OR u.email ILIKE :q)")
+            role = filters.get("role")
+            if role == "admin":
+                where.append("EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'super_admin' AND ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW()))")
+            elif role == "user":
+                where.append("NOT EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'super_admin' AND ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW()))")
+        where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+        sql = _text(f"SELECT COUNT(*) AS cnt FROM users u {where_sql}")
+        with self.connection_manager.session_scope() as session:
+            row = session.execute(sql, params).fetchone()
+            return int(row[0]) if row else 0
 
     @handle_database_operation
     def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get a user by their ID."""
-        user = self.user_repo.get_by_id(user_id)
-        if user:
-            return self._user_to_dict(user)
-        return None
+        """Get a user by their ID from PostgreSQL users table."""
+        from sqlalchemy import text as _text
+        sql = _text(
+            """
+            SELECT u.id, u.name, u.email, COALESCE(u.email_verified, FALSE) AS email_verified,
+                   u.created_at,
+                   EXISTS (
+                       SELECT 1 FROM user_roles ur
+                       WHERE ur.user_id = u.id AND ur.role='super_admin' AND ur.is_active=TRUE
+                         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
+                   ) AS is_super_admin
+            FROM users u WHERE u.id = :uid
+            """
+        )
+        with self.connection_manager.session_scope() as session:
+            row = session.execute(sql, {"uid": user_id}).mappings().first()
+            if not row:
+                return None
+            return {
+                "id": row["id"],
+                "name": row.get("name"),
+                "email": row.get("email"),
+                "email_verified": bool(row.get("email_verified")),
+                "created_at": row.get("created_at").isoformat() if row.get("created_at") else None,
+                "is_super_admin": bool(row.get("is_super_admin")),
+            }
 
     def update_user_role(self, user_id: str, is_super_admin: bool) -> bool:
-        """Update user's admin role."""
+        """Update user's super_admin role via user_roles table."""
         try:
-            return self.user_repo.update_user_role(user_id, is_super_admin)
+            if is_super_admin:
+                res = self.assign_admin_role(user_id, 'super_admin', assigned_by_user_id='system')
+                return bool(res.get('success'))
+            else:
+                res = self.remove_admin_role(user_id, 'super_admin', removed_by_user_id='system')
+                return bool(res.get('success'))
         except Exception as e:
             logger.exception("Error updating user role", error=str(e))
             return False
 
     def delete_user(self, user_id: str) -> bool:
-        """Delete a user."""
+        """Delete a user and related records from PostgreSQL tables."""
+        from sqlalchemy import text as _text
         try:
-            # Delete associated sessions and accounts first
-            self.user_repo.delete_user_sessions(user_id)
-            self.user_repo.delete_user_accounts(user_id)
-            # Delete the user
-            return self.user_repo.delete_user(user_id)
+            # Prevent deleting last super_admin
+            if self.get_active_super_admin_count() <= 1:
+                # Verify if this user is the last super admin
+                u = self.get_user_by_id(user_id)
+                if u and u.get('is_super_admin'):
+                    return False
+            with self.connection_manager.session_scope() as session:
+                session.execute(_text("DELETE FROM auth_sessions WHERE user_id = :uid"), {"uid": user_id})
+                session.execute(_text('DELETE FROM accounts WHERE "userId" = :uid'), {"uid": user_id})
+                session.execute(_text("DELETE FROM user_roles WHERE user_id = :uid"), {"uid": user_id})
+                session.execute(_text("DELETE FROM users WHERE id = :uid"), {"uid": user_id})
+            return True
         except Exception as e:
             logger.exception("Error deleting user", error=str(e))
             return False
 
     def get_user_statistics(self) -> Dict[str, Any]:
-        """Get user statistics."""
+        """Get user statistics from PostgreSQL auth tables."""
+        from sqlalchemy import text as _text
         try:
-            return self.user_repo.get_user_statistics()
+            with self.connection_manager.session_scope() as session:
+                total_users = session.execute(_text("SELECT COUNT(*) FROM users")).scalar_one()
+                admin_count = session.execute(_text(
+                    """
+                    SELECT COUNT(*) FROM users u
+                    WHERE EXISTS (
+                        SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role='super_admin'
+                          AND ur.is_active=TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
+                    )
+                    """
+                )).scalar_one()
+                verified_count = session.execute(_text("SELECT COUNT(*) FROM users WHERE email_verified = TRUE")).scalar_one()
+                thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+                recent_users = session.execute(_text("SELECT COUNT(*) FROM users WHERE created_at >= :dt"), {"dt": thirty_days_ago}).scalar_one()
+            return {
+                "total_users": int(total_users or 0),
+                "admin_users": int(admin_count or 0),
+                "regular_users": int((total_users or 0) - (admin_count or 0)),
+                "verified_users": int(verified_count or 0),
+                "unverified_users": int((total_users or 0) - (verified_count or 0)),
+                "recent_users_30_days": int(recent_users or 0),
+            }
         except Exception as e:
             logger.exception("Error getting user statistics", error=str(e))
             return {}
@@ -490,117 +596,7 @@ class DatabaseManager:
         return self.image_repo.get_image_statistics()
 
     # Role Management Methods
-    @handle_database_operation("Supabase RPC call")
-    def call_supabase_rpc(self, function_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Call a Supabase RPC function with service role authentication.
-        
-        Args:
-            function_name: Name of the RPC function to call
-            params: Parameters to pass to the RPC function
-            
-        Returns:
-            Dict containing the RPC response
-        """
-        # Check if service role RPC is enabled
-        if os.getenv("ENABLE_SERVICE_ROLE_RPC", "false").lower() != "true":
-            logger.error("Service role RPC calls are disabled by ENABLE_SERVICE_ROLE_RPC=false")
-            return {
-                "success": False,
-                "error": "Service role RPC calls are disabled",
-                "error_type": "auth_error",
-                "status_code": 403,
-            }
-        
-        # Allowlist of permitted RPC functions
-        allowed_functions = {
-            "assign_admin_role",
-            "remove_admin_role"
-        }
-        
-        if function_name not in allowed_functions:
-            logger.error(f"RPC function '{function_name}' not in allowlist", 
-                        function=function_name, 
-                        allowed_functions=list(allowed_functions),
-                        caller_context="database_manager_v4")
-            return {
-                "success": False,
-                "error": f"RPC function '{function_name}' not permitted",
-                "error_type": "auth_error",
-                "status_code": 403,
-            }
-        
-        if not self.supabase_enabled:
-            logger.error("Supabase not configured for role management")
-            return {
-                "success": False,
-                "error": "Supabase not configured",
-                "error_type": "service_error",
-                "status_code": 503,
-            }
-        
-        try:
-            import requests
-            
-            # Construct the RPC URL
-            rpc_url = f"{self.supabase_url}/rest/v1/rpc/{function_name}"
-            
-            # Set up headers with service role key
-            headers = {
-                'Authorization': f'Bearer {self.supabase_service_role_key}',
-                'Content-Type': 'application/json',
-                'apikey': self.supabase_service_role_key
-            }
-            
-            # Make the RPC call
-            response = requests.post(
-                rpc_url,
-                json=params,
-                headers=headers,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                logger.info(f"Supabase RPC call successful", function=function_name)
-                return result
-            else:
-                error_text = response.text
-                logger.error(
-                    f"Supabase RPC call failed",
-                    function=function_name,
-                    status_code=response.status_code,
-                    response=error_text
-                )
-                
-                # Map HTTP status codes to appropriate error types
-                status_code = response.status_code
-                if status_code == 400:
-                    error_type = 'validation_error'
-                elif status_code in [401, 403]:
-                    error_type = 'auth_error'
-                elif status_code == 404:
-                    error_type = 'not_found'
-                elif status_code == 409:
-                    error_type = 'conflict'
-                else:
-                    error_type = 'service_error'
-                    status_code = 503
-                
-                return {
-                    "error": f"RPC call failed: {response.status_code}",
-                    "error_type": error_type,
-                    "status_code": status_code,
-                    "details": error_text
-                }
-                
-        except Exception as e:
-            logger.exception(f"Error calling Supabase RPC", function=function_name, error=str(e))
-            return {
-                "success": False,
-                "error": f"RPC call error: {str(e)}",
-                "error_type": "service_error",
-                "status_code": 503,
-            }
+    # Legacy external RPC helper removed
 
     @handle_database_operation("assign admin role")
     def assign_admin_role(
@@ -611,7 +607,7 @@ class DatabaseManager:
         expires_at: Optional[str] = None,
         notes: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Assign an admin role to a user via Supabase RPC.
+        """Assign an admin role to a user in PostgreSQL.
         
         Args:
             target_user_id: ID of the user to assign role to
@@ -624,18 +620,29 @@ class DatabaseManager:
             Dict: { success: bool, error?: str, error_type?: str, status_code?: int }
         """
         try:
-            params = {
-                'p_user_id': target_user_id,
-                'p_role': role,
-                'p_assigned_by': assigned_by_user_id
-            }
-            
+            from sqlalchemy import text
+            from datetime import datetime
+            # Map simple levels; adjust as needed
+            level = 10 if role == 'super_admin' else 5 if role in ('system_admin', 'data_admin', 'moderator') else 1
+            exp_dt = None
             if expires_at:
-                params['p_expires_at'] = expires_at
-            if notes:
-                params['p_notes'] = notes
-            
-            result = self.call_supabase_rpc('assign_admin_role', params)
+                try:
+                    exp_dt = datetime.fromisoformat(expires_at)
+                except Exception:
+                    exp_dt = None
+            with self.connection_manager.session_scope() as session:
+                session.execute(
+                    text(
+                        """
+                        INSERT INTO user_roles (user_id, role, level, granted_at, is_active, expires_at)
+                        VALUES (:uid, :role, :lvl, NOW(), TRUE, :exp)
+                        ON CONFLICT (user_id, role)
+                        DO UPDATE SET is_active = TRUE, level = EXCLUDED.level, granted_at = NOW(), expires_at = COALESCE(EXCLUDED.expires_at, user_roles.expires_at)
+                        """
+                    ),
+                    {"uid": target_user_id, "role": role, "lvl": level, "exp": exp_dt}
+                )
+            result = {"success": True}
             
             # Structured audit logging
             audit_log = {
@@ -669,7 +676,7 @@ class DatabaseManager:
         role: str,
         removed_by_user_id: str
     ) -> Dict[str, Any]:
-        """Remove an admin role from a user via Supabase RPC.
+        """Deactivate an admin role for a user in PostgreSQL.
         
         Args:
             target_user_id: ID of the user to remove role from
@@ -680,13 +687,19 @@ class DatabaseManager:
             Dict: { success: bool, error?: str, error_type?: str, status_code?: int }
         """
         try:
-            params = {
-                'p_user_id': target_user_id,
-                'p_role': role,
-                'p_removed_by': removed_by_user_id
-            }
-            
-            result = self.call_supabase_rpc('remove_admin_role', params)
+            from sqlalchemy import text
+            with self.connection_manager.session_scope() as session:
+                session.execute(
+                    text(
+                        """
+                        UPDATE user_roles
+                        SET is_active = FALSE, expires_at = COALESCE(expires_at, NOW())
+                        WHERE user_id = :uid AND role = :role AND is_active = TRUE
+                        """
+                    ),
+                    {"uid": target_user_id, "role": role}
+                )
+            result = {"success": True}
             
             # Structured audit logging
             audit_log = {
@@ -711,49 +724,22 @@ class DatabaseManager:
             return {"success": False, "error": str(e), "error_type": "service_error", "status_code": 503}
 
     def get_active_super_admin_count(self) -> int:
-        """Return precise count of active super_admin roles using Supabase REST Content-Range.
-        Falls back to 0 on errors.
-        """
+        """Return count of active super_admin roles using PostgreSQL."""
         try:
-            if not self.supabase_enabled:
-                logger.error("Supabase not configured for role management")
-                return 0
-
-            import requests
-
-            headers = {
-                'Authorization': f'Bearer {self.supabase_service_role_key}',
-                'apikey': self.supabase_service_role_key,
-                'Prefer': 'count=exact'
-            }
-
-            query_url = f"{self.supabase_url}/rest/v1/admin_roles"
-            params = {
-                'select': 'id',
-                'is_active': 'eq.true',
-                'role': 'eq.super_admin',
-                'limit': 1,
-                'offset': 0,
-                'order': 'assigned_at.desc'
-            }
-
-            response = requests.get(query_url, params=params, headers=headers, timeout=30)
-            if response.status_code != 200:
-                logger.warning("Failed to count super_admins", status=response.status_code, resp=response.text)
-                return 0
-
-            content_range = response.headers.get('Content-Range')
-            if content_range and '/' in content_range:
-                try:
-                    return int(content_range.split('/')[-1])
-                except Exception:
-                    return 0
-            # Fallback to length if header missing
-            try:
-                data = response.json()
-                return len(data) if isinstance(data, list) else 0
-            except Exception:
-                return 0
+            from sqlalchemy import text
+            with self.connection_manager.session_scope() as session:
+                row = session.execute(
+                    text(
+                        """
+                        SELECT COUNT(*) AS cnt
+                        FROM user_roles
+                        WHERE role = 'super_admin'
+                          AND is_active = TRUE
+                          AND (expires_at IS NULL OR expires_at > NOW())
+                        """
+                    )
+                ).fetchone()
+                return int(row.cnt) if row else 0
         except Exception as e:
             logger.exception("Error counting super_admins", error=str(e))
             return 0
@@ -769,7 +755,7 @@ class DatabaseManager:
         include_all: bool = False,
         include_expired: bool = False
     ) -> Dict[str, Any]:
-        """Get admin roles from Supabase with optional filtering.
+        """Get admin roles from PostgreSQL with optional filtering.
         
         Args:
             user_id: Optional specific user ID
@@ -782,149 +768,65 @@ class DatabaseManager:
             Dict containing users with roles and pagination info
         """
         try:
-            if not self.supabase_enabled:
-                logger.error("Supabase not configured for role management")
-                raise ExternalServiceError(
-                    message="Role management service unavailable",
-                    service="supabase",
-                    details={"reason": "Supabase not configured"}
-                )
-            
-            import requests
-            
-            # Set up headers with service role key and count preference
-            headers = {
-                'Authorization': f'Bearer {self.supabase_service_role_key}',
-                'apikey': self.supabase_service_role_key,
-                'Prefer': 'count=exact',
-                'Range': f'{offset}-{offset + limit - 1}'  # Add Range header for clarity
-            }
-            
-            if include_all:
-                # Query users table with left join to admin_roles, restrict fields for PII safety
-                query_url = f"{self.supabase_url}/rest/v1/users"
-                params = {
-                    'select': 'id,name,email,admin_roles(*)',
-                    'limit': limit,
-                    'offset': offset,
-                    'order': 'created_at.desc'
-                }
-                # Add search filter for users table
-                if search:
-                    params['or'] = f'(name.ilike.*{search}*,email.ilike.*{search}*)'
-            else:
-                # Query admin_roles table with user data
-                query_url = f"{self.supabase_url}/rest/v1/admin_roles"
-                params = {
-                    'select': '*,users:users!inner(id,name,email)',
-                    'limit': limit,
-                    'offset': offset,
-                    'order': 'assigned_at.desc'
-                }
-                
-                # Build filters
-                and_filters = []
-                if not include_expired:
-                    params['is_active'] = 'eq.true'
-                    expires_filter = 'or(expires_at.is.null,expires_at.gt.now())'
-                    and_filters.append(expires_filter)
-                if search:
-                    search_filter = f'or(users.name.ilike.*{search}*,users.email.ilike.*{search}*)'
-                    and_filters.append(search_filter)
-                if and_filters:
-                    params['and'] = f"and({','.join(and_filters)})"
-            
+            from sqlalchemy import text
+            where_clauses = []
+            params: Dict[str, Any] = {}
+            if not include_expired:
+                where_clauses.append("ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())")
             if user_id:
-                params['user_id'] = f'eq.{user_id}'
+                where_clauses.append("u.id = :uid")
+                params["uid"] = user_id
             if role_filter:
-                params['role'] = f'eq.{role_filter}'
-            
-            # Make the request
-            response = requests.get(
-                query_url,
-                params=params,
-                headers=headers,
-                timeout=30
+                where_clauses.append("ur.role = :r")
+                params["r"] = role_filter
+            if search:
+                where_clauses.append("(u.name ILIKE :q OR u.email ILIKE :q)")
+                params["q"] = f"%{search}%"
+            where_sql = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+            count_sql = text(
+                f"""
+                SELECT COUNT(*) AS cnt
+                FROM user_roles ur
+                JOIN users u ON u.id = ur.user_id
+                {where_sql}
+                """
             )
-            
-            if response.status_code == 200:
-                roles_data = response.json()
-                
-                # Get total count from Content-Range header
-                total_count = len(roles_data)  # Fallback
-                content_range = response.headers.get('Content-Range')
-                header_present = bool(content_range)
-                if content_range:
-                    try:
-                        # Content-Range format: "0-9/100" where 100 is total count
-                        total_count = int(content_range.split('/')[-1])
-                        logger.debug("Content-Range header parsed successfully", content_range=content_range, total_count=total_count)
-                    except (ValueError, IndexError) as e:
-                        logger.warning("Failed to parse Content-Range header, using fallback", content_range=content_range, error=str(e))
-                        total_count = len(roles_data)
-                else:
-                    logger.warning("Content-Range header missing, using fallback count", returned_count=len(roles_data))
-                
-                # Format the response - flatten nested user data
-                flattened_users = []
-                if include_all:
-                    # Process users query with admin_roles join
-                    for user_record in roles_data:
-                        admin_role_data = user_record.get('admin_roles', [])
-                        # Get the most recent active role if any
-                        active_role = None
-                        if admin_role_data:
-                            active_roles = [r for r in admin_role_data if r.get('is_active', True)]
-                            if active_roles:
-                                # Sort by assigned_at and take most recent
-                                active_role = sorted(active_roles, 
-                                                   key=lambda x: x.get('assigned_at', ''), 
-                                                   reverse=True)[0]
-                        
-                        flattened_users.append({
-                            'id': user_record.get('id'),
-                            'name': user_record.get('name'),
-                            'email': user_record.get('email'),
-                            'role': active_role.get('role') if active_role else None,
-                            'role_level': active_role.get('role_level') if active_role else None,
-                            'assigned_at': active_role.get('assigned_at') if active_role else None,
-                            'expires_at': active_role.get('expires_at') if active_role else None,
-                            'notes': active_role.get('notes') if active_role else None,
-                            'assigned_by': active_role.get('assigned_by') if active_role else None
-                        })
-                else:
-                    # Process admin_roles query with users join
-                    for role_record in roles_data:
-                        user_data = role_record.get('users', {})
-                        flattened_users.append({
-                            'id': role_record.get('user_id'),
-                            'name': user_data.get('name'),
-                            'email': user_data.get('email'),
-                            'role': role_record.get('role'),
-                            'role_level': role_record.get('role_level'),
-                            'assigned_at': role_record.get('assigned_at'),
-                            'expires_at': role_record.get('expires_at'),
-                            'notes': role_record.get('notes'),
-                            'assigned_by': role_record.get('assigned_by')
-                        })
-                
+            data_sql = text(
+                f"""
+                SELECT u.id, u.name, u.email, ur.role, ur.level AS role_level, ur.granted_at AS assigned_at, ur.expires_at
+                FROM user_roles ur
+                JOIN users u ON u.id = ur.user_id
+                {where_sql}
+                ORDER BY ur.granted_at DESC
+                LIMIT :limit OFFSET :offset
+                """
+            )
+            with self.connection_manager.session_scope() as session:
+                total = session.execute(count_sql, params).scalar_one()
+                params_with_pagination = {**params, "limit": limit, "offset": offset}
+                rows = session.execute(data_sql, params_with_pagination).mappings().all()
+                users = [
+                    {
+                        "id": r["id"],
+                        "name": r["name"],
+                        "email": r["email"],
+                        "role": r["role"],
+                        "role_level": r.get("role_level"),
+                        "assigned_at": r.get("assigned_at"),
+                        "expires_at": r.get("expires_at"),
+                    }
+                    for r in rows
+                ]
                 result = {
-                    "users": flattened_users,
-                    "total": total_count,
+                    "users": users,
+                    "total": int(total or 0),
                     "page": (offset // limit) + 1 if limit else 1,
                     "limit": limit,
-                    "has_more": (((offset + len(roles_data)) < total_count) if header_present else (len(roles_data) == limit))
+                    "has_more": (offset + len(users)) < int(total or 0),
                 }
-                
-                logger.info("Admin roles retrieved successfully", count=len(roles_data))
+                logger.info("Admin roles retrieved successfully", count=len(users))
                 return result
-            else:
-                logger.error(
-                    "Failed to retrieve admin roles",
-                    status_code=response.status_code,
-                    response=response.text
-                )
-                return {"users": [], "total": 0, "page": 1, "limit": limit, "has_more": False}
                 
         except Exception as e:
             logger.exception("Error retrieving admin roles", error=str(e))
@@ -1107,25 +1009,7 @@ class DatabaseManager:
             logger.exception("Error converting Google review to dict", error=str(e))
             return {}
 
-    def _user_to_dict(self, user) -> Dict[str, Any]:
-        """Convert user model to dictionary."""
-        try:
-            return {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "emailVerified": (
-                    user.emailVerified.isoformat() if user.emailVerified else None
-                ),
-                "image": user.image,
-                "isSuperAdmin": user.isSuperAdmin,
-                "role": "admin" if user.isSuperAdmin else "user",
-                "createdAt": user.createdAt.isoformat() if user.createdAt else None,
-                "updatedAt": user.updatedAt.isoformat() if user.updatedAt else None,
-            }
-        except Exception as e:
-            logger.exception("Error converting user to dict", error=str(e))
-            return {}
+    # Legacy converter removed (NextAuth schema)
 
     def _safe_json_loads(self, json_str: Optional[str], default_value: Any) -> Any:
         """Safely parse JSON string or Python literal with fallback to default value."""

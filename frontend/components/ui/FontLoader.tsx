@@ -20,7 +20,7 @@ export function FontLoader({ children }: FontLoaderProps) {
         const fontLoader = document.createElement('div');
         fontLoader.style.position = 'absolute';
         fontLoader.style.visibility = 'hidden';
-        fontLoader.style.fontFamily = 'var(--font-roboto), system-ui, sans-serif';
+        fontLoader.style.fontFamily = 'var(--font-nexa), system-ui, sans-serif';
         fontLoader.style.fontWeight = '300 400 500 700';
         fontLoader.textContent = 'Font Loading Test';
         document.body.appendChild(fontLoader);

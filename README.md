@@ -4,6 +4,26 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 ## 🚀 Recent Updates (August 2025)
 
+### ✅ **Map Popup Glassy Design Update - PRODUCTION READY**
+
+- **🎉 Visual Consistency Enhancement**: Updated live map popup to use the same glassy tag design as eatery page cards
+- **✅ Design Improvements**:
+  - Added map variant to Card component with proper dimensions (h-40 image, reduced padding)
+  - Restored glassy design using `backdrop-filter: blur(8px)` for kosher tags
+  - Added yellow star rating display for restaurants with ratings
+  - Enhanced price range detection with multiple field fallbacks
+- **✅ Technical Fixes**:
+  - Updated map page to use unified API endpoint (`/api/restaurants/unified`)
+  - Removed CSS interference (`contain` properties) that blocked glassy effects
+  - Replaced inline HTML with reusable Card component
+  - Fixed all TypeScript compilation errors
+- **✅ Performance & UX**:
+  - Larger image display (160px height) for better visibility
+  - Better price range fallbacks (shows `$$` instead of "Price not available")
+  - Consistent design language across map and eatery pages
+- **📊 Results**: Map popup now provides consistent, modern glassy design with improved data display
+- **📝 Documentation**: Complete implementation details in `docs/map-popup-glassy-design-update.md`
+
 ### ✅ **Unified Page Design & Mock Data Fallback - PRODUCTION READY**
 
 - **🎉 Major Consistency Enhancement**: All listing pages (shuls, stores, mikvah, shtetl, marketplace) now have identical design and functionality

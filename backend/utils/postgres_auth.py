@@ -160,7 +160,7 @@ class TokenManager:
 
 
 class PostgresAuthManager:
-    """PostgreSQL-based authentication manager to replace Supabase."""
+    """PostgreSQL-based authentication manager."""
     
     def __init__(self, db_manager):
         self.db = db_manager

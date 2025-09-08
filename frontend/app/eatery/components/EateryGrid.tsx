@@ -40,7 +40,6 @@ export default function EateryGrid({
   const [restaurants, setRestaurants] = useState<LightRestaurant[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(0)
   const [backendError, setBackendError] = useState(false)
   const isRetryingRef = useRef(false)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -77,14 +76,15 @@ export default function EateryGrid({
     return restaurants.map(restaurant => transformRestaurant(restaurant, userLocation))
   }, [restaurants, userLocation, transformRestaurant])
 
-  // Real API function for restaurants with offset-based pagination for infinite scroll
+  // Real API function with cursor-based pagination
   const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
-      // Build API URL with parameters - use unified endpoint
+      // Build API URL with parameters - use unified endpoint for now
       const apiUrl = new URL('/api/restaurants/unified', window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('offset', offset.toString())
-
+      
+      // For cursor-based pagination, we don't use offset
       if (params) {
         const searchParams = new URLSearchParams(params)
         searchParams.forEach((value, key) => {
@@ -113,35 +113,17 @@ export default function EateryGrid({
         throw new Error('Backend service unavailable')
       }
 
-      // Get total from multiple possible locations in the response
-      const total = data.data?.total || data.total || data.pagination?.total || 0
-      const currentOffset = offset
+      // Handle unified endpoint response format
+      const responseRestaurants = data.data?.restaurants || []
+      const total = data.data?.total || data.total || 0
+      const hasMoreData = data.data?.hasMore !== undefined ? data.data.hasMore : (offset + limit) < total
       
-      // Check if backend provides hasMore/hasNext, otherwise calculate it
-      let hasMoreData = data.pagination?.hasMore !== undefined 
-        ? data.pagination.hasMore 
-        : data.hasNext !== undefined 
-        ? data.hasNext 
-        : (currentOffset + limit) < total
-      
-      // Fallback: If we got a full page of results but total is 0 or incorrect,
-      // assume there might be more data (similar to shuls page logic)
-      const restaurantsCount = data.data?.restaurants?.length || 0
-      if (total === 0 && restaurantsCount === limit) {
-        hasMoreData = true
-      }
-      
-      // Additional fallback: If API says hasMore is false but we got a full page on first load,
-      // override it to true (API might be too conservative)
-      if (!hasMoreData && offset === 0 && restaurantsCount === limit) {
-        hasMoreData = true
-      }
+      console.log('fetchRestaurants unified response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData)
       
       return {
-        restaurants: data.data?.restaurants || [],
-        total,
+        restaurants: responseRestaurants,
         hasMore: hasMoreData,
-        limit: data.pagination?.limit || limit
+        limit: data.data?.limit || limit
       }
 
     } catch (error) {
@@ -184,22 +166,15 @@ export default function EateryGrid({
       }
     }
 
-    // Add distance sorting when location is available
-    if (userLocation) {
-      params.set('sortBy', 'distance');
-      params.set('userLat', userLocation.latitude.toString());
-      params.set('userLng', userLocation.longitude.toString());
-    }
-
     // Add hours filter if specified
     if (activeFilters?.hoursFilter) {
       params.set('hoursFilter', activeFilters.hoursFilter);
     }
     
     return params.toString()
-  }, [searchQuery, category, activeFilters, userLocation])
+  }, [searchQuery, category, activeFilters])
 
-  // Load more items in batches of 24
+  // Load more items using offset-based pagination
   const loadMoreItems = useCallback(async () => {
     if (loading || !hasMore) {
       return;
@@ -209,28 +184,26 @@ export default function EateryGrid({
 
     try {
       if (useRealData && !backendError) {
-        // Try real API first
-        const currentPage = page;
+        // Try real API first with offset-based pagination
+        const currentPage = Math.floor(restaurants.length / 24);
         const offset = currentPage * 24;
         const response = await fetchRestaurants(24, offset, buildSearchParams());
         setRestaurants((prev) => [...prev, ...response.restaurants]);
         setHasMore(response.hasMore);
-        setPage((prev) => prev + 1);
       } else {
         // Use mock data (fallback or when backend is in error state)
         await new Promise((resolve) => setTimeout(resolve, 1000));
         
         const newItems: MockRestaurant[] = [];
         for (let i = 0; i < 24; i++) {
-          const itemIndex = page * 24 + i;
+          const itemIndex = restaurants.length + i;
           if (itemIndex < 50) { // Limit mock data to 50 items
             newItems.push(generateMockRestaurants(1)[0]);
           }
         }
         
         setRestaurants((prev) => [...prev, ...newItems]);
-        setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
-        setPage((prev) => prev + 1);
+        setHasMore(restaurants.length + newItems.length < 50);
       }
     } catch (error) {
       console.error('Error loading more items:', error);
@@ -243,19 +216,18 @@ export default function EateryGrid({
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const newItems: MockRestaurant[] = [];
       for (let i = 0; i < 24; i++) {
-        const itemIndex = page * 24 + i;
+        const itemIndex = restaurants.length + i;
         if (itemIndex < 50) {
           newItems.push(generateMockRestaurants(1)[0]);
         }
       }
       
       setRestaurants((prev) => [...prev, ...newItems]);
-      setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
-      setPage((prev) => prev + 1);
+      setHasMore(restaurants.length + newItems.length < 50);
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, page, useRealData, backendError, fetchRestaurants, buildSearchParams]);
+  }, [loading, hasMore, useRealData, backendError, fetchRestaurants, buildSearchParams, restaurants.length]);
 
   // Unified effect for all data loading - prevents duplicate API calls
   useEffect(() => {
@@ -266,7 +238,6 @@ export default function EateryGrid({
     debounceTimeoutRef.current = setTimeout(() => {
       // Reset state for new data load
       setRestaurants([])
-      setPage(0)
       setHasMore(true)
       setBackendError(false)
       isRetryingRef.current = false
@@ -280,19 +251,17 @@ export default function EateryGrid({
         const attemptFetch = async (): Promise<void> => {
           try {
             if (useRealData && currentRetryCount < 3) {
-              // Try real API first
+              // Try real API first with offset-based pagination
               const response = await fetchRestaurants(24, 0, buildSearchParams())
               setRestaurants(response.restaurants)
               setHasMore(response.hasMore)
               isRetryingRef.current = false
-              setPage(1)
             } else {
               // Use mock data (fallback or when useRealData is false or max retries reached)
               await new Promise((resolve) => setTimeout(resolve, 1000))
               const mockItems = generateMockRestaurants(24)
               setRestaurants(mockItems)
               setHasMore(true)
-              setPage(1)
               
               if (currentRetryCount >= 3) {
                 console.log('Backend unreachable after 3 attempts, switching to mock data')
@@ -317,7 +286,6 @@ export default function EateryGrid({
               const mockItems = generateMockRestaurants(24)
               setRestaurants(mockItems)
               setHasMore(true)
-              setPage(1)
               return
             }
             
@@ -336,7 +304,6 @@ export default function EateryGrid({
               const mockItems = generateMockRestaurants(24)
               setRestaurants(mockItems)
               setHasMore(true)
-              setPage(1)
             }
           }
         }
@@ -414,6 +381,9 @@ export default function EateryGrid({
     return true
   })
 
+  // Backend handles distance sorting, so we use filteredRestaurants directly
+  const sortedRestaurants = filteredRestaurants
+
   // Handle card click
   const handleCardClick = (restaurant: LightRestaurant) => {
     if (onCardClick) {
@@ -444,7 +414,7 @@ export default function EateryGrid({
     return formattedRating;
   }, [])
 
-  if (filteredRestaurants.length === 0 && !loading) {
+  if (sortedRestaurants.length === 0 && !loading) {
     return (
       <div className="text-center py-12">
         <Search className="mx-auto h-12 w-12 text-gray-400" />
@@ -481,7 +451,7 @@ export default function EateryGrid({
       
       {/* Grid Layout - Using ShulGrid's simple Tailwind approach */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {filteredRestaurants.map((restaurant, index) => {
+        {sortedRestaurants.map((restaurant, index) => {
           return (
             <div key={`restaurant-${restaurant.id}-${index}`}>
               <Card
@@ -517,7 +487,7 @@ export default function EateryGrid({
       )}
 
       {/* Load More Button */}
-      {hasMore && !loading && filteredRestaurants.length > 0 && (
+      {hasMore && !loading && sortedRestaurants.length > 0 && (
         <div className="flex justify-center py-8">
           <button
             onClick={loadMoreItems}
@@ -529,9 +499,9 @@ export default function EateryGrid({
       )}
 
       {/* End of Results */}
-      {!hasMore && filteredRestaurants.length > 0 && (
+      {!hasMore && sortedRestaurants.length > 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          Showing all {filteredRestaurants.length} restaurants
+          Showing all {sortedRestaurants.length} restaurants
         </div>
       )}
     </div>
