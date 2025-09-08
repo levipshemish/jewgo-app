@@ -86,10 +86,14 @@ export default function UnifiedLiveMapClient() {
     highUsageThreshold: 70,
     criticalUsageThreshold: 85,
     onHighUsage: (info) => {
-      console.warn('🗺️ Map memory usage high:', `${info.usagePercentage.toFixed(1)}%`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('🗺️ Map memory usage high:', `${info.usagePercentage.toFixed(1)}%`);
+      }
     },
     onCriticalUsage: (info) => {
-      console.error('🚨 Map memory usage critical:', `${info.usagePercentage.toFixed(1)}%`);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🚨 Map memory usage critical:', `${info.usagePercentage.toFixed(1)}%`);
+      }
       // Trigger aggressive cleanup when memory usage is critical
       forceCleanup();
     },
@@ -112,7 +116,9 @@ export default function UnifiedLiveMapClient() {
       lowFPS: 30,
     },
     onAlert: (alert) => {
-      console.warn(`🚨 Performance Alert [${alert.type}]:`, alert.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`🚨 Performance Alert [${alert.type}]:`, alert.message);
+      }
       // Could also send to monitoring service here
     },
   });
@@ -174,7 +180,9 @@ export default function UnifiedLiveMapClient() {
   // Memory pressure response - clear caches and reduce data when memory is critical
   useEffect(() => {
     if (memoryInfo?.isCriticalUsage) {
-      console.log('🧹 Critical memory usage detected, clearing caches...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🧹 Critical memory usage detected, clearing caches...');
+      }
       
       // Clear localStorage cache to free up memory
       try {
@@ -186,12 +194,16 @@ export default function UnifiedLiveMapClient() {
           }
         });
       } catch (err) {
-        console.warn('Failed to clear localStorage cache:', err);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to clear localStorage cache:', err);
+        }
       }
 
       // Reduce restaurant count immediately if we have too many
       if (allRestaurants.length > MAX_MARKERS) {
-        console.log(`🗺️ Reducing restaurants from ${allRestaurants.length} to ${MAX_MARKERS} due to memory pressure`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🗺️ Reducing restaurants from ${allRestaurants.length} to ${MAX_MARKERS} due to memory pressure`);
+        }
         const reducedRestaurants = allRestaurants.slice(0, MAX_MARKERS);
         setAllRestaurants(reducedRestaurants);
         setDisplayedRestaurants(prev => prev.slice(0, MAX_MARKERS));
@@ -744,23 +756,25 @@ export default function UnifiedLiveMapClient() {
       if (process.env.NODE_ENV === 'development') {
         const summary = getPerformanceSummary();
         
-        console.group('📊 Map Performance Report');
-        console.log(`Total metrics collected: ${summary.totalMetrics}`);
-        console.log(`Average render time: ${summary.averageRenderTime.toFixed(1)}ms`);
-        console.log(`Average API time: ${summary.averageApiTime.toFixed(1)}ms`);
-        console.log(`Current memory usage: ${summary.currentMemoryUsage.toFixed(1)}%`);
-        
-        if (summary.slowOperations.length > 0) {
-          console.warn('Recent slow operations:', summary.slowOperations.map(op => 
-            `${op.name}: ${op.value.toFixed(1)}${op.unit}`
-          ));
+        if (process.env.NODE_ENV === 'development') {
+          console.group('📊 Map Performance Report');
+          console.log(`Total metrics collected: ${summary.totalMetrics}`);
+          console.log(`Average render time: ${summary.averageRenderTime.toFixed(1)}ms`);
+          console.log(`Average API time: ${summary.averageApiTime.toFixed(1)}ms`);
+          console.log(`Current memory usage: ${summary.currentMemoryUsage.toFixed(1)}%`);
+          
+          if (summary.slowOperations.length > 0) {
+            console.warn('Recent slow operations:', summary.slowOperations.map(op => 
+              `${op.name}: ${op.value.toFixed(1)}${op.unit}`
+            ));
+          }
+          
+          if (summary.recentAlerts.length > 0) {
+            console.warn('Recent performance alerts:', summary.recentAlerts.map(alert => alert.message));
+          }
+          
+          console.groupEnd();
         }
-        
-        if (summary.recentAlerts.length > 0) {
-          console.warn('Recent performance alerts:', summary.recentAlerts.map(alert => alert.message));
-        }
-        
-        console.groupEnd();
       }
     };
 
@@ -1000,7 +1014,9 @@ export default function UnifiedLiveMapClient() {
           <MapErrorBoundary
             maxRetries={3}
             onError={(err, _errorInfo) => {
-              console.error('Map component error:', err);
+              if (process.env.NODE_ENV === 'development') {
+                console.error('Map component error:', err);
+              }
               // Could also report to monitoring service here
             }}
           >

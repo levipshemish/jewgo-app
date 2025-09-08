@@ -169,7 +169,9 @@ export function usePerformanceMonitoring(
       setAlerts(prev => [...prev, alert].slice(-10)); // Keep last 10 alerts
       opts.onAlert(alert);
       
-      console.warn(`🚨 Performance Alert [${alert.type}]:`, alert.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`🚨 Performance Alert [${alert.type}]:`, alert.message);
+      }
     }
   }, [opts]);
 
