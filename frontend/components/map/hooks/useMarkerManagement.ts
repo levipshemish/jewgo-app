@@ -297,10 +297,10 @@ export function useMarkerManagement({
       return;
     }
 
-    // Create clusterer
+    // Create clusterer with optimized settings for memory usage
     clustererRef.current = new (window.MarkerClusterer as any)(map, markersRef.current as any, {
-      gridSize: 50,
-      maxZoom: 15,
+      gridSize: 60, // Larger grid size to reduce clustering overhead
+      maxZoom: 14, // Lower max zoom to force clustering at higher zoom levels
       styles: [
         {
           url: '/images/cluster-1.png',
@@ -393,6 +393,13 @@ export function useMarkerManagement({
 
     lastSelectedIdRef.current = selectedRestaurantId?.toString() || null;
   }, [selectedRestaurantId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupMarkers();
+    };
+  }, [cleanupMarkers]);
 
   return {
     markersMap: markersMapRef.current,

@@ -105,6 +105,7 @@ export default function UnifiedLiveMapClient() {
 
   // Constants
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  const MAX_MARKERS = 300; // Maximum markers to prevent memory issues
 
 
   // Initialize component
@@ -247,7 +248,7 @@ export default function UnifiedLiveMapClient() {
       
       // Use cursor-based endpoint with viewport bounds for efficient loading
       const apiUrl = new URL('https://api.jewgo.app/api/restaurants');
-      apiUrl.searchParams.set('limit', '500'); // Increased limit for map view
+      apiUrl.searchParams.set('limit', '200'); // Reduced limit to prevent memory issues
       
       // Add viewport bounds if provided
       if (mapBounds) {
@@ -335,19 +336,23 @@ export default function UnifiedLiveMapClient() {
             setAllRestaurants(prev => {
               const existingIds = new Set(prev.map(r => r.id));
               const newRestaurants = validRestaurants.filter(r => !existingIds.has(r.id));
-              return [...prev, ...newRestaurants];
+              const combined = [...prev, ...newRestaurants];
+              // Limit total markers to prevent memory issues
+              return combined.slice(0, MAX_MARKERS);
             });
             setDisplayedRestaurants(prev => {
               const existingIds = new Set(prev.map(r => r.id));
               const newRestaurants = validRestaurants.filter(r => !existingIds.has(r.id));
-              return [...prev, ...newRestaurants];
+              const combined = [...prev, ...newRestaurants];
+              // Limit total markers to prevent memory issues
+              return combined.slice(0, MAX_MARKERS);
             });
             // Update the last fetched bounds
             lastFetchBoundsRef.current = boundsKey;
           } else {
             // Initial load: replace all restaurants
-            setAllRestaurants(validRestaurants);
-            setDisplayedRestaurants(validRestaurants);
+            setAllRestaurants(validRestaurants.slice(0, MAX_MARKERS));
+            setDisplayedRestaurants(validRestaurants.slice(0, MAX_MARKERS));
           }
         });
         
