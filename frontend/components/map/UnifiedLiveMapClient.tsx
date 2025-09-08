@@ -217,15 +217,19 @@ export default function UnifiedLiveMapClient() {
       
       fetchAbortController.current = new AbortController();
       
-      // Use unified API endpoint like the eatery page
-      const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
-      apiUrl.searchParams.set('limit', '1000');
-      apiUrl.searchParams.set('offset', '0');
-      
-      // Add location if available
+      // Use cursor-based endpoint for location-based sorting, unified endpoint otherwise
+      let apiUrl: URL;
       if (userLocation) {
+        // Use new cursor-based endpoint for distance sorting
+        apiUrl = new URL('https://api.jewgo.app/api/restaurants');
+        apiUrl.searchParams.set('limit', '1000');
         apiUrl.searchParams.set('lat', userLocation.latitude.toString());
         apiUrl.searchParams.set('lng', userLocation.longitude.toString());
+      } else {
+        // Use unified endpoint for non-location-based requests
+        apiUrl = new URL('/api/restaurants/unified', window.location.origin);
+        apiUrl.searchParams.set('limit', '1000');
+        apiUrl.searchParams.set('offset', '0');
       }
       
       const response = await fetch(apiUrl.toString(), {
@@ -245,8 +249,18 @@ export default function UnifiedLiveMapClient() {
       setLoadingStage('processing-data');
       setLoadingProgress(70);
 
-      if (data && data.data && data.data.restaurants && Array.isArray(data.data.restaurants) && data.data.restaurants.length > 0) {
-        const validRestaurantsRaw = data.data.restaurants.filter((restaurant: any) =>
+      // Handle both response formats: cursor-based and unified
+      let restaurantsArray: any[] = [];
+      if (data && data.items && Array.isArray(data.items)) {
+        // Cursor-based response format
+        restaurantsArray = data.items;
+      } else if (data && data.data && data.data.restaurants && Array.isArray(data.data.restaurants)) {
+        // Unified response format
+        restaurantsArray = data.data.restaurants;
+      }
+      
+      if (restaurantsArray.length > 0) {
+        const validRestaurantsRaw = restaurantsArray.filter((restaurant: any) =>
           restaurant && typeof restaurant === 'object' && restaurant.id
         );
 
