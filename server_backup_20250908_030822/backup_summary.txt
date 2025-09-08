@@ -1,0 +1,44 @@
+JewGo Server Data Backup Summary
+================================
+Backup Date: Mon Sep  8 03:08:25 EDT 2025
+Source Server: https://api.jewgo.app
+Backup Directory: server_backup_20250908_030822
+
+Files Backed Up:
+- . (608 bytes)
+- .. (1408 bytes)
+- categories.json (82 bytes)
+- config.json (81 bytes)
+- events_detailed.json (94 bytes)
+- events.json (78 bytes)
+- health.json (246 bytes)
+- metrics.json (88 bytes)
+- restaurants_detailed.json (61983 bytes)
+- restaurants.json (18752 bytes)
+- reviews_detailed.json (96 bytes)
+- reviews.json (80 bytes)
+- search_restaurant.json (106 bytes)
+- search_synagogue.json (104 bytes)
+- synagogues_detailed.json (102 bytes)
+- synagogues.json (86 bytes)
+- tags.json (70 bytes)
+- users.json (76 bytes)
+
+API Endpoints Tested:
+- /health - Health status
+- /api/restaurants - Restaurant data
+- /api/synagogues - Synagogue data  
+- /api/events - Event data
+- /api/reviews - Review data
+- /api/users - User data (if accessible)
+- /api/metrics - Metrics data (if accessible)
+- /api/search - Search functionality
+- /api/categories - Categories (if accessible)
+- /api/tags - Tags (if accessible)
+- /api/config - Configuration (if accessible)
+
+Next Steps:
+1. Review the backed up data
+2. Set up new server with this data
+3. Import data into new database
+4. Update DNS to point to new server
