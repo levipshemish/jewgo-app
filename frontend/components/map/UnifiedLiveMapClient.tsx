@@ -366,7 +366,7 @@ export default function UnifiedLiveMapClient() {
       setLoading(false);
       lastFetchTime.current = now;
     }
-  }, [allRestaurants.length, startTransition, CACHE_DURATION, userLocation]);
+  }, [startTransition, CACHE_DURATION, userLocation]);
 
   // Throttled bounds change handler
   const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBounds) => {
@@ -411,7 +411,7 @@ export default function UnifiedLiveMapClient() {
     if (mounted) {
       fetchRestaurantsData();
     }
-  }, [mounted, fetchRestaurantsData]);
+  }, [mounted]);
 
   // Worker-based filtering system
   useEffect(() => {
