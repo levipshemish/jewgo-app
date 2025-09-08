@@ -1443,6 +1443,7 @@ def create_app(config_class=None):
             logger.info(
                 f"Cursor pagination - limit: {limit}, cursor: {cursor is not None}, lat: {lat}, lng: {lng}"
             )
+            logger.info(f"Viewport bounds - NE: ({bounds_ne_lat}, {bounds_ne_lng}), SW: ({bounds_sw_lat}, {bounds_sw_lng})")
             logger.info(f"Cache key: {cache_key}")
             logger.info(f"Request args: {dict(request.args)}")
             logger.info(f"Query string: {request.query_string.decode()}")
@@ -1542,6 +1543,7 @@ def create_app(config_class=None):
             # Execute the query
             logger.info(f"Executing query: {query}")
             logger.info(f"Query params: {params}")
+            logger.info(f"Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
             
             db_manager = get_db_manager()
             if not db_manager:
