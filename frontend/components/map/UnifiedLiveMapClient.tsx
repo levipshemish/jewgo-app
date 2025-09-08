@@ -99,9 +99,23 @@ export default function UnifiedLiveMapClient() {
   // const performanceHistory = useRef<number[]>([]);
   const restaurantsRef = useRef<Restaurant[]>([]);
   // const indexesRef = useRef<any>(null);
+  const boundsChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Constants
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  // Throttled bounds change handler
+  const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBounds) => {
+    // Clear existing timeout
+    if (boundsChangeTimeoutRef.current) {
+      clearTimeout(boundsChangeTimeoutRef.current);
+    }
+    
+    // Set new timeout to fetch data after user stops moving the map
+    boundsChangeTimeoutRef.current = setTimeout(() => {
+      fetchRestaurantsData(bounds);
+    }, 1000); // 1 second delay
+  }, [fetchRestaurantsData]);
 
   // Initialize component
   useEffect(() => {
@@ -170,11 +184,14 @@ export default function UnifiedLiveMapClient() {
     }
   }, [mounted, userLocation, locationPromptShown, permissionStatus]);
 
-  // Optimized data fetching with intelligent caching
-  const fetchRestaurantsData = useCallback(async () => {
+  // Optimized data fetching with viewport-based loading
+  const fetchRestaurantsData = useCallback(async (mapBounds?: google.maps.LatLngBounds) => {
     const now = Date.now();
     
-    // Check if we have recent data
+    // Check if we have recent data for the same viewport
+    const boundsKey = mapBounds ? `${mapBounds.getNorthEast().lat()},${mapBounds.getNorthEast().lng()},${mapBounds.getSouthWest().lat()},${mapBounds.getSouthWest().lng()}` : 'all';
+    const cacheKey = `restaurants_cache_${boundsKey}`;
+    
     if (allRestaurants.length > 0 && (now - lastFetchTime.current) < CACHE_DURATION) {
       setLoadingProgress(100);
       setLoadingStage('complete');
@@ -188,8 +205,8 @@ export default function UnifiedLiveMapClient() {
       setLoadingProgress(10);
 
       // Check cache first
-      const cachedData = localStorage.getItem('restaurants_cache');
-      const cacheTimestamp = localStorage.getItem('restaurants_cache_timestamp');
+      const cachedData = localStorage.getItem(cacheKey);
+      const cacheTimestamp = localStorage.getItem(`${cacheKey}_timestamp`);
       const cacheAge = cacheTimestamp ? Date.now() - parseInt(cacheTimestamp) : Infinity;
       
       if (cachedData && cacheAge < CACHE_DURATION) {
@@ -217,10 +234,19 @@ export default function UnifiedLiveMapClient() {
       
       fetchAbortController.current = new AbortController();
       
-      // Use unified endpoint - map shows all restaurants in viewport, no distance sorting needed
-      const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
-      apiUrl.searchParams.set('limit', '1000');
-      apiUrl.searchParams.set('offset', '0');
+      // Use cursor-based endpoint with viewport bounds for efficient loading
+      const apiUrl = new URL('https://api.jewgo.app/api/restaurants');
+      apiUrl.searchParams.set('limit', '500'); // Increased limit for map view
+      
+      // Add viewport bounds if provided
+      if (mapBounds) {
+        const ne = mapBounds.getNorthEast();
+        const sw = mapBounds.getSouthWest();
+        apiUrl.searchParams.set('bounds_ne_lat', ne.lat().toString());
+        apiUrl.searchParams.set('bounds_ne_lng', ne.lng().toString());
+        apiUrl.searchParams.set('bounds_sw_lat', sw.lat().toString());
+        apiUrl.searchParams.set('bounds_sw_lng', sw.lng().toString());
+      }
       
       const response = await fetch(apiUrl.toString(), {
         cache: "no-store",
@@ -239,9 +265,9 @@ export default function UnifiedLiveMapClient() {
       setLoadingStage('processing-data');
       setLoadingProgress(70);
 
-      // Handle unified response format
-      if (data && data.data && data.data.restaurants && Array.isArray(data.data.restaurants) && data.data.restaurants.length > 0) {
-        const validRestaurantsRaw = data.data.restaurants.filter((restaurant: any) =>
+      // Handle cursor-based response format
+      if (data && data.items && Array.isArray(data.items) && data.items.length > 0) {
+        const validRestaurantsRaw = data.items.filter((restaurant: any) =>
           restaurant && typeof restaurant === 'object' && restaurant.id
         );
 
@@ -264,8 +290,8 @@ export default function UnifiedLiveMapClient() {
         setLoadingProgress(90);
         
         try {
-          localStorage.setItem('restaurants_cache', JSON.stringify(validRestaurants));
-          localStorage.setItem('restaurants_cache_timestamp', Date.now().toString());
+          localStorage.setItem(cacheKey, JSON.stringify(validRestaurants));
+          localStorage.setItem(`${cacheKey}_timestamp`, Date.now().toString());
         } catch (_cacheError) {
           // Cache storage failed, continue anyway
         }
@@ -638,6 +664,7 @@ export default function UnifiedLiveMapClient() {
             className="h-full rounded-none shadow-none bg-transparent"
             showRatingBubbles={true}
             onMapStateUpdate={(state) => setMapState(state)}
+            onBoundsChanged={handleBoundsChanged}
           />
         </div>
       </div>

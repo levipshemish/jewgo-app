@@ -1406,6 +1406,12 @@ def create_app(config_class=None):
             radius_m = request.args.get("radius_m", type=float)  # radius in meters
             cursor = request.args.get("cursor", type=str)
             
+            # Parse viewport bounds for map-based loading
+            bounds_ne_lat = request.args.get("bounds_ne_lat", type=float)
+            bounds_ne_lng = request.args.get("bounds_ne_lng", type=float)
+            bounds_sw_lat = request.args.get("bounds_sw_lat", type=float)
+            bounds_sw_lng = request.args.get("bounds_sw_lng", type=float)
+            
             # Parse pagination parameters
             try:
                 limit = min(int(request.args.get("limit", 30)), 100)  # Cap at 100
@@ -1491,6 +1497,7 @@ def create_app(config_class=None):
                           AND geom IS NOT NULL
                           AND updated_at <= %s
                           {f'AND ST_DWithin(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography, {radius_m})' if radius_m else ''}
+                          {f'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
                     )
                     SELECT * FROM scored
                     WHERE (%s IS NULL)
@@ -1503,10 +1510,13 @@ def create_app(config_class=None):
                 if radius_m:
                     params.extend([lng, lat])  # For ST_DWithin
                 params.extend([as_of])  # For updated_at filter
+                if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
+                    # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
+                    params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])
                 params.extend([last_dist_m, last_dist_m, last_dist_m, last_id, limit])
             else:
                 # No location provided, fallback to simple query with cursor support
-                query = """
+                query = f"""
                     SELECT id, name, address, city, state, zip_code,
                            phone_number, website, kosher_category,
                            certifying_agency, price_range, google_rating, google_review_count,
@@ -1516,10 +1526,15 @@ def create_app(config_class=None):
                     WHERE status = 'active'
                       AND updated_at <= %s
                       AND (%s IS NULL OR id > %s)
+                      {f'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
                     ORDER BY name ASC, id ASC
                     LIMIT %s
                 """
-                params = [as_of, last_id, last_id, limit]
+                params = [as_of, last_id, last_id]
+                if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
+                    # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
+                    params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])
+                params.append(limit)
             # Apply additional filters (simplified for cursor-based approach)
             # Note: For complex filtering, consider moving to a separate endpoint
             # or implementing filter-aware cursor encoding

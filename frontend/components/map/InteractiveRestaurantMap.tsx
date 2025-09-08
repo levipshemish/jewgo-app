@@ -41,6 +41,7 @@ interface InteractiveRestaurantMapProps {
   className?: string;
   showRatingBubbles?: boolean;
   onMapStateUpdate?: (state: MapState) => void;
+  onBoundsChanged?: (bounds: google.maps.LatLngBounds) => void;
 }
 
 export function InteractiveRestaurantMap({
@@ -52,6 +53,7 @@ export function InteractiveRestaurantMap({
   className = '',
   showRatingBubbles = false,
   onMapStateUpdate,
+  onBoundsChanged,
 }: InteractiveRestaurantMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -158,6 +160,19 @@ export function InteractiveRestaurantMap({
           },
         });
         directionsRendererRef.current.setMap(map);
+
+        // Add bounds change listener for viewport-based loading
+        if (onBoundsChanged) {
+          const boundsChangedListener = map.addListener('bounds_changed', () => {
+            const bounds = map.getBounds();
+            if (bounds) {
+              onBoundsChanged(bounds);
+            }
+          });
+          
+          // Store listener for cleanup
+          mapInstanceRef.current = map;
+        }
 
         // Update map state
         setMapState(prev => ({
