@@ -75,7 +75,18 @@ const DEFAULT_OPTIONS: Required<PerformanceMonitoringOptions> = {
 export function usePerformanceMonitoring(
   options: PerformanceMonitoringOptions = {}
 ): UsePerformanceMonitoringReturn {
-  const opts = useMemo(() => ({ ...DEFAULT_OPTIONS, ...options }), [options]);
+  // Memoize options more carefully to prevent unnecessary re-renders
+  const opts = useMemo(() => {
+    const merged = { ...DEFAULT_OPTIONS, ...options };
+    return merged;
+  }, [
+    options.enabled,
+    options.collectMetrics,
+    options.alertOnSlowPerformance,
+    options.maxHistoryLength,
+    options.thresholds,
+    options.onAlert,
+  ]);
   const [metrics, setMetrics] = useState<PerformanceMetric[]>([]);
   const [alerts, setAlerts] = useState<PerformanceAlert[]>([]);
   const activeTimersRef = useRef<Map<string, { startTime: number; category: PerformanceMetric['category'] }>>(new Map());

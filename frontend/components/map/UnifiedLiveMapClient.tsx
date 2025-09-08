@@ -111,13 +111,7 @@ export default function UnifiedLiveMapClient() {
   }, [memoryInfo?.isCriticalUsage, forceCleanup]);
 
   // Enhanced performance monitoring
-  const {
-    startTimer,
-    recordMetric,
-    measureAsyncOperation: _measureAsyncOperation,
-    getPerformanceSummary,
-    clearMetrics: _clearMetrics
-  } = usePerformanceMonitoring({
+  const performanceMonitoringOptions = useMemo(() => ({
     enabled: process.env.NODE_ENV === 'development',
     thresholds: {
       slowRender: 100, // 100ms
@@ -126,13 +120,21 @@ export default function UnifiedLiveMapClient() {
       manyMarkers: BASE_MAX_MARKERS,
       lowFPS: 30,
     },
-    onAlert: (alert) => {
+    onAlert: (alert: any) => {
       if (process.env.NODE_ENV === 'development') {
         console.warn(`🚨 Performance Alert [${alert.type}]:`, alert.message);
       }
       // Could also send to monitoring service here
     },
-  });
+  }), [BASE_MAX_MARKERS]);
+
+  const {
+    startTimer,
+    recordMetric,
+    measureAsyncOperation: _measureAsyncOperation,
+    getPerformanceSummary,
+    clearMetrics: _clearMetrics
+  } = usePerformanceMonitoring(performanceMonitoringOptions);
   
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
   // Removed activeTab state since we're only showing map view
