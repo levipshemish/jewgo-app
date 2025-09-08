@@ -704,6 +704,16 @@ def create_app(config_class=None):
             logger.error(f"Error registering Redis health routes blueprint: {e}")
     else:
         logger.info("Redis not configured - skipping Redis health routes registration")
+    # Register PostgreSQL authentication system
+    try:
+        from utils.app_factory_postgres_auth import init_postgres_auth_app
+        init_postgres_auth_app(app)
+        logger.info("PostgreSQL authentication system initialized successfully")
+    except ImportError as e:
+        logger.warning(f"Could not initialize PostgreSQL auth system: {e}")
+    except Exception as e:
+        logger.error(f"Error initializing PostgreSQL auth system: {e}")
+
     # Register v4 API routes
     try:
         if api_v4 is not None:

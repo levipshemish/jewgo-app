@@ -202,9 +202,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               if (DEBUG) { debugLog('📍 LocationContext: Permission denied, cleared location data'); }
             } else if (newState === 'granted') {
               setError(null);
-              if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting location'); }
-              // Automatically request location when permission is granted
-              requestLocation();
+              if (DEBUG) { debugLog('📍 LocationContext: Permission granted'); }
+              // Don't automatically request location - wait for user gesture
             }
           };
           

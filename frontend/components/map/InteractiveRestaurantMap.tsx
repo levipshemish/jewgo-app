@@ -134,6 +134,11 @@ export function InteractiveRestaurantMap({
           return;
         }
 
+        // Don't create a new map if one already exists
+        if (mapInstanceRef.current) {
+          return;
+        }
+
         // Check if Map ID is available for Advanced Markers
         const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID;
 
@@ -233,8 +238,11 @@ export function InteractiveRestaurantMap({
       }
       _cleanupAccessibility();
       
-      // Cleanup map instances
+      // Cleanup map instances more thoroughly
       if (mapInstanceRef.current) {
+        // Clear all event listeners
+        google.maps.event.clearInstanceListeners(mapInstanceRef.current);
+        // Clear the map
         mapInstanceRef.current = null;
       }
       if (userLocationMarkerRef.current) {
@@ -242,7 +250,7 @@ export function InteractiveRestaurantMap({
         userLocationMarkerRef.current = null;
       }
     };
-  }, [mapCenter, onBoundsChanged, restaurantsWithCoords, announceRestaurantSelection, handleKeyboardNavigation, keyboardSelectedIndex, onRestaurantSelect, setUpAriaLabels, _cleanupAccessibility]); // Include all dependencies
+  }, [mapCenter, onBoundsChanged, announceRestaurantSelection, handleKeyboardNavigation, keyboardSelectedIndex, onRestaurantSelect, setUpAriaLabels, _cleanupAccessibility]); // Removed restaurantsWithCoords to prevent infinite loop
 
   // Update user location marker when user location changes
   useEffect(() => {
