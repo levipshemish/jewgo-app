@@ -734,6 +734,10 @@ export default function UnifiedLiveMapClient() {
     setMapState(state);
   }, []);
 
+  const handleRestaurantSelectCallback = useCallback((restaurant: Restaurant) => {
+    handleRestaurantSelect(parseInt(restaurant.id.toString()));
+  }, [handleRestaurantSelect]);
+
   const handleToggleFavorite = useCallback((restaurant: Restaurant) => {
     const restaurantId = restaurant.id.toString();
     const isCurrentlyFavorite = favoritesManager.isFavorite(restaurantId);
@@ -1030,7 +1034,7 @@ export default function UnifiedLiveMapClient() {
               restaurants={displayedRestaurants}
               userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
               selectedRestaurantId={selectedRestaurant?.id || null}
-              onRestaurantSelect={(restaurant) => handleRestaurantSelect(parseInt(restaurant.id.toString()))}
+              onRestaurantSelect={handleRestaurantSelectCallback}
               mapCenter={mapCenter || undefined}
               className="h-full rounded-none shadow-none bg-transparent"
               showRatingBubbles={true}

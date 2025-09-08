@@ -250,7 +250,7 @@ export function InteractiveRestaurantMap({
         userLocationMarkerRef.current = null;
       }
     };
-  }, [mapCenter, onBoundsChanged, announceRestaurantSelection, handleKeyboardNavigation, keyboardSelectedIndex, onRestaurantSelect, setUpAriaLabels, _cleanupAccessibility]); // Removed restaurantsWithCoords to prevent infinite loop
+  }, [mapCenter, onBoundsChanged, announceRestaurantSelection, handleKeyboardNavigation, onRestaurantSelect, setUpAriaLabels, _cleanupAccessibility]); // Removed restaurantsWithCoords and keyboardSelectedIndex to prevent infinite loops
 
   // Update user location marker when user location changes
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
 
 interface MapAccessibilityOptions {
   enabled?: boolean;
@@ -28,7 +28,7 @@ const DEFAULT_OPTIONS: Required<MapAccessibilityOptions> = {
 export function useMapAccessibility(
   options: MapAccessibilityOptions = {}
 ): MapAccessibilityReturn {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const opts = useMemo(() => ({ ...DEFAULT_OPTIONS, ...options }), [options]);
   const _announcerRef = useRef<HTMLElement | null>(null);
   const keyboardListenerRef = useRef<((e: KeyboardEvent) => void) | null>(null);
 
