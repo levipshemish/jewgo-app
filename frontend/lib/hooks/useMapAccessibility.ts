@@ -29,7 +29,7 @@ export function useMapAccessibility(
   options: MapAccessibilityOptions = {}
 ): MapAccessibilityReturn {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  const announcerRef = useRef<HTMLElement | null>(null);
+  const _announcerRef = useRef<HTMLElement | null>(null);
   const keyboardListenerRef = useRef<((e: KeyboardEvent) => void) | null>(null);
 
   // Create or get the screen reader announcer element

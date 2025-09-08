@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface MemoryInfo {
   usedJSHeapSize: number;
@@ -43,7 +43,7 @@ const DEFAULT_OPTIONS: Required<MemoryMonitoringOptions> = {
 export function useMemoryMonitoring(
   options: MemoryMonitoringOptions = {}
 ): UseMemoryMonitoringReturn {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const opts = useMemo(() => ({ ...DEFAULT_OPTIONS, ...options }), [options]);
   const [memoryInfo, setMemoryInfo] = useState<MemoryInfo | null>(null);
   const [memoryHistory, setMemoryHistory] = useState<MemoryInfo[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);

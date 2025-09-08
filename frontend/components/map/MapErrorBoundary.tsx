@@ -123,11 +123,13 @@ export class MapErrorBoundary extends React.Component<MapErrorBoundaryProps, Map
     this.props.onError?.(error, errorInfo);
 
     // Log error details for debugging
-    console.group('🗺️ Map Error Boundary');
-    console.error('Error:', error);
-    console.error('Error Info:', errorInfo);
-    console.error('Component Stack:', errorInfo.componentStack);
-    console.groupEnd();
+    if (process.env.NODE_ENV === 'development') {
+      console.group('🗺️ Map Error Boundary');
+      console.error('Error:', error);
+      console.error('Error Info:', errorInfo);
+      console.error('Component Stack:', errorInfo.componentStack);
+      console.groupEnd();
+    }
 
     // Report to monitoring service in production
     if (process.env.NODE_ENV === 'production') {

@@ -8,7 +8,7 @@ import { loadMaps } from '@/lib/maps/loader';
 import { Restaurant } from '@/lib/types/restaurant';
 import { performanceMonitor } from '@/lib/utils/performanceOptimization';
 import { safeFilter } from '@/lib/utils/validation';
-import { useMapAccessibility, announceLoadingState } from '@/lib/hooks/useMapAccessibility';
+import { useMapAccessibility, announceLoadingState as _announceLoadingState } from '@/lib/hooks/useMapAccessibility';
 
 import { useMarkerManagement } from './hooks/useMarkerManagement';
 
@@ -110,11 +110,11 @@ export function InteractiveRestaurantMap({
 
   // Accessibility features
   const {
-    announceMapUpdate,
+    announceMapUpdate: _announceMapUpdate,
     announceRestaurantSelection,
     handleKeyboardNavigation,
     setUpAriaLabels,
-    cleanupAccessibility,
+    cleanupAccessibility: _cleanupAccessibility,
   } = useMapAccessibility({
     enabled: true,
     announceMapUpdates: true,
@@ -226,6 +226,13 @@ export function InteractiveRestaurantMap({
 
     return () => {
       isMounted = false;
+      // Cleanup accessibility
+      const currentMapRef = mapRef.current;
+      if (mapInstanceRef.current && (mapInstanceRef.current as any)._accessibilityHandler) {
+        currentMapRef?.removeEventListener('keydown', (mapInstanceRef.current as any)._accessibilityHandler);
+      }
+      _cleanupAccessibility();
+      
       // Cleanup map instances
       if (mapInstanceRef.current) {
         mapInstanceRef.current = null;
@@ -235,7 +242,7 @@ export function InteractiveRestaurantMap({
         userLocationMarkerRef.current = null;
       }
     };
-  }, [mapCenter, onBoundsChanged, restaurantsWithCoords]); // Include dependencies to prevent stale closures
+  }, [mapCenter, onBoundsChanged, restaurantsWithCoords, announceRestaurantSelection, handleKeyboardNavigation, keyboardSelectedIndex, onRestaurantSelect, setUpAriaLabels, _cleanupAccessibility]); // Include all dependencies
 
   // Update user location marker when user location changes
   useEffect(() => {
@@ -271,6 +278,22 @@ export function InteractiveRestaurantMap({
   // Removed getUserLocation function since it's not used in this component
 
   // Removed clearDirections function since we no longer use Google Maps Directions API
+
+  // Announce map updates for accessibility
+  useEffect(() => {
+    _announceMapUpdate(restaurantsWithCoords.length);
+  }, [restaurantsWithCoords.length, _announceMapUpdate]);
+
+  // Announce loading states
+  useEffect(() => {
+    if (mapState.isLoadingMarkers) {
+      announceLoadingState('loading', 'restaurant markers');
+    } else if (mapState.markerError) {
+      announceLoadingState('error', 'restaurant markers');
+    } else {
+      announceLoadingState('loaded', 'restaurant markers');
+    }
+  }, [mapState.isLoadingMarkers, mapState.markerError]);
 
   // Performance monitoring
   useEffect(() => {

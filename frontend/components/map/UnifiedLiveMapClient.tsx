@@ -15,6 +15,7 @@ import { throttle as throttleFn } from '@/lib/utils/touchUtils';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useMemoryMonitoring } from '@/lib/hooks/useMemoryMonitoring';
+import { usePerformanceMonitoring } from '@/lib/hooks/usePerformanceMonitoring';
 import { favoritesManager } from '@/lib/utils/favorites';
 
 // Removed VirtualRestaurantList import since we're only showing map view
@@ -90,6 +91,28 @@ export default function UnifiedLiveMapClient() {
       forceCleanup();
     },
   });
+
+  // Enhanced performance monitoring
+  const {
+    startTimer,
+    recordMetric,
+    measureAsyncOperation: _measureAsyncOperation,
+    getPerformanceSummary,
+    clearMetrics: _clearMetrics
+  } = usePerformanceMonitoring({
+    enabled: process.env.NODE_ENV === 'development',
+    thresholds: {
+      slowRender: 100, // 100ms
+      slowApiCall: 3000, // 3 seconds for map data
+      highMemoryUsage: 80,
+      manyMarkers: BASE_MAX_MARKERS,
+      lowFPS: 30,
+    },
+    onAlert: (alert) => {
+      console.warn(`🚨 Performance Alert [${alert.type}]:`, alert.message);
+      // Could also send to monitoring service here
+    },
+  });
   
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
   // Removed activeTab state since we're only showing map view
@@ -160,8 +183,8 @@ export default function UnifiedLiveMapClient() {
             localStorage.removeItem(`${key}_timestamp`);
           }
         });
-      } catch (error) {
-        console.warn('Failed to clear localStorage cache:', error);
+      } catch (err) {
+        console.warn('Failed to clear localStorage cache:', err);
       }
 
       // Reduce restaurant count immediately if we have too many
@@ -172,7 +195,7 @@ export default function UnifiedLiveMapClient() {
         setDisplayedRestaurants(prev => prev.slice(0, MAX_MARKERS));
       }
     }
-  }, [memoryInfo?.isCriticalUsage, allRestaurants.length, MAX_MARKERS]);
+  }, [memoryInfo?.isCriticalUsage, allRestaurants.length, MAX_MARKERS, allRestaurants]);
 
   // Handle URL parameters for deep linking
   useEffect(() => {
@@ -237,6 +260,7 @@ export default function UnifiedLiveMapClient() {
 
   // Optimized data fetching with viewport-based loading
   const fetchRestaurantsData = useCallback(async (mapBounds?: google.maps.LatLngBounds | PlainBounds, isInitialLoad = false) => {
+    const endFetchTimer = startTimer('restaurant-data-fetch', 'api');
     // Prevent multiple simultaneous fetches
     if (isFetchingRef.current) {
       return;
@@ -550,8 +574,29 @@ export default function UnifiedLiveMapClient() {
       }
       
       lastFetchTime.current = now;
+      
+      // Complete performance measurement
+      endFetchTimer();
+      
+      // Record additional metrics
+      recordMetric({
+        name: 'marker-count',
+        value: allRestaurants.length,
+        category: 'custom',
+        unit: 'count',
+      });
+      
+      // Track memory pressure correlation
+      if (memoryInfo?.usagePercentage) {
+        recordMetric({
+          name: 'memory-during-fetch',
+          value: memoryInfo.usagePercentage,
+          category: 'memory',
+          unit: '%',
+        });
+      }
     }
-  }, [CACHE_DURATION, allRestaurants.length]); // Include dependencies to prevent stale closures
+  }, [CACHE_DURATION, allRestaurants.length, startTimer, recordMetric, memoryInfo?.usagePercentage, MAX_MARKERS]); // Include dependencies to prevent stale closures
 
   // Throttled bounds change handler with movement threshold and per-bounds cooldown
   const lastBoundsRef = useRef<{ ne: { lat: number; lng: number }; sw: { lat: number; lng: number } } | null>(null);
@@ -633,6 +678,9 @@ export default function UnifiedLiveMapClient() {
       return;
     }
     
+    // Track filter processing performance
+    const endFilterTimer = startTimer('filter-processing', 'interaction');
+    
     const message: FilterWorkerMessage = {
       type: 'FILTER_RESTAURANTS',
       payload: {
@@ -643,7 +691,18 @@ export default function UnifiedLiveMapClient() {
       },
     };
     throttledPost(message);
-  }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost, loading]);
+    
+    // Record metrics for filter complexity
+    recordMetric({
+      name: 'restaurants-to-filter',
+      value: allRestaurants.length,
+      category: 'custom',
+      unit: 'count',
+    });
+    
+    // End timer when worker responds (this is approximate timing)
+    setTimeout(() => endFilterTimer(), 50); // Approximate worker processing time
+  }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost, loading, startTimer, recordMetric]);
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
@@ -674,6 +733,40 @@ export default function UnifiedLiveMapClient() {
     // Force re-render by updating the selected restaurant
     setSelectedRestaurant({ ...restaurant });
   }, []);
+
+  // Development performance dashboard (console logging)
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+
+    const logPerformanceReport = () => {
+      if (process.env.NODE_ENV === 'development') {
+        const summary = getPerformanceSummary();
+        
+        console.group('📊 Map Performance Report');
+        console.log(`Total metrics collected: ${summary.totalMetrics}`);
+        console.log(`Average render time: ${summary.averageRenderTime.toFixed(1)}ms`);
+        console.log(`Average API time: ${summary.averageApiTime.toFixed(1)}ms`);
+        console.log(`Current memory usage: ${summary.currentMemoryUsage.toFixed(1)}%`);
+        
+        if (summary.slowOperations.length > 0) {
+          console.warn('Recent slow operations:', summary.slowOperations.map(op => 
+            `${op.name}: ${op.value.toFixed(1)}${op.unit}`
+          ));
+        }
+        
+        if (summary.recentAlerts.length > 0) {
+          console.warn('Recent performance alerts:', summary.recentAlerts.map(alert => alert.message));
+        }
+        
+        console.groupEnd();
+      }
+    };
+
+    // Log performance report every 2 minutes in development
+    const interval = setInterval(logPerformanceReport, 120000);
+    
+    return () => clearInterval(interval);
+  }, [getPerformanceSummary]);
 
   // Calculate distance between two points in miles
   const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -904,8 +997,8 @@ export default function UnifiedLiveMapClient() {
         >
           <MapErrorBoundary
             maxRetries={3}
-            onError={(error, errorInfo) => {
-              console.error('Map component error:', error);
+            onError={(err, _errorInfo) => {
+              console.error('Map component error:', err);
               // Could also report to monitoring service here
             }}
           >
