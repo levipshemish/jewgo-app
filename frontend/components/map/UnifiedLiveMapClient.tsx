@@ -100,6 +100,8 @@ export default function UnifiedLiveMapClient() {
   const restaurantsRef = useRef<Restaurant[]>([]);
   // const indexesRef = useRef<any>(null);
   const boundsChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isFetchingRef = useRef<boolean>(false);
+  const lastFetchBoundsRef = useRef<string | null>(null);
 
   // Constants
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -181,6 +183,11 @@ export default function UnifiedLiveMapClient() {
 
   // Optimized data fetching with viewport-based loading
   const fetchRestaurantsData = useCallback(async (mapBounds?: google.maps.LatLngBounds) => {
+    // Prevent multiple simultaneous fetches
+    if (isFetchingRef.current) {
+      return;
+    }
+    
     const now = Date.now();
     
     // Check if we have recent data for the same viewport
@@ -190,6 +197,11 @@ export default function UnifiedLiveMapClient() {
     // For viewport-based loading, we don't use cache since we're accumulating data
     const shouldUseCache = !mapBounds;
     
+    // Prevent fetching the same bounds multiple times
+    if (mapBounds && lastFetchBoundsRef.current === boundsKey) {
+      return;
+    }
+    
     if (shouldUseCache && allRestaurants.length > 0 && (now - lastFetchTime.current) < CACHE_DURATION) {
       setLoadingProgress(100);
       setLoadingStage('complete');
@@ -197,6 +209,7 @@ export default function UnifiedLiveMapClient() {
     }
     
     try {
+      isFetchingRef.current = true;
       setLoading(true);
       setError(null);
       setLoadingStage('checking-cache');
@@ -329,6 +342,8 @@ export default function UnifiedLiveMapClient() {
               const newRestaurants = validRestaurants.filter(r => !existingIds.has(r.id));
               return [...prev, ...newRestaurants];
             });
+            // Update the last fetched bounds
+            lastFetchBoundsRef.current = boundsKey;
           } else {
             // Initial load: replace all restaurants
             setAllRestaurants(validRestaurants);
@@ -390,10 +405,11 @@ export default function UnifiedLiveMapClient() {
       setLoadingProgress(100);
       setLoadingStage('error');
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
       lastFetchTime.current = now;
     }
-  }, [startTransition, CACHE_DURATION, userLocation]);
+  }, [startTransition, CACHE_DURATION]);
 
   // Throttled bounds change handler
   const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBounds) => {
