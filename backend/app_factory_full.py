@@ -1644,7 +1644,7 @@ def create_app(config_class=None):
                 execution_time = (datetime.now() - start_time).total_seconds()
                 logger.info(f"Query executed in {execution_time:.3f}s, returned {len(restaurants)} items")
                 
-            return jsonify(response_data)
+                return jsonify(response_data)
                 
         except Exception as e:
             logger.error(f"Error in get_restaurants: {e}")
