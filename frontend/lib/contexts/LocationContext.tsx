@@ -364,6 +364,25 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [hasInitialized, hasShownPopup, lastPopupShownTime]);
 
+  // Define checkPermissionStatus function before using it in other functions
+  const checkPermissionStatus = useCallback(async (): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> => {
+    if (!navigator.geolocation) {
+      return 'unsupported';
+    }
+
+    try {
+      if ('permissions' in navigator && 'query' in navigator.permissions) {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        return permission.state;
+      } else {
+        // For older browsers, we can't check without actually requesting
+        return 'prompt';
+      }
+    } catch (_error) {
+      return 'prompt';
+    }
+  }, []);
+
   // Define refreshLocation function before using it in useEffect
   const refreshLocation = useCallback(async (): Promise<void> => {
     if (permissionStatus === 'granted') {
@@ -467,24 +486,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
   const setLoadingHandler = useCallback((loading: boolean) => {
     setIsLoading(loading);
-  }, []);
-
-  const checkPermissionStatus = useCallback(async (): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> => {
-    if (!navigator.geolocation) {
-      return 'unsupported';
-    }
-
-    try {
-      if ('permissions' in navigator && 'query' in navigator.permissions) {
-        const permission = await navigator.permissions.query({ name: 'geolocation' });
-        return permission.state;
-      } else {
-        // For older browsers, we can't check without actually requesting
-        return 'prompt';
-      }
-    } catch (_error) {
-      return 'prompt';
-    }
   }, []);
 
   const markPopupShown = useCallback(() => {
