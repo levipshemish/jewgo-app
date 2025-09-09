@@ -2092,9 +2092,9 @@ def create_app(config_class=None):
     def healthz():
         return jsonify({"ok": True}), 200
     
-    @app.route("/api/restaurants/<int:restaurant_id>/view", methods=["POST"])
-    def track_restaurant_view(restaurant_id):
-        """Track a view for a restaurant - Updated via webhook deployment"""
+                @app.route("/api/restaurants/<int:restaurant_id>/view", methods=["POST"])
+                def track_restaurant_view(restaurant_id):
+                    """Track a view for a restaurant - Webhook deployment test successful!"""
         try:
             # Use the restaurant repository to increment view count
             from database.repositories.restaurant_repository import RestaurantRepository
