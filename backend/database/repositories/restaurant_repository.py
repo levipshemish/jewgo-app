@@ -1,3 +1,9 @@
+# !/usr/bin/env python3
+"""Restaurant repository for database operations.
+This module handles all restaurant-related database operations,
+separating data access logic from business logic.
+"""
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from sqlalchemy import and_, func, or_
@@ -8,11 +14,6 @@ from ..connection_manager import DatabaseConnectionManager
 from ..models import Restaurant, RestaurantImage
 
 logger = get_logger(__name__)
-# !/usr/bin/env python3
-"""Restaurant repository for database operations.
-This module handles all restaurant-related database operations,
-separating data access logic from business logic.
-"""
 
 
 class RestaurantRepository(BaseRepository[Restaurant]):
@@ -309,7 +310,7 @@ class RestaurantRepository(BaseRepository[Restaurant]):
             # Use raw SQL to increment view count to avoid model caching issues
             from sqlalchemy import text
             result = session.execute(
-                text("UPDATE restaurants SET view_count = COALESCE(view_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = :restaurant_id RETURNING view_count"),
+                text("UPDATE restaurants SET view_count = COALESCE(view_count, 0) + 1 WHERE id = :restaurant_id RETURNING view_count"),
                 {"restaurant_id": restaurant_id}
             )
             
