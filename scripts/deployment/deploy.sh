@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Deployment script for Jewgo App
 echo "🚀 Starting deployment..."

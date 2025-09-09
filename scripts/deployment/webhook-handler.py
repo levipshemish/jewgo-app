@@ -97,7 +97,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         try:
             # Execute the deployment script directly
             result = subprocess.run(
-                ['/bin/bash', '/app/deploy.sh'],
+                ['/bin/sh', '/app/deploy.sh'],
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minute timeout
