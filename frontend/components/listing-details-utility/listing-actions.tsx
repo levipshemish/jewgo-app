@@ -311,9 +311,10 @@ export function ListingActions({
                 variant="ghost"
                 size="sm"
                 onClick={handleAddressClick}
-                className="flex items-center justify-center text-sm text-gray-900 font-bold h-auto p-0 hover:bg-blue-50 hover:text-blue-600 transition-colors group rounded-full px-2 py-1 text-center max-w-full"
+                className="flex items-center justify-center gap-1 text-sm text-green-600 font-bold h-auto p-0 hover:bg-green-50 hover:text-green-700 transition-colors group rounded-full px-2 py-1 text-center max-w-full"
               >
-                <span className="text-center">{address}</span>
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="text-center underline decoration-black">{address}</span>
               </Button>
             </div>
           )}

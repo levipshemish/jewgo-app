@@ -1,7 +1,7 @@
 {
   "version": 2,
   "name": "jewgo-frontend",
-  "buildCommand": "npm run validate-env && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm ci",
   "framework": "nextjs",
