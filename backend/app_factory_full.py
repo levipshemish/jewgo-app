@@ -2078,6 +2078,8 @@ def create_app(config_class=None):
     def track_restaurant_view(restaurant_id):
         """Track a view for a restaurant - Webhook deployment system fully operational!"""
         try:
+            print(f"🔍 [VIEW TRACKING] Starting view tracking for restaurant_id: {restaurant_id}")
+            
             # Use the restaurant repository to increment view count
             from database.repositories.restaurant_repository import RestaurantRepository
             from database.connection_manager import DatabaseConnectionManager
@@ -2086,36 +2088,69 @@ def create_app(config_class=None):
             connection_manager.connect()
             restaurant_repo = RestaurantRepository(connection_manager)
             
+            # Get the current view count before incrementing
+            from sqlalchemy import text
+            session = connection_manager.get_session()
+            result = session.execute(
+                text("SELECT view_count, name FROM restaurants WHERE id = :restaurant_id"),
+                {"restaurant_id": restaurant_id}
+            )
+            before_row = result.fetchone()
+            if not before_row:
+                session.close()
+                print(f"❌ [VIEW TRACKING] Restaurant {restaurant_id} not found")
+                return jsonify({
+                    "success": False,
+                    "error": "Restaurant not found"
+                }), 404
+            
+            before_count = before_row[0] or 0
+            restaurant_name = before_row[1] or "Unknown"
+            session.close()
+            
+            print(f"📊 [VIEW TRACKING] Restaurant: {restaurant_name} (ID: {restaurant_id})")
+            print(f"📊 [VIEW TRACKING] View count BEFORE increment: {before_count}")
+            
             success = restaurant_repo.increment_view_count(restaurant_id)
             
             if success:
                 # Get the updated view count using raw SQL to avoid model caching issues
-                from sqlalchemy import text
                 session = connection_manager.get_session()
                 result = session.execute(
                     text("SELECT view_count FROM restaurants WHERE id = :restaurant_id"),
                     {"restaurant_id": restaurant_id}
                 )
                 view_count_row = result.fetchone()
-                view_count = view_count_row[0] if view_count_row else 0
+                after_count = view_count_row[0] if view_count_row else 0
                 session.close()
+                
+                print(f"📊 [VIEW TRACKING] View count AFTER increment: {after_count}")
+                print(f"✅ [VIEW TRACKING] Successfully incremented view count by 1")
                 
                 # Invalidate cache for this restaurant
                 cache_key = f"restaurant:{restaurant_id}"
                 redis_cache.delete(cache_key)
+                print(f"🗑️ [VIEW TRACKING] Cleared cache for key: {cache_key}")
                 
-                return jsonify({
+                response_data = {
                     "success": True,
                     "data": {
                         "restaurant_id": restaurant_id,
-                        "view_count": view_count
+                        "restaurant_name": restaurant_name,
+                        "view_count": after_count,
+                        "view_count_before": before_count,
+                        "increment": after_count - before_count
                     }
-                })
+                }
+                
+                print(f"🎉 [VIEW TRACKING] Returning response: {response_data}")
+                return jsonify(response_data)
             else:
+                print(f"❌ [VIEW TRACKING] Failed to increment view count for restaurant {restaurant_id}")
                 return jsonify({
                     "success": False,
-                    "error": "Restaurant not found"
-                }), 404
+                    "error": "Failed to increment view count"
+                }), 500
                 
         except Exception as e:
             logger.error(f"Error tracking view for restaurant {restaurant_id}: {e}")

@@ -9,8 +9,10 @@ export async function POST(
 ) {
   try {
     const { id: restaurantId } = await params
+    console.log(`🔍 [FRONTEND API] View tracking request for restaurant_id: ${restaurantId}`)
 
     if (!restaurantId || isNaN(Number(restaurantId))) {
+      console.error(`❌ [FRONTEND API] Invalid restaurant ID: ${restaurantId}`)
       return NextResponse.json(
         { success: false, error: 'Invalid restaurant ID' },
         { status: 400 }
@@ -19,15 +21,22 @@ export async function POST(
 
     // Forward the request to the backend API
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
-    const response = await fetch(`${backendUrl}/api/restaurants/${restaurantId}/view`, {
+    const backendEndpoint = `${backendUrl}/api/restaurants/${restaurantId}/view`
+    
+    console.log(`📡 [FRONTEND API] Forwarding request to backend: ${backendEndpoint}`)
+    
+    const response = await fetch(backendEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
     })
 
+    console.log(`📡 [FRONTEND API] Backend response status: ${response.status} ${response.statusText}`)
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      console.error(`❌ [FRONTEND API] Backend error:`, errorData)
       return NextResponse.json(
         { 
           success: false, 
@@ -38,10 +47,16 @@ export async function POST(
     }
 
     const data = await response.json()
+    console.log(`✅ [FRONTEND API] Backend response data:`, data)
+    
+    if (data.success && data.data) {
+      console.log(`📊 [FRONTEND API] View count updated: ${data.data.view_count_before} → ${data.data.view_count} (+${data.data.increment})`)
+    }
+    
     return NextResponse.json(data)
 
   } catch (error) {
-    console.error('Error in view tracking API route:', error)
+    console.error('💥 [FRONTEND API] Error in view tracking API route:', error)
     return NextResponse.json(
       { 
         success: false, 
