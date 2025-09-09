@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest) {
     }
     
     // Fetch business types from backend
-    const response = await fetch(`${backendUrl}/api/v4/restaurants/business-types`, {
+    const response = await fetch(`${backendUrl}/api/restaurants/business-types`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

@@ -268,7 +268,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Use v4 backend route prefix
-    apiUrl = `${finalBackendUrl}/api/v4/restaurants?${queryParams.toString()}`;
+    apiUrl = `${finalBackendUrl}/api/restaurants?${queryParams.toString()}`;
     
     // Configurable timeout to avoid long hangs in dev; faster fallback improves UX
     const timeoutEnv = process.env.NEXT_PUBLIC_BACKEND_TIMEOUT_MS;

@@ -28,7 +28,7 @@ export async function GET(_request: NextRequest) {
     
     // Fetch filter options from backend API
     // Use v4 backend route prefix
-    const _backendResponse = await fetch(`${backendUrl}/api/v4/restaurants/filter-options`, {
+    const _backendResponse = await fetch(`${backendUrl}/api/restaurants/filter-options`, {
       headers: {
         'Content-Type': 'application/json',
       },

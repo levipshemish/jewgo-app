@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     
     // Forward the request to the backend
     const backendResponse = await fetch(
-      `${backendUrl}/api/v4/restaurants/fetch-missing-websites`,
+      `${backendUrl}/api/restaurants/fetch-missing-websites`,
       {
         method: 'POST',
         headers: {

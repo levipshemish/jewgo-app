@@ -195,25 +195,25 @@ def get_synagogues():
         total_pages = (total + limit - 1) // limit if total > 0 else 1
         has_more = (page * limit) < total
         
-            response_data = {
-                'success': True,
+        response_data = {
+            'success': True,
             'data': {
                 'synagogues': synagogues,
                 'pagination': {
-                'page': page,
-                'limit': limit,
-                'total': total,
+                    'page': page,
+                    'limit': limit,
+                    'total': total,
                     'total_pages': total_pages,
                     'has_more': has_more,
                     'offset': (page - 1) * limit
                 }
             },
-                'message': f'Retrieved {len(synagogues)} synagogues',
-                'timestamp': datetime.now(timezone.utc).isoformat()
-            }
-            
+            'message': f'Retrieved {len(synagogues)} synagogues',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+        
         logger.info(f"Successfully retrieved {len(synagogues)} synagogues")
-            return jsonify(response_data)
+        return jsonify(response_data)
             
     except Exception as e:
         logger.error(f"Error fetching synagogues: {str(e)}")
@@ -317,7 +317,7 @@ def get_filter_options():
             'hasWomenSection': 'Women Section',
             'hasMechitza': 'Mechitza',
             'hasSeparateEntrance': 'Separate Entrance',
-                    'hasParking': 'Has Parking',
+            'hasParking': 'Has Parking',
             'hasDisabledAccess': 'Disabled Access',
             'hasKiddushFacilities': 'Kiddush Facilities',
             'hasSocialHall': 'Social Hall',
@@ -327,17 +327,17 @@ def get_filter_options():
             'hasYouthPrograms': 'Youth Programs',
             'hasSeniorPrograms': 'Senior Programs',
             'acceptsVisitors': 'Accepts Visitors'
-            }
-            
-            response_data = {
-                'success': True,
-                'data': filter_options,
-                'message': 'Filter options retrieved successfully',
-                'timestamp': datetime.now(timezone.utc).isoformat()
-            }
-            
-            logger.info("Successfully retrieved synagogue filter options")
-            return jsonify(response_data)
+        }
+        
+        response_data = {
+            'success': True,
+            'data': filter_options,
+            'message': 'Filter options retrieved successfully',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+        
+        logger.info("Successfully retrieved synagogue filter options")
+        return jsonify(response_data)
             
     except Exception as e:
         logger.error(f"Error in get_filter_options: {str(e)}", exc_info=True)
@@ -352,7 +352,7 @@ def get_synagogue_stats():
     """Get synagogue statistics."""
     try:
         stats_query = """
-                SELECT 
+            SELECT 
                 COUNT(*) as total_synagogues,
                 COUNT(CASE WHEN is_verified = true THEN 1 END) as verified_synagogues,
                 COUNT(CASE WHEN has_daily_minyan = true THEN 1 END) as daily_minyan_synagogues,
@@ -369,15 +369,15 @@ def get_synagogue_stats():
             result = session.execute(text(stats_query), {"is_active": True}).mappings().all()
             stats = dict(result[0]) if result else {}
             
-            response_data = {
-                'success': True,
+        response_data = {
+            'success': True,
             'data': stats,
             'message': 'Synagogue statistics retrieved successfully',
             'timestamp': datetime.now(timezone.utc).isoformat()
         }
-            
-            logger.info("Successfully retrieved synagogue statistics")
-            return jsonify(response_data)
+        
+        logger.info("Successfully retrieved synagogue statistics")
+        return jsonify(response_data)
             
     except Exception as e:
         logger.error(f"Error in get_synagogue_stats: {str(e)}", exc_info=True)

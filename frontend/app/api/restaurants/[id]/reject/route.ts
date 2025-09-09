@@ -25,7 +25,7 @@ export async function PUT(
 
       // Update restaurant status in database via backend API using centralized URL
       const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-      const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}/reject`;
+      const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}/reject`;
       
       const response = await fetch(apiUrl, {
         method: 'PUT',

@@ -24,7 +24,7 @@ export async function POST(
 
       // Fetch website data via backend API
       const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-      const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}/fetch-website`;
+      const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}/fetch-website`;
       
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console

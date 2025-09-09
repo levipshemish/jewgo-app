@@ -4,7 +4,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.ap
 
 export async function GET(_request: NextRequest) {
   try {
-    const backendUrl = `${BACKEND_URL}/api/v4/restaurants/keyset/health`;
+    const backendUrl = `${BACKEND_URL}/api/restaurants/keyset/health`;
     
     console.log(`[Keyset Health API v4] Checking backend health at: ${backendUrl}`);
     

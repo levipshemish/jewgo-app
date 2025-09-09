@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Forward all query parameters to the backend
-    const backendUrl = `${BACKEND_URL}/api/v4/restaurants/keyset/list?${searchParams.toString()}`;
+    const backendUrl = `${BACKEND_URL}/api/restaurants/keyset/list?${searchParams.toString()}`;
     
     console.log(`[Keyset API v4] Forwarding request to: ${backendUrl}`);
     

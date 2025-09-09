@@ -32,7 +32,7 @@ export async function GET(
 
     // Fetch restaurant data from backend
     const backendUrl = getBackendUrl();
-    const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}`;
+    const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -46,7 +46,7 @@ export async function GET(
         if (response.status >= 500) {
           try {
             // Fetch all restaurants and find the one we need
-            const restaurantsResponse = await fetch(`${getBackendUrl()}/api/v4/restaurants?limit=1000`, {
+            const restaurantsResponse = await fetch(`${getBackendUrl()}/api/restaurants?limit=1000`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -234,7 +234,7 @@ export async function PUT(
 
     // Update restaurant data via backend API
     const backendUrl = getBackendUrl();
-    const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}`;
+    const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     // Prefer incoming Authorization header; fallback to admin token (Supabase access token)
     const authHeader = forwardAuthHeader(request, admin?.token ? `Bearer ${admin.token}` : undefined);
@@ -296,7 +296,7 @@ export async function DELETE(
 
     // Delete restaurant via backend API
     const backendUrl = getBackendUrl();
-    const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}`;
+    const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     // Prefer incoming Authorization header; fallback to admin token (Supabase access token)
     const authHeader = forwardAuthHeader(request, admin?.token ? `Bearer ${admin.token}` : undefined);
@@ -358,7 +358,7 @@ export async function PATCH(
 
     // Partial update restaurant data via backend API
     const backendUrl = getBackendUrl();
-    const apiUrl = `${backendUrl}/api/v4/restaurants/${restaurantId}`;
+    const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     // Prefer incoming Authorization header; fallback to admin token (Supabase access token)
     const authHeader = forwardAuthHeader(request, admin?.token ? `Bearer ${admin.token}` : undefined);

@@ -12,7 +12,7 @@ export async function GET(
     }
 
     const backendUrl = getBackendUrl();
-    const response = await fetch(`${backendUrl}/api/v4/restaurants/${restaurantId}/hours`, {
+    const response = await fetch(`${backendUrl}/api/restaurants/${restaurantId}/hours`, {
       headers: {
         'Content-Type': 'application/json',
       },
