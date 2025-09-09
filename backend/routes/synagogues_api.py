@@ -112,7 +112,7 @@ def get_synagogues():
         
         # Validate coordinates if provided
         if lat is not None and lng is not None:
-                if not GooglePlacesValidator.validate_coordinates(lat, lng):
+            if not GooglePlacesValidator.validate_coordinates(lat, lng):
                 return jsonify({
                     'success': False,
                     'error': 'Invalid coordinates provided',
