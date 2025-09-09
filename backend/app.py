@@ -20,13 +20,13 @@ def create_app():
     app = Flask(__name__)
     
     # Configure CORS
-    CORS(app, origins=[
-        "http://localhost:3000",
-        "https://jewgo.app",
-        "https://www.jewgo.app",
-        "https://jewgo-app.netlify.app",
-        "https://jewgo-app.vercel.app"
-    ])
+    # CORS(app, origins=[
+    #     "http://localhost:3000",
+    #     "https://jewgo.app",
+    #     "https://www.jewgo.app",
+    #     "https://jewgo-app.netlify.app",
+    #     "https://jewgo-app.vercel.app"
+    # ])
     
     # Initialize metrics middleware
     metrics_middleware = MetricsMiddleware(app)

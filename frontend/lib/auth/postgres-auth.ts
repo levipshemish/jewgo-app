@@ -62,8 +62,9 @@ class PostgresAuthClient {
   private csrfToken: string | null = null;
 
   constructor() {
-    // Use environment variable or default to backend URL
-    this.baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    // Use frontend API routes instead of direct backend calls
+    // This ensures CORS headers are properly handled
+    this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
   }
 
   public async request(

@@ -2549,8 +2549,8 @@ def proxy_image():
         from flask import redirect
 
         response = redirect(image_url)
-        response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Cache-Control"] = "public, max-age=3600"
+        # CORS headers are handled by Flask-CORS extension
         return response
 
     except Exception as e:

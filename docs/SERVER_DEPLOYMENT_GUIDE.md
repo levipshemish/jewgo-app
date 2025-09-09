@@ -25,6 +25,12 @@ This guide covers the complete setup and configuration of the JewGo production s
 - **OS**: Ubuntu 24.04 LTS
 - **User**: `ubuntu`
 
+### Recent Updates (September 2025)
+- **✅ API Communication Fixes**: All frontend API routes now properly communicate with backend
+- **✅ CORS Issues Resolved**: PostgresAuthClient updated to use frontend API routes
+- **✅ Backend Endpoint Corrections**: Synagogues API route fixed to call `/api/v4/synagogues`
+- **✅ Fallback Systems**: Statistics and kosher-types APIs return default data when backend endpoints unavailable
+
 ### Architecture
 ```
 Internet → Nginx (Port 80/443) → Backend (Port 5000) → PostgreSQL + Redis

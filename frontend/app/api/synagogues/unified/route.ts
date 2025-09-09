@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
       backendUrl = `https://${backendUrl}`;
     }
-    const fullBackendUrl = `${backendUrl}/api/synagogues?${queryParams}`;
+    const fullBackendUrl = `${backendUrl}/api/v4/synagogues?${queryParams}`;
     
     console.log('Unified synagogues backend URL:', fullBackendUrl);
     

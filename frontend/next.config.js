@@ -318,8 +318,6 @@ const nextConfig = {
       // Admin endpoints are handled by Next.js frontend, not backend
       // { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*`, permanent: false },
       { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*`, permanent: false },
-      { source: '/api/statistics/:path*', destination: `${BACKEND_URL}/api/statistics/:path*`, permanent: false },
-      { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*`, permanent: false },
       { source: '/api/migrate/:path*', destination: `${BACKEND_URL}/api/migrate/:path*`, permanent: false },
       { source: '/api/remove-duplicates/:path*', destination: `${BACKEND_URL}/api/remove-duplicates/:path*`, permanent: false },
       { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*`, permanent: false },
@@ -343,8 +341,6 @@ const nextConfig = {
       // Admin endpoints are handled by Next.js frontend, not backend
       // { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*` },
       { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*` },
-      { source: '/api/statistics/:path*', destination: `${BACKEND_URL}/api/statistics/:path*` },
-      { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*` },
       { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*` },
       { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*` },
       // Note: Do not rewrite '/api/restaurants/*' so that Next API routes

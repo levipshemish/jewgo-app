@@ -13,61 +13,8 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET() {
   try {
-    // Get backend URL from environment
-    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
-    
-    // Ensure the backend URL has a protocol
-    if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
-      backendUrl = `https://${backendUrl}`;
-    }
-    
-    // Forward the request to the backend
-    const backendResponse = await fetch(
-      `${backendUrl}/api/kosher-types`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    // Check if response is JSON
-    const contentType = backendResponse.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      return NextResponse.json(
-        { 
-          error: 'Backend service unavailable',
-          message: 'Kosher types service is currently unavailable'
-        },
-        { status: 503 }
-      );
-    }
-
-    // For server errors, return default kosher types
-    if (!backendResponse.ok && backendResponse.status >= 500) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          categories: ['Meat', 'Dairy', 'Pareve'],
-          certifiers: ['OU', 'OK', 'Star-K', 'CRC', 'Other'],
-          types: {
-            meat: ['Glatt', 'Beit Yosef', 'Regular'],
-            dairy: ['Cholov Yisroel', 'Cholov Stam'],
-            general: ['Pas Yisroel', 'Yoshon', 'Kemach Yoshon']
-          }
-        },
-        message: 'Using default kosher types'
-      });
-    }
-
-    const data = await backendResponse.json();
-
-    // Return the same status and data from the backend
-    return NextResponse.json(data, { status: backendResponse.status });
-
-  } catch (error) {
-    // Return default kosher types for any error
+    // Since there's no backend kosher-types endpoint, return default kosher types
+    // This ensures the UI continues to work without errors
     return NextResponse.json({
       success: true,
       data: {
@@ -79,11 +26,23 @@ export async function GET() {
           general: ['Pas Yisroel', 'Yoshon', 'Kemach Yoshon']
         }
       },
-      message: error instanceof Error && (
-        error.name === 'AbortError' || 
-        error.message.toLowerCase().includes('fetch') ||
-        error.message.toLowerCase().includes('network')
-      ) ? 'Kosher types service temporarily unavailable' : 'Using default kosher types'
+      message: 'Using default kosher types - backend endpoint not implemented'
+    });
+
+  } catch (error) {
+    // For any errors, return default kosher types to ensure UI works
+    return NextResponse.json({
+      success: true,
+      data: {
+        categories: ['Meat', 'Dairy', 'Pareve'],
+        certifiers: ['OU', 'OK', 'Star-K', 'CRC', 'Other'],
+        types: {
+          meat: ['Glatt', 'Beit Yosef', 'Regular'],
+          dairy: ['Cholov Yisroel', 'Cholov Stam'],
+          general: ['Pas Yisroel', 'Yoshon', 'Kemach Yoshon']
+        }
+      },
+      message: 'Using default kosher types'
     });
   }
 } 

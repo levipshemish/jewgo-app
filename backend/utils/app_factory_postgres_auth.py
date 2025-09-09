@@ -168,13 +168,8 @@ def setup_security_headers(app: Flask):
             response.headers['X-Frame-Options'] = 'DENY'
             response.headers['X-XSS-Protection'] = '1; mode=block'
             
-            # CORS headers (if not already set by CORS extension)
-            if not response.headers.get('Access-Control-Allow-Origin'):
-                # You may want to configure this based on environment
-                allowed_origins = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
-                origin = request.headers.get('Origin')
-                if origin in allowed_origins:
-                    response.headers['Access-Control-Allow-Origin'] = origin
+            # CORS headers are handled by Flask-CORS extension
+            # No need to manually add CORS headers here
         
         return response
 

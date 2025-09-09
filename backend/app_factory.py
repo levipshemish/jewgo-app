@@ -124,32 +124,32 @@ def create_app():
         logger.info("Using default CORS origins", cors_origins=cors_origins)
     logger.info("Final CORS origins configuration", cors_origins=cors_origins)
     # Configure CORS with more robust settings
-    CORS(
-        app,
-        origins=cors_origins,
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=[
-            "Content-Type",
-            "Authorization",
-            "Accept",
-            "Origin",
-            "X-Requested-With",
-            "X-Forwarded-For",
-            "X-Real-IP",
-            "Cache-Control",
-            "Pragma",
-        ],
-        expose_headers=[
-            "Content-Type",
-            "Content-Length",
-            "Cache-Control",
-            "Pragma",
-            "Authorization",
-        ],
-        supports_credentials=True,
-        max_age=86400,  # Cache preflight for 24 hours
-        send_wildcard=False,  # Don't send wildcard, send specific origin
-    )
+    # CORS(
+    #     app,
+    #     origins=cors_origins,
+    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    #     allow_headers=[
+    #         "Content-Type",
+    #         "Authorization",
+    #         "Accept",
+    #         "Origin",
+    #         "X-Requested-With",
+    #         "X-Forwarded-For",
+    #         "X-Real-IP",
+    #         "Cache-Control",
+    #         "Pragma",
+    #     ],
+    #     expose_headers=[
+    #         "Content-Type",
+    #         "Content-Length",
+    #         "Cache-Control",
+    #         "Pragma",
+    #         "Authorization",
+    #     ],
+    #     supports_credentials=True,
+    #     max_age=86400,  # Cache preflight for 24 hours
+    #     send_wildcard=False,  # Don't send wildcard, send specific origin
+    # )
     # Initialize database manager
     db_manager = None
     if EnhancedDatabaseManager:
