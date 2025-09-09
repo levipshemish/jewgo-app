@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.4-alpine
     container_name: jewgo_postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-jewgo_db}
@@ -88,6 +88,20 @@ services:
       - "5000:5000"
     volumes:
       - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+
+  webhook:
+    image: python:3.11-alpine
+    container_name: jewgo_webhook
+    environment:
+      WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-jkghfuighsaeruih8934ygre98v45790 bv4373490760937bcyhdfdfkhoishiouyr90334#@%#$^#$%$^#}
+    volumes:
+      - ./scripts/deployment/webhook-handler.py:/app/webhook-handler.py
+      - ./scripts/deployment/deploy.sh:/app/deploy.sh
+    working_dir: /app
+    command: python3 webhook-handler.py
+    ports:
+      - "8080:8080"
     restart: unless-stopped
 
   frontend:
