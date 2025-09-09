@@ -374,6 +374,35 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [permissionStatus, requestLocation]);
 
+  // Define refreshPermissionStatus function before using it in useEffect
+  const refreshPermissionStatus = useCallback(async (): Promise<void> => {
+    if (DEBUG) { debugLog('📍 LocationContext: Refreshing permission status...'); }
+    
+    const newStatus = await checkPermissionStatus();
+    const oldStatus = permissionStatus;
+    
+    if (DEBUG) { debugLog('📍 LocationContext: Permission status changed from', oldStatus, 'to:', newStatus); }
+    setPermissionStatus(newStatus);
+    
+    // If permission is denied, clear any saved location data
+    if (newStatus === 'denied') {
+      setUserLocation(null);
+      setError('Location access was denied');
+      localStorage.removeItem(LOCATION_STORAGE_KEY);
+      // Reset popup state when permission is denied
+      setHasShownPopup(false);
+      setLastPopupShownTime(null);
+    } else if (newStatus === 'granted') {
+      setError(null);
+      // Always request fresh location when permission is granted
+      if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting fresh location'); }
+      // Use setTimeout to ensure state update has completed
+      setTimeout(() => {
+        requestLocation();
+      }, 100);
+    }
+  }, [checkPermissionStatus, permissionStatus, requestLocation]);
+
   // Add visibility change listener to refresh location when user returns to app
   useEffect(() => {
     if (!hasInitialized) {
@@ -457,34 +486,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       return 'prompt';
     }
   }, []);
-
-  const refreshPermissionStatus = useCallback(async (): Promise<void> => {
-    if (DEBUG) { debugLog('📍 LocationContext: Refreshing permission status...'); }
-    
-    const newStatus = await checkPermissionStatus();
-    const oldStatus = permissionStatus;
-    
-    if (DEBUG) { debugLog('📍 LocationContext: Permission status changed from', oldStatus, 'to:', newStatus); }
-    setPermissionStatus(newStatus);
-    
-    // If permission is denied, clear any saved location data
-    if (newStatus === 'denied') {
-      setUserLocation(null);
-      setError('Location access was denied');
-      localStorage.removeItem(LOCATION_STORAGE_KEY);
-      // Reset popup state when permission is denied
-      setHasShownPopup(false);
-      setLastPopupShownTime(null);
-    } else if (newStatus === 'granted') {
-      setError(null);
-      // Always request fresh location when permission is granted
-      if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting fresh location'); }
-      // Use setTimeout to ensure state update has completed
-      setTimeout(() => {
-        requestLocation();
-      }, 100);
-    }
-  }, [checkPermissionStatus, permissionStatus, requestLocation]);
 
   const markPopupShown = useCallback(() => {
     setHasShownPopup(true);
