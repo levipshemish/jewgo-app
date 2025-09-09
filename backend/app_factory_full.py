@@ -670,7 +670,7 @@ def create_app(config_class=None):
     # Routes will be registered later just before returning the app
     # Register health blueprint
     try:
-        from routes.health_routes import health_bp
+        from routes.health import health_bp
         from routes.deploy_webhook import deploy_webhook_bp
         from routes.test_webhook import test_webhook_bp
         app.register_blueprint(health_bp)

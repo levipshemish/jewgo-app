@@ -357,26 +357,68 @@ class UnifiedSearchService:
                 | Restaurant.short_description.ilike(f"%{filters.query}%")
             )
         # Get restaurants with coordinates
-        restaurants = query.filter(
-            Restaurant.latitude.isnot(None), Restaurant.longitude.isnot(None)
-        ).all()
-        # Calculate distances and filter by radius
+        # Use PostGIS for distance calculation and filtering
+        from sqlalchemy import text
+        
+        # Build PostGIS query for distance-based search
+        radius_miles = filters.radius or 50
+        radius_meters = radius_miles * 1609.34  # Convert miles to meters
+        
+        postgis_query = text("""
+            SELECT r.*, 
+                   ST_Distance(r.geom::geography, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography) AS distance_m
+            FROM restaurants r
+            WHERE r.latitude IS NOT NULL 
+              AND r.longitude IS NOT NULL
+              AND ST_DWithin(r.geom::geography, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :radius_meters)
+            ORDER BY r.geom <-> ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)
+            LIMIT :limit OFFSET :offset
+        """)
+        
+        # Execute PostGIS query
+        result = self.session.execute(postgis_query, {
+            'lat': filters.lat,
+            'lng': filters.lng,
+            'radius_meters': radius_meters,
+            'limit': filters.limit,
+            'offset': filters.offset
+        })
+        
+        # Convert results to SearchResult objects
         nearby_restaurants = []
-        for restaurant in restaurants:
-            distance = self._calculate_distance(
-                filters.lat, filters.lng, restaurant.latitude, restaurant.longitude
-            )
-            if distance <= (filters.radius or 50):
-                result = SearchResult.from_restaurant(restaurant, distance=distance)
-                nearby_restaurants.append(result)
-        # Sort by distance
-        nearby_restaurants.sort(key=lambda x: x.distance or float("in"))
-        # Apply pagination
-        total_count = len(nearby_restaurants)
-        start_idx = filters.offset
-        end_idx = start_idx + filters.limit
-        results = nearby_restaurants[start_idx:end_idx]
-        return results, total_count
+        for row in result:
+            # Convert row to Restaurant-like object
+            restaurant_data = dict(row._mapping)
+            distance_miles = restaurant_data.get('distance_m', 0) / 1609.34  # Convert meters to miles
+            
+            # Create a mock restaurant object for SearchResult
+            class MockRestaurant:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        if key != 'distance_m':  # Skip the distance field
+                            setattr(self, key, value)
+            
+            mock_restaurant = MockRestaurant(restaurant_data)
+            result_obj = SearchResult.from_restaurant(mock_restaurant, distance=distance_miles)
+            nearby_restaurants.append(result_obj)
+        
+        # Get total count for pagination
+        count_query = text("""
+            SELECT COUNT(*) as total
+            FROM restaurants r
+            WHERE r.latitude IS NOT NULL 
+              AND r.longitude IS NOT NULL
+              AND ST_DWithin(r.geom::geography, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :radius_meters)
+        """)
+        
+        count_result = self.session.execute(count_query, {
+            'lat': filters.lat,
+            'lng': filters.lng,
+            'radius_meters': radius_meters
+        }).fetchone()
+        
+        total_count = count_result[0] if count_result else 0
+        return nearby_restaurants, total_count
 
     def _full_text_search(
         self, filters: SearchFilters
@@ -520,23 +562,7 @@ class UnifiedSearchService:
         )
         return scored_query
 
-    def _calculate_distance(
-        self, lat1: float, lng1: float, lat2: float, lng2: float
-    ) -> float:
-        """Calculate distance between two points using Haversine formula."""
-        # Convert to radians
-        lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
-        # Haversine formula
-        dlat = lat2 - lat1
-        dlng = lng2 - lng1
-        a = (
-            math.sin(dlat / 2) ** 2
-            + math.cos(lat1) * math.cos(lat2) * math.sin(dlng / 2) ** 2
-        )
-        c = 2 * math.asin(math.sqrt(a))
-        # Earth's radius in miles
-        r = 3956
-        return c * r
+    # Note: _calculate_distance method removed - now using PostGIS ST_Distance for better performance
 
     def _get_suggestions(self, query: Optional[str], limit: int = 10) -> List[str]:
         """Get search suggestions based on query."""

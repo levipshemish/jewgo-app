@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: forbid-haversine
+        name: Forbid Python Haversine in routes
+        entry: bash -c 'if grep -r "calculate_distance\|haversine\|math\.cos\|math\.sin" backend/routes/; then echo "❌ Found Python Haversine in routes - use PostGIS instead"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
