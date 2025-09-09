@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createSuccessResponse } from '@/lib/utils/error-responses';
+import { handleBackendError, fetchWithTimeout, getFallbackResponse } from '../../../lib/utils/backend-error-handler';
+import { createSuccessResponse } from '../../../lib/utils/error-responses';
 
 // Enhanced restaurant submission schema
 const restaurantSubmissionSchema = z.object({
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
     let lastError: Error | undefined;
     
     try {
-      backendResponse = await fetch(`${backendUrl}/api/v4/restaurants`, {
+      backendResponse = await fetch(`${backendUrl}/api/restaurants`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,13 +210,13 @@ export async function GET(request: NextRequest) {
     
     console.log('Frontend API: Calling backend URL:', fullBackendUrl);
     
-    // Direct fetch for debugging
-    const response = await fetch(fullBackendUrl, {
+    // Use the improved fetch with timeout
+    const response = await fetchWithTimeout(fullBackendUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-    });
+    }, 10000);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -255,21 +256,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(transformedResponse);
     
   } catch (error) {
-    console.error('Error fetching restaurants:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
+    // Use the centralized error handler
+    const errorResponse = handleBackendError(error, {
+      fallbackData: getFallbackResponse('restaurants'),
+      customMessage: 'Restaurants retrieved successfully'
     });
     
-    // For network errors, return empty list with success status to ensure UI works
-    return NextResponse.json({
-      success: true,
-      items: [],
-      next_cursor: null,
-      limit: parseInt(limit),
-      message: 'Restaurants retrieved successfully'
-    });
+    return NextResponse.json(errorResponse);
   }
 }
 
@@ -284,7 +277,7 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
       backendUrl = `https://${backendUrl}`;
     }
-    const response = await fetch(`${backendUrl}/api/v4/restaurants?limit=1000`, {
+    const response = await fetch(`${backendUrl}/api/restaurants?limit=1000`, {
       headers: {
         'Content-Type': 'application/json',
       },
