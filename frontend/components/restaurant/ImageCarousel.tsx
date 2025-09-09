@@ -79,6 +79,17 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     setImageLoading(new Array(allImages.length).fill(true));
   }, [allImages.length]);
 
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
+    if (allImages.length > 0) {
+      const timeout = setTimeout(() => {
+        setImageLoading(prev => prev.map(() => false));
+      }, 10000); // 10 second timeout
+
+      return () => clearTimeout(timeout);
+    }
+  }, [allImages.length]);
+
   // Use the scroll-snap carousel hook
   const {
     currentIndex,
@@ -96,6 +107,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   });
 
   const handleImageError = (index: number) => {
+    console.log(`Image ${index} failed to load:`, allImages[index]);
     setImageLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = false;
@@ -104,6 +116,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   };
 
   const handleImageLoad = (index: number) => {
+    console.log(`Image ${index} loaded successfully:`, allImages[index]);
     setImageLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = false;
@@ -168,7 +181,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
               
               {/* Image */}
               <Image
-                src={image || ''}
+                src={image || '/images/default-restaurant.webp'}
                 alt={`${restaurantName} - Image ${index + 1}`}
                 fill
                 className={`object-cover transition-opacity duration-300 ${
