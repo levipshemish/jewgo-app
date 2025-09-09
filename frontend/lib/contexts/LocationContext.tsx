@@ -357,6 +357,16 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [hasInitialized, hasShownPopup, lastPopupShownTime]);
 
+  // Define refreshLocation function before using it in useEffect
+  const refreshLocation = useCallback(async (): Promise<void> => {
+    if (permissionStatus === 'granted') {
+      if (DEBUG) { debugLog('📍 LocationContext: Refreshing location data'); }
+      await requestLocation();
+    } else {
+      if (DEBUG) { debugLog('📍 LocationContext: Cannot refresh location - permission not granted'); }
+    }
+  }, [permissionStatus, requestLocation]);
+
   // Add visibility change listener to refresh location when user returns to app
   useEffect(() => {
     if (!hasInitialized) {
@@ -459,15 +469,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       }
     }
   }, [checkPermissionStatus, userLocation, requestLocation]);
-
-  const refreshLocation = useCallback(async (): Promise<void> => {
-    if (permissionStatus === 'granted') {
-      if (DEBUG) { debugLog('📍 LocationContext: Refreshing location data'); }
-      await requestLocation();
-    } else {
-      if (DEBUG) { debugLog('📍 LocationContext: Cannot refresh location - permission not granted'); }
-    }
-  }, [permissionStatus, requestLocation]);
 
   const markPopupShown = useCallback(() => {
     setHasShownPopup(true);
