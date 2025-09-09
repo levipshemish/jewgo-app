@@ -43,7 +43,7 @@ export function useViewTracking({
     lastTrackTimeRef.current = now
 
     try {
-      const response = await fetch(`/api/restaurants/${restaurantId}/view`, {
+      const response = await fetch(`/api/v4/restaurants/${restaurantId}/view`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -249,7 +249,7 @@ export async function getUnifiedSynagogueData(params: Record<string, any> = {}):
     }
   });
 
-  const url = `/api/synagogues/unified?${searchParams.toString()}`;
+  const url = `/api/v4/synagogues/unified?${searchParams.toString()}`;
   
   return unifiedApiCall(url, {
     ttl: CACHE_CONFIG.LONG_TTL, // Synagogues change less frequently
@@ -309,7 +309,7 @@ export async function getUnifiedMikvahData(params: Record<string, any> = {}): Pr
     }
   });
 
-  const url = `/api/mikvah?${searchParams.toString()}`;
+  const url = `/api/v4/mikvah?${searchParams.toString()}`;
   
   return unifiedApiCall(url, {
     ttl: CACHE_CONFIG.LONG_TTL, // Mikvah data changes infrequently

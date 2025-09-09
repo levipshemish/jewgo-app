@@ -1,12 +1,11 @@
 "use client"
 import { useState, useEffect, useCallback, useRef, RefObject, useMemo } from "react"
 import Card from "@/components/core/cards/Card"
-import { Loader2, Search, Wifi, WifiOff, AlertTriangle, RefreshCw } from "lucide-react"
+import { Loader2, Search, WifiOff, AlertTriangle, RefreshCw } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "../types"
 import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
-import { isRestaurantOpenDuringPeriod } from "@/lib/utils/hours"
 import { getBestAvailableRating, formatRating } from "@/lib/utils/ratingCalculation"
 import EateryGridSkeleton from "./EateryGridSkeleton"
 
@@ -85,7 +84,7 @@ export default function EateryGrid({
   const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, timeoutMs: number = 8000) => {
     try {
       // Build API URL with parameters - use frontend API route
-      const apiUrl = new URL('/api/restaurants', window.location.origin)
+      const apiUrl = new URL('/api/v4/restaurants', window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('include_reviews', 'true') // Include Google reviews for consistent rating calculation
       
@@ -167,31 +166,57 @@ export default function EateryGrid({
   const buildSearchParams = useCallback(() => {
     const params = new URLSearchParams()
     
+    // Add active filters to search parameters with proper API parameter mapping
+    if (activeFilters) {
+      
+      // Map frontend filter names to API parameter names
+      if (activeFilters.q && activeFilters.q.trim()) {
+        params.set('search', activeFilters.q.trim())
+      }
+    }
+    
+    // Override with searchQuery if provided (from header search)
     if (searchQuery && searchQuery.trim() !== '') {
-      params.append('search', searchQuery.trim())
+      params.set('search', searchQuery.trim())
     }
     
     if (category && category !== 'all') {
-      params.append('kosher_category', category)
+      params.set('kosher_category', category)
     }
-
-    // Add active filters to search parameters
+    
+    // Continue with other active filters
     if (activeFilters) {
-      for (const [key, value] of Object.entries(activeFilters)) {
-        if (value === null || value === undefined) continue;
-        if (typeof value === 'string' && !value.trim()) continue;
-        if (Array.isArray(value)) {
-          if (value.length === 0) continue;
-          for (const v of value) params.append(key, String(v));
-        } else {
-          params.set(key, String(value));
-        }
+      if (activeFilters.category) {
+        params.set('kosher_category', activeFilters.category)
       }
-    }
-
-    // Add hours filter if specified
-    if (activeFilters?.hoursFilter) {
-      params.set('hoursFilter', activeFilters.hoursFilter);
+      
+      if (activeFilters.agency) {
+        params.set('certifying_agency', activeFilters.agency)
+      }
+      
+      if (activeFilters.distanceMi) {
+        // Convert miles to meters for backend
+        const radiusMeters = activeFilters.distanceMi * 1609.34
+        params.set('radius_m', radiusMeters.toString())
+      }
+      
+      if (activeFilters.priceRange && Array.isArray(activeFilters.priceRange)) {
+        const [min, max] = activeFilters.priceRange
+        if (min) params.set('price_min', min.toString())
+        if (max) params.set('price_max', max.toString())
+      }
+      
+      if (activeFilters.ratingMin) {
+        params.set('min_rating', activeFilters.ratingMin.toString())
+      }
+      
+      if (activeFilters.hoursFilter) {
+        params.set('hours_filter', activeFilters.hoursFilter)
+      }
+      
+      if (activeFilters.openNow) {
+        params.set('open_now', 'true')
+      }
     }
     
     // Add location parameters for distance sorting
@@ -425,46 +450,8 @@ export default function EateryGrid({
     return () => container.removeEventListener("scroll", handleScroll)
   }, [loadMoreItems, scrollContainerRef])
 
-  // Filter transformed restaurants based on category, search, and hours
-  const filteredRestaurants = transformedRestaurants.filter(restaurant => {
-    // Category filter
-    if (category !== "all") {
-      if (restaurant.kosher_category?.toLowerCase() !== category.toLowerCase()) {
-        return false
-      }
-    }
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      const matchesSearch = (
-        restaurant.name?.toLowerCase().includes(query) ||
-        restaurant.address?.toLowerCase().includes(query) ||
-        restaurant.kosher_category?.toLowerCase().includes(query) ||
-        restaurant.cuisine?.toLowerCase().includes(query)
-      )
-      if (!matchesSearch) {
-        return false
-      }
-    }
-
-    // Hours filter - check if restaurant is open during specified time period
-    if (activeFilters?.hoursFilter) {
-      // Check if restaurant has hours data
-      const hoursData = (restaurant as any).hours_of_operation || (restaurant as any).hours_json || (restaurant as any).hours;
-      if (!hoursData) {
-        return false // Exclude restaurants without hours data
-      }
-      
-      // Use the hours utility function to check if restaurant is open during the specified period
-      const isOpenDuringPeriod = isRestaurantOpenDuringPeriod(hoursData, activeFilters.hoursFilter as any);
-      if (!isOpenDuringPeriod) {
-        return false
-      }
-    }
-
-    return true
-  })
+  // Server-side filtering handles all filters, so we use transformedRestaurants directly
+  const filteredRestaurants = transformedRestaurants
 
   // Backend handles distance sorting, so we use filteredRestaurants directly
   const sortedRestaurants = filteredRestaurants

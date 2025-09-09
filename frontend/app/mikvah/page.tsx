@@ -71,7 +71,7 @@ interface _Mikvah {
 const fetchMikvah = async (limit: number, params?: string, timeoutMs: number = 5000) => {
   try {
     const queryString = params ? `?${params}` : '';
-    const url = `/api/mikvah/unified${queryString}`;
+    const url = `/api/v4/mikvah/unified${queryString}`;
     
     // Use unified API call with caching and deduplication
     const { unifiedApiCall } = await import('@/lib/utils/unified-api');

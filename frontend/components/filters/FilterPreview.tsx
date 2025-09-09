@@ -84,7 +84,7 @@ export function FilterPreview({
         params.set('lng', userLocation.longitude.toString());
       }
 
-      const response = await deduplicatedFetch(`/api/restaurants?${params.toString()}`);
+      const response = await deduplicatedFetch(`/api/v4/restaurants?${params.toString()}`);
       
       if (response.success && typeof response.total === 'number') {
         setPreview({
@@ -119,7 +119,7 @@ export function FilterPreview({
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [fetchPreview, debounceMs]);
+  }, [fetchPreview, debounceMs, debounceTimeout]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
