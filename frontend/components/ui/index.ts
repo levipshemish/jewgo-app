@@ -202,7 +202,11 @@ export { default as LogoIcon } from './LogoIcon';
 // Use existing ScrollToTop component; BackToTopButton does not exist
 export { ScrollToTop } from './ScrollToTop';
 
-// export { Button } from './Button';
+// Core UI Components
+export { Button, buttonVariants } from './button';
+export { ProfileImage } from './profile-image';
+export { Stack, Cluster } from './spacing';
+
 // export { Input } from './Input';
 // export { Modal } from './Modal';
 // etc. 
