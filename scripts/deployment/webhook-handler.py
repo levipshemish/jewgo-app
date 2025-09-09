@@ -14,19 +14,32 @@ from urllib.parse import urlparse, parse_qs
 
 # Configuration
 WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', 'your-webhook-secret-here')
-DEPLOY_SCRIPT = '/home/ubuntu/jewgo-app/deploy.sh'
+DEPLOY_SCRIPT = '/app/deploy.sh'
 PORT = 8080
 
 class WebhookHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         """Handle POST requests from GitHub webhooks"""
+        print(f"Received POST request to: {self.path}")
+        print(f"Headers: {dict(self.headers)}")
+        
+        # Only handle /webhook/deploy path
+        if self.path != '/webhook/deploy':
+            print(f"Invalid path: {self.path}")
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b'Not Found')
+            return
+            
         try:
             # Get the content length and read the body
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length)
+            print(f"Body length: {content_length}")
             
             # Verify the webhook signature
             if not self.verify_signature(body):
+                print("Signature verification failed")
                 self.send_response(401)
                 self.end_headers()
                 self.wfile.write(b'Unauthorized')
@@ -77,12 +90,17 @@ class WebhookHandler(BaseHTTPRequestHandler):
     
     def trigger_deployment(self):
         """Trigger the deployment script"""
+        print(f"Triggering deployment with script: {DEPLOY_SCRIPT}")
         try:
-            subprocess.run([DEPLOY_SCRIPT], check=True, capture_output=True, text=True)
+            result = subprocess.run([DEPLOY_SCRIPT], check=True, capture_output=True, text=True)
             print("Deployment completed successfully")
+            print(f"Deployment output: {result.stdout}")
         except subprocess.CalledProcessError as e:
             print(f"Deployment failed: {e}")
             print(f"Error output: {e.stderr}")
+            print(f"Return code: {e.returncode}")
+        except Exception as e:
+            print(f"Unexpected error during deployment: {e}")
     
     def log_message(self, format, *args):
         """Override to use print instead of stderr"""
