@@ -1,25 +1,31 @@
 #!/bin/bash
-set -e
 
+# Deployment script for Jewgo App
 echo "Starting deployment..."
-cd /home/ubuntu
 
-echo "Pulling latest changes..."
-git pull origin main
+# Navigate to the project directory
+cd /home/ubuntu/jewgo-app
 
-echo "Stopping containers..."
-docker-compose down
+# Pull the latest changes from the main branch
+echo "Pulling latest changes from GitHub..."
+git fetch origin
+git reset --hard origin/main
 
-echo "Building containers..."
-docker-compose build --no-cache
+# Restart the backend container to pick up changes
+echo "Restarting backend container..."
+docker-compose restart backend
 
-echo "Starting containers..."
-docker-compose up -d
+# Wait for the backend to start
+echo "Waiting for backend to start..."
+sleep 15
 
-echo "Waiting for services..."
-sleep 30
+# Check if the backend is healthy
+echo "Checking backend health..."
+if curl -f http://localhost:5000/health > /dev/null 2>&1; then
+    echo "✅ Backend is healthy"
+else
+    echo "❌ Backend health check failed"
+    exit 1
+fi
 
-echo "Health check..."
-curl -f -s https://api.jewgo.app/health && echo " - API OK" || echo " - API FAILED"
-
-echo "Deployment completed!"
+echo "✅ Deployment completed successfully"

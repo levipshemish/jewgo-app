@@ -1,0 +1,181 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Loader2, Users, AlertCircle } from 'lucide-react';
+import { DraftFilters } from '@/lib/filters/filters.types';
+import { validateFilters, normalizeFilters } from '@/lib/utils/filterValidation';
+import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
+
+interface FilterPreviewProps {
+  filters: DraftFilters;
+  userLocation?: { latitude: number; longitude: number } | null;
+  className?: string;
+  debounceMs?: number;
+}
+
+interface PreviewResult {
+  count: number;
+  loading: boolean;
+  error: string | null;
+  hasValidationErrors: boolean;
+}
+
+export function FilterPreview({
+  filters,
+  userLocation,
+  className = '',
+  debounceMs = 500
+}: FilterPreviewProps) {
+  const [preview, setPreview] = useState<PreviewResult>({
+    count: 0,
+    loading: false,
+    error: null,
+    hasValidationErrors: false
+  });
+
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Validate filters
+  const validation = validateFilters(filters, userLocation);
+  const hasActiveFilters = Object.values(filters).some(value => 
+    value !== undefined && value !== null && value !== '' && 
+    !(Array.isArray(value) && value.length === 0)
+  );
+
+  // Debounced preview fetch
+  const fetchPreview = useCallback(async () => {
+    if (!hasActiveFilters || validation.errors.length > 0) {
+      setPreview(prev => ({
+        ...prev,
+        loading: false,
+        error: null,
+        hasValidationErrors: validation.errors.length > 0
+      }));
+      return;
+    }
+
+    setPreview(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      // Normalize filters to use standard field names
+      const normalizedFilters = normalizeFilters(filters);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.set('limit', '1'); // Only need count, not actual data
+      params.set('preview', 'true'); // Special flag for preview requests
+      
+      // Add filter parameters
+      Object.entries(normalizedFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (Array.isArray(value)) {
+            if (value.length > 0) {
+              params.set(key, JSON.stringify(value));
+            }
+          } else {
+            params.set(key, String(value));
+          }
+        }
+      });
+
+      // Add location if available
+      if (userLocation) {
+        params.set('lat', userLocation.latitude.toString());
+        params.set('lng', userLocation.longitude.toString());
+      }
+
+      const response = await deduplicatedFetch(`/api/restaurants?${params.toString()}`);
+      
+      if (response.success && typeof response.total === 'number') {
+        setPreview({
+          count: response.total,
+          loading: false,
+          error: null,
+          hasValidationErrors: false
+        });
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error fetching filter preview:', error);
+      setPreview({
+        count: 0,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load preview',
+        hasValidationErrors: false
+      });
+    }
+  }, [filters, userLocation, validation.errors.length, hasActiveFilters]);
+
+  // Debounced effect
+  useEffect(() => {
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    const timeout = setTimeout(fetchPreview, debounceMs);
+    setDebounceTimeout(timeout);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [fetchPreview, debounceMs]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+    };
+  }, [debounceTimeout]);
+
+  if (!hasActiveFilters) {
+    return null;
+  }
+
+  if (validation.errors.length > 0) {
+    return (
+      <div className={`flex items-center gap-2 text-sm text-red-600 ${className}`}>
+        <AlertCircle className="w-4 h-4" />
+        <span>Please fix validation errors to see preview</span>
+      </div>
+    );
+  }
+
+  if (validation.warnings.length > 0) {
+    return (
+      <div className={`flex items-center gap-2 text-sm text-amber-600 ${className}`}>
+        <AlertCircle className="w-4 h-4" />
+        <span>Warning: {validation.warnings[0].message}</span>
+      </div>
+    );
+  }
+
+  if (preview.loading) {
+    return (
+      <div className={`flex items-center gap-2 text-sm text-gray-600 ${className}`}>
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span>Checking results...</span>
+      </div>
+    );
+  }
+
+  if (preview.error) {
+    return (
+      <div className={`flex items-center gap-2 text-sm text-red-600 ${className}`}>
+        <AlertCircle className="w-4 h-4" />
+        <span>Unable to preview results</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-2 text-sm ${className}`}>
+      <Users className="w-4 h-4 text-green-600" />
+      <span className="text-gray-700">
+        <span className="font-medium text-green-600">{preview.count}</span>
+        {' '}
+        {preview.count === 1 ? 'restaurant' : 'restaurants'} found
+      </span>
+    </div>
+  );
+}

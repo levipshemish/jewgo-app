@@ -12,6 +12,7 @@ import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "./types"
 import LocationAwarePage from "@/components/LocationAwarePage"
+import { ActiveFilterChips } from "@/components/filters/ActiveFilterChips"
 
 function EateryPageContent() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -95,6 +96,10 @@ function EateryPageContent() {
     setShowFilters(false)
   }, [setFilter, clearFilter, clearAllFilters, activeFilters])
 
+  const handleRemoveFilter = useCallback((filterKey: string) => {
+    clearFilter(filterKey as keyof typeof activeFilters)
+  }, [clearFilter])
+
   const handleCardClick = useCallback((restaurant: LightRestaurant) => {
     router.push(`/eatery/${restaurant.id}`)
   }, [router])
@@ -128,6 +133,17 @@ function EateryPageContent() {
           onAddEatery={handleAddEatery}
           addButtonText="Add Restaurant"
         />
+        
+        {/* Active Filter Chips */}
+        <div className="px-4 py-2 border-b border-border/30">
+          <ActiveFilterChips
+            filters={activeFilters}
+            onRemoveFilter={handleRemoveFilter}
+            onClearAll={clearAllFilters}
+            variant="full"
+            className="min-h-[32px]"
+          />
+        </div>
       </div>
 
       {/* Grid - Explicit height constraint to prevent overflow */}

@@ -2019,6 +2019,54 @@ def create_app(config_class=None):
     def healthz():
         return jsonify({"ok": True}), 200
     
+    @app.route("/api/restaurants/<int:restaurant_id>/view", methods=["POST"])
+    def track_restaurant_view(restaurant_id):
+        """Track a view for a restaurant"""
+        try:
+            # Use the restaurant repository to increment view count
+            from database.repositories.restaurant_repository import RestaurantRepository
+            from database.connection_manager import DatabaseConnectionManager
+            
+            connection_manager = DatabaseConnectionManager()
+            restaurant_repo = RestaurantRepository(connection_manager)
+            
+            success = restaurant_repo.increment_view_count(restaurant_id)
+            
+            if success:
+                # Get the updated view count
+                restaurant = restaurant_repo.get_by_id(restaurant_id)
+                view_count = restaurant.view_count if restaurant else 0
+                
+                # Invalidate cache for this restaurant
+                cache_key = f"restaurant:{restaurant_id}"
+                redis_cache.delete(cache_key)
+                
+                return jsonify({
+                    "success": True,
+                    "data": {
+                        "restaurant_id": restaurant_id,
+                        "view_count": view_count
+                    }
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Restaurant not found"
+                }), 404
+                
+        except Exception as e:
+            logger.error(f"Error tracking view for restaurant {restaurant_id}: {e}")
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Failed to track view",
+                        "details": str(e),
+                    }
+                ),
+                500,
+            )
+    
     return app, socketio
 
 # Create the app and socketio instances
