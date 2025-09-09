@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
       backendUrl = `https://${backendUrl}`;
     }
-    const fullBackendUrl = `${backendUrl}/api/v4/restaurants?${queryParams}`;
+    const fullBackendUrl = `${backendUrl}/api/restaurants?${queryParams}`;
     
     console.log('Frontend API: Calling backend URL:', fullBackendUrl);
     
