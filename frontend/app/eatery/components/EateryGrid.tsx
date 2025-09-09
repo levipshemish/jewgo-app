@@ -1,13 +1,14 @@
 "use client"
 import { useState, useEffect, useCallback, useRef, RefObject, useMemo } from "react"
 import Card from "@/components/core/cards/Card"
-import { Loader2, Search } from "lucide-react"
+import { Loader2, Search, Wifi, WifiOff, AlertTriangle, RefreshCw } from "lucide-react"
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "../types"
 import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
 import { isRestaurantOpenDuringPeriod } from "@/lib/utils/hours"
 import { getBestAvailableRating, formatRating } from "@/lib/utils/ratingCalculation"
+import EateryGridSkeleton from "./EateryGridSkeleton"
 
 // Import the mock data generator (fallback)
 import { generateMockRestaurants, type MockRestaurant } from "@/lib/mockData/restaurants"
@@ -42,6 +43,9 @@ export default function EateryGrid({
   const [hasMore, setHasMore] = useState(true)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [backendError, setBackendError] = useState(false)
+  const [errorType, setErrorType] = useState<'network' | 'timeout' | 'server' | 'not_found' | 'unknown' | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const isRetryingRef = useRef(false)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -136,11 +140,23 @@ export default function EateryGrid({
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('Request aborted due to timeout')
-        throw new Error('Request timed out - backend may be unreachable')
+        throw new Error('TIMEOUT: Request timed out - backend may be unreachable')
       }
       if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('TimeoutError'))) {
         console.log('Timeout error detected')
-        throw new Error('Request timed out - backend may be unreachable')
+        throw new Error('TIMEOUT: Request timed out - backend may be unreachable')
+      }
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        console.log('Network error detected')
+        throw new Error('NETWORK: Unable to connect to server - check your internet connection')
+      }
+      if (error instanceof Error && error.message.includes('404')) {
+        console.log('Not found error detected')
+        throw new Error('NOT_FOUND: Restaurant service endpoint not found')
+      }
+      if (error instanceof Error && error.message.includes('500')) {
+        console.log('Server error detected')
+        throw new Error('SERVER: Internal server error - please try again later')
       }
       console.error('Error fetching restaurants:', error)
       throw error
@@ -225,6 +241,29 @@ export default function EateryGrid({
     } catch (error) {
       console.error('Error loading more items:', error);
       
+      // Parse error type and message
+      if (error instanceof Error) {
+        if (error.message.startsWith('TIMEOUT:')) {
+          setErrorType('timeout')
+          setErrorMessage('Request timed out. The server may be slow or unreachable.')
+        } else if (error.message.startsWith('NETWORK:')) {
+          setErrorType('network')
+          setErrorMessage('Network connection failed. Please check your internet connection.')
+        } else if (error.message.startsWith('SERVER:')) {
+          setErrorType('server')
+          setErrorMessage('Server error occurred. Please try again later.')
+        } else if (error.message.startsWith('NOT_FOUND:')) {
+          setErrorType('not_found')
+          setErrorMessage('Service endpoint not found. Please contact support.')
+        } else {
+          setErrorType('unknown')
+          setErrorMessage('An unexpected error occurred. Please try again.')
+        }
+      } else {
+        setErrorType('unknown')
+        setErrorMessage('An unexpected error occurred. Please try again.')
+      }
+      
       // Switch to mock data permanently after error
       console.log('Backend unreachable, switching to mock data');
       setBackendError(true);
@@ -258,6 +297,9 @@ export default function EateryGrid({
       setHasMore(true)
       setNextCursor(null)
       setBackendError(false)
+      setErrorType(null)
+      setErrorMessage('')
+      setIsInitialLoad(true)
       isRetryingRef.current = false
       
       const loadInitialItems = async () => {
@@ -290,6 +332,29 @@ export default function EateryGrid({
           } catch (error) {
             console.error('Error loading initial items:', error)
             currentRetryCount++
+            
+            // Parse error type and message
+            if (error instanceof Error) {
+              if (error.message.startsWith('TIMEOUT:')) {
+                setErrorType('timeout')
+                setErrorMessage('Request timed out. The server may be slow or unreachable.')
+              } else if (error.message.startsWith('NETWORK:')) {
+                setErrorType('network')
+                setErrorMessage('Network connection failed. Please check your internet connection.')
+              } else if (error.message.startsWith('SERVER:')) {
+                setErrorType('server')
+                setErrorMessage('Server error occurred. Please try again later.')
+              } else if (error.message.startsWith('NOT_FOUND:')) {
+                setErrorType('not_found')
+                setErrorMessage('Service endpoint not found. Please contact support.')
+              } else {
+                setErrorType('unknown')
+                setErrorMessage('An unexpected error occurred. Please try again.')
+              }
+            } else {
+              setErrorType('unknown')
+              setErrorMessage('An unexpected error occurred. Please try again.')
+            }
             
             // Check if it's a timeout error - fail faster for timeouts
             const isTimeoutError = error instanceof Error && 
@@ -329,6 +394,7 @@ export default function EateryGrid({
         
         await attemptFetch()
         setLoading(false)
+        setIsInitialLoad(false)
       }
       
       loadInitialItems()
@@ -433,7 +499,13 @@ export default function EateryGrid({
     return formattedRating;
   }, [])
 
-  if (sortedRestaurants.length === 0 && !loading) {
+  // Show skeleton during initial load
+  if (isInitialLoad && loading) {
+    return <EateryGridSkeleton count={8} showBackendError={backendError} />
+  }
+
+  // Show no results state
+  if (sortedRestaurants.length === 0 && !loading && !isInitialLoad) {
     return (
       <div className="text-center py-12">
         <Search className="mx-auto h-12 w-12 text-gray-400" />
@@ -447,22 +519,72 @@ export default function EateryGrid({
 
   return (
     <div className="px-4 py-4">
-      {/* Backend Status Indicator */}
-      {backendError && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <div className="flex">
+      {/* Enhanced Error Status Indicator */}
+      {backendError && errorType && (
+        <div className={`mb-4 p-4 rounded-lg border ${
+          errorType === 'network' ? 'bg-red-50 border-red-200' :
+          errorType === 'timeout' ? 'bg-orange-50 border-orange-200' :
+          errorType === 'server' ? 'bg-yellow-50 border-yellow-200' :
+          errorType === 'not_found' ? 'bg-purple-50 border-purple-200' :
+          'bg-gray-50 border-gray-200'
+        }`}>
+          <div className="flex items-start">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+              {errorType === 'network' && <WifiOff className="h-5 w-5 text-red-400" />}
+              {errorType === 'timeout' && <AlertTriangle className="h-5 w-5 text-orange-400" />}
+              {errorType === 'server' && <AlertTriangle className="h-5 w-5 text-yellow-400" />}
+              {errorType === 'not_found' && <AlertTriangle className="h-5 w-5 text-purple-400" />}
+              {errorType === 'unknown' && <AlertTriangle className="h-5 w-5 text-gray-400" />}
             </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
-                Backend Service Unavailable
+            <div className="ml-3 flex-1">
+              <h3 className={`text-sm font-medium ${
+                errorType === 'network' ? 'text-red-800' :
+                errorType === 'timeout' ? 'text-orange-800' :
+                errorType === 'server' ? 'text-yellow-800' :
+                errorType === 'not_found' ? 'text-purple-800' :
+                'text-gray-800'
+              }`}>
+                {errorType === 'network' && 'Connection Problem'}
+                {errorType === 'timeout' && 'Request Timeout'}
+                {errorType === 'server' && 'Server Error'}
+                {errorType === 'not_found' && 'Service Not Found'}
+                {errorType === 'unknown' && 'Service Unavailable'}
               </h3>
-              <div className="mt-2 text-sm text-yellow-700">
-                <p>Restaurant service is temporarily unavailable. Please try again later.</p>
+              <div className={`mt-2 text-sm ${
+                errorType === 'network' ? 'text-red-700' :
+                errorType === 'timeout' ? 'text-orange-700' :
+                errorType === 'server' ? 'text-yellow-700' :
+                errorType === 'not_found' ? 'text-purple-700' :
+                'text-gray-700'
+              }`}>
+                <p className="mb-2">{errorMessage}</p>
+                <p className="text-xs opacity-75">
+                  Showing sample data. Some features may be limited.
+                </p>
               </div>
+            </div>
+            <div className="flex-shrink-0 ml-3">
+              <button
+                onClick={() => {
+                  setBackendError(false)
+                  setErrorType(null)
+                  setErrorMessage('')
+                  // Trigger a reload by clearing restaurants and setting loading
+                  setRestaurants([])
+                  setLoading(true)
+                  setIsInitialLoad(true)
+                }}
+                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  errorType === 'network' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                  errorType === 'timeout' ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' :
+                  errorType === 'server' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
+                  errorType === 'not_found' ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' :
+                  'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Retry
+              </button>
             </div>
           </div>
         </div>
@@ -499,9 +621,12 @@ export default function EateryGrid({
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {loading && !isInitialLoad && (
         <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm text-gray-600">Loading more restaurants...</span>
+          </div>
         </div>
       )}
 

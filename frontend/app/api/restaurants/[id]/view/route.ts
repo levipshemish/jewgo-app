@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Ensure Node.js runtime for server-side operations
+export const runtime = 'nodejs'
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const restaurantId = params.id
+    const { id: restaurantId } = await params
 
     if (!restaurantId || isNaN(Number(restaurantId))) {
       return NextResponse.json(
