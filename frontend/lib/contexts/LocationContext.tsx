@@ -27,6 +27,7 @@ interface LocationContextType extends LocationState {
   setLoading: (loading: boolean) => void;
   checkPermissionStatus: () => Promise<'granted' | 'denied' | 'prompt' | 'unsupported'>;
   refreshPermissionStatus: () => Promise<void>;
+  refreshLocation: () => Promise<void>;
   markPopupShown: () => void;
   shouldShowPopup: (forceShow?: boolean) => boolean;
   resetPopupState: () => void;
@@ -210,7 +211,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           // Listen for permission changes
           permission.addEventListener('change', handlePermissionChange);
           
-          return permission.state;
+          // Return cleanup function
+          return () => {
+            permission.removeEventListener('change', handlePermissionChange);
+          };
         } else {
           // Fallback for older browsers - we'll check when user actually requests location
           if (DEBUG) { debugLog('📍 LocationContext: Permissions API not supported, defaulting to prompt'); }
@@ -227,10 +231,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
     // Check permission first, then load data only if permission is granted
     const loadDataWithPermissionCheck = async () => {
-      const permissionState = await checkBrowserPermission();
+      const cleanup = await checkBrowserPermission();
       
       // Only load location data if permission is granted
-      if (permissionState === 'granted' && savedLocationData) {
+      if (permissionStatus === 'granted' && savedLocationData) {
         try {
           const data = JSON.parse(savedLocationData);
           
@@ -254,21 +258,34 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           // Clear corrupted data
           localStorage.removeItem(LOCATION_STORAGE_KEY);
         }
-      } else if (permissionState === 'granted' && !savedLocationData) {
+      } else if (permissionStatus === 'granted' && !savedLocationData) {
         // Permission is granted but no saved data, request location
         if (DEBUG) { debugLog('📍 LocationContext: Permission granted but no saved data, requesting location'); }
         requestLocation();
-      } else if (permissionState === 'denied') {
+      } else if (permissionStatus === 'denied') {
         // Clear any saved location data if permission is denied
         localStorage.removeItem(LOCATION_STORAGE_KEY);
         if (DEBUG) { debugLog('📍 LocationContext: Cleared location data due to denied permission'); }
       }
+      
+      // Return cleanup function if available
+      return cleanup;
     };
 
-    loadDataWithPermissionCheck();
+    let cleanup: (() => void) | undefined;
+    loadDataWithPermissionCheck().then((cleanupFn) => {
+      cleanup = cleanupFn;
+    });
     
     // Mark as initialized to prevent premature saves
     setHasInitialized(true);
+    
+    // Return cleanup function
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
   }, [requestLocation]);
 
   // Save location data to localStorage whenever it changes (only save if we have valid data)
@@ -340,6 +357,38 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [hasInitialized, hasShownPopup, lastPopupShownTime]);
 
+  // Add visibility change listener to refresh location when user returns to app
+  useEffect(() => {
+    if (!hasInitialized) {
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && permissionStatus === 'granted') {
+        // Check if location is old (more than 30 minutes)
+        if (userLocation && userLocation.timestamp) {
+          const age = Date.now() - userLocation.timestamp;
+          const maxAge = 30 * 60 * 1000; // 30 minutes
+          
+          if (age > maxAge) {
+            if (DEBUG) { debugLog('📍 LocationContext: Location is old, refreshing on visibility change'); }
+            refreshLocation();
+          }
+        } else if (!userLocation) {
+          // No location but permission granted, request it
+          if (DEBUG) { debugLog('📍 LocationContext: No location but permission granted, requesting on visibility change'); }
+          requestLocation();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [hasInitialized, permissionStatus, userLocation, refreshLocation, requestLocation]);
+
   const setLocation = useCallback((location: UserLocation) => {
     setUserLocation(location);
   }, []);
@@ -403,8 +452,22 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setLastPopupShownTime(null);
     } else if (newStatus === 'granted') {
       setError(null);
+      // If permission was just granted and we don't have location, request it
+      if (!userLocation) {
+        if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting location'); }
+        requestLocation();
+      }
     }
-  }, [checkPermissionStatus]);
+  }, [checkPermissionStatus, userLocation, requestLocation]);
+
+  const refreshLocation = useCallback(async (): Promise<void> => {
+    if (permissionStatus === 'granted') {
+      if (DEBUG) { debugLog('📍 LocationContext: Refreshing location data'); }
+      await requestLocation();
+    } else {
+      if (DEBUG) { debugLog('📍 LocationContext: Cannot refresh location - permission not granted'); }
+    }
+  }, [permissionStatus, requestLocation]);
 
   const markPopupShown = useCallback(() => {
     setHasShownPopup(true);
@@ -479,6 +542,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setLoading: setLoadingHandler,
     checkPermissionStatus,
     refreshPermissionStatus,
+    refreshLocation,
     markPopupShown,
     shouldShowPopup,
     resetPopupState,
@@ -497,6 +561,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setLoadingHandler,
     checkPermissionStatus,
     refreshPermissionStatus,
+    refreshLocation,
     markPopupShown,
     shouldShowPopup,
     resetPopupState,
