@@ -115,14 +115,9 @@ function StatusBadge({ status }: { status: string }) {
 function ErrorLogs({ errors, title }: { errors: string[], title: string }) {
   const [isExpanded, setIsExpanded] = useState(false)
   
-  console.log('ErrorLogs component called with:', { errors, title })
-  
   if (!errors || errors.length === 0) {
-    console.log('No errors to display')
     return null
   }
-
-  console.log('Rendering error logs:', errors)
 
   return (
     <div className="mt-2">
@@ -159,21 +154,16 @@ export default function StatusPage() {
       setLoading(true)
       setError(null)
       
-      console.log('Fetching status...')
       const response = await fetch('/api/status')
       const data = await response.json()
-      
-      console.log('Status data:', data)
       
       if (data.success) {
         setStatus(data.data)
         setLastRefresh(new Date())
-        console.log('Status set successfully')
       } else {
         setError(data.error || 'Failed to fetch status')
       }
     } catch (err) {
-      console.error('Error fetching status:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
@@ -205,20 +195,6 @@ export default function StatusPage() {
               >
                 Manual Refresh
               </button>
-              
-              {/* Test Error Logs Display */}
-              <div className="mt-8 p-4 bg-white rounded-lg border">
-                <h3 className="text-lg font-semibold mb-4">Test Error Logs Display</h3>
-                <ErrorLogs 
-                  errors={[
-                    "HTTP 405: METHOD NOT ALLOWED",
-                    "HTTP 501: Unsupported method ('GET')",
-                    "Signature verification failed",
-                    "Missing deployment script"
-                  ]} 
-                  title="Sample Error Logs" 
-                />
-              </div>
             </div>
           </div>
         </div>

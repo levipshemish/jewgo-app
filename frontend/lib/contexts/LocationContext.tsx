@@ -203,8 +203,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               if (DEBUG) { debugLog('📍 LocationContext: Permission denied, cleared location data'); }
             } else if (newState === 'granted') {
               setError(null);
-              if (DEBUG) { debugLog('📍 LocationContext: Permission granted'); }
-              // Don't automatically request location - wait for user gesture
+              if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting fresh location'); }
+              // Automatically request fresh location when permission is granted
+              requestLocation();
             }
           };
           
@@ -464,11 +465,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setLastPopupShownTime(null);
     } else if (newStatus === 'granted') {
       setError(null);
-      // If permission was just granted and we don't have location, request it
-      if (!userLocation) {
-        if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting location'); }
-        requestLocation();
-      }
+      // Always request fresh location when permission is granted
+      if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting fresh location'); }
+      requestLocation();
     }
   }, [checkPermissionStatus, userLocation, requestLocation]);
 
