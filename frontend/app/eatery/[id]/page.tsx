@@ -485,10 +485,12 @@ function EateryIdPageContent() {
   }, [eateryId, fetchReviews, trackView])
 
   // Convert new location format to old format for compatibility with mapEateryToListingData
-  const legacyUserLocation = userLocation ? {
-    lat: userLocation.latitude,
-    lng: userLocation.longitude
-  } : null;
+  const legacyUserLocation = useMemo(() => {
+    return userLocation ? {
+      lat: userLocation.latitude,
+      lng: userLocation.longitude
+    } : null;
+  }, [userLocation]);
 
   // Memoize the listing data to prevent infinite re-renders
   // This must be called before any early returns to maintain hook order
