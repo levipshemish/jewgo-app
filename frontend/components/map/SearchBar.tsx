@@ -68,11 +68,12 @@ export default function SearchBar() {
       setIsLoadingPlaces(true);
       setPlacesApiError(null);
 
-      const suggestions = await googlePlacesAPI.getPlacePredictions({
+      const request = {
         input: searchQuery,
         types: ['establishment', 'restaurant', 'food'],
         componentRestrictions: { country: 'us' }
-      });
+      };
+      const suggestions = await googlePlacesAPI.getPlacePredictions(request);
 
       setPlaceSuggestions(suggestions || []);
     } catch (error) {

@@ -70,6 +70,14 @@ export function InteractiveRestaurantMap({
     visibleCount: null,
   });
 
+  // Filter restaurants with coordinates
+  const restaurantsWithCoords = useMemo((): Restaurant[] => {
+    return safeFilter(restaurants, (restaurant: Restaurant) => {
+      return Boolean(restaurant.latitude && restaurant.longitude &&
+        typeof restaurant.latitude === 'number' && typeof restaurant.longitude === 'number');
+    });
+  }, [restaurants]);
+
   // Use refs to capture current values for event handlers to avoid dependency issues
   const restaurantsWithCoordsRef = useRef<Restaurant[]>([]);
   const keyboardSelectedIndexRef = useRef<number>(-1);
@@ -112,14 +120,6 @@ export function InteractiveRestaurantMap({
       zIndex: 1000, // Ensure it's above other markers
     });
   }, []);
-
-  // Filter restaurants with coordinates
-  const restaurantsWithCoords = useMemo((): Restaurant[] => {
-    return safeFilter(restaurants, (restaurant: Restaurant) => {
-      return Boolean(restaurant.latitude && restaurant.longitude &&
-        typeof restaurant.latitude === 'number' && typeof restaurant.longitude === 'number');
-    });
-  }, [restaurants]);
 
   // Accessibility features
   const {
