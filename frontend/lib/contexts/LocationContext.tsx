@@ -274,7 +274,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
     let cleanup: (() => void) | undefined;
     loadDataWithPermissionCheck().then((cleanupFn) => {
-      cleanup = cleanupFn;
+      if (typeof cleanupFn === 'function') {
+        cleanup = cleanupFn;
+      }
     });
     
     // Mark as initialized to prevent premature saves
