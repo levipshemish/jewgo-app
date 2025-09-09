@@ -23,10 +23,10 @@ export function CollapsibleFilterSection({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <div className={`border border-gray-200 rounded-lg ${className}`}>
+    <div className={`${className}`}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between py-3 hover:bg-gray-50 transition-colors rounded-lg"
       >
         <div className="flex items-center gap-2">
           {Icon && <Icon className="w-4 h-4 text-gray-600" />}
@@ -42,7 +42,7 @@ export function CollapsibleFilterSection({
       </button>
       
       {isExpanded && (
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+        <div className="pb-4">
           {children}
         </div>
       )}

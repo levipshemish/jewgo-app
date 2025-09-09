@@ -9,7 +9,6 @@ import { AppliedFilters } from '@/lib/filters/filters.types';
 import { validateFilters, normalizeFilters, getCanonicalDistance } from '@/lib/utils/filterValidation';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import { FilterPreview } from './FilterPreview';
-import { CollapsibleFilterSection } from './CollapsibleFilterSection';
 
 
 interface ModernFilterPopupProps {
@@ -135,7 +134,7 @@ export function ModernFilterPopup({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-6 py-4 sm:px-8 sm:py-6 space-y-4 sm:space-y-6">
+          <div className="px-6 py-4 sm:px-8 sm:py-6 space-y-6">
             {/* Validation Errors */}
             {showValidationErrors && validation.errors.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
@@ -187,33 +186,30 @@ export function ModernFilterPopup({
               userLocation={userLocation}
               className="mb-4"
             />
-            {/* Distance Filter - Standardized to distanceMi */}
-            <CollapsibleFilterSection
-              title="Distance from You"
-              icon={MapPin}
-              defaultExpanded={!!getCanonicalDistance(draftFilters)}
-              compact={true}
-            >
+            {/* Distance Filter */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gray-600" />
+                <label className="text-sm font-medium text-gray-900">Distance from You</label>
+              </div>
               {userLocation ? (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="50"
-                      step="0.5"
-                      value={getCanonicalDistance(draftFilters) || 25}
-                      onChange={(e) => setDraftFilter('distanceMi', Number(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer slider-green"
-                      style={{
-                        background: `linear-gradient(to right, #16a34a 0%, #16a34a ${(((getCanonicalDistance(draftFilters) || 25)) / 50) * 100}%, #e5e7eb ${(((getCanonicalDistance(draftFilters) || 25)) / 50) * 100}%, #e5e7eb 100%)`,
-                      }}
-                    />
-                    <div className="flex justify-between text-xs text-gray-600">
-                      <span>0.5 mi</span>
-                      <span className="font-medium text-black">{getCanonicalDistance(draftFilters) || 25} miles</span>
-                      <span>50 mi</span>
-                    </div>
+                <div className="space-y-2">
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="50"
+                    step="0.5"
+                    value={getCanonicalDistance(draftFilters) || 25}
+                    onChange={(e) => setDraftFilter('distanceMi', Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer slider-green"
+                    style={{
+                      background: `linear-gradient(to right, #16a34a 0%, #16a34a ${(((getCanonicalDistance(draftFilters) || 25)) / 50) * 100}%, #e5e7eb ${(((getCanonicalDistance(draftFilters) || 25)) / 50) * 100}%, #e5e7eb 100%)`,
+                    }}
+                  />
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>0.5 mi</span>
+                    <span className="font-medium text-black">{getCanonicalDistance(draftFilters) || 25} miles</span>
+                    <span>50 mi</span>
                   </div>
                 </div>
               ) : (
@@ -231,15 +227,12 @@ export function ModernFilterPopup({
                   )}
                 </div>
               )}
-            </CollapsibleFilterSection>
+            </div>
 
 
             {/* Certifying Agency Filter */}
-            <CollapsibleFilterSection
-              title="Certifying Agency"
-              defaultExpanded={!!draftFilters.agency}
-              compact={true}
-            >
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-900">Certifying Agency</label>
               <CustomDropdown
                 value={draftFilters.agency || ""}
                 onChange={(value) => setDraftFilter('agency', value || undefined)}
@@ -256,14 +249,11 @@ export function ModernFilterPopup({
                 placeholder="All Agencies"
                 disabled={effectiveFilterOptionsLoading}
               />
-            </CollapsibleFilterSection>
+            </div>
 
             {/* Kosher Type Filter */}
-            <CollapsibleFilterSection
-              title="Kosher Type"
-              defaultExpanded={!!draftFilters.category}
-              compact={true}
-            >
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-900">Kosher Type</label>
               <CustomDropdown
                 key={`category-${draftFilters.category || 'empty'}`}
                 value={draftFilters.category || ""}
@@ -281,14 +271,11 @@ export function ModernFilterPopup({
                 placeholder="All Kosher Types"
                 disabled={effectiveFilterOptionsLoading}
               />
-            </CollapsibleFilterSection>
+            </div>
 
             {/* Price Range Filter */}
-            <CollapsibleFilterSection
-              title="Price Range"
-              defaultExpanded={!!draftFilters.priceRange}
-              compact={true}
-            >
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-900">Price Range</label>
               <CustomDropdown
                 value={(() => {
                   // Convert numeric price range back to symbol for display
@@ -328,14 +315,11 @@ export function ModernFilterPopup({
                 placeholder="All Price Ranges"
                 disabled={effectiveFilterOptionsLoading}
               />
-            </CollapsibleFilterSection>
+            </div>
 
             {/* Rating Filter */}
-            <CollapsibleFilterSection
-              title="Minimum Rating"
-              defaultExpanded={!!draftFilters.ratingMin}
-              compact={true}
-            >
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-900">Minimum Rating</label>
               <CustomDropdown
                 value={draftFilters.ratingMin?.toString() || ""}
                 onChange={(value) => {
@@ -356,15 +340,14 @@ export function ModernFilterPopup({
                 ]}
                 placeholder="All Ratings"
               />
-            </CollapsibleFilterSection>
+            </div>
 
             {/* Hours Filter */}
-            <CollapsibleFilterSection
-              title="Available Hours"
-              icon={Clock}
-              defaultExpanded={!!draftFilters.hoursFilter}
-              compact={true}
-            >
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-600" />
+                <label className="text-sm font-medium text-gray-900">Available Hours</label>
+              </div>
               <CustomDropdown
                 value={draftFilters.hoursFilter || ""}
                 onChange={(value) => setDraftFilter('hoursFilter', value || undefined)}
@@ -378,7 +361,7 @@ export function ModernFilterPopup({
                 ]}
                 placeholder="All Hours"
               />
-            </CollapsibleFilterSection>
+            </div>
           </div>
         </div>
 
