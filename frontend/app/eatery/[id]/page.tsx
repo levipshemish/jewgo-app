@@ -213,7 +213,10 @@ function EateryIdPageContent() {
   // Fetch reviews for a restaurant with deduplication
   const fetchReviews = useCallback(async (restaurantId: string, offset: number = 0, limit: number = 10) => {
     try {
-      setReviewsLoading(true)
+      // Only show loading state for pagination, not initial load
+      if (offset > 0) {
+        setReviewsLoading(true)
+      }
       
       // Use deduplicated fetch to prevent duplicate API calls
       const data = await deduplicatedFetch(`/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
@@ -240,7 +243,9 @@ function EateryIdPageContent() {
         setReviews([])
       }
     } finally {
-      setReviewsLoading(false)
+      if (offset > 0) {
+        setReviewsLoading(false)
+      }
     }
   }, [])
 
@@ -435,16 +440,23 @@ function EateryIdPageContent() {
         }
 
         setEatery(eateryData)
-        setLoading(false)
-        isFetchingRef.current = false
+        
+        // Track the view and fetch reviews in parallel to prevent sequential loading
+        const promises = []
         
         // Track the view after successful data load
-        trackView()
+        promises.push(trackView())
         
         // Fetch reviews for this restaurant
         if (eateryData.id) {
-          fetchReviews(eateryData.id, 0, 10) // Start with first 10 reviews
+          promises.push(fetchReviews(eateryData.id, 0, 10)) // Start with first 10 reviews
         }
+        
+        // Wait for all parallel operations to complete before setting loading to false
+        Promise.allSettled(promises).finally(() => {
+          setLoading(false)
+          isFetchingRef.current = false
+        })
         
         // Debug logging for rating and reviews
         console.log('=== RATING AND REVIEWS DEBUG ===');
