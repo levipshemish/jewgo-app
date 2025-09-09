@@ -58,13 +58,26 @@ interface SystemStatus {
   }
 }
 
-async function checkRoute(url: string, name: string): Promise<RouteStatus> {
+async function checkRoute(url: string, name: string, method: string = 'GET'): Promise<RouteStatus> {
   const startTime = Date.now()
   try {
-    const response = await fetch(url, {
-      method: 'GET',
+    const fetchOptions: any = {
+      method,
       timeout: 5000,
-    } as any)
+    }
+    
+    // Add appropriate headers and body for POST requests
+    if (method === 'POST') {
+      fetchOptions.headers = {
+        'Content-Type': 'application/json',
+      }
+      // For view tracking, we might need a simple body
+      if (url.includes('/view')) {
+        fetchOptions.body = JSON.stringify({})
+      }
+    }
+    
+    const response = await fetch(url, fetchOptions)
     
     const responseTime = Date.now() - startTime
     
@@ -115,23 +128,42 @@ async function checkRoute(url: string, name: string): Promise<RouteStatus> {
 
 async function getWebhookStatus(): Promise<WebhookStatus> {
   try {
+    // Try the new webhook status endpoint first
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'}/webhook/status`)
     
     if (response.ok) {
       const data = await response.json()
       return {
-        configured: data.webhook_configured || false,
+        configured: data.data?.webhook_configured || data.webhook_configured || false,
         lastActivity: new Date().toISOString(),
-        recentDeliveries: data.recent_deliveries || 0,
-        recentErrors: data.recent_errors || [],
-        failureCount: data.failure_count || 0
+        recentDeliveries: data.data?.recent_deliveries || data.recent_deliveries || 0,
+        recentErrors: data.data?.recent_errors || data.recent_errors || [],
+        failureCount: data.data?.failure_count || data.failure_count || 0
       }
     } else {
-      return {
-        configured: false,
-        recentDeliveries: 0,
-        recentErrors: [`HTTP ${response.status}: ${response.statusText}`],
-        failureCount: 1
+      // If the new endpoint fails, try the old one
+      const oldResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'}/webhook/deploy`, {
+        method: 'GET'
+      })
+      
+      if (oldResponse.ok) {
+        return {
+          configured: true,
+          lastActivity: new Date().toISOString(),
+          recentDeliveries: 0,
+          recentErrors: [],
+          failureCount: 0
+        }
+      } else {
+        return {
+          configured: false,
+          recentDeliveries: 0,
+          recentErrors: [
+            `New endpoint: HTTP ${response.status}: ${response.statusText}`,
+            `Old endpoint: HTTP ${oldResponse.status}: ${oldResponse.statusText}`
+          ],
+          failureCount: 1
+        }
       }
     }
   } catch (error) {
@@ -190,18 +222,18 @@ export async function GET(request: NextRequest) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
     
-    // Define routes to check
+    // Define routes to check with their proper HTTP methods
     const routesToCheck = [
-      { url: `${backendUrl}/health`, name: 'Health Check' },
-      { url: `${backendUrl}/api/restaurants?limit=1`, name: 'Restaurants API' },
-      { url: `${backendUrl}/api/restaurants/1577`, name: 'Restaurant Detail API' },
-      { url: `${backendUrl}/api/restaurants/1577/view`, name: 'View Tracking API' },
-      { url: `${backendUrl}/webhook/status`, name: 'Webhook Status' },
+      { url: `${backendUrl}/health`, name: 'Health Check', method: 'GET' },
+      { url: `${backendUrl}/api/restaurants?limit=1`, name: 'Restaurants API', method: 'GET' },
+      { url: `${backendUrl}/api/restaurants/1577`, name: 'Restaurant Detail API', method: 'GET' },
+      { url: `${backendUrl}/api/restaurants/1577/view`, name: 'View Tracking API', method: 'POST' },
+      { url: `${backendUrl}/webhook/status`, name: 'Webhook Status', method: 'GET' },
     ]
     
     // Check all routes in parallel
     const routeStatuses = await Promise.all(
-      routesToCheck.map(route => checkRoute(route.url, route.name))
+      routesToCheck.map(route => checkRoute(route.url, route.name, route.method))
     )
     
     // Get webhook status
