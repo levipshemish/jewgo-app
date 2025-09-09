@@ -101,8 +101,11 @@ services:
     volumes:
       - ./scripts/deployment/webhook-handler.py:/app/webhook-handler.py
       - ./scripts/deployment/deploy.sh:/app/deploy.sh
+      - /home/ubuntu/jewgo-app:/home/ubuntu/jewgo-app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker-compose:/usr/bin/docker-compose:ro
     working_dir: /app
-    command: python3 webhook-handler.py
+    command: sh -c "apk add --no-cache git docker-cli && python3 webhook-handler.py"
     ports:
       - "8080:8080"
     restart: unless-stopped
