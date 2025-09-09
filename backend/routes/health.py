@@ -24,7 +24,7 @@ def health():
     
     # Check database
     try:
-        from backend.database.database_manager_v4 import DatabaseManager
+        from database.database_manager_v4 import DatabaseManager
         db_manager = DatabaseManager()
         with db_manager.get_session() as session:
             session.execute(text("SELECT 1"))
@@ -36,7 +36,7 @@ def health():
     
     # Check Redis
     try:
-        from backend.utils.redis_client import redis_client
+        from utils.redis_client import redis_client
         redis_client.ping()
         status["redis_ok"] = True
     except Exception as e:

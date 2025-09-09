@@ -156,7 +156,7 @@ def _initialize_sentry() -> None:
     # Get logger for this function
     try:
         sentry_dsn = os.environ.get("SENTRY_DSN")
-        if sentry_dsn:
+        if sentry_dsn and sentry_dsn.strip() and sentry_dsn.startswith(('http://', 'https://')):
             sentry_sdk.init(
                 dsn=sentry_dsn,
                 integrations=[
@@ -781,14 +781,7 @@ def create_app(config_class=None):
         logger.warning(f"Could not register metrics API blueprint: {e}")
     
     # Register mock API routes for development
-    try:
-        from mock_api import mock_bp
-        app.register_blueprint(mock_bp)
-        logger.info("Mock API routes blueprint registered successfully")
-    except ImportError as e:
-        logger.warning(f"Could not register mock API routes blueprint: {e}")
-    except Exception as e:
-        logger.error(f"Error registering mock API routes blueprint: {e}")
+    # Note: mock_api module not available, skipping registration
     # Search blueprint removed - using direct PostgreSQL search
     # Register error handlers
     try:

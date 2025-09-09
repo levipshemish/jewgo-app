@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Any
 from utils.performance_metrics import get_performance_stats, performance_collector
 from utils.api_caching import get_cache_stats
-from utils.auth_decorators import require_admin
+from utils.rbac import require_admin
 
 # Setup logging
 logger = logging.getLogger(__name__)

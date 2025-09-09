@@ -9,22 +9,22 @@ import logging
 from typing import Optional, Dict, Any, List
 from sqlalchemy import text
 
-# Import shared utilities with correct backend. prefix
-from backend.utils.query_builders import (
+# Import shared utilities
+from utils.query_builders import (
     build_where_clause,
     build_pagination_clause
 )
-from backend.utils.geospatial import distance_select, distance_where_clause, knn_order_clause
+from utils.geospatial import distance_select, distance_where_clause, knn_order_clause
 
 # Import database manager
 try:
-    from backend.database.database_manager_v4 import DatabaseManager
+    from database.database_manager_v4 import DatabaseManager
 except ImportError:
-    from backend.database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManager
+    from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManager
 
 # Import utilities
 try:
-    from backend.utils.google_places_validator import GooglePlacesValidator
+    from utils.google_places_validator import GooglePlacesValidator
 except ImportError:
     # Fallback if validator not available
     class GooglePlacesValidator:
