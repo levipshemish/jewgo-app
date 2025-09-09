@@ -102,11 +102,19 @@ class RoleInvalidationListener:
         # Close database connection
         self._close_connection()
         
-        # Wait for threads to finish
+        # Wait for threads to finish with timeout
         if self.listener_thread and self.listener_thread.is_alive():
             self.listener_thread.join(timeout=5)
+            if self.listener_thread.is_alive():
+                logger.warning("Listener thread did not stop gracefully, forcing cleanup")
         if self.health_thread and self.health_thread.is_alive():
             self.health_thread.join(timeout=5)
+            if self.health_thread.is_alive():
+                logger.warning("Health thread did not stop gracefully, forcing cleanup")
+        
+        # Clear thread references
+        self.listener_thread = None
+        self.health_thread = None
             
         logger.info("Role invalidation listener stopped")
     

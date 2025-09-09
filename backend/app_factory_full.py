@@ -2197,6 +2197,112 @@ def create_app(config_class=None):
                 500,
             )
     
+    # Connection pool monitoring endpoints
+    @app.route("/api/admin/connection-pool/metrics", methods=["GET"])
+    def get_connection_pool_metrics():
+        """Get connection pool metrics for monitoring."""
+        try:
+            from utils.connection_pool_monitor import get_connection_pool_metrics
+            hours = request.args.get('hours', 1, type=int)
+            metrics = get_connection_pool_metrics(hours)
+            return jsonify(metrics), 200
+        except Exception as e:
+            logger.error(f"Error getting connection pool metrics: {e}")
+            return jsonify({"error": "Failed to get connection pool metrics"}), 500
+    
+    @app.route("/api/admin/connection-pool/alerts", methods=["GET"])
+    def get_connection_pool_alerts():
+        """Get connection pool alerts."""
+        try:
+            from utils.connection_pool_monitor import get_connection_pool_alerts
+            alerts = get_connection_pool_alerts()
+            return jsonify({"alerts": alerts}), 200
+        except Exception as e:
+            logger.error(f"Error getting connection pool alerts: {e}")
+            return jsonify({"error": "Failed to get connection pool alerts"}), 500
+    
+    # Add cleanup handlers for proper resource management
+    @app.teardown_appcontext
+    def cleanup_resources(error):
+        """Clean up resources when app context is torn down."""
+        try:
+            # Close database connections
+            from utils.database_connection_manager import close_db_manager
+            close_db_manager()
+            
+            # Close Redis connections
+            from utils.redis_client import close_redis_client
+            close_redis_client()
+            
+            # Stop monitoring threads
+            from utils.performance_metrics import performance_collector
+            performance_collector.stop_monitoring()
+            
+            # Stop role invalidation listener
+            from workers.role_invalidation_listener import stop_role_invalidation_listener
+            stop_role_invalidation_listener()
+            
+            # Stop v4 monitoring
+            from monitoring.v4_monitoring import stop_v4_monitoring
+            stop_v4_monitoring()
+            
+            # Stop connection pool monitoring
+            from utils.connection_pool_monitor import stop_connection_pool_monitoring
+            stop_connection_pool_monitoring()
+            
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+    
+    # Add signal handlers for graceful shutdown
+    import signal
+    import sys
+    
+    def signal_handler(signum, frame):
+        """Handle shutdown signals gracefully."""
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        
+        try:
+            # Stop monitoring threads
+            from utils.performance_metrics import performance_collector
+            performance_collector.stop_monitoring()
+            
+            # Stop role invalidation listener
+            from workers.role_invalidation_listener import stop_role_invalidation_listener
+            stop_role_invalidation_listener()
+            
+            # Stop v4 monitoring
+            from monitoring.v4_monitoring import stop_v4_monitoring
+            stop_v4_monitoring()
+            
+            # Stop connection pool monitoring
+            from utils.connection_pool_monitor import stop_connection_pool_monitoring
+            stop_connection_pool_monitoring()
+            
+            # Close Redis connections
+            from utils.redis_client import close_redis_client
+            close_redis_client()
+            
+            # Close database connections
+            from utils.database_connection_manager import close_db_manager
+            close_db_manager()
+            
+        except Exception as e:
+            logger.error(f"Error during graceful shutdown: {e}")
+        
+        sys.exit(0)
+    
+    # Register signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    # Start connection pool monitoring
+    try:
+        from utils.connection_pool_monitor import start_connection_pool_monitoring
+        start_connection_pool_monitoring()
+        logger.info("Connection pool monitoring started")
+    except Exception as e:
+        logger.error(f"Failed to start connection pool monitoring: {e}")
+    
     return app, socketio
 
 # Create the app and socketio instances

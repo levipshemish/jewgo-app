@@ -69,8 +69,11 @@ class V4MonitoringSystem:
     def stop_monitoring(self):
         """Stop the monitoring system."""
         self.monitoring_active = False
-        if self.monitoring_thread:
+        if self.monitoring_thread and self.monitoring_thread.is_alive():
             self.monitoring_thread.join(timeout=5)
+            if self.monitoring_thread.is_alive():
+                logger.warning("V4 monitoring thread did not stop gracefully")
+        self.monitoring_thread = None
         logger.info("V4 monitoring system stopped")
 
     def _monitoring_loop(self, interval_seconds: int):

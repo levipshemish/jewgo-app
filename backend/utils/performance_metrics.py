@@ -53,6 +53,8 @@ class PerformanceCollector:
         self.db_metrics = deque(maxlen=max_metrics)
         self.system_metrics = deque(maxlen=1000)  # Less frequent system metrics
         self.lock = threading.Lock()
+        self._monitoring_active = False
+        self._monitor_thread = None
         
         # Start system metrics collection
         self._start_system_monitoring()
@@ -105,8 +107,10 @@ class PerformanceCollector:
     
     def _start_system_monitoring(self):
         """Start background system monitoring."""
+        self._monitoring_active = True
+        
         def monitor_system():
-            while True:
+            while self._monitoring_active:
                 try:
                     # Collect system metrics
                     cpu_percent = psutil.cpu_percent(interval=1)
@@ -124,16 +128,23 @@ class PerformanceCollector:
                     with self.lock:
                         self.system_metrics.append(metric)
                     
-                    # Sleep for 30 seconds
-                    time.sleep(30)
+                    # Sleep for 30 seconds, but check for stop signal
+                    for _ in range(30):
+                        if not self._monitoring_active:
+                            break
+                        time.sleep(1)
                     
                 except Exception as e:
                     logger.error(f"Error collecting system metrics: {e}")
-                    time.sleep(60)  # Wait longer on error
+                    # Wait longer on error, but still check for stop signal
+                    for _ in range(60):
+                        if not self._monitoring_active:
+                            break
+                        time.sleep(1)
         
         # Start monitoring thread
-        monitor_thread = threading.Thread(target=monitor_system, daemon=True)
-        monitor_thread.start()
+        self._monitor_thread = threading.Thread(target=monitor_system, daemon=True)
+        self._monitor_thread.start()
     
     def get_api_stats(self, time_window_minutes: int = 60) -> Dict[str, Any]:
         """Get API performance statistics for the last N minutes."""
@@ -314,6 +325,18 @@ class PerformanceCollector:
             'database': self.get_db_stats(time_window_minutes),
             'system': self.get_system_stats(time_window_minutes)
         }
+    
+    def stop_monitoring(self):
+        """Stop system monitoring and cleanup resources."""
+        self._monitoring_active = False
+        
+        if self._monitor_thread and self._monitor_thread.is_alive():
+            self._monitor_thread.join(timeout=5)
+            if self._monitor_thread.is_alive():
+                logger.warning("Performance monitoring thread did not stop gracefully")
+        
+        self._monitor_thread = None
+        logger.info("Performance monitoring stopped")
 
 # Global performance collector instance
 performance_collector = PerformanceCollector()

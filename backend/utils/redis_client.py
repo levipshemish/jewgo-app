@@ -154,6 +154,9 @@ def close_redis_client():
     if _redis_client:
         try:
             _redis_client.close()
+            # Also disconnect the connection pool to prevent connection leaks
+            if hasattr(_redis_client, 'connection_pool'):
+                _redis_client.connection_pool.disconnect()
             logger.info("Redis client connection closed")
         except Exception as e:
             logger.error(f"Error closing Redis client: {e}")

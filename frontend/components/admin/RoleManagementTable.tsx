@@ -634,11 +634,17 @@ function RoleAssignmentModal({ user, onAssign, onClose, isLoading, availableUser
   useEffect(() => { setMounted(true); }, []);
 
   // Debounced user search against /api/admin/roles?include_all=true&search=...
-  const [debounceId, setDebounceId] = useState<any>(null);
+  const debounceIdRef = useRef<NodeJS.Timeout | null>(null);
   const onSearchUsers = useCallback((q: string) => {
     setUserQuery(q);
-    if (debounceId) clearTimeout(debounceId);
-    const id = setTimeout(async () => {
+    
+    // Clear existing timeout
+    if (debounceIdRef.current) {
+      clearTimeout(debounceIdRef.current);
+    }
+    
+    // Set new timeout
+    debounceIdRef.current = setTimeout(async () => {
       if (!q) {
         setUserOptions(availableUsers);
         return;
@@ -657,8 +663,16 @@ function RoleAssignmentModal({ user, onAssign, onClose, isLoading, availableUser
         setIsSearching(false);
       }
     }, 300);
-    setDebounceId(id);
-  }, [availableUsers, debounceId]);
+  }, [availableUsers]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceIdRef.current) {
+        clearTimeout(debounceIdRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

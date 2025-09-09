@@ -80,3 +80,29 @@ export function subscribe(listener: Listener) {
     listeners.delete(listener);
   };
 }
+
+// Cleanup function to terminate worker and clear timers
+export function cleanupMessageBus() {
+  // Clear dispatch timer
+  if (dispatchTimer !== null) {
+    clearTimeout(dispatchTimer);
+    dispatchTimer = null;
+  }
+  
+  // Terminate worker
+  if (worker) {
+    worker.terminate();
+    worker = null;
+  }
+  
+  // Clear listeners
+  listeners.clear();
+  
+  // Clear latest result
+  latestResult = null;
+}
+
+// Auto-cleanup on page unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', cleanupMessageBus);
+}
