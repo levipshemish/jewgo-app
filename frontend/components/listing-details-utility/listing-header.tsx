@@ -78,28 +78,27 @@ export function ListingHeader({
 
   return (
     <div className="flex justify-center">
-      {/* Single header bar with back, tags, kosher info, stats, and action buttons */}
-      <div className="inline-flex items-center gap-2 p-1 sm:p-2 px-2 sm:px-3 bg-white rounded-full mt-6 sm:mt-8">
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 hover:bg-white/50 transition-colors">
+      {/* Header bar with consistent spacing and better visual hierarchy */}
+      <div className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white rounded-full mt-4 sm:mt-6 shadow-sm">
+        {/* Back button */}
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-7 w-7 hover:bg-gray-100 transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        {/* Kosher info and stats in the middle */}
-        <div className="flex items-center gap-3 self-center">
-          {/* Kosher info */}
+        {/* Kosher information section */}
+        <div className="flex items-center gap-1.5">
           {kosherType && (
-            <span className={`text-sm font-medium px-1 py-0.5 rounded-full flex items-center ${
-              kosherType.toLowerCase() === 'meat' ? 'text-red-600' :
-              kosherType.toLowerCase() === 'dairy' ? 'text-blue-600' :
-              kosherType.toLowerCase() === 'parve' || kosherType.toLowerCase() === 'pareve' ? 'text-orange-600' :
-              'text-gray-600'
+            <span className={`text-xs font-medium rounded-full px-2 py-1 ${
+              kosherType.toLowerCase() === 'meat' ? 'text-red-700 bg-red-100' :
+              kosherType.toLowerCase() === 'dairy' ? 'text-blue-700 bg-blue-100' :
+              kosherType.toLowerCase() === 'parve' || kosherType.toLowerCase() === 'pareve' ? 'text-orange-700 bg-orange-100' :
+              'text-gray-700 bg-gray-100'
             }`}>
               {kosherType}
             </span>
           )}
           {kosherAgency && (
             (() => {
-              // Check if agency should be clickable
               const lowerAgency = kosherAgency.toLowerCase()
               const isClickable = kosherAgencyWebsite || 
                 lowerAgency.includes('orb') || 
@@ -112,34 +111,35 @@ export function ListingHeader({
               return isClickable ? (
                 <button
                   onClick={handleAgencyClick}
-                  className="text-sm text-gray-600 hover:text-blue-600 hover:underline transition-colors cursor-pointer flex items-center"
+                  className="text-xs text-gray-600 hover:text-blue-600 underline transition-colors px-1 py-1 rounded"
                 >
                   {kosherAgency}
                 </button>
               ) : (
-                <span className="text-sm text-gray-600 flex items-center">
+                <span className="text-xs text-gray-600 px-1 py-1">
                   {kosherAgency}
                 </span>
               )
             })()
           )}
-
-          {/* Stats */}
-          {viewCount !== undefined && viewCount >= 0 && (
-            <div className="flex items-center gap-1 text-gray-600 text-sm">
-              <Eye className="h-4 w-4" />
-              <span>{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
-            </div>
-          )}
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        {/* Stats section */}
+        {viewCount !== undefined && viewCount >= 0 && (
+          <div className="flex items-center gap-1.5 text-gray-600">
+            <Eye className="h-4 w-4 text-blue-500" />
+            <span className="text-xs font-medium">{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5">
           {shareCount !== undefined && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-8 w-8 hover:bg-white/50 transition-colors"
+              className="h-7 w-7 hover:bg-gray-100 transition-colors"
             >
               <Share className="h-4 w-4" />
             </Button>
@@ -148,13 +148,13 @@ export function ListingHeader({
             variant="ghost"
             size="icon"
             onClick={onFavorite}
-            className="h-8 w-8 hover:bg-white/50 transition-colors group"
+            className="h-7 w-7 hover:bg-gray-100 transition-colors group"
           >
             <Heart
               className={`h-4 w-4 transition-colors ${
                 isFavorited
                   ? 'fill-red-500 text-red-500'
-                  : 'text-gray-700 group-hover:fill-red-500 group-hover:text-red-500'
+                  : 'text-gray-600 group-hover:fill-red-500 group-hover:text-red-500'
               }`}
             />
           </Button>

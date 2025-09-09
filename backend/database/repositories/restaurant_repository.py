@@ -301,6 +301,24 @@ class RestaurantRepository(BaseRepository[Restaurant]):
             self.logger.exception("Error getting kosher types", error=str(e))
             return []
 
+    def increment_view_count(self, restaurant_id: int) -> bool:
+        """Increment the view count for a restaurant."""
+        try:
+            session = self.connection_manager.get_session()
+            restaurant = session.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+            if restaurant:
+                restaurant.view_count += 1
+                restaurant.updated_at = datetime.utcnow()
+                session.commit()
+                session.close()
+                self.logger.info("Incremented view count", restaurant_id=restaurant_id, new_count=restaurant.view_count)
+                return True
+            session.close()
+            return False
+        except Exception as e:
+            self.logger.exception("Error incrementing view count", error=str(e))
+            return False
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get restaurant statistics."""
         try:

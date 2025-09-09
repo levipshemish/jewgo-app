@@ -6,6 +6,7 @@ import { ListingPage } from '@/components/listing-details-utility/listing-page'
 import { mapEateryToListingData } from '@/utils/eatery-mapping'
 import { EateryDB } from '@/types/listing'
 import { useLocationData } from '@/hooks/useLocationData'
+import { useViewTracking } from '@/hooks/useViewTracking'
 import Link from 'next/link'
 import ErrorBoundary from '../components/ErrorBoundary'
 import LocationAwarePage from '@/components/LocationAwarePage'
@@ -200,6 +201,13 @@ function EateryIdPageContent() {
   }
 
   const eateryId = params.id as string
+
+  // View tracking hook
+  const { trackView } = useViewTracking({
+    restaurantId: eateryId,
+    enabled: true,
+    debounceMs: 2000 // 2 second debounce to prevent spam
+  })
 
   // Fetch reviews for a restaurant with deduplication
   const fetchReviews = useCallback(async (restaurantId: string, offset: number = 0, limit: number = 10) => {
@@ -414,7 +422,7 @@ function EateryIdPageContent() {
             longitude: restaurantData.longitude || 0,
           },
           stats: {
-            view_count: 1234, // TODO: Get from backend
+            view_count: restaurantData.view_count || 0,
             share_count: 0, // TODO: Get from backend
           },
           google_reviews: restaurantData.google_reviews,
@@ -427,6 +435,9 @@ function EateryIdPageContent() {
         setEatery(eateryData)
         setLoading(false)
         isFetchingRef.current = false
+        
+        // Track the view after successful data load
+        trackView()
         
         // Fetch reviews for this restaurant
         if (eateryData.id) {
@@ -469,7 +480,7 @@ function EateryIdPageContent() {
     if (eateryId) {
       fetchEateryData()
     }
-  }, [eateryId, fetchReviews])
+  }, [eateryId, fetchReviews, trackView])
 
   // Convert new location format to old format for compatibility with mapEateryToListingData
   const legacyUserLocation = userLocation ? {

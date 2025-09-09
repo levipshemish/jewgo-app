@@ -187,6 +187,8 @@ class Restaurant(Base):
     google_review_count = Column(Integer)  # Optional
     google_reviews = Column(Text)  # JSONB for recent reviews (limited)
     user_email = Column(String(255))  # Optional — for contact form
+    # 📈 Analytics
+    view_count = Column(Integer, default=0, nullable=False)  # Track page views
     # 🏢 Enhanced Add Eatery Workflow Fields
     # Owner management
     owner_name = Column(Text)  # Restaurant owner name
