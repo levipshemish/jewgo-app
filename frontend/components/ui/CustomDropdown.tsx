@@ -33,6 +33,11 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        // Check if the click is on a dropdown option (rendered via portal)
+        const target = event.target as Element;
+        if (target && target.closest('[data-dropdown-option]')) {
+          return; // Don't close if clicking on a dropdown option
+        }
         setIsOpen(false);
       }
     };
@@ -44,14 +49,18 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEscape);
-    }
+      // Use a slight delay to prevent immediate closing
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleEscape);
+      }, 100);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
   }, [isOpen]);
 
   const selectedOption = options.find(option => option.value === value);
@@ -139,6 +148,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       {/* Dropdown Popup - Rendered via Portal with higher z-index */}
       {isOpen && createPortal(
         <div 
+          data-dropdown-option
           className="fixed bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
           style={{ 
             top: dropdownPosition.top,
@@ -154,17 +164,13 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
               <button
                 key={option.value}
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleOptionClick(option.value);
-                }}
+                data-dropdown-option
+                onClick={() => handleOptionClick(option.value)}
                 className={`
                   w-full text-left px-4 py-3 text-sm font-medium transition-colors duration-200
                   hover:bg-green-50 hover:text-green-800 focus:bg-green-50 focus:text-green-800
                   ${value === option.value ? 'bg-green-100 text-green-800' : 'text-black bg-white'}
                 `}
-                onMouseDown={(e) => e.preventDefault()} // Prevent focus loss
               >
                 {option.label}
               </button>
