@@ -9,10 +9,12 @@ interface HeaderProps {
   placeholder?: string;
   showFilters?: boolean;
   onShowFilters?: () => void;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 export default function Header({
-  onSearch, placeholder = "Find your Eatery", showFilters = true, onShowFilters, }: HeaderProps = {}) {
+  onSearch, placeholder = "Find your Eatery", showFilters = true, onShowFilters, showBackButton = false, onBack, }: HeaderProps = {}) {
   const [query, setQuery] = useState('');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -56,6 +58,20 @@ export default function Header({
     <header className="bg-white shadow-soft border-b border-neutral-200 backdrop-blur-lg bg-white/95 w-full">
       <div className="px-4 py-3 sm:px-6 sm:py-4 lg:py-6">
         <div className="flex items-center space-x-4 lg:space-x-6">
+          {/* Back Button */}
+          {showBackButton && onBack && (
+            <button
+              onClick={onBack}
+              className="bg-white text-gray-700 px-3 py-2 rounded-lg shadow-lg hover:bg-gray-50 transition-colors flex items-center space-x-2 border border-gray-200 flex-shrink-0"
+              title="Go back"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="text-sm font-medium">Back</span>
+            </button>
+          )}
+          
           {/* Search Bar with inline logo */}
           {onSearch && (
             <div className="flex-1 w-full">

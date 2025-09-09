@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
       backendUrl = `https://${backendUrl}`;
     }
-    const apiUrl = `${backendUrl}/api/v4/restaurants?${queryParams.toString()}`;
+    const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -114,14 +114,19 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     // Ensure we have valid data structure from various backend shapes
+    // Backend returns data in 'items' field, not 'restaurants'
     let restaurants: any = [];
     if (Array.isArray(data)) {
       restaurants = data;
+    } else if (Array.isArray(data?.items)) {
+      restaurants = data.items;
     } else if (Array.isArray(data?.restaurants)) {
       restaurants = data.restaurants;
     } else if (data && typeof data === 'object') {
       if (Array.isArray(data?.data)) {
         restaurants = data.data;
+      } else if (Array.isArray(data?.data?.items)) {
+        restaurants = data.data.items;
       } else if (Array.isArray(data?.data?.restaurants)) {
         restaurants = data.data.restaurants;
       } else if (Array.isArray((data as any)?.data?.data)) {
