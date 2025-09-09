@@ -90,19 +90,30 @@ class WebhookHandler(BaseHTTPRequestHandler):
         )
     
     def trigger_deployment(self):
-        """Trigger the deployment by writing to a trigger file"""
+        """Trigger the deployment by executing the deployment script"""
         import sys
-        import time
-        print(f"Triggering deployment via trigger file", file=sys.stderr)
+        import subprocess
+        print(f"Triggering deployment execution", file=sys.stderr)
         try:
-            # Write a trigger file that the host system can monitor
-            trigger_file = "/app/deploy.trigger"
-            with open(trigger_file, "w") as f:
-                f.write(f"deploy_triggered_{int(time.time())}")
-            print("Deployment trigger file created", file=sys.stderr)
-            print("Note: Host system needs to monitor /app/deploy.trigger for automatic deployment", file=sys.stderr)
+            # Execute the deployment script directly
+            result = subprocess.run(
+                ['/bin/bash', '/app/deploy.sh'],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+            
+            if result.returncode == 0:
+                print("✅ Deployment completed successfully", file=sys.stderr)
+                print(f"Deployment output: {result.stdout}", file=sys.stderr)
+            else:
+                print(f"❌ Deployment failed with return code {result.returncode}", file=sys.stderr)
+                print(f"Deployment error: {result.stderr}", file=sys.stderr)
+                
+        except subprocess.TimeoutExpired:
+            print("❌ Deployment timed out after 5 minutes", file=sys.stderr)
         except Exception as e:
-            print(f"Error creating deployment trigger: {e}", file=sys.stderr)
+            print(f"❌ Error executing deployment: {e}", file=sys.stderr)
     
     def log_message(self, format, *args):
         """Override to use print instead of stderr"""
