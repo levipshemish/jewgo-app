@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { postgresAuth } from "@/lib/auth/postgres-auth";
+import { useLocation } from "@/lib/contexts/LocationContext";
 import LocationAccess from "@/components/location/LocationAccess";
 
 export default function LocationAccessPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
+  const { setLocation, setPermissionStatus } = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,19 +31,18 @@ export default function LocationAccessPage() {
   }, [router]);
 
   const handleLocationGranted = (coords: { latitude: number; longitude: number }) => {
-    // Store location in localStorage or state management
-    localStorage.setItem('userLocation', JSON.stringify(coords));
-    localStorage.setItem('locationRequested', 'true');
-    // eslint-disable-next-line no-console
-
+    // Use LocationContext to store location data
+    setLocation({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      timestamp: Date.now()
+    });
+    setPermissionStatus('granted');
   };
 
   const handleLocationDenied = () => {
-    // Mark that location was requested (even if denied)
-    localStorage.setItem('locationRequested', 'true');
-    // eslint-disable-next-line no-console
-
-    // User can still use the app without location
+    // Use LocationContext to set permission status
+    setPermissionStatus('denied');
   };
 
   if (isAuthenticated === null) {

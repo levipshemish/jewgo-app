@@ -9,7 +9,6 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { LocationProvider } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useLocation } from '@/lib/contexts/LocationContext';
 
@@ -90,6 +89,10 @@ function LocationAwareContent({
 /**
  * LocationAwarePage - HOC that provides location functionality
  * 
+ * Note: This component assumes that LocationProvider is already available
+ * in the component tree (typically from the root layout). It does not
+ * create its own LocationProvider to avoid nested providers.
+ * 
  * @param props Component props
  * @returns Location-aware page component
  * 
@@ -108,11 +111,7 @@ function LocationAwareContent({
  * ```
  */
 export default function LocationAwarePage(props: LocationAwarePageProps) {
-  return (
-    <LocationProvider>
-      <LocationAwareContent {...props} />
-    </LocationProvider>
-  );
+  return <LocationAwareContent {...props} />;
 }
 
 /**
