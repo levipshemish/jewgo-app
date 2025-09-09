@@ -57,8 +57,9 @@ class SearchType(Enum):
 @dataclass
 class SearchFilters:
     """Search filters configuration."""
-
+    
     query: Optional[str] = None
+    entity_type: Optional[str] = None
     kosher_type: Optional[str] = None
     certifying_agency: Optional[str] = None
     city: Optional[str] = None
@@ -75,6 +76,7 @@ class SearchFilters:
     lat: Optional[float] = None
     lng: Optional[float] = None
     radius: Optional[float] = None
+    sort: Optional[str] = None
     fuzzy_threshold: float = 0.3
     limit: int = 50
     offset: int = 0
