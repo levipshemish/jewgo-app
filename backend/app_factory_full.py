@@ -2094,7 +2094,7 @@ def create_app(config_class=None):
     
                 @app.route("/api/restaurants/<int:restaurant_id>/view", methods=["POST"])
                 def track_restaurant_view(restaurant_id):
-                    """Track a view for a restaurant - Webhook deployment test successful!"""
+                    """Track a view for a restaurant - HTTPS webhook deployment working!"""
         try:
             # Use the restaurant repository to increment view count
             from database.repositories.restaurant_repository import RestaurantRepository
