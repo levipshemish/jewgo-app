@@ -490,6 +490,19 @@ function EateryIdPageContent() {
     lng: userLocation.longitude
   } : null;
 
+  // Memoize the listing data to prevent infinite re-renders
+  // This must be called before any early returns to maintain hook order
+  const finalListingData = useMemo(() => {
+    if (!eatery) return null
+    
+    try {
+      return mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
+    } catch (err) {
+      console.error('Error mapping eatery data:', err)
+      return null
+    }
+  }, [eatery, legacyUserLocation, reviews, requestLocation, permissionStatus])
+
   // Render loading state
   if (loading) {
     return (
@@ -569,18 +582,6 @@ function EateryIdPageContent() {
       </main>
     )
   }
-
-  // Memoize the listing data to prevent infinite re-renders
-  const finalListingData = useMemo(() => {
-    if (!eatery) return null
-    
-    try {
-      return mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
-    } catch (err) {
-      console.error('Error mapping eatery data:', err)
-      return null
-    }
-  }, [eatery, legacyUserLocation, reviews, requestLocation, permissionStatus])
 
   // Render eatery details
   if (eatery && finalListingData) {
