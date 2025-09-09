@@ -134,10 +134,10 @@ export function mapEateryToListingData(
         // Use a stable array reference to prevent infinite re-renders
         if (uniqueImages.length === 1) {
           const demoImages = [
-            'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&h=600&fit=crop'
+            '/images/default-restaurant.webp',
+            '/images/default-restaurant.webp',
+            '/images/default-restaurant.webp',
+            '/images/default-restaurant.webp'
           ];
           // Create a new array instead of mutating the existing one
           const imagesWithDemo = [...uniqueImages, ...demoImages];

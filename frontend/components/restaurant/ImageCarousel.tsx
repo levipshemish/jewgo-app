@@ -74,21 +74,24 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     return normalized;
   }, [images, kosherCategory]);
 
+  // Memoize the images array to prevent unnecessary re-renders
+  const stableImages = React.useMemo(() => allImages, [JSON.stringify(allImages)]);
+
   // Initialize image loading states
   useEffect(() => {
-    setImageLoading(new Array(allImages.length).fill(true));
-  }, [allImages.length]);
+    setImageLoading(new Array(stableImages.length).fill(true));
+  }, [stableImages.length]);
 
   // Add a timeout to prevent infinite loading
   useEffect(() => {
-    if (allImages.length > 0) {
+    if (stableImages.length > 0) {
       const timeout = setTimeout(() => {
         setImageLoading(prev => prev.map(() => false));
       }, 10000); // 10 second timeout
 
       return () => clearTimeout(timeout);
     }
-  }, [allImages.length]);
+  }, [stableImages.length]);
 
   // Use the scroll-snap carousel hook
   const {
@@ -102,12 +105,12 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     nextSlide,
     prevSlide
   } = useScrollSnapCarousel({
-    totalSlides: allImages.length,
+    totalSlides: stableImages.length,
     debounceMs: 50
   });
 
   const handleImageError = (index: number) => {
-    console.log(`Image ${index} failed to load:`, allImages[index]);
+    console.log(`Image ${index} failed to load:`, stableImages[index]);
     setImageLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = false;
@@ -116,7 +119,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   };
 
   const handleImageLoad = (index: number) => {
-    console.log(`Image ${index} loaded successfully:`, allImages[index]);
+    console.log(`Image ${index} loaded successfully:`, stableImages[index]);
     setImageLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = false;
@@ -124,7 +127,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     });
   };
 
-  if (allImages.length === 0) {
+  if (stableImages.length === 0) {
     return (
       <div className={`relative h-96 bg-gradient-to-br from-gray-100 to-gray-200 ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -163,7 +166,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
           aria-label={`${restaurantName} image gallery`}
           aria-roledescription="carousel"
         >
-          {allImages.map((image, index) => (
+          {stableImages.map((image, index) => (
             <div
               key={image || `img-${index}`}
               className="flex-none w-full snap-center relative h-full"
@@ -191,8 +194,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 priority={index === 0}
                 onError={() => handleImageError(index)}
                 onLoad={() => handleImageLoad(index)}
-                unoptimized={Boolean(image && (image.includes('cloudinary.com') || image.includes('googleusercontent.com') || image.includes('images.unsplash.com')))}
+                unoptimized={true}
                 loading={index === 0 ? 'eager' : 'lazy'}
+                crossOrigin="anonymous"
               />
               
             </div>
@@ -201,7 +205,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
 
         {/* Navigation Arrows - Desktop Only */}
-        {allImages.length > 1 && (
+        {stableImages.length > 1 && (
           <>
             <button
               onClick={prevSlide}
@@ -226,9 +230,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       </div>
 
         {/* Dots Indicator - Bottom Center Overlay */}
-        {allImages.length > 1 && (
+        {stableImages.length > 1 && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
-            {allImages.map((_, index) => (
+            {stableImages.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
