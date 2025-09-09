@@ -134,7 +134,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         {/* Scrollable container with snap */}
         <div
           ref={scrollContainerRef}
-          className="flex overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory select-none h-full"
+          className="flex overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory select-none h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -214,8 +214,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
         {/* Dots Indicator - Bottom Center Overlay */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-            {allImages.slice(0, 5).map((_, index) => (
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
+            {allImages.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
