@@ -6,7 +6,7 @@ from typing import Any
 import sentry_sdk
 from flask import Flask, jsonify, request
 from flask_caching import Cache
-from flask_cors import CORS
+# from flask_cors import CORS  # Unused import
 import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -15,6 +15,14 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from utils.logging_config import get_logger
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from database.database_manager_v3 import EnhancedDatabaseManager
+from utils.api_response import APIResponse
+from utils.error_handler import ErrorHandler
+from utils.feature_flags import FeatureFlag, feature_flag_manager
+from utils.feedback_manager import FeedbackManager
+from utils.logging_config import configure_logging
+from utils.security import security_manager
+from config.config import Config
 logger = get_logger(__name__)
 # Import Redis with fallback
 try:
@@ -88,22 +96,6 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Unexpected error importing synagogues blueprint: {e}")
     synagogues_bp = None
-from database.database_manager_v3 import EnhancedDatabaseManager
-from utils.api_response import (
-    APIResponse,
-)
-from utils.error_handler import ErrorHandler
-from utils.feature_flags import (
-    FeatureFlag,
-    feature_flag_manager,
-)
-from utils.feedback_manager import FeedbackManager
-from utils.logging_config import configure_logging
-from utils.security import (
-    SecurityManager,
-    security_manager,
-)
-from config.config import Config
 # Import Redis health blueprint with fallback
 try:
     from routes.redis_health import redis_bp
@@ -238,7 +230,7 @@ def _load_dependencies():
             "FeedbackManager": FeedbackManager,
             **v4_deps,  # Include v4 dependencies
         }
-    except ImportError as e:
+    except ImportError:
         return {}
 def create_app(config_class=None):
     """Application factory function that creates and configures the Flask app
@@ -256,13 +248,15 @@ def create_app(config_class=None):
     # Using PostgreSQL auth exclusively
     # Import required decorators early to avoid NameError
     try:
-        from utils.feature_flags import require_feature_flag
         from utils.security import require_admin_auth
     except ImportError as e:
         logger.warning(f"Could not import decorators: {e}")
         # Fallback decorators
-        require_admin_auth = lambda f: f
-        require_feature_flag = lambda flag, default=True: lambda f: f
+        def require_admin_auth(f):
+            return f
+        
+        def noop_function():
+            return None
     # Create Flask app
     app = Flask(__name__)
 
@@ -840,7 +834,7 @@ def create_app(config_class=None):
                 )
         # Auth for create - use role-based authentication
         from utils.security import require_admin
-        return require_admin()(lambda: None)()  # This will handle auth and return appropriate response
+        return require_admin()(noop_function)()  # This will handle auth and return appropriate response
         flag = FeatureFlag.from_dict(data)
         feature_flag_manager.add_flag(flag)
         return jsonify({"message": "Feature flag created successfully"}), 201
@@ -862,7 +856,7 @@ def create_app(config_class=None):
             )
         # POST update or DELETE remove require admin auth - use role-based authentication
         from utils.security import require_admin
-        return require_admin()(lambda: None)()  # This will handle auth and return appropriate response
+        return require_admin()(noop_function)()  # This will handle auth and return appropriate response
         if request.method == "POST":
             data = request.get_json() or {}
             updated = feature_flag_manager.update_flag(flag_name, data)
@@ -1273,7 +1267,8 @@ def create_app(config_class=None):
         try:
             client_id = request.sid
             websocket_service.add_connection(client_id, request.remote_addr)
-            performance_monitor.record_metric("websocket_connection", 1)
+            if performance_monitor:
+                performance_monitor.record_metric("websocket_connection", 1)
             logger.info(f"Client connected: {client_id}")
             emit("connected", {"status": "connected", "client_id": client_id})
         except Exception as e:
@@ -1285,7 +1280,8 @@ def create_app(config_class=None):
         try:
             client_id = request.sid
             websocket_service.remove_connection(client_id)
-            performance_monitor.record_metric("websocket_disconnection", 1)
+            if performance_monitor:
+                performance_monitor.record_metric("websocket_disconnection", 1)
             logger.info(f"Client disconnected: {client_id}")
         except Exception as e:
             logger.error(f"Error handling disconnection: {e}")
@@ -1339,7 +1335,8 @@ def create_app(config_class=None):
                     },
                 },
             )
-            performance_monitor.record_metric("filter_update", 1)
+            if performance_monitor:
+                performance_monitor.record_metric("filter_update", 1)
             logger.info(
                 f"Filter update from {client_id}: {filter_type} = {filter_value}"
             )
@@ -1366,7 +1363,8 @@ def create_app(config_class=None):
                     },
                 },
             )
-            performance_monitor.record_metric("location_update", 1)
+            if performance_monitor:
+                performance_monitor.record_metric("location_update", 1)
             logger.info(f"Location update from {client_id}: {latitude}, {longitude}")
         except Exception as e:
             logger.error(f"Error handling location update: {e}")
@@ -1433,30 +1431,30 @@ def create_app(config_class=None):
             logger.info(f"Request args: {dict(request.args)}")
             logger.info(f"Query string: {request.query_string.decode()}")
             # Parse boolean parameters properly (Flask's type=bool doesn't work with 'true'/'false' strings)
-            open_now = request.args.get("open_now", "").lower() in [
-                "true",
-                "1",
-                "yes",
-                "on",
-            ]
-            mobile_optimized = request.args.get("mobile_optimized", "").lower() in [
-                "true",
-                "1",
-                "yes",
-                "on",
-            ]
-            low_power_mode = request.args.get("low_power_mode", "").lower() in [
-                "true",
-                "1",
-                "yes",
-                "on",
-            ]
-            slow_connection = request.args.get("slow_connection", "").lower() in [
-                "true",
-                "1",
-                "yes",
-                "on",
-            ]
+            # open_now = request.args.get("open_now", "").lower() in [
+            #     "true",
+            #     "1",
+            #     "yes",
+            #     "on",
+            # ]
+            # mobile_optimized = request.args.get("mobile_optimized", "").lower() in [
+            #     "true",
+            #     "1",
+            #     "yes",
+            #     "on",
+            # ]
+            # low_power_mode = request.args.get("low_power_mode", "").lower() in [
+            #     "true",
+            #     "1",
+            #     "yes",
+            #     "on",
+            # ]
+            # slow_connection = request.args.get("slow_connection", "").lower() in [
+            #     "true",
+            #     "1",
+            #     "yes",
+            #     "on",
+            # ]
             # Try to get from cache first (skip if redis_cache not available)
             # Temporarily disable cache to debug pagination issue
             # if 'redis_cache' in locals():
@@ -1476,7 +1474,7 @@ def create_app(config_class=None):
             price_min = request.args.get("price_min", type=int)
             price_max = request.args.get("price_max", type=int)
             min_rating = request.args.get("min_rating", type=float)
-            hours_filter = request.args.get("hours_filter", type=str)
+            # hours_filter = request.args.get("hours_filter", type=str)  # Unused variable
             
             # Build additional filter conditions
             additional_filters = []
@@ -1540,7 +1538,7 @@ def create_app(config_class=None):
                           AND geom IS NOT NULL
                           AND updated_at <= %s
                           {f'AND ST_DWithin(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography, {radius_m})' if radius_m else ''}
-                          {f'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
+                          {'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
                           {filter_clause}
                     )
                     SELECT * FROM scored
@@ -1571,7 +1569,7 @@ def create_app(config_class=None):
                     WHERE status = 'active'
                       AND updated_at <= %s
                       AND (%s IS NULL OR id > %s)
-                      {f'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
+                      {'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
                       {filter_clause}
                     ORDER BY name ASC, id ASC
                     LIMIT %s
@@ -1663,9 +1661,19 @@ def create_app(config_class=None):
             cache_key = f"restaurant:{restaurant_id}"
             cached_result = redis_cache.get(cache_key)
             if cached_result:
-                performance_monitor.record_cache_hit("restaurant_detail")
+                if performance_monitor:
+                    performance_monitor.record_cache_hit("restaurant_detail")
                 return jsonify(cached_result)
-            performance_monitor.record_cache_miss("restaurant_detail")
+            if performance_monitor:
+                performance_monitor.record_cache_miss("restaurant_detail")
+            db_manager = get_db_manager()
+            if not db_manager:
+                return (
+                    jsonify(
+                        {"success": False, "error": "Database connection unavailable"}
+                    ),
+                    503,
+                )
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(
@@ -1712,6 +1720,14 @@ def create_app(config_class=None):
     def get_restaurant_status(restaurant_id):
         """Get real-time restaurant status"""
         try:
+            db_manager = get_db_manager()
+            if not db_manager:
+                return (
+                    jsonify(
+                        {"success": False, "error": "Database connection unavailable"}
+                    ),
+                    503,
+                )
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(
@@ -1756,50 +1772,15 @@ def create_app(config_class=None):
                 ),
                 500,
             )
-
-            if success:
-                # Get the updated view count
-                restaurant = restaurant_repo.get_by_id(restaurant_id)
-                view_count = restaurant.view_count if restaurant else 0
-                
-                # Invalidate cache for this restaurant
-                cache_key = f"restaurant:{restaurant_id}"
-                redis_cache.delete(cache_key)
-                
-                return jsonify({
-                    "success": True,
-                    "data": {
-                        "restaurant_id": restaurant_id,
-                        "view_count": view_count
-                    }
-                })
-            else:
-                return jsonify({
-                    "success": False,
-                    "error": "Restaurant not found"
-                }), 404
-                
-        except Exception as e:
-            logger.error(f"Error tracking view for restaurant {restaurant_id}: {e}")
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "Failed to track view",
-                        "details": str(e),
-                    }
-                ),
-                500,
-            )
     @app.route("/api/performance/stats", methods=["GET"])
     def get_performance_stats():
         """Get performance monitoring statistics"""
         try:
             stats = {
-                "distance_filtering": performance_monitor.get_distance_filtering_stats(),
-                "open_now_filtering": performance_monitor.get_open_now_filtering_stats(),
-                "cache": performance_monitor.get_cache_stats(),
-                "overall": performance_monitor.get_overall_stats(),
+                "distance_filtering": performance_monitor.get_distance_filtering_stats() if performance_monitor else {},
+                "open_now_filtering": performance_monitor.get_open_now_filtering_stats() if performance_monitor else {},
+                "cache": performance_monitor.get_cache_stats() if performance_monitor else {},
+                "overall": performance_monitor.get_overall_stats() if performance_monitor else {},
                 "websocket": {
                     "active_connections": len(websocket_service.connections) if websocket_service else 0,
                     "active_rooms": len(websocket_service.rooms) if websocket_service else 0,
@@ -1843,6 +1824,14 @@ def create_app(config_class=None):
         migrate = request.args.get("migrate")
         if migrate == "subcategories":
             try:
+                db_manager = get_db_manager()
+                if not db_manager:
+                    return (
+                        jsonify(
+                            {"success": False, "error": "Database connection unavailable"}
+                        ),
+                        503,
+                    )
                 with db_manager.get_connection() as conn:
                     with conn.cursor() as cursor:
                         # Check if subcategories table exists
@@ -1945,7 +1934,7 @@ def create_app(config_class=None):
             # Check for admin token
             # Use role-based authentication instead of token-based
             from utils.security import require_admin
-            return require_admin()(lambda: None)()  # This will handle auth and return appropriate response
+            return require_admin()(noop_function)()  # This will handle auth and return appropriate response
             # Import and run the migration
             from database.migrations.create_marketplace_unified import run_migration
             success = run_migration()
