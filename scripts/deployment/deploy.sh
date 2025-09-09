@@ -29,7 +29,7 @@ echo "🏥 Checking backend health..."
 max_attempts=10
 attempt=1
 while [ $attempt -le $max_attempts ]; do
-    if curl -f http://localhost:5000/health > /dev/null 2>&1; then
+    if curl -f http://localhost:5000/healthz > /dev/null 2>&1; then
         echo "✅ Backend is healthy"
         break
     else
