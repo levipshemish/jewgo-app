@@ -10,6 +10,7 @@ interface ListingImageProps {
   className?: string;
   restaurantName?: string;
   allImages?: string[];
+  viewCount?: number;
 }
 
 export function ListingImage({
@@ -19,7 +20,8 @@ export function ListingImage({
   onAction: _onAction,
   className = '',
   restaurantName = 'Restaurant',
-  allImages = []
+  allImages = [],
+  viewCount
 }: ListingImageProps) {
   const images = allImages.length > 0 ? allImages : src ? [src] : [];
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { ListingHeader } from "./listing-header"
-import { ListingImage } from '@/components/listing/listing-image'
+import { ListingImage } from './listing-image'
 import { ListingContent } from "./listing-content"
 import { ListingActions } from "./listing-actions"
 import { Stack } from "@/components/ui/spacing"
