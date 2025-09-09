@@ -1,7 +1,7 @@
 "use client"
 
 import { ListingHeader } from "./listing-header"
-import { ListingImage } from "./listing-image"
+import { ListingImage } from '@/components/listing/listing-image'
 import { ListingContent } from "./listing-content"
 import { ListingActions } from "./listing-actions"
 import { Stack } from "@/components/ui/spacing"
@@ -166,6 +166,7 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
               onAction={safeData.image.onAction}
               restaurantName={safeData.content?.leftText || safeData.title || "Restaurant"}
               allImages={safeData.image.allImages || []}
+              viewCount={safeData.header?.viewCount}
             />
           )}
 

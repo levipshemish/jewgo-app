@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ListingPage } from '@/components/listing-details-utility/listing-page'
+import { ListingImage } from '@/components/listing/listing-image'
 import { mapEateryToListingData } from '@/utils/eatery-mapping'
 import { EateryDB } from '@/types/listing'
 import { useLocationData } from '@/hooks/useLocationData'
