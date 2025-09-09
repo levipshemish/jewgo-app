@@ -170,7 +170,7 @@ export async function GET(
       if (response.status >= 500) {
         console.log('Backend server error, trying fallback endpoint');
         // Try fallback endpoint
-        const fallbackUrl = `${backendUrl}/api/synagogues/${synagogueId}`;
+        const fallbackUrl = `${backendUrl}/api/v4/synagogues/${synagogueId}`;
         const fallbackResponse = await fetch(fallbackUrl, {
           method: 'GET',
           headers: {
