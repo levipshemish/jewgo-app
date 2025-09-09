@@ -1222,7 +1222,9 @@ class EnhancedDatabaseManager:
             )
         # Fetch additional images from restaurant_images table
         try:
+            logger.info(f"Attempting to fetch additional images for restaurant {restaurant.id}")
             additional_images_data = self.get_restaurant_images(restaurant.id)
+            logger.info(f"Retrieved {len(additional_images_data)} additional images for restaurant {restaurant.id}")
             # Extract just the URLs for the frontend
             additional_images = [
                 img["image_url"]
@@ -1234,6 +1236,7 @@ class EnhancedDatabaseManager:
                 "Added additional images to restaurant",
                 restaurant_id=restaurant.id,
                 image_count=len(additional_images),
+                image_urls=additional_images,
             )
         except Exception as e:
             logger.warning(
@@ -2579,6 +2582,7 @@ class EnhancedDatabaseManager:
         """
         session = None
         try:
+            logger.info(f"Fetching images for restaurant ID: {restaurant_id}")
             session = self.get_session()
             images = (
                 session.query(RestaurantImage)
@@ -2586,8 +2590,10 @@ class EnhancedDatabaseManager:
                 .order_by(RestaurantImage.image_order.asc())
                 .all()
             )
+            logger.info(f"Found {len(images)} raw images for restaurant {restaurant_id}")
             result = []
             for image in images:
+                logger.info(f"Processing image: ID={image.id}, URL={image.image_url}, Order={image.image_order}")
                 if image.image_url:  # Only include images with valid URLs
                     result.append(
                         {
@@ -2607,6 +2613,8 @@ class EnhancedDatabaseManager:
                             ),
                         }
                     )
+                else:
+                    logger.warning(f"Skipping image {image.id} - no URL")
             logger.info(
                 "Retrieved restaurant images",
                 restaurant_id=restaurant_id,
