@@ -1390,9 +1390,21 @@ def create_app(config_class=None):
             
             # Parse pagination parameters
             try:
-                limit = min(int(request.args.get("limit", 30)), 100)  # Cap at 100
+                limit = min(int(request.args.get("limit", 200)), 500)  # Increased default to 200, cap at 500
             except (ValueError, TypeError):
-                limit = 30
+                limit = 200
+            
+            # Parse sorting parameters
+            sort_by = request.args.get("sort_by", "name")  # name, id, created_at, distance
+            sort_order = request.args.get("sort_order", "ASC").upper()  # ASC, DESC
+            
+            # Validate sort parameters
+            valid_sort_fields = ["name", "id", "created_at", "distance"]
+            if sort_by not in valid_sort_fields:
+                sort_by = "name"  # Default fallback
+            
+            if sort_order not in ["ASC", "DESC"]:
+                sort_order = "ASC"  # Default fallback
             
             # Decode cursor if provided
             last_dist_m = None
@@ -1517,6 +1529,7 @@ def create_app(config_class=None):
                 filter_clause = ""
             
             # Build cursor-based query with distance sorting
+            # When location is provided, always prioritize distance sorting for better UX
             if lat is not None and lng is not None:
                 # Use PostGIS for efficient distance calculation
                 query = f"""
@@ -1552,6 +1565,17 @@ def create_app(config_class=None):
                 params.extend([last_dist_m, last_dist_m, last_dist_m, last_id, limit])
             else:
                 # No location provided, fallback to simple query with cursor support
+                # Build ORDER BY clause based on sort_by parameter
+                if sort_by == "id":
+                    order_clause = f"id {sort_order}"
+                    cursor_condition = f"({'id > %s' if sort_order == 'ASC' else 'id < %s'})"
+                elif sort_by == "created_at":
+                    order_clause = f"created_at {sort_order}, id {sort_order}"
+                    cursor_condition = f"({'created_at > %s OR (created_at = %s AND id > %s)' if sort_order == 'ASC' else 'created_at < %s OR (created_at = %s AND id < %s)'})"
+                else:  # Default to name sorting
+                    order_clause = f"name {sort_order}, id {sort_order}"
+                    cursor_condition = f"({'name > %s OR (name = %s AND id > %s)' if sort_order == 'ASC' else 'name < %s OR (name = %s AND id < %s)'})"
+                
                 query = f"""
                     SELECT id, name, address, city, state, zip_code,
                            phone_number, website, kosher_category,
@@ -1561,13 +1585,21 @@ def create_app(config_class=None):
                     FROM restaurants
                     WHERE status = 'active'
                       AND updated_at <= %s
-                      AND (%s IS NULL OR id > %s)
+                      AND (%s IS NULL OR {cursor_condition})
                       {'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
                       {filter_clause}
-                    ORDER BY name ASC, id ASC
+                    ORDER BY {order_clause}
                     LIMIT %s
                 """
-                params = [as_of, last_id, last_id]
+                # Build cursor parameters based on sort type
+                if sort_by == "id":
+                    cursor_params = [last_id] if last_id else [None]
+                elif sort_by == "created_at":
+                    cursor_params = [last_id, last_id, last_id] if last_id else [None, None, None]
+                else:  # name sorting
+                    cursor_params = [last_id, last_id, last_id] if last_id else [None, None, None]
+                
+                params = [as_of] + cursor_params
                 if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
                     # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
                     params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])

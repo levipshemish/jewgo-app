@@ -88,6 +88,17 @@ export default function EateryGrid({
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('include_reviews', 'true') // Include Google reviews for consistent rating calculation
       
+      // Determine sorting strategy based on location availability
+      const hasLocation = params && new URLSearchParams(params).get('lat') && new URLSearchParams(params).get('lng')
+      if (hasLocation) {
+        // When location is available, use distance sorting (backend will handle this automatically)
+        // Don't set sort_by parameter - let backend use distance sorting
+      } else {
+        // When no location, sort by name for consistent ordering
+        apiUrl.searchParams.set('sort_by', 'name')
+        apiUrl.searchParams.set('sort_order', 'ASC')
+      }
+      
       // Add cursor for pagination
       if (cursor) {
         apiUrl.searchParams.set('cursor', cursor)
@@ -239,7 +250,7 @@ export default function EateryGrid({
     try {
       if (useRealData && !backendError) {
         // Try real API first with cursor-based pagination
-        const response = await fetchRestaurants(24, nextCursor || undefined, buildSearchParams());
+        const response = await fetchRestaurants(200, nextCursor || undefined, buildSearchParams());
         setRestaurants((prev) => {
           // Deduplicate by id to prevent duplicate restaurants
           const existingIds = new Set(prev.map((r: LightRestaurant) => r.id));
@@ -337,7 +348,7 @@ export default function EateryGrid({
           try {
             if (useRealData && currentRetryCount < 3) {
               // Try real API first with cursor-based pagination
-              const response = await fetchRestaurants(24, undefined, buildSearchParams())
+              const response = await fetchRestaurants(200, undefined, buildSearchParams())
               setRestaurants(response.restaurants)
               setHasMore(response.hasMore)
               setNextCursor(response.nextCursor || null)

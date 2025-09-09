@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const limit = searchParams.get('limit') || '50';
+  const limit = searchParams.get('limit') || '200'; // Increased default limit
   const _page = searchParams.get('page') || '1';
   
   try {
@@ -195,8 +195,10 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    // Ensure limit and offset are set
-    queryParams.set('limit', limit);
+    // Don't override limit if it's already set - let the backend handle it
+    if (!searchParams.has('limit')) {
+      queryParams.set('limit', limit);
+    }
     queryParams.set('offset', offset);
     
     // Use the correct backend URL - fallback to production URL if not set
