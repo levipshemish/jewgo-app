@@ -15,7 +15,7 @@ beforeAll(() => {
 function PerfHarness() {
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
   const timesRef = React.useRef<number[]>([]);
-  const [appends, setAppends] = React.useState(0);
+  const [_appends, setAppends] = React.useState(0);
 
   const loader = React.useCallback(async () => {
     const t0 = performance.now();
@@ -48,7 +48,7 @@ describe('Append performance smoke', () => {
 
     // Trigger 5 appends
     for (let i = 0; i < 5; i++) {
-      await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
+      await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
     }
 
     const values: number[] = (window as any).__APPEND_TIMES__ || [];

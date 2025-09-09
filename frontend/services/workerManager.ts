@@ -10,10 +10,10 @@ import type { WorkRequest, WorkResponse } from "@/workers/protocol";
 
 // Performance limits
 const MAX_VISIBLE = 200;
-const CLUSTER_WHEN = 60;
+const _CLUSTER_WHEN = 60;
 
 // Worker instance
-let worker = makeWorker<WorkRequest, WorkResponse>(
+const worker = makeWorker<WorkRequest, WorkResponse>(
   new URL("@/workers/livemap.worker.ts", import.meta.url)
 );
 
@@ -46,7 +46,7 @@ export function runFilter(maxVisible: number = MAX_VISIBLE): void {
     }
   } catch (error: any) {
     console.error('Filter error:', error);
-    useLivemapStore.setState((s) => ({ 
+    useLivemapStore.setState((_s) => ({ 
       error: `Filter error: ${error?.message || 'Unknown error'}` 
     }));
   }

@@ -5,7 +5,7 @@
  * Changes here require coordination across worker implementations.
  */
 
-import type { Restaurant, Filters, Bounds, LatLng, Id } from "@/types/livemap";
+import type { Restaurant, Filters, LatLng, Id } from "@/types/livemap";
 
 export type WorkRequest =
   | { 

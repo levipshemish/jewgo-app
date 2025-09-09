@@ -3,8 +3,7 @@
  * Replaces Supabase authentication with PostgreSQL-based system
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 export interface UseAuthReturn {

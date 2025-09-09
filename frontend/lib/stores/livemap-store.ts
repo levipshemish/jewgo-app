@@ -10,7 +10,6 @@
 
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import { shallow } from 'zustand/shallow';
 import type { Restaurant, Filters, MapState, LatLng, Id, LoadingState } from '@/types/livemap';
 
 interface LivemapState {
@@ -44,7 +43,7 @@ interface LivemapState {
 
 export const useLivemapStore = create<LivemapState>()(
   devtools(
-    subscribeWithSelector((set, get) => ({
+    subscribeWithSelector((set, _get) => ({
       restaurants: [],
       filtered: [],
       selectedId: null,
@@ -62,7 +61,11 @@ export const useLivemapStore = create<LivemapState>()(
       toggleFavorite: (id) =>
         set((st) => {
           const fav = new Set(st.favorites);
-          fav.has(id) ? fav.delete(id) : fav.add(id);
+          if (fav.has(id)) {
+            fav.delete(id);
+          } else {
+            fav.add(id);
+          }
           return { favorites: fav };
         }),
       applyFilterResults: (ids) => set(() => ({ filtered: ids })),

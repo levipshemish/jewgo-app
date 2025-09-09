@@ -48,16 +48,7 @@ export function useMemoryMonitoring(
     const merged = { ...DEFAULT_OPTIONS, ...options };
     // Only recreate if the actual values have changed
     return merged;
-  }, [
-    options,
-    options.checkIntervalMs,
-    options.highUsageThreshold,
-    options.criticalUsageThreshold,
-    options.enabled,
-    options.onHighUsage,
-    options.onCriticalUsage,
-    options.onMemoryPressure,
-  ]);
+  }, [options]);
   const [memoryInfo, setMemoryInfo] = useState<MemoryInfo | null>(null);
   const [memoryHistory, setMemoryHistory] = useState<MemoryInfo[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);

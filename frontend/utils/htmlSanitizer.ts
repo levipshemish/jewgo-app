@@ -282,7 +282,7 @@ function isValidUrl(url: string): boolean {
 /**
  * Check if an image URL is valid
  */
-function isValidImageUrl(url: string): boolean {
+function _isValidImageUrl(url: string): boolean {
   if (!isValidUrl(url)) {
     return false;
   }

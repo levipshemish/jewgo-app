@@ -12,9 +12,7 @@ import {
   addDistanceToItems,
   sortByDistance,
   filterByDistance,
-  getLocationDisplayText,
   formatLocationForDisplay,
-  createLocationTransformer,
   type UserLocation,
   type LocationWithDistance
 } from '@/lib/utils/location';
@@ -98,7 +96,7 @@ export function useLocationData<T extends LocationWithDistance>(
 ): UseLocationDataReturn<T> {
   const {
     sortByDistance: shouldSortByDistance = false,
-    maxDistanceMiles,
+    maxDistanceMiles: _maxDistanceMiles,
     fallbackText = 'Get Location'
   } = options;
 

@@ -263,7 +263,7 @@ export function InteractiveRestaurantMap({
         userLocationMarkerRef.current = null;
       }
     };
-  }, [mapCenter, onBoundsChanged, announceRestaurantSelection, handleKeyboardNavigation, onRestaurantSelect, setUpAriaLabels, _cleanupAccessibility]); // Removed restaurantsWithCoords and keyboardSelectedIndex to prevent infinite loops
+  }, [mapCenter, onBoundsChanged, announceRestaurantSelection, handleKeyboardNavigation, onRestaurantSelect, setUpAriaLabels, _cleanupAccessibility, restaurantsWithCoords]); // Added restaurantsWithCoords back as it's needed
 
   // Update user location marker when user location changes
   useEffect(() => {

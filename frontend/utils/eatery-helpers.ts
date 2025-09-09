@@ -79,11 +79,10 @@ export function openImageCarousel(images: string[], currentIndex: number = 0) {
  */
 export function openHoursPopup(hours: EateryDB['hours']) {
   // This would typically open a modal with hours
-  console.log('Opening hours popup:', hours)
-  
-  // For now, we'll just log the hours
+  // For now, we'll just format the hours for display
   const formattedHours = formatHoursForPopup(hours)
-  console.table(formattedHours)
+  // TODO: Implement actual popup modal
+  return formattedHours
 }
 
 /**

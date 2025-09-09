@@ -5,7 +5,7 @@
  */
 
 import { useLivemapStore } from "@/lib/stores/livemap-store";
-import { PERFORMANCE_LIMITS } from "@/types/livemap";
+// import { PERFORMANCE_LIMITS } from "@/types/livemap";
 import type { Restaurant, Bounds } from "@/types/livemap";
 
 // Cache with TTL

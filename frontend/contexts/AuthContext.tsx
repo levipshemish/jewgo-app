@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Probe backend profile; 200 => authenticated, 401 => not
       const currentUser = await postgresAuth.getProfile();
       setUser(currentUser);
-    } catch (error) {
+    } catch (_error) {
       // Treat any failure as unauthenticated for client UX
       setUser(null);
     } finally {
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: { email: string; password: string; name?: string }) => {
     try {
-      const result = await postgresAuth.register(data);
+      const _result = await postgresAuth.register(data);
       // After registration, log the user in
       await login(data.email, data.password);
     } catch (error) {
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const currentUser = await postgresAuth.getProfile();
       setUser(currentUser);
-    } catch (error) {
+    } catch (_error) {
       setUser(null);
     }
   };

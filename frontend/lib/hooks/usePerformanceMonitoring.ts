@@ -79,15 +79,7 @@ export function usePerformanceMonitoring(
   const opts = useMemo(() => {
     const merged = { ...DEFAULT_OPTIONS, ...options };
     return merged;
-  }, [
-    options,
-    options.enabled,
-    options.collectMetrics,
-    options.alertOnSlowPerformance,
-    options.maxHistoryLength,
-    options.thresholds,
-    options.onAlert,
-  ]);
+  }, [options]);
   const [metrics, setMetrics] = useState<PerformanceMetric[]>([]);
   const [alerts, setAlerts] = useState<PerformanceAlert[]>([]);
   const activeTimersRef = useRef<Map<string, { startTime: number; category: PerformanceMetric['category'] }>>(new Map());

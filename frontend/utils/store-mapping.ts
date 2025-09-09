@@ -1,15 +1,10 @@
 import { StoreDB, ListingData, UserLocation } from '@/types/listing'
 import { 
   calculateDistance, 
-  openImageCarousel, 
   openDirections, 
-  handleOrder, 
   handleFavorite, 
-  handleShare, 
   handleEmail,
-  handleTagClick,
-  formatPriceRange,
-  formatRating
+  handleTagClick
 } from './eatery-helpers'
 
 /**
@@ -85,22 +80,21 @@ export function mapStoreToListingData(
         // Use real review data from API
         if (store.reviews?.google_reviews) {
           try {
-            const reviews = JSON.parse(store.reviews.google_reviews)
-            console.log('Reviews for', store.name, ':', reviews)
+            const parsedReviews = JSON.parse(store.reviews.google_reviews)
+            console.log('Reviews for', store.name, ':', parsedReviews)
             
             // Format reviews for display
-            const formattedReviews = reviews.map((review: any) => ({
+            const _formattedReviews = parsedReviews.map((review: any) => ({
               author: review.author,
               rating: review.rating,
               text: review.text,
               time: new Date(review.time * 1000).toLocaleDateString()
             }))
             
-            // For now, show in console. In a real app, this would open a reviews popup
-            console.table(formattedReviews)
+            // For now, show in alert. In a real app, this would open a reviews popup
             alert(`Reviews for ${store.name}:\n\n${formattedReviews.map((r: any) => `${r.author} (${r.rating}/5): ${r.text}`).join('\n\n')}`)
-          } catch (error) {
-            console.error('Error parsing reviews:', error)
+          } catch (_error) {
+            // Error parsing reviews - show fallback message
             alert(`Reviews for ${store.name} - Unable to load reviews at this time`)
           }
         } else {

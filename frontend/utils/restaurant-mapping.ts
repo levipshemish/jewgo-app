@@ -42,7 +42,7 @@ export function mapRestaurantToListingData(restaurant: Restaurant, userLocation?
     .join(', ');
 
   // Format hours for display
-  const formatHours = (hours: any) => {
+  const _formatHours = (hours: any) => {
     if (typeof hours === 'string') return hours;
     if (hours?.hours_json) {
       try {

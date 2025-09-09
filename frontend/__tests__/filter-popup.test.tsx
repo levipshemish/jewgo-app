@@ -102,10 +102,6 @@ jest.mock('@/lib/hooks/useLocalFilters', () => ({
 // --- Later in the same file ---
 
 describe('ModernFilterPopup Dropdowns', () => {
-  const defaultProps = {
-    // …existing defaultProps…
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockLocalFiltersState = { ...defaultLocalFiltersState };

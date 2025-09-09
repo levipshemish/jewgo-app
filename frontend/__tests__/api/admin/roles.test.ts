@@ -48,7 +48,7 @@ describe('Admin Roles API Routes', () => {
     // Setup default mock implementations
     mockRequireAdminOrThrow.mockResolvedValue(mockAdminUser);
     mockWithPermission.mockImplementation((permission) => {
-      return async (request: NextRequest) => {
+      return async (_request: NextRequest) => {
         if (permission === 'role:manage') {
           return mockAdminUser;
         }

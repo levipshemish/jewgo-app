@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { memo, useMemo, useEffect, useState } from 'react';
+import React, { memo, useMemo, useEffect, useState, useCallback } from 'react';
 import { useLivemapStore, sel } from '@/lib/stores/livemap-store';
 import GoogleMap from './vendors/GoogleMap';
 import Header from '@/components/layout/Header';
@@ -16,10 +16,9 @@ import RestaurantDetails from './RestaurantDetails';
 import { onBoundsChanged } from '@/services/triggers';
 import { loadRestaurantsInBounds } from '@/services/dataManager';
 import { runFilter } from '@/services/workerManager';
-import { initializeURLSync } from '@/services/urlSync';
 import type { Bounds } from '@/types/livemap';
 
-export default memo(function MapEngine() {
+const MapEngine = () => {
   // 🔒 Use selectors only - never read raw state
   const ids = useLivemapStore(sel.filteredIds);
   const restaurants = useLivemapStore(sel.restaurantsById);
@@ -35,9 +34,9 @@ export default memo(function MapEngine() {
   const select = useLivemapStore((state) => state.select);
   
   // Search handler
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setFilters({ ...filters, query });
-  };
+  }, [filters, setFilters]);
   
   // Filter handlers
   const handleApplyFilters = (newFilters: any) => {
@@ -216,4 +215,6 @@ export default memo(function MapEngine() {
       />
     </div>
   );
-});
+};
+
+export default memo(MapEngine);

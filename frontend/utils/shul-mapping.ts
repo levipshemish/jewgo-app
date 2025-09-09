@@ -20,7 +20,7 @@ function formatDistance(distance: number): string {
   return `${distance.toFixed(1)} mi away`
 }
 
-function formatRating(rating?: number): string {
+function _formatRating(rating?: number): string {
   if (!rating) return ''
   return rating.toFixed(1)
 }
@@ -31,7 +31,7 @@ function handleFavorite(shulId: string) {
   // TODO: Implement favorite functionality
 }
 
-function handleShare(shulId: string) {
+function _handleShare(shulId: string) {
   console.log('Share shul:', shulId)
   // TODO: Implement share functionality
 }
@@ -48,7 +48,7 @@ function handleTagClick(tag: string) {
   // TODO: Implement tag filtering
 }
 
-function openImageCarousel(images: string[]) {
+function _openImageCarousel(images: string[]) {
   console.log('Open image carousel:', images)
   // TODO: Implement image carousel
 }

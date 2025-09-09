@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { SAMPLE_RESTAURANT_DATASET, RestaurantDataset } from '@/lib/data/restaurant-dataset'
 import YesNoNotesDisplay from '@/components/data-display/YesNoNotesDisplay'
 import Header from '@/components/layout/Header'
-import { MapPinIcon, PhoneIcon, GlobeAltIcon, StarIcon } from '@heroicons/react/24/outline'
+import { MapPinIcon, PhoneIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 
 export default function RestaurantDetailPage() {
   const params = useParams()
@@ -48,7 +48,7 @@ export default function RestaurantDetailPage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Restaurant Not Found</h1>
-            <p className="text-gray-600">The restaurant you're looking for doesn't exist.</p>
+            <p className="text-gray-600">The restaurant you&apos;re looking for doesn&apos;t exist.</p>
           </div>
         </div>
       </div>

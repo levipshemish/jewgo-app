@@ -9,7 +9,7 @@
  * Version: 1.0
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // ============================================================================
 // API Route Types

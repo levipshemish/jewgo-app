@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { loadMaps } from '@/lib/maps/loader';
 import type { Restaurant, LatLng, Bounds } from '@/types/livemap';
 
@@ -72,7 +72,7 @@ export default function GoogleMap({
         
         const mapConfig: google.maps.MapOptions = {
           center: center || { lat: 25.7617, lng: -80.1918 }, // Miami default
-          zoom: zoom,
+          zoom,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           mapTypeControl: true,
           streetViewControl: true,
@@ -336,20 +336,25 @@ export default function GoogleMap({
 
   // Cleanup on unmount
   useEffect(() => {
+    // Capture ref values to avoid stale closure issues
+    const currentMarkers = markersRef.current;
+    const currentUserLocationMarker = userLocationMarkerRef.current;
+    
     return () => {
-          // Clean up markers
-          markersRef.current.forEach(({ marker }) => {
-            if ('setMap' in marker) {
-              (marker as google.maps.Marker).setMap(null);
-            } else if ('map' in marker) {
-              (marker as any).map = null;
-            }
-          });
-      markersRef.current.clear();
+      
+      // Clean up markers
+      currentMarkers.forEach(({ marker }) => {
+        if ('setMap' in marker) {
+          (marker as google.maps.Marker).setMap(null);
+        } else if ('map' in marker) {
+          (marker as any).map = null;
+        }
+      });
+      currentMarkers.clear();
 
       // Clean up user location marker
-      if (userLocationMarkerRef.current) {
-        userLocationMarkerRef.current.setMap(null);
+      if (currentUserLocationMarker) {
+        currentUserLocationMarker.setMap(null);
       }
 
 

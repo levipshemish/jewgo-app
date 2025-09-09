@@ -14,7 +14,7 @@ if (process.env.UPSTASH_REDIS_REST_URL) {
     const redisModule = require("@upstash/redis");
     Ratelimit = rateLimitModule.Ratelimit;
     Redis = redisModule.Redis;
-  } catch (error) {
+  } catch (_error) {
     console.warn("Upstash modules not available, rate limiting disabled");
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import GoogleMap from '@/components/map/vendors/GoogleMap';
 import type { Restaurant } from '@/types/livemap';
 

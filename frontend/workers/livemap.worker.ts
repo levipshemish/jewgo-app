@@ -178,7 +178,7 @@ function handleSortByDistance(payload: {
   ids: string[];
   by: LatLng;
 }) {
-  const { ids, by } = payload;
+  const { ids, by: _by } = payload;
   const startTime = performance.now();
   
   // This would need restaurant data to calculate distances

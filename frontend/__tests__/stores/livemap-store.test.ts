@@ -189,7 +189,7 @@ describe('LivemapStore', () => {
     it('should not cause unnecessary re-renders', () => {
       let renderCount = 0;
       
-      const { result } = renderHook(() => {
+      const { result: _result } = renderHook(() => {
         renderCount++;
         return useLivemapStore(sel.filteredIds);
       });

@@ -89,7 +89,7 @@ export function mapEateryToListingData(
   userLocation?: UserLocation | null,
   reviews?: any[],
   onLocationRequest?: () => void,
-  locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
+  _locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
 ): ListingData {
   
   const result = {

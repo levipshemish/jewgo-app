@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui-listing-utility/button"
 import { useState } from "react"
-import { ChevronDown, Clock, MapPin, Globe, Globe2, Phone, Mail, ShoppingCart } from "lucide-react"
+import { ChevronDown, Clock, MapPin, Globe, Phone, Mail, ShoppingCart } from "lucide-react"
 import { Stack, Cluster } from "@/components/ui-listing-utility/spacing"
 
 // Utility function to determine restaurant status

@@ -45,7 +45,7 @@ describe('Momentum guard limits consecutive auto-loads without scroll delta', ()
 
     // Simulate multiple IO triggers without scroll delta
     for (let i = 0; i < 5; i++) {
-      await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
+      await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
     }
     const callsNoDelta = (window as any).__CALLS__.current as number;
     expect(callsNoDelta).toBeLessThanOrEqual(2); // IS_MAX_CONSEC_AUTOLOADS=2
@@ -53,7 +53,7 @@ describe('Momentum guard limits consecutive auto-loads without scroll delta', ()
     // Change scroll position enough to satisfy delta and allow loading again
     // @ts-ignore
     window.scrollY = 100;
-    await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
+    await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
     const callsAfterDelta = (window as any).__CALLS__.current as number;
     expect(callsAfterDelta).toBeGreaterThan(callsNoDelta);
   });

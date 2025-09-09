@@ -28,7 +28,7 @@ export async function GET() {
       message: 'Statistics not available - backend endpoint not implemented'
     });
 
-  } catch (error) {
+  } catch (_error) {
     // For any errors, return default statistics to ensure UI works
     return NextResponse.json({
       totalRestaurants: 0,

@@ -6,12 +6,10 @@
 
 'use client';
 
-import { SlidersHorizontal } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLivemapStore } from '@/lib/stores/livemap-store';
 import { onSearchChanged } from '@/services/triggers';
 import { googlePlacesAPI } from '@/lib/google/places';
-import { safeFilter } from '@/lib/utils/validation';
 
 interface PlaceSuggestion {
   place_id: string;
@@ -25,13 +23,12 @@ interface PlaceSuggestion {
 
 export default function SearchBar() {
   const [query, setQuery] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+  const [_isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   const [placesApiError, setPlacesApiError] = useState<string | null>(null);
 
-  const [retryCount, setRetryCount] = useState(0);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const placesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);

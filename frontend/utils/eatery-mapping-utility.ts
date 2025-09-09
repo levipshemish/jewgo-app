@@ -6,7 +6,6 @@ import {
   openDirections, 
   handleOrder, 
   handleFavorite, 
-  handleShare, 
   handleEmail,
   handleTagClick,
   formatPriceRange,
@@ -79,11 +78,10 @@ export function mapEateryToListingData(
               time: new Date(review.time * 1000).toLocaleDateString()
             }))
             
-            // For now, show in console. In a real app, this would open a reviews popup
-            console.table(formattedReviews)
+            // For now, show in alert. In a real app, this would open a reviews popup
             alert(`Reviews for ${eatery.name}:\n\n${formattedReviews.map((r: any) => `${r.author} (${r.rating}/5): ${r.text}`).join('\n\n')}`)
-          } catch (error) {
-            console.error('Error parsing reviews:', error)
+          } catch (_error) {
+            // Error parsing reviews - show fallback message
             alert(`Reviews for ${eatery.name} - Unable to load reviews at this time`)
           }
         } else {

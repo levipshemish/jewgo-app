@@ -8,7 +8,7 @@
  */
 
 import { useLivemapStore } from '@/lib/stores/livemap-store';
-import type { Filters, LatLng, Bounds } from '@/types/livemap';
+import type { Filters, LatLng } from '@/types/livemap';
 
 // URL-synced fields (subset of filters)
 const URL_SYNC_FIELDS = [
@@ -133,7 +133,7 @@ function hydrateStoreFromURL(): void {
  * Subscribe to store changes and update URL
  */
 function subscribeToStoreChanges(): void {
-  let isUpdating = false;
+  const isUpdating = false;
   
   useLivemapStore.subscribe(
     (state) => ({

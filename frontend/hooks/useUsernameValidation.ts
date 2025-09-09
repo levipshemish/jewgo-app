@@ -67,7 +67,7 @@ export function useUsernameValidation(initialUsername: string = "") {
             error: result.available ? null : "Username is already taken",
           }));
         }
-      } catch (error) {
+      } catch (_error) {
         setValidationState(prev => ({
           ...prev,
           isAvailable: false,

@@ -29,7 +29,7 @@ export async function GET() {
       message: 'Using default kosher types - backend endpoint not implemented'
     });
 
-  } catch (error) {
+  } catch (_error) {
     // For any errors, return default kosher types to ensure UI works
     return NextResponse.json({
       success: true,

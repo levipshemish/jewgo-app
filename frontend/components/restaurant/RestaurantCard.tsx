@@ -11,7 +11,7 @@ interface RestaurantCardProps {
   showRating?: boolean;
 }
 
-export function RestaurantCard({ restaurant, showDistance = true, showRating = true }: RestaurantCardProps) {
+export function RestaurantCard({ restaurant, showDistance: _showDistance = true, showRating = true }: RestaurantCardProps) {
   const availableFeatures = restaurant.data_fields.filter(f => f.value === 'Yes').length
   const totalFeatures = restaurant.data_fields.length
   const featurePercentage = Math.round((availableFeatures / totalFeatures) * 100)

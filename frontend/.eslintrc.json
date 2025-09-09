@@ -138,7 +138,8 @@
       "env": { "jest": true },
       "rules": {
         "no-undef": "off",
-        "no-console": "off"
+        "no-console": "off",
+        "no-restricted-imports": "off"
       }
     },
     {

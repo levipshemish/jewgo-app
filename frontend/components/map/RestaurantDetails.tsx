@@ -64,7 +64,7 @@ export default function RestaurantDetails() {
     router.push(`/eatery/${selected.id}`);
   };
 
-  const handleToggleFavorite = (id: string, isLiked: boolean) => {
+  const handleToggleFavorite = (_id: string, _isLiked: boolean) => {
     toggleFavorite(selected.id);
   };
 

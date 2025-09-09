@@ -9,7 +9,7 @@ import type { Restaurant, Filters } from '@/types/livemap';
 
 // Mock the worker environment
 const mockPostMessage = jest.fn();
-const mockOnMessage = jest.fn();
+const _mockOnMessage = jest.fn();
 
 // Mock self object
 Object.defineProperty(global, 'self', {
@@ -249,7 +249,7 @@ describe('Livemap Worker', () => {
   it('should calculate distance correctly', () => {
     // Test distance calculation with known coordinates
     const point1 = { lat: 25.7617, lng: -80.1918 }; // Miami
-    const point2 = { lat: 25.771, lng: -80.195 };   // Nearby point
+    const _point2 = { lat: 25.771, lng: -80.195 };   // Nearby point
 
     // This would need to be tested by calling the worker with distance filtering
     // For now, we'll test that the worker doesn't crash with distance filters

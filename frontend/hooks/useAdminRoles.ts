@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
-import { toast } from 'react-hot-toast';
+// import { toast } from 'react-hot-toast';
 
 // Types
 interface User {
@@ -167,8 +167,8 @@ export function useAssignRole() {
       // Invalidate admin user context to reflect new permissions immediately
       try {
         await fetch('/api/admin/auth/refresh', { method: 'POST' });
-      } catch (error) {
-        console.warn('Failed to refresh admin context:', error);
+      } catch (refreshError) {
+        console.warn('Failed to refresh admin context:', refreshError);
       }
       
       return result;
@@ -250,8 +250,8 @@ export function useRevokeRole() {
       // Invalidate admin user context to reflect new permissions immediately
       try {
         await fetch('/api/admin/auth/refresh', { method: 'POST' });
-      } catch (error) {
-        console.warn('Failed to refresh admin context:', error);
+      } catch (refreshError) {
+        console.warn('Failed to refresh admin context:', refreshError);
       }
       
       return result;

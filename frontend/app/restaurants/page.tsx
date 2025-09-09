@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import { SAMPLE_RESTAURANT_DATASET, RestaurantDataset } from '@/lib/data/restaurant-dataset'
+import { SAMPLE_RESTAURANT_DATASET } from '@/lib/data/restaurant-dataset'
 import RestaurantCard from '@/components/restaurant/RestaurantCard'
 import Header from '@/components/layout/Header'
 import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
@@ -19,7 +19,7 @@ export default function RestaurantsPage() {
 
   // Filter and sort restaurants
   const filteredRestaurants = useMemo(() => {
-    let filtered = SAMPLE_RESTAURANT_DATASET.filter(restaurant => {
+    const filtered = SAMPLE_RESTAURANT_DATASET.filter(restaurant => {
       const matchesSearch = restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            restaurant.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            restaurant.certifying_agency.toLowerCase().includes(searchQuery.toLowerCase())

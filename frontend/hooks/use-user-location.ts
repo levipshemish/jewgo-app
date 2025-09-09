@@ -35,8 +35,8 @@ export function useUserLocation(): UseUserLocationReturn {
         })
         setLoading(false)
       },
-      (error) => {
-        setError(`Unable to retrieve your location: ${error.message}`)
+      (locationError) => {
+        setError(`Unable to retrieve your location: ${locationError.message}`)
         setLoading(false)
       },
       {

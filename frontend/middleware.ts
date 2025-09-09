@@ -118,7 +118,7 @@ async function handleAuthenticatedUser(
 /**
  * Handle middleware errors
  */
-function handleMiddlewareError(request: NextRequest, error: any): NextResponse {
+function handleMiddlewareError(request: NextRequest, _error: any): NextResponse {
   const isApi = request.nextUrl.pathname.startsWith('/api/admin');
   
   if (isApi) {
