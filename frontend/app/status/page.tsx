@@ -186,15 +186,6 @@ export default function StatusPage() {
             <div className="text-center">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
               <p className="text-gray-600">Loading system status...</p>
-              <button 
-                onClick={() => {
-                  console.log('Manual refresh clicked')
-                  fetchStatus()
-                }}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Manual Refresh
-              </button>
             </div>
           </div>
         </div>
