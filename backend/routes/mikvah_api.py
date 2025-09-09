@@ -15,6 +15,7 @@ from backend.utils.query_builders import (
     build_pagination_clause
 )
 from backend.utils.geospatial import distance_select, distance_where_clause, knn_order_clause
+from backend.utils.api_caching import cache_mikvah_list
 
 # Import database manager
 try:
@@ -42,6 +43,7 @@ mikvah_bp = Blueprint('mikvah', __name__, url_prefix='/api/v4/mikvah')
 db_manager = DatabaseManager()
 
 @mikvah_bp.route('/', methods=['GET'])
+@cache_mikvah_list(ttl_seconds=600)  # Cache for 10 minutes
 def get_mikvah():
     """Get mikvah facilities with filtering, pagination, and location-based sorting."""
     try:

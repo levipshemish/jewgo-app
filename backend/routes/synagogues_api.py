@@ -15,6 +15,7 @@ from backend.utils.query_builders import (
     build_pagination_clause
 )
 from backend.utils.geospatial import distance_select, distance_where_clause, knn_order_clause
+from backend.utils.api_caching import cache_synagogue_list
 
 # Import database manager
 try:
@@ -97,6 +98,7 @@ def build_synagogue_where_clause(filters: Dict[str, Any]) -> tuple[str, Dict[str
     return where, named
 
 @synagogues_bp.route('/', methods=['GET'])
+@cache_synagogue_list(ttl_seconds=600)  # Cache for 10 minutes
 def get_synagogues():
     """Get synagogues with filtering, pagination, and location-based sorting."""
     try:

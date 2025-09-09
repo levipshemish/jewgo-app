@@ -13,6 +13,9 @@ from utils.rate_limiter import (
     search_limit,
     admin_limit,
 )
+from utils.api_caching import cache_restaurant_list
+from utils.performance_metrics import record_api_metric
+from utils.metrics_decorator import track_api_performance
 from werkzeug.exceptions import HTTPException
 
 logger = get_logger(__name__)
@@ -380,6 +383,8 @@ def not_found_response(message: str, resource_type: str = "resource"):
 @safe_route("/restaurants", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
 @public_read_limit()
+@cache_restaurant_list(ttl_seconds=300)  # Cache for 5 minutes
+@track_api_performance("GET /restaurants")
 def get_restaurants():
     """Get restaurants with optional filtering and pagination using v4 service."""
     try:

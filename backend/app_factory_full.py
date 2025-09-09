@@ -759,6 +759,33 @@ def create_app(config_class=None):
         logger.warning(f"Could not import mikvah blueprint: {e}")
     except Exception as e:
         logger.warning(f"Could not register mikvah blueprint: {e}")
+    
+    # Register unified search blueprint
+    try:
+        from routes.unified_search_api import unified_search_bp
+        if unified_search_bp is not None:
+            app.register_blueprint(unified_search_bp)
+            logger.info("Unified search blueprint registered successfully")
+        else:
+            logger.warning("Unified search blueprint is None - skipping registration")
+    except ImportError as e:
+        logger.warning(f"Could not register unified search blueprint: {e}")
+    except Exception as e:
+        logger.warning(f"Could not register unified search blueprint: {e}")
+    
+    # Register metrics API blueprint
+    try:
+        from routes.metrics_api import metrics_bp
+        if metrics_bp is not None:
+            app.register_blueprint(metrics_bp)
+            logger.info("Metrics API blueprint registered successfully")
+        else:
+            logger.warning("Metrics API blueprint is None - skipping registration")
+    except ImportError as e:
+        logger.warning(f"Could not register metrics API blueprint: {e}")
+    except Exception as e:
+        logger.warning(f"Could not register metrics API blueprint: {e}")
+    
     # Register mock API routes for development
     try:
         from mock_api import mock_bp
