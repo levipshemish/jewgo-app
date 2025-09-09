@@ -4,7 +4,28 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, CheckCircle, XCircle, AlertCircle, Clock, Server, Database, Webhook, Activity, ChevronDown, ChevronRight, FileText } from 'lucide-react'
+import { 
+  RefreshCw, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle, 
+  Clock, 
+  Server, 
+  Database, 
+  Webhook, 
+  Activity, 
+  ChevronDown, 
+  ChevronRight, 
+  FileText,
+  Cpu,
+  HardDrive,
+  Wifi,
+  Users,
+  Shield,
+  TrendingUp,
+  BarChart3,
+  Settings
+} from 'lucide-react'
 
 interface RouteStatus {
   name: string
@@ -58,6 +79,19 @@ interface SystemStatus {
   redis: {
     status: 'connected' | 'disconnected'
     lastCheck: string
+  }
+  systemMetrics?: any
+  databaseStatus?: any
+  externalAPIs?: any
+  serviceDependencies?: any
+  performanceMetrics?: any
+  securityMonitoring?: any
+  applicationHealth?: any
+  alertsNotifications?: any
+  dataSources?: {
+    systemMetrics: string
+    databaseStatus: string
+    externalAPIs: string
   }
 }
 
@@ -229,6 +263,20 @@ export default function StatusPage() {
             <p className="text-gray-600 mt-1">
               Real-time monitoring of backend services and infrastructure
             </p>
+            <div className="mt-2 flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-green-700">Real Data</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-blue-700">Partial Real</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span className="text-yellow-700">Mock Data</span>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             {lastRefresh && (
@@ -297,6 +345,10 @@ export default function StatusPage() {
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
                 API Routes Status
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs text-green-700">Real</span>
+                </div>
               </CardTitle>
               <CardDescription>
                 Health status of backend API endpoints
@@ -391,10 +443,14 @@ export default function StatusPage() {
         {/* Webhook Status */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Webhook className="h-5 w-5" />
-              Webhook Status
-            </CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Webhook className="h-5 w-5" />
+                Webhook Status
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs text-green-700">Real</span>
+                </div>
+              </CardTitle>
             <CardDescription>
               GitHub webhook configuration and recent activity
             </CardDescription>
@@ -471,6 +527,403 @@ export default function StatusPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* System Metrics */}
+        {status.systemMetrics && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Cpu className="h-5 w-5" />
+                System Metrics
+                <div className="flex items-center gap-1 ml-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    status.dataSources?.systemMetrics === 'real' ? 'bg-green-500' : 
+                    status.dataSources?.systemMetrics === 'partial_real' ? 'bg-blue-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className={`text-xs ${
+                    status.dataSources?.systemMetrics === 'real' ? 'text-green-700' : 
+                    status.dataSources?.systemMetrics === 'partial_real' ? 'text-blue-700' : 'text-yellow-700'
+                  }`}>
+                    {status.dataSources?.systemMetrics === 'real' ? 'Real' : 
+                     status.dataSources?.systemMetrics === 'partial_real' ? 'Partial' : 'Mock'}
+                  </span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Cpu className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">CPU Usage</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {status.systemMetrics.cpu.usage.toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-blue-600">
+                    {status.systemMetrics.cpu.cores} cores
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <HardDrive className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">Memory</span>
+                  </div>
+                  <div className="text-2xl font-bold text-green-900">
+                    {status.systemMetrics.memory.percentage.toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-green-600">
+                    {(status.systemMetrics.memory.used / 1024).toFixed(1)}GB / {(status.systemMetrics.memory.total / 1024).toFixed(1)}GB
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <HardDrive className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm font-medium text-orange-800">Disk Space</span>
+                  </div>
+                  <div className="text-2xl font-bold text-orange-900">
+                    {status.systemMetrics.disk.percentage.toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-orange-600">
+                    {(status.systemMetrics.disk.used / 1024).toFixed(1)}GB / {(status.systemMetrics.disk.total / 1024).toFixed(1)}GB
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Wifi className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-800">Network I/O</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900">
+                    {(status.systemMetrics.network.bytesIn / 1024 / 1024).toFixed(1)}MB
+                  </div>
+                  <div className="text-xs text-purple-600">
+                    {(status.systemMetrics.network.bytesOut / 1024 / 1024).toFixed(1)}MB out
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Database Status */}
+        {status.databaseStatus && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Database Status
+                <div className="flex items-center gap-1 ml-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    status.dataSources?.databaseStatus === 'real' ? 'bg-green-500' : 
+                    status.dataSources?.databaseStatus === 'partial_real' ? 'bg-blue-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className={`text-xs ${
+                    status.dataSources?.databaseStatus === 'real' ? 'text-green-700' : 
+                    status.dataSources?.databaseStatus === 'partial_real' ? 'text-blue-700' : 'text-yellow-700'
+                  }`}>
+                    {status.dataSources?.databaseStatus === 'real' ? 'Real' : 
+                     status.dataSources?.databaseStatus === 'partial_real' ? 'Partial' : 'Mock'}
+                  </span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-medium text-blue-800 mb-2">Connection Pool</div>
+                  <div className="text-lg font-bold text-blue-900">
+                    {status.databaseStatus.connectionPool.active} / {status.databaseStatus.connectionPool.maxConnections}
+                  </div>
+                  <div className="text-xs text-blue-600">Active connections</div>
+                </div>
+                
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="text-sm font-medium text-green-800 mb-2">Query Performance</div>
+                  <div className="text-lg font-bold text-green-900">
+                    {status.databaseStatus.queryPerformance.averageResponseTime.toFixed(1)}ms
+                  </div>
+                  <div className="text-xs text-green-600">Average response time</div>
+                </div>
+                
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="text-sm font-medium text-orange-800 mb-2">Database Size</div>
+                  <div className="text-lg font-bold text-orange-900">
+                    {status.databaseStatus.databaseSize.totalSize.toFixed(1)}MB
+                  </div>
+                  <div className="text-xs text-orange-600">{status.databaseStatus.databaseSize.tableCount} tables</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* External APIs Status */}
+        {status.externalAPIs && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                External APIs Status
+                <div className="flex items-center gap-1 ml-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    status.dataSources?.externalAPIs === 'real' ? 'bg-green-500' : 
+                    status.dataSources?.externalAPIs === 'partial_real' ? 'bg-blue-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className={`text-xs ${
+                    status.dataSources?.externalAPIs === 'real' ? 'text-green-700' : 
+                    status.dataSources?.externalAPIs === 'partial_real' ? 'text-blue-700' : 'text-yellow-700'
+                  }`}>
+                    {status.dataSources?.externalAPIs === 'real' ? 'Real' : 
+                     status.dataSources?.externalAPIs === 'partial_real' ? 'Partial' : 'Mock'}
+                  </span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {status.externalAPIs.apis.map((api: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <StatusIcon status={api.status} />
+                      <div>
+                        <div className="font-medium">{api.name}</div>
+                        <div className="text-sm text-gray-600">{api.url}</div>
+                        {api.error && (
+                          <div className="text-sm text-red-600">{api.error}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">{api.responseTime}ms</div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(api.lastCheck).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Performance Metrics */}
+        {status.performanceMetrics && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Performance Metrics
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="text-xs text-yellow-700">Mock</span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-medium text-blue-800 mb-2">Response Times</div>
+                  <div className="text-lg font-bold text-blue-900">
+                    {status.performanceMetrics.responseTimes.average.toFixed(1)}ms
+                  </div>
+                  <div className="text-xs text-blue-600">Average</div>
+                </div>
+                
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="text-sm font-medium text-green-800 mb-2">Request Rate</div>
+                  <div className="text-lg font-bold text-green-900">
+                    {status.performanceMetrics.requestRates.perMinute}
+                  </div>
+                  <div className="text-xs text-green-600">Requests/minute</div>
+                </div>
+                
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="text-sm font-medium text-orange-800 mb-2">Success Rate</div>
+                  <div className="text-lg font-bold text-orange-900">
+                    {status.performanceMetrics.errorRates.successRate.toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-orange-600">Success rate</div>
+                </div>
+                
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="text-sm font-medium text-purple-800 mb-2">Uptime</div>
+                  <div className="text-lg font-bold text-purple-900">
+                    {status.performanceMetrics.uptime.current}%
+                  </div>
+                  <div className="text-xs text-purple-600">Current uptime</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Security Monitoring */}
+        {status.securityMonitoring && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Security Monitoring
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="text-xs text-yellow-700">Mock</span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 bg-red-50 rounded-lg">
+                  <div className="text-sm font-medium text-red-800 mb-2">Failed Logins</div>
+                  <div className="text-lg font-bold text-red-900">
+                    {status.securityMonitoring.failedLogins.last24h}
+                  </div>
+                  <div className="text-xs text-red-600">Last 24 hours</div>
+                </div>
+                
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-medium text-blue-800 mb-2">Rate Limiting</div>
+                  <div className="text-lg font-bold text-blue-900">
+                    {status.securityMonitoring.rateLimiting.currentUsage}
+                  </div>
+                  <div className="text-xs text-blue-600">Current usage</div>
+                </div>
+                
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="text-sm font-medium text-green-800 mb-2">SSL Status</div>
+                  <div className="text-lg font-bold text-green-900">
+                    {status.securityMonitoring.ssl.status}
+                  </div>
+                  <div className="text-xs text-green-600">
+                    {status.securityMonitoring.ssl.daysUntilExpiry} days left
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="text-sm font-medium text-purple-800 mb-2">Security Headers</div>
+                  <div className="text-lg font-bold text-purple-900">
+                    {Object.values(status.securityMonitoring.securityHeaders).filter(Boolean).length}/4
+                  </div>
+                  <div className="text-xs text-purple-600">Active headers</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Application Health */}
+        {status.applicationHealth && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Application Health
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="text-xs text-yellow-700">Mock</span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-medium text-blue-800 mb-2">Active Users</div>
+                  <div className="text-lg font-bold text-blue-900">
+                    {status.applicationHealth.activeUsers.current}
+                  </div>
+                  <div className="text-xs text-blue-600">Currently online</div>
+                </div>
+                
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="text-sm font-medium text-green-800 mb-2">24h Users</div>
+                  <div className="text-lg font-bold text-green-900">
+                    {status.applicationHealth.activeUsers.last24h}
+                  </div>
+                  <div className="text-xs text-green-600">Last 24 hours</div>
+                </div>
+                
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="text-sm font-medium text-orange-800 mb-2">Feature Flags</div>
+                  <div className="text-lg font-bold text-orange-900">
+                    {status.applicationHealth.featureFlags.filter(f => f.enabled).length}
+                  </div>
+                  <div className="text-xs text-orange-600">Enabled features</div>
+                </div>
+                
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="text-sm font-medium text-purple-800 mb-2">Versions</div>
+                  <div className="text-lg font-bold text-purple-900">
+                    v{status.applicationHealth.versions.frontend}
+                  </div>
+                  <div className="text-xs text-purple-600">Frontend version</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Alerts & Notifications */}
+        {status.alertsNotifications && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Alerts & Notifications
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="text-xs text-yellow-700">Mock</span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {status.alertsNotifications.recentDeployments.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Recent Deployments</h4>
+                    <div className="space-y-2">
+                      {status.alertsNotifications.recentDeployments.map((deployment, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <div className="font-medium">{deployment.version}</div>
+                            <div className="text-sm text-gray-600">
+                              {new Date(deployment.timestamp).toLocaleString()}
+                            </div>
+                          </div>
+                          <Badge variant={deployment.status === 'success' ? 'default' : 'destructive'}>
+                            {deployment.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {status.alertsNotifications.performanceAlerts.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Performance Alerts</h4>
+                    <div className="space-y-2">
+                      {status.alertsNotifications.performanceAlerts.map((alert, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div>
+                            <div className="font-medium text-red-800">{alert.type.toUpperCase()}</div>
+                            <div className="text-sm text-red-600">
+                              {alert.current} / {alert.threshold} threshold
+                            </div>
+                          </div>
+                          <Badge variant="destructive">
+                            {alert.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

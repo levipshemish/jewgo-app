@@ -56,6 +56,19 @@ interface SystemStatus {
     status: 'connected' | 'disconnected'
     lastCheck: string
   }
+  systemMetrics?: any
+  databaseStatus?: any
+  externalAPIs?: any
+  serviceDependencies?: any
+  performanceMetrics?: any
+  securityMonitoring?: any
+  applicationHealth?: any
+  alertsNotifications?: any
+  dataSources?: {
+    systemMetrics: string
+    databaseStatus: string
+    externalAPIs: string
+  }
 }
 
 async function checkRoute(url: string, name: string, method: string = 'GET'): Promise<RouteStatus> {
@@ -245,6 +258,57 @@ export async function GET(request: NextRequest) {
     // Check backend health
     const backendHealth = await checkRoute(`${backendUrl}/health`, 'Backend Health')
     
+    // Get comprehensive system metrics (try real first, fallback to mock)
+    let systemMetrics = null
+    let systemMetricsSource = 'none'
+    try {
+      // Try real system metrics first
+      const realMetricsResponse = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/real-system-metrics`)
+      if (realMetricsResponse.ok) {
+        const realMetricsData = await realMetricsResponse.json()
+        systemMetrics = realMetricsData.data
+        systemMetricsSource = realMetricsData.source
+      } else {
+        // Fallback to mock data
+        const mockMetricsResponse = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/system-metrics`)
+        if (mockMetricsResponse.ok) {
+          const mockMetricsData = await mockMetricsResponse.json()
+          systemMetrics = mockMetricsData.data
+          systemMetricsSource = 'mock'
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch system metrics:', error)
+    }
+    
+    // Get real external API status
+    let externalAPIs = null
+    let externalAPIsSource = 'none'
+    try {
+      const externalResponse = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/real-external-apis`)
+      if (externalResponse.ok) {
+        const externalData = await externalResponse.json()
+        externalAPIs = externalData.data
+        externalAPIsSource = externalData.source
+      }
+    } catch (error) {
+      console.error('Failed to fetch external API status:', error)
+    }
+    
+    // Get real database status
+    let databaseStatus = null
+    let databaseStatusSource = 'none'
+    try {
+      const dbResponse = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/real-database-status`)
+      if (dbResponse.ok) {
+        const dbData = await dbResponse.json()
+        databaseStatus = dbData.data
+        databaseStatusSource = dbData.source
+      }
+    } catch (error) {
+      console.error('Failed to fetch database status:', error)
+    }
+    
     const systemStatus: SystemStatus = {
       timestamp: new Date().toISOString(),
       backend: {
@@ -261,6 +325,19 @@ export async function GET(request: NextRequest) {
       redis: {
         status: 'connected', // This would need to be checked
         lastCheck: new Date().toISOString(),
+      },
+      systemMetrics: systemMetrics || null,
+      databaseStatus: databaseStatus || null,
+      externalAPIs: externalAPIs || null,
+      serviceDependencies: systemMetrics?.serviceDependencies || null,
+      performanceMetrics: systemMetrics?.performanceMetrics || null,
+      securityMonitoring: systemMetrics?.securityMonitoring || null,
+      applicationHealth: systemMetrics?.applicationHealth || null,
+      alertsNotifications: systemMetrics?.alertsNotifications || null,
+      dataSources: {
+        systemMetrics: systemMetricsSource,
+        databaseStatus: databaseStatusSource,
+        externalAPIs: externalAPIsSource
       }
     }
     
