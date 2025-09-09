@@ -192,7 +192,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           // Create permission change handler
           const handlePermissionChange = () => {
             const newState = permission.state;
-            if (DEBUG) { debugLog('📍 LocationContext: Permission state changed to:', newState); }
+            const oldState = permissionStatus;
+            if (DEBUG) { debugLog('📍 LocationContext: Permission state changed from', oldState, 'to:', newState); }
             setPermissionStatus(newState);
             
             if (newState === 'denied') {
@@ -205,7 +206,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               setError(null);
               if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting fresh location'); }
               // Automatically request fresh location when permission is granted
-              requestLocation();
+              // Use setTimeout to ensure state update has completed
+              setTimeout(() => {
+                requestLocation();
+              }, 100);
             }
           };
           
@@ -377,20 +381,27 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && permissionStatus === 'granted') {
-        // Check if location is old (more than 30 minutes)
-        if (userLocation && userLocation.timestamp) {
-          const age = Date.now() - userLocation.timestamp;
-          const maxAge = 30 * 60 * 1000; // 30 minutes
-          
-          if (age > maxAge) {
-            if (DEBUG) { debugLog('📍 LocationContext: Location is old, refreshing on visibility change'); }
-            refreshLocation();
+      if (document.visibilityState === 'visible') {
+        // Always refresh permission status when app becomes visible
+        if (DEBUG) { debugLog('📍 LocationContext: App became visible, refreshing permission status'); }
+        refreshPermissionStatus();
+        
+        // Also check if location needs refreshing
+        if (permissionStatus === 'granted') {
+          // Check if location is old (more than 30 minutes)
+          if (userLocation && userLocation.timestamp) {
+            const age = Date.now() - userLocation.timestamp;
+            const maxAge = 30 * 60 * 1000; // 30 minutes
+            
+            if (age > maxAge) {
+              if (DEBUG) { debugLog('📍 LocationContext: Location is old, refreshing on visibility change'); }
+              refreshLocation();
+            }
+          } else if (!userLocation) {
+            // No location but permission granted, request it
+            if (DEBUG) { debugLog('📍 LocationContext: No location but permission granted, requesting on visibility change'); }
+            requestLocation();
           }
-        } else if (!userLocation) {
-          // No location but permission granted, request it
-          if (DEBUG) { debugLog('📍 LocationContext: No location but permission granted, requesting on visibility change'); }
-          requestLocation();
         }
       }
     };
@@ -400,7 +411,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [hasInitialized, permissionStatus, userLocation, refreshLocation, requestLocation]);
+  }, [hasInitialized, permissionStatus, userLocation, refreshLocation, requestLocation, refreshPermissionStatus]);
 
   const setLocation = useCallback((location: UserLocation) => {
     setUserLocation(location);
@@ -451,9 +462,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     if (DEBUG) { debugLog('📍 LocationContext: Refreshing permission status...'); }
     
     const newStatus = await checkPermissionStatus();
-    setPermissionStatus(newStatus);
+    const oldStatus = permissionStatus;
     
-    if (DEBUG) { debugLog('📍 LocationContext: Permission status refreshed to:', newStatus); }
+    if (DEBUG) { debugLog('📍 LocationContext: Permission status changed from', oldStatus, 'to:', newStatus); }
+    setPermissionStatus(newStatus);
     
     // If permission is denied, clear any saved location data
     if (newStatus === 'denied') {
@@ -467,9 +479,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setError(null);
       // Always request fresh location when permission is granted
       if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting fresh location'); }
-      requestLocation();
+      // Use setTimeout to ensure state update has completed
+      setTimeout(() => {
+        requestLocation();
+      }, 100);
     }
-  }, [checkPermissionStatus, userLocation, requestLocation]);
+  }, [checkPermissionStatus, permissionStatus, requestLocation]);
 
   const markPopupShown = useCallback(() => {
     setHasShownPopup(true);
