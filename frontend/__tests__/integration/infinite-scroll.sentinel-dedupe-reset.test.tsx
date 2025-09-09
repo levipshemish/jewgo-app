@@ -18,7 +18,7 @@ function DummyList() {
   const [items, setItems] = React.useState<Item[]>([]);
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
 
-  const loadMore = React.useCallback(async ({ offset, limit }: { signal: AbortSignal; offset: number; limit: number }) => {
+  const loadMore = React.useCallback(async ({ offset, limit: _limit }: { signal: AbortSignal; offset: number; limit: number }) => {
     // Return 5 items per page with overlap: last id repeats to test dedupe
     const base = offset;
     const newItems: Item[] = Array.from({ length: 5 }).map((_, i) => ({ id: base + i, name: `R${base + i}` }));
@@ -33,7 +33,7 @@ function DummyList() {
     return { appended: newItems.length };
   }, []);
 
-  const { state, actions } = useInfiniteScroll(loadMore as any, { limit: 5, reinitOnPageShow: false, isBot: false });
+  const { state: _state, actions } = useInfiniteScroll(loadMore as any, { limit: 5, reinitOnPageShow: false, isBot: false });
 
   React.useEffect(() => {
     if (sentinelRef.current) actions.attachSentinel(sentinelRef.current);
@@ -54,13 +54,13 @@ describe('Infinite scroll sentinel + dedupe + reset', () => {
 
     // First IO trigger
     await act(async () => {
-      ioCallback && ioCallback([{ isIntersecting: true }]);
+      void (ioCallback && ioCallback([{ isIntersecting: true }]));
     });
     expect(screen.getByTestId('count').textContent).toBe('5');
 
     // Second IO trigger (overlap on first id)
     await act(async () => {
-      ioCallback && ioCallback([{ isIntersecting: true }]);
+      void (ioCallback && ioCallback([{ isIntersecting: true }]));
     });
     // We appended 5 but deduped 1 overlap => +4 => total 9
     expect(screen.getByTestId('count').textContent).toBe('9');

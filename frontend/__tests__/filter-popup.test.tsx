@@ -42,7 +42,7 @@ jest.mock('@/lib/hooks/useFilterOptions', () => ({
 }));
 
 describe('ModernFilterPopup Dropdowns', () => {
-  const defaultProps = {
+  const _defaultProps = {
     isOpen: true,
     onClose: jest.fn(),
     onApplyFilters: jest.fn(),

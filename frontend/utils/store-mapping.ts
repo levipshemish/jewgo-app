@@ -4,7 +4,10 @@ import {
   openDirections, 
   handleFavorite, 
   handleEmail,
-  handleTagClick
+  handleTagClick,
+  formatRating,
+  formatPriceRange,
+  handleOrder
 } from './eatery-helpers'
 
 /**
@@ -13,7 +16,7 @@ import {
 export function mapStoreToListingData(
   store: StoreDB, 
   userLocation?: UserLocation | null,
-  reviews?: any[],
+  reviewsData?: any[],
   onLocationRequest?: () => void,
   locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
 ): ListingData {
@@ -84,7 +87,7 @@ export function mapStoreToListingData(
             console.log('Reviews for', store.name, ':', parsedReviews)
             
             // Format reviews for display
-            const _formattedReviews = parsedReviews.map((review: any) => ({
+            const formattedReviews = parsedReviews.map((review: any) => ({
               author: review.author,
               rating: review.rating,
               text: review.text,
@@ -154,7 +157,7 @@ export function mapStoreToListingData(
     address: store.address,
     description: store.short_description || store.description,
     location: store.location,
-    reviews: reviews?.map(review => ({
+    reviews: reviewsData?.map(review => ({
       id: review.id?.toString() || review.review_id?.toString() || Math.random().toString(),
       user: review.user_name || review.author_name || review.user || 'Anonymous',
       rating: review.rating || 0,
@@ -169,7 +172,7 @@ export function mapStoreToListingData(
     reviewsLoading: false
   }
   
-  console.log('Store mapping reviews:', reviews)
+  console.log('Store mapping reviews:', reviewsData)
   console.log('Mapped store reviews:', result.reviews)
   return result
 }

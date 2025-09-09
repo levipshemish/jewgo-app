@@ -4,7 +4,8 @@ import {
   openDirections, 
   handleFavorite, 
   handleEmail,
-  handleTagClick
+  handleTagClick,
+  formatRating
 } from './eatery-helpers'
 
 /**
@@ -13,7 +14,7 @@ import {
 export function mapMikvahToListingData(
   mikvah: MikvahDB, 
   userLocation?: UserLocation | null,
-  reviews?: any[],
+  reviewsData?: any[],
   onLocationRequest?: () => void,
   locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
 ): ListingData {
@@ -84,7 +85,7 @@ export function mapMikvahToListingData(
             console.log('Reviews for', mikvah.name, ':', parsedReviews)
             
             // Format reviews for display
-            const _formattedReviews = parsedReviews.map((review: any) => ({
+            const formattedReviews = parsedReviews.map((review: any) => ({
               author: review.author,
               rating: review.rating,
               text: review.text,
@@ -162,7 +163,7 @@ export function mapMikvahToListingData(
     address: mikvah.address,
     description: mikvah.short_description || mikvah.description,
     location: mikvah.location,
-    reviews: reviews?.map(review => ({
+    reviews: reviewsData?.map(review => ({
       id: review.id?.toString() || review.review_id?.toString() || Math.random().toString(),
       user: review.user_name || review.author_name || review.user || 'Anonymous',
       rating: review.rating || 0,
@@ -177,7 +178,7 @@ export function mapMikvahToListingData(
     reviewsLoading: false
   }
   
-  console.log('Mikvah mapping reviews:', reviews)
+  console.log('Mikvah mapping reviews:', reviewsData)
   console.log('Mapped mikvah reviews:', result.reviews)
   return result
 }

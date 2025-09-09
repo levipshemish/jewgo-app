@@ -48,6 +48,11 @@ export function initializeURLSync(): void {
  * Hydrate store from URL parameters
  */
 function hydrateStoreFromURL(): void {
+  // Handle SSR - skip hydration if window is not available
+  if (typeof window === 'undefined') {
+    return;
+  }
+  
   const urlParams = new URLSearchParams(window.location.search);
   const filters: Partial<URLSyncableFilters> = {};
   
@@ -167,6 +172,11 @@ function updateURLFromStore(state: {
   filters: Filters;
   map: { center: LatLng | null; zoom: number };
 }): void {
+  // Handle SSR - skip URL update if window is not available
+  if (typeof window === 'undefined') {
+    return;
+  }
+  
   const urlParams = new URLSearchParams();
   
   // Add filter parameters
@@ -218,6 +228,14 @@ export function getURLState(): {
   filters: URLSyncableFilters;
   map: { center: LatLng | null; zoom: number | null };
 } {
+  // Handle SSR - return empty state if window is not available
+  if (typeof window === 'undefined') {
+    return {
+      filters: {},
+      map: { center: null, zoom: null }
+    };
+  }
+  
   const urlParams = new URLSearchParams(window.location.search);
   
   const filters: URLSyncableFilters = {};

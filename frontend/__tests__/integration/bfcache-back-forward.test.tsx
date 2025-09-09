@@ -43,7 +43,7 @@ describe('BFCache back/forward does not double-append', () => {
     render(<BFCacheHarness />);
 
     // Trigger once
-    await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
+    await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
     let calls = (window as any).__LOAD_CALLS__.current as number;
     expect(calls).toBe(1);
 
@@ -57,7 +57,7 @@ describe('BFCache back/forward does not double-append', () => {
     expect(calls).toBe(1);
 
     // Trigger again explicitly
-    await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
+    await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
     calls = (window as any).__LOAD_CALLS__.current as number;
     expect(calls).toBe(2);
   });

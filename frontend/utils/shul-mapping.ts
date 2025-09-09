@@ -20,20 +20,10 @@ function formatDistance(distance: number): string {
   return `${distance.toFixed(1)} mi away`
 }
 
-function _formatRating(rating?: number): string {
-  if (!rating) return ''
-  return rating.toFixed(1)
-}
-
 // Helper functions for actions
 function handleFavorite(shulId: string) {
   console.log('Toggle favorite for shul:', shulId)
   // TODO: Implement favorite functionality
-}
-
-function _handleShare(shulId: string) {
-  console.log('Share shul:', shulId)
-  // TODO: Implement share functionality
 }
 
 function handleEmail(email: string) {
@@ -46,11 +36,6 @@ function handleEmail(email: string) {
 function handleTagClick(tag: string) {
   console.log('Tag clicked:', tag)
   // TODO: Implement tag filtering
-}
-
-function _openImageCarousel(images: string[]) {
-  console.log('Open image carousel:', images)
-  // TODO: Implement image carousel
 }
 
 function openDirections(latitude: number, longitude: number) {

@@ -58,9 +58,9 @@ describe('Cursor fallback -> cooldown -> re-enable', () => {
     render(<FallbackHarness />);
 
     // Trigger 3 failures via cursor loader
-    await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
-    await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
-    await act(async () => { ioCallback && ioCallback([{ isIntersecting: true }]); });
+    await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
+    await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
+    await act(async () => { void (ioCallback && ioCallback([{ isIntersecting: true }])); });
 
     expect(screen.getByTestId('mode').textContent).toBe('offset');
     // Advance time by cooldown

@@ -47,8 +47,19 @@ const mockRestaurants: Restaurant[] = [
 ];
 
 export default function URLSyncTestPage() {
-  const [urlState, setUrlState] = useState(getURLState());
+  const [urlState, setUrlState] = useState(() => {
+    // Initialize with empty state during SSR, will be updated on client
+    if (typeof window === 'undefined') {
+      return { filters: {}, map: { center: null, zoom: null } };
+    }
+    return getURLState();
+  });
   const { setRestaurants, setFilters, setMap } = useLivemapStore();
+
+  // Initialize URL state on client side
+  useEffect(() => {
+    setUrlState(getURLState());
+  }, []);
 
   // Update URL state periodically
   useEffect(() => {
