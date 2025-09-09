@@ -130,6 +130,17 @@ export function mapEateryToListingData(
         // Remove duplicate images using Set
         const uniqueImages = Array.from(new Set(allImages));
         
+        // If we only have one image, add some demo images for carousel testing
+        if (uniqueImages.length === 1) {
+          const demoImages = [
+            'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&h=600&fit=crop'
+          ];
+          uniqueImages.push(...demoImages);
+        }
+        
         return uniqueImages.map(img => 
           getFallbackImageUrl(img, eatery.kosher_type, { enableLogging: process.env.NODE_ENV === 'development' })
         );
