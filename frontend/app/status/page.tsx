@@ -196,6 +196,29 @@ export default function StatusPage() {
             <div className="text-center">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
               <p className="text-gray-600">Loading system status...</p>
+              <button 
+                onClick={() => {
+                  console.log('Manual refresh clicked')
+                  fetchStatus()
+                }}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Manual Refresh
+              </button>
+              
+              {/* Test Error Logs Display */}
+              <div className="mt-8 p-4 bg-white rounded-lg border">
+                <h3 className="text-lg font-semibold mb-4">Test Error Logs Display</h3>
+                <ErrorLogs 
+                  errors={[
+                    "HTTP 405: METHOD NOT ALLOWED",
+                    "HTTP 501: Unsupported method ('GET')",
+                    "Signature verification failed",
+                    "Missing deployment script"
+                  ]} 
+                  title="Sample Error Logs" 
+                />
+              </div>
             </div>
           </div>
         </div>
