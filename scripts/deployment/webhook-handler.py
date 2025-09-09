@@ -90,19 +90,19 @@ class WebhookHandler(BaseHTTPRequestHandler):
         )
     
     def trigger_deployment(self):
-        """Trigger the deployment script"""
+        """Trigger the deployment by writing to a trigger file"""
         import sys
-        print(f"Triggering deployment with script: {DEPLOY_SCRIPT}", file=sys.stderr)
+        import time
+        print(f"Triggering deployment via trigger file", file=sys.stderr)
         try:
-            result = subprocess.run([DEPLOY_SCRIPT], check=True, capture_output=True, text=True)
-            print("Deployment completed successfully", file=sys.stderr)
-            print(f"Deployment output: {result.stdout}", file=sys.stderr)
-        except subprocess.CalledProcessError as e:
-            print(f"Deployment failed: {e}", file=sys.stderr)
-            print(f"Error output: {e.stderr}", file=sys.stderr)
-            print(f"Return code: {e.returncode}", file=sys.stderr)
+            # Write a trigger file that the host system can monitor
+            trigger_file = "/app/deploy.trigger"
+            with open(trigger_file, "w") as f:
+                f.write(f"deploy_triggered_{int(time.time())}")
+            print("Deployment trigger file created", file=sys.stderr)
+            print("Note: Host system needs to monitor /app/deploy.trigger for automatic deployment", file=sys.stderr)
         except Exception as e:
-            print(f"Unexpected error during deployment: {e}", file=sys.stderr)
+            print(f"Error creating deployment trigger: {e}", file=sys.stderr)
     
     def log_message(self, format, *args):
         """Override to use print instead of stderr"""
