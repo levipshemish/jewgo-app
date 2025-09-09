@@ -182,16 +182,21 @@ export async function GET(request: NextRequest) {
   try {
     const status = searchParams.get('status');
     const offset = searchParams.get('offset') || '0';
+    const cursor = searchParams.get('cursor');
     
-    // Build query parameters
-    const queryParams = new URLSearchParams({
-      limit,
-      offset,
+    // Build query parameters - pass through all parameters from the request
+    const queryParams = new URLSearchParams();
+    
+    // Add all search parameters from the request
+    searchParams.forEach((value, key) => {
+      if (value && value.trim() !== '') {
+        queryParams.append(key, value);
+      }
     });
     
-    if (status) {
-      queryParams.append('status', status);
-    }
+    // Ensure limit and offset are set
+    queryParams.set('limit', limit);
+    queryParams.set('offset', offset);
     
     // Use the correct backend URL - fallback to production URL if not set
     let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
@@ -200,33 +205,49 @@ export async function GET(request: NextRequest) {
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
       backendUrl = `https://${backendUrl}`;
     }
-    const fullBackendUrl = `${backendUrl}/api/v4/restaurants?${queryParams}`;
+    const fullBackendUrl = `${backendUrl}/api/restaurants?${queryParams}`;
     
-    // Use unified API call with caching and deduplication
-    const { unifiedApiCall } = await import('@/lib/utils/unified-api');
-    const result = await unifiedApiCall(fullBackendUrl, {
-      ttl: 2 * 60 * 1000, // 2 minutes cache
-      deduplicate: true,
-      retry: true,
-      retryAttempts: 2,
+    console.log('Frontend API: Calling backend URL:', fullBackendUrl);
+    
+    // Direct fetch for debugging
+    const response = await fetch(fullBackendUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const responseData = await response.json();
+    console.log('Frontend API: Direct fetch result:', JSON.stringify(responseData, null, 2));
+    
+    const result = {
+      success: true,
+      data: responseData,
+      cached: false,
+      performance: { requestTime: 0, cacheHit: false, retryCount: 0 }
+    };
     
     if (!result.success) {
       // For server errors, return empty list with success status
-      return createSuccessResponse({ message: 'Restaurants retrieved successfully' });
+      return NextResponse.json({
+        success: true,
+        items: [],
+        next_cursor: null,
+        limit: parseInt(limit),
+        message: 'No restaurants found'
+      });
     }
     
     const backendData = result.data;
     
-    // Transform the backend response to match frontend expectations
+    // For cursor-based pagination, pass through the backend response directly
+    // The EateryGrid component expects the cursor-based format with 'items' and 'next_cursor'
     const transformedResponse = {
-      success: backendData.success,
-      restaurants: backendData.restaurants || [],
-      totalPages: Math.ceil((backendData.total || 0) / parseInt(limit)),
-      totalRestaurants: backendData.total || 0,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      message: backendData.message,
+      ...backendData,
       cached: result.cached,
       performance: result.performance
     };
@@ -235,9 +256,20 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('Error fetching restaurants:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
     
     // For network errors, return empty list with success status to ensure UI works
-    return createSuccessResponse({ message: 'Restaurants retrieved successfully' });
+    return NextResponse.json({
+      success: true,
+      items: [],
+      next_cursor: null,
+      limit: parseInt(limit),
+      message: 'Restaurants retrieved successfully'
+    });
   }
 }
 
@@ -246,7 +278,7 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
   
   try {
     // Fetch existing restaurants
-    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://api.jewgo.app';
     
     // Ensure the backend URL has a protocol
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {

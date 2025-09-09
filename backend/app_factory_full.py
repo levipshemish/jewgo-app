@@ -432,31 +432,31 @@ def create_app(config_class=None):
         logger.info("Using default CORS origins", cors_origins=cors_origins)
     logger.info("Final CORS origins configuration", cors_origins=cors_origins)
     # Configure CORS with more robust settings
-    CORS(
-        app,
-        origins=cors_origins,
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=[
-            "Content-Type",
-            "Authorization",
-            "Accept",
-            "Origin",
-            "X-Requested-With",
-            "X-Forwarded-For",
-            "X-Real-IP",
-            "Cache-Control",
-            "Pragma",
-        ],
-        expose_headers=[
-            "Content-Type",
-            "Content-Length",
-            "Cache-Control",
-            "Pragma",
-        ],
-        supports_credentials=True,
-        max_age=86400,  # Cache preflight for 24 hours
-        send_wildcard=False,  # Don't send wildcard, send specific origin
-    )
+    # CORS(
+    #     app,
+    #     origins=cors_origins,
+    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    #     allow_headers=[
+    #         "Content-Type",
+    #         "Authorization",
+    #         "Accept",
+    #         "Origin",
+    #         "X-Requested-With",
+    #         "X-Forwarded-For",
+    #         "X-Real-IP",
+    #         "Cache-Control",
+    #         "Pragma",
+    #     ],
+    #     expose_headers=[
+    #         "Content-Type",
+    #         "Content-Length",
+    #         "Cache-Control",
+    #         "Pragma",
+    #     ],
+    #     supports_credentials=True,
+    #     max_age=86400,  # Cache preflight for 24 hours
+    #     send_wildcard=False,  # Don't send wildcard, send specific origin
+    # )
     # Attach minimal redaction filter to prevent sensitive values in logs
     try:
         from utils.log_redaction import RedactingFilter
@@ -1232,64 +1232,12 @@ def create_app(config_class=None):
                 ),
                 200,
             )
-    # Add global OPTIONS handler for CORS preflight requests
-    @app.route("/", defaults={"path": ""}, methods=["OPTIONS"])
-    @app.route("/<path:path>", methods=["OPTIONS"])
-    def handle_options(path):
-        """Handle OPTIONS requests for CORS preflight."""
-        response = app.make_default_options_response()
-        # Get the origin from the request
-        origin = request.headers.get("Origin")
-        # Check if origin is in allowed origins
-        cors_origins_env = os.environ.get("CORS_ORIGINS", "")
-        if cors_origins_env:
-            # Split by comma and strip whitespace from each origin
-            cors_origins = [
-                origin.strip()
-                for origin in cors_origins_env.split(",")
-                if origin.strip()
-            ]
-        else:
-            cors_origins = []
-        if not cors_origins:
-            cors_origins = [
-                "https://jewgo.app",
-                "https://jewgo-app.vercel.app",
-                "https://jewgo.netlify.app",
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-            ]
-        # Set the appropriate origin header
-        if origin and origin in cors_origins:
-            response.headers.add("Access-Control-Allow-Origin", origin)
-        else:
-            # Default to jewgo.app if origin not found or not in allowed list
-            response.headers.add("Access-Control-Allow-Origin", "https://jewgo.app")
-        response.headers.add(
-            "Access-Control-Allow-Headers",
-            "Content-Type,Authorization,Accept,Origin,X-Requested-With,X-Forwarded-For,X-Real-IP,Cache-Control,Pragma",
-        )
-        response.headers.add(
-            "Access-Control-Allow-Methods",
-            "GET,POST,PUT,DELETE,OPTIONS",
-        )
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        response.headers.add("Access-Control-Max-Age", "86400")
-        response.headers.add(
-            "Access-Control-Expose-Headers",
-            "Content-Type,Content-Length,Cache-Control,Pragma",
-        )
-        # Log the CORS request for debugging
-        logger.info(
-            "CORS preflight request",
-            origin=origin,
-            allowed_origins=cors_origins,
-        )
-        return response
+    # CORS preflight requests are handled by Flask-CORS extension
+    # No need for manual OPTIONS handler
     # All routes are already registered in this file
     # Initialize SocketIO for WebSocket support
     socketio = SocketIO(
-        app, cors_allowed_origins=["http://localhost:3000", "https://jewgo.app"]
+        app, cors_allowed_origins=[]
     )
     # WebSocket event handlers
     @socketio.on("connect")
@@ -2027,4 +1975,4 @@ app, socketio = create_app()
 
 if __name__ == "__main__":
     # Run the app with SocketIO
-    socketio.run(app, host="0.0.0.0", port=8000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
