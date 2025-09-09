@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { handleBackendError, fetchWithTimeout, getFallbackResponse } from '../../../../lib/utils/backend-error-handler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,12 +15,12 @@ export async function GET(request: NextRequest) {
     const auth = request.headers.get('authorization');
     if (auth) headers['authorization'] = auth;
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers,
       // Avoid caching in dev for fresh auth state
       cache: 'no-store',
-    });
+    }, 5000); // 5 second timeout for auth requests
 
     const body = await res.text();
     const response = new NextResponse(body, {
@@ -31,7 +32,13 @@ export async function GET(request: NextRequest) {
     });
     return response;
   } catch (e: any) {
-    return NextResponse.json({ error: 'Proxy error', message: e?.message }, { status: 502 });
+    // Use the centralized error handler
+    const errorResponse = handleBackendError(e, {
+      fallbackData: getFallbackResponse('profile'),
+      customMessage: 'Authentication service temporarily unavailable'
+    });
+    
+    return NextResponse.json(errorResponse, { status: 200 });
   }
 }
 

@@ -79,7 +79,7 @@ export interface UseCursorPaginationReturn {
 
 /**
  * Hook for cursor-based pagination with restaurant data
- * Integrates with Phase 2 backend cursor API at /api/v4/restaurants/keyset/list
+ * Integrates with backend cursor API at /api/restaurants/keyset/list
  */
 export function useCursorPagination(
   defaultLimit: number = 24,
@@ -205,7 +205,7 @@ export function useCursorPagination(
       
       // Build URL with query parameters
       const params = buildCursorQueryParams(cursor, query, filters);
-      const url = `/api/v4/restaurants/keyset/list?${params.toString()}`;
+      const url = `/api/restaurants/keyset/list?${params.toString()}`;
       
       // Make request to cursor API
       const response = await fetch(url, {

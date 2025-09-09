@@ -84,7 +84,7 @@ export default function EateryGrid({
   const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, timeoutMs: number = 8000) => {
     try {
       // Build API URL with parameters - use frontend API route
-      const apiUrl = new URL('/api/v4/restaurants', window.location.origin)
+      const apiUrl = new URL('/api/restaurants', window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('include_reviews', 'true') // Include Google reviews for consistent rating calculation
       

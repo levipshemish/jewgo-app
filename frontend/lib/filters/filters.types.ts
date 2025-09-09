@@ -211,6 +211,14 @@ export interface DraftFilters extends FilterState {
    */
   maxDistance?: number;
   
+  /**
+   * Legacy radius filter in meters
+   * @unit meters
+   * @precedence 4 (lowest priority)
+   * @deprecated Use distanceMi instead for consistency
+   */
+  radius?: number;
+  
   ratingMin?: number;
   priceRange?: [number, number];
 

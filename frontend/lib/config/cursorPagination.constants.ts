@@ -39,8 +39,8 @@ export const CURSOR_CONFIG = {
 
 // Backend endpoint configuration
 export const CURSOR_API_ENDPOINTS = {
-  RESTAURANTS: '/api/v4/restaurants/keyset/list',
-  HEALTH: '/api/v4/restaurants/keyset/health',
+  RESTAURANTS: '/api/restaurants/keyset/list',
+  HEALTH: '/api/restaurants/keyset/health',
 } as const;
 
 // Development and debugging

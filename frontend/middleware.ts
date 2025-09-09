@@ -3,6 +3,22 @@ import type { NextRequest } from 'next/server';
 import { validateRedirectUrl } from '@/lib/utils/auth-utils';
 import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
 
+// Type definitions for better type safety
+interface UserData {
+  success: boolean;
+  data?: {
+    id: string;
+    email: string;
+    role?: string;
+    [key: string]: unknown;
+  };
+}
+
+interface AuthError extends Error {
+  message: string;
+  code?: string;
+}
+
 // Enhanced middleware with security hardening and admin route protection
 export const config = {
   matcher: [
@@ -51,7 +67,7 @@ export async function middleware(request: NextRequest) {
         return handleUnauthenticatedUser(request, isApi);
       }
 
-      const userData = await verifyResponse.json();
+      const userData: UserData = await verifyResponse.json();
       if (!userData.success || !userData.data) {
         return handleUnauthenticatedUser(request, isApi);
       }
@@ -60,7 +76,7 @@ export async function middleware(request: NextRequest) {
       return await handleAuthenticatedUser(request, isApi, userData.data, response);
     } catch (error) {
       console.error('Middleware auth verification error:', error);
-      return handleAuthError(request, isApi, error);
+      return handleAuthError(request, isApi, error as AuthError);
     }
 
   } catch (error) {
@@ -72,7 +88,7 @@ export async function middleware(request: NextRequest) {
 /**
  * Handle authentication errors
  */
-function handleAuthError(request: NextRequest, isApi: boolean, error: any): NextResponse {
+function handleAuthError(request: NextRequest, isApi: boolean, error: AuthError): NextResponse {
   if (isApi) {
     return NextResponse.json(
       { error: 'Authentication error', details: error.message }, 
@@ -101,7 +117,7 @@ function handleUnauthenticatedUser(request: NextRequest, isApi: boolean): NextRe
 async function handleAuthenticatedUser(
   request: NextRequest, 
   isApi: boolean, 
-  _user: any, 
+  _user: UserData['data'], 
   response: NextResponse
 ): Promise<NextResponse> {
   // For middleware, we just check that the user is authenticated
@@ -118,7 +134,7 @@ async function handleAuthenticatedUser(
 /**
  * Handle middleware errors
  */
-function handleMiddlewareError(request: NextRequest, _error: any): NextResponse {
+function handleMiddlewareError(request: NextRequest, _error: unknown): NextResponse {
   const isApi = request.nextUrl.pathname.startsWith('/api/admin');
   
   if (isApi) {

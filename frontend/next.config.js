@@ -1,17 +1,61 @@
 /** @type {import('next').NextConfig} */
-// Ensure backend URL used in rewrites/redirects is always valid
+// Enhanced backend URL configuration with better validation and fallbacks
 const rawBackend = process.env["NEXT_PUBLIC_BACKEND_URL"] || '';
 const normalizedBackend = rawBackend.replace(/\/+$/, '');
 const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Validate backend URL configuration
-if (isProduction && !normalizedBackend) {
-  console.warn('⚠️  NEXT_PUBLIC_BACKEND_URL is required in production environment');
+function validateBackendUrl(url) {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-const BACKEND_URL = normalizedBackend
-  ? normalizedBackend
-  : (isProduction ? null : 'http://127.0.0.1:8082'); // Only allow local fallback in development
+// Enhanced backend URL resolution with multiple fallback strategies
+let BACKEND_URL = null;
+
+if (normalizedBackend && validateBackendUrl(normalizedBackend)) {
+  BACKEND_URL = normalizedBackend;
+} else if (isProduction) {
+  // Production fallbacks
+  const productionFallbacks = [
+    'https://api.jewgo.app',
+    'https://jewgo-api.herokuapp.com',
+    'https://jewgo-backend.vercel.app'
+  ];
+  
+  for (const fallback of productionFallbacks) {
+    if (validateBackendUrl(fallback)) {
+      BACKEND_URL = fallback;
+      console.warn(`⚠️  Using production fallback backend URL: ${fallback}`);
+      break;
+    }
+  }
+  
+  if (!BACKEND_URL) {
+    console.error('❌ No valid backend URL found for production environment');
+  }
+} else if (isDevelopment) {
+  // Development fallbacks
+  const devFallbacks = [
+    'http://127.0.0.1:8082',
+    'http://localhost:8082',
+    'http://127.0.0.1:5000',
+    'http://localhost:5000'
+  ];
+  
+  for (const fallback of devFallbacks) {
+    if (validateBackendUrl(fallback)) {
+      BACKEND_URL = fallback;
+      console.log(`🔧 Using development backend URL: ${fallback}`);
+      break;
+    }
+  }
+}
 
 // Improved environment detection
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
@@ -303,28 +347,11 @@ const nextConfig = {
     ];
   },
 
-  // Redirects configuration
+  // Redirects configuration - REMOVED to prevent conflicts with rewrites
+  // Using rewrites instead of redirects for better performance and SEO
   async redirects() {
-    // Only configure redirects if BACKEND_URL is available
-    if (!BACKEND_URL) {
-      console.warn('⚠️  Skipping API redirects - BACKEND_URL not configured');
-      return [];
-    }
-
-    return [
-      // Only redirect non-Next.js API routes to backend
-      { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*`, permanent: false },
-      { source: '/api/health/:path*', destination: `${BACKEND_URL}/api/health/:path*`, permanent: false },
-      // Admin endpoints are handled by Next.js frontend, not backend
-      // { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*`, permanent: false },
-      { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*`, permanent: false },
-      { source: '/api/migrate/:path*', destination: `${BACKEND_URL}/api/migrate/:path*`, permanent: false },
-      { source: '/api/remove-duplicates/:path*', destination: `${BACKEND_URL}/api/remove-duplicates/:path*`, permanent: false },
-      { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*`, permanent: false },
-      { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*`, permanent: false },
-      // Note: Do not redirect '/api/restaurants/*' so that Next API routes
-      // like '/api/restaurants' and '/api/restaurants/filter-options' work locally
-    ];
+    // No redirects configured - using rewrites instead
+    return [];
   },
   // Rewrites configuration
   async rewrites() {

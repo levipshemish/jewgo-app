@@ -24,6 +24,7 @@
     "test:watch": "jest --watch",
     "health-check": "echo 'Health check script removed during cleanup - use validate-env instead'",
     "check-env": "node scripts/check-environment.js",
+    "validate-env": "node scripts/validate-environment.js",
     "deploy:check": "echo '✅ Deployment validation complete'",
     "deploy:validate": "node scripts/deploy-validate.js",
     "deploy:setup": "node scripts/deploy-setup.js",
