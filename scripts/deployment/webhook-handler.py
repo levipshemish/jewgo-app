@@ -20,12 +20,13 @@ PORT = 8080
 class WebhookHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         """Handle POST requests from GitHub webhooks"""
-        print(f"Received POST request to: {self.path}")
-        print(f"Headers: {dict(self.headers)}")
+        import sys
+        print(f"Received POST request to: {self.path}", file=sys.stderr)
+        print(f"Headers: {dict(self.headers)}", file=sys.stderr)
         
         # Only handle /webhook/deploy path
         if self.path != '/webhook/deploy':
-            print(f"Invalid path: {self.path}")
+            print(f"Invalid path: {self.path}", file=sys.stderr)
             self.send_response(404)
             self.end_headers()
             self.wfile.write(b'Not Found')
@@ -35,11 +36,11 @@ class WebhookHandler(BaseHTTPRequestHandler):
             # Get the content length and read the body
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length)
-            print(f"Body length: {content_length}")
+            print(f"Body length: {content_length}", file=sys.stderr)
             
             # Verify the webhook signature
             if not self.verify_signature(body):
-                print("Signature verification failed")
+                print("Signature verification failed", file=sys.stderr)
                 self.send_response(401)
                 self.end_headers()
                 self.wfile.write(b'Unauthorized')
@@ -50,19 +51,19 @@ class WebhookHandler(BaseHTTPRequestHandler):
             
             # Check if this is a push to the main branch
             if self.is_main_branch_push(payload):
-                print("Main branch push detected, triggering deployment...")
+                print("Main branch push detected, triggering deployment...", file=sys.stderr)
                 self.trigger_deployment()
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b'Deployment triggered')
             else:
-                print("Push to non-main branch, ignoring...")
+                print("Push to non-main branch, ignoring...", file=sys.stderr)
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b'Ignored')
                 
         except Exception as e:
-            print(f"Error processing webhook: {e}")
+            print(f"Error processing webhook: {e}", file=sys.stderr)
             self.send_response(500)
             self.end_headers()
             self.wfile.write(b'Internal Server Error')
@@ -90,17 +91,18 @@ class WebhookHandler(BaseHTTPRequestHandler):
     
     def trigger_deployment(self):
         """Trigger the deployment script"""
-        print(f"Triggering deployment with script: {DEPLOY_SCRIPT}")
+        import sys
+        print(f"Triggering deployment with script: {DEPLOY_SCRIPT}", file=sys.stderr)
         try:
             result = subprocess.run([DEPLOY_SCRIPT], check=True, capture_output=True, text=True)
-            print("Deployment completed successfully")
-            print(f"Deployment output: {result.stdout}")
+            print("Deployment completed successfully", file=sys.stderr)
+            print(f"Deployment output: {result.stdout}", file=sys.stderr)
         except subprocess.CalledProcessError as e:
-            print(f"Deployment failed: {e}")
-            print(f"Error output: {e.stderr}")
-            print(f"Return code: {e.returncode}")
+            print(f"Deployment failed: {e}", file=sys.stderr)
+            print(f"Error output: {e.stderr}", file=sys.stderr)
+            print(f"Return code: {e.returncode}", file=sys.stderr)
         except Exception as e:
-            print(f"Unexpected error during deployment: {e}")
+            print(f"Unexpected error during deployment: {e}", file=sys.stderr)
     
     def log_message(self, format, *args):
         """Override to use print instead of stderr"""
