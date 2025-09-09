@@ -64,7 +64,7 @@ def unified_search():
         )
         
         # Initialize search service
-        with db_manager.get_session() as session:
+        with db_manager.connection_manager.session_scope() as session:
             search_service = UnifiedSearchService(session)
             
             # Perform search
