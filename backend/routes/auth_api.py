@@ -318,7 +318,7 @@ def oauth_google_callback():
 
 
 @auth_bp.route('/register', methods=['POST'])
-@rate_limit(max_requests=5, window_seconds=3600)  # 5 registrations per hour
+@rate_limit(limit=5, window=3600)  # 5 registrations per hour
 def register():
     """Register a new user account."""
     try:
@@ -371,7 +371,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['POST'])
-@rate_limit(max_requests=5, window_seconds=300)  # 5 login attempts per 5 minutes
+@rate_limit(limit=5, window=300)  # 5 login attempts per 5 minutes
 @csrf_protect
 def login():
     """Authenticate user and return tokens."""
@@ -434,7 +434,7 @@ def login():
 
 
 @auth_bp.route('/refresh', methods=['POST'])
-@rate_limit(max_requests=60, window_seconds=3600)  # 60 refresh attempts per hour
+@rate_limit(limit=60, window=3600)  # 60 refresh attempts per hour
 @csrf_protect
 def refresh_token():
     """Refresh access token using refresh token."""
@@ -525,7 +525,7 @@ def refresh_token():
 
 
 @auth_bp.route('/verify-email', methods=['POST'])
-@rate_limit(max_requests=10, window_seconds=3600)  # 10 verification attempts per hour
+@rate_limit(limit=10, window=3600)  # 10 verification attempts per hour
 def verify_email():
     """Verify user email with verification token."""
     try:
@@ -615,7 +615,7 @@ def update_profile():
 
 @auth_bp.route('/change-password', methods=['POST'])
 @require_auth
-@rate_limit(max_requests=5, window_seconds=3600)  # 5 password changes per hour
+@rate_limit(limit=5, window=3600)  # 5 password changes per hour
 def change_password():
     """Change user password."""
     try:
@@ -886,7 +886,7 @@ def health_check():
 
 
 @auth_bp.route('/session/info', methods=['GET'])
-@rate_limit(max_requests=120, window_seconds=3600)
+@rate_limit(limit=120, window=3600)
 def session_info():
     """Return non-sensitive session metadata derived from the refresh token."""
     try:
@@ -939,7 +939,7 @@ def handle_internal_error(error):
 
 
 @auth_bp.route('/me', methods=['GET'])
-@rate_limit(max_requests=100, window_seconds=3600)
+@rate_limit(limit=100, window=3600)
 def me():
     """Return current user info by verifying access token from header or cookies."""
     try:
@@ -960,7 +960,7 @@ def me():
 
 
 @auth_bp.route('/guest', methods=['POST'])
-@rate_limit(max_requests=30, window_seconds=3600)
+@rate_limit(limit=30, window=3600)
 @csrf_protect
 def guest_login():
     """Create a guest user and issue cookies. Shorter refresh TTL is configured via env."""
@@ -1010,7 +1010,7 @@ def guest_login():
 
 
 @auth_bp.route('/forgot-password', methods=['POST'])
-@rate_limit(max_requests=3, window_seconds=3600)  # 3 requests per hour
+@rate_limit(limit=3, window=3600)  # 3 requests per hour
 @csrf_protect
 def forgot_password():
     """Initiate password reset process by sending reset token via email."""
@@ -1042,7 +1042,7 @@ def forgot_password():
 
 
 @auth_bp.route('/reset-password', methods=['POST'])
-@rate_limit(max_requests=5, window_seconds=3600)  # 5 attempts per hour
+@rate_limit(limit=5, window=3600)  # 5 attempts per hour
 @csrf_protect
 def reset_password():
     """Reset user password using valid reset token."""
@@ -1076,7 +1076,7 @@ def reset_password():
 
 @auth_bp.route('/upgrade-email', methods=['POST'])
 @require_auth
-@rate_limit(max_requests=5, window_seconds=3600)
+@rate_limit(limit=5, window=3600)
 def upgrade_email():
     """Upgrade a guest account to a full email/password account.
 
@@ -1143,7 +1143,7 @@ def upgrade_email():
 
 
 @auth_bp.route('/resend-verification', methods=['POST'])
-@rate_limit(max_requests=3, window_seconds=3600)  # 3 requests per hour
+@rate_limit(limit=3, window=3600)  # 3 requests per hour
 @csrf_protect
 def resend_verification():
     """Resend email verification link."""
