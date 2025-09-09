@@ -309,7 +309,7 @@ class RestaurantRepository(BaseRepository[Restaurant]):
             # Use raw SQL to increment view count to avoid model caching issues
             from sqlalchemy import text
             result = session.execute(
-                text("UPDATE restaurants SET view_count = COALESCE(view_count, 0) + 1, updated_at = NOW() WHERE id = :restaurant_id RETURNING view_count"),
+                text("UPDATE restaurants SET view_count = COALESCE(view_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = :restaurant_id RETURNING view_count"),
                 {"restaurant_id": restaurant_id}
             )
             
