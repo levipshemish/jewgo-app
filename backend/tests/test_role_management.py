@@ -5,7 +5,7 @@ from services.user_service_v4 import UserServiceV4
 from database.database_manager_v4 import DatabaseManager
 from utils.error_handler import ValidationError
 # Note: api_v4 import was unused in this test module and removed
-from app_factory import create_app
+from app_factory_full import create_app
 
 
 class TestRoleManagement:
