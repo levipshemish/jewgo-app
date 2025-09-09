@@ -202,7 +202,7 @@ export { default as LogoIcon } from './LogoIcon';
 // Use existing ScrollToTop component; BackToTopButton does not exist
 export { ScrollToTop } from './ScrollToTop';
 
-// export { Button } from './Button';
-// export { Input } from './Input';
-// export { Modal } from './Modal';
-// etc. 
+// Consolidated UI Components - Enhanced with Radix UI Slot support
+export { Button, buttonVariants } from './button';
+export { ProfileImage } from './profile-image';
+export { Stack, Cluster } from './spacing'; 

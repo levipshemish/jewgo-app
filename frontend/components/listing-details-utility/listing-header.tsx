@@ -1,7 +1,7 @@
 "use client"
 
 import { ArrowLeft, Heart, Share, Eye } from "lucide-react"
-import { Button } from "@/components/ui-listing-utility/button"
+import { Button } from "@/components/ui/button"
 
 interface ListingHeaderProps {
   kosherType?: string

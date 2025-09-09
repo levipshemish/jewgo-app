@@ -4,7 +4,7 @@ import { ListingHeader } from "./listing-header"
 import { ListingImage } from "./listing-image"
 import { ListingContent } from "./listing-content"
 import { ListingActions } from "./listing-actions"
-import { Stack } from "@/components/ui-listing-utility/spacing"
+import { Stack } from "@/components/ui/spacing"
 
 export interface ListingData {
   title?: string

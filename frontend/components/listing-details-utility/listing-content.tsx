@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui-listing-utility/button"
+import { Button } from "@/components/ui/button"
 import { Star, MapPin } from "lucide-react"
 import { useState } from "react"
 import { ReviewsPopup } from "./reviews-popup"

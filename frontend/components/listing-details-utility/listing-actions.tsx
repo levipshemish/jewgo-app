@@ -1,9 +1,9 @@
 "use client"
 
-import { Button } from "@/components/ui-listing-utility/button"
+import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { ChevronDown, Clock, MapPin, Globe, Phone, Mail, ShoppingCart } from "lucide-react"
-import { Stack, Cluster } from "@/components/ui-listing-utility/spacing"
+import { Stack, Cluster } from "@/components/ui/spacing"
 
 // Utility function to determine restaurant status
 function getRestaurantStatus(hoursArray: any[]) {

@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@/components/ui-listing-utility/button"
-import { ProfileImage } from "@/components/ui-listing-utility/profile-image"
+import { Button } from "@/components/ui/button"
+import { ProfileImage } from "@/components/ui/profile-image"
 import { Star, X, ChevronDown, MessageSquare } from "lucide-react"
 import { useState } from "react"
 import { createPortal } from "react-dom"
