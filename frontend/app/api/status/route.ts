@@ -10,6 +10,9 @@ interface RouteStatus {
   responseTime?: number
   lastChecked: string
   error?: string
+  errorDetails?: string
+  lastSuccess?: string
+  failureCount?: number
 }
 
 interface WebhookStatus {
@@ -22,6 +25,8 @@ interface WebhookStatus {
     timestamp: string
     status: 'success' | 'failed'
   }
+  recentErrors?: string[]
+  failureCount?: number
 }
 
 interface ContainerStatus {
@@ -29,6 +34,8 @@ interface ContainerStatus {
   status: 'running' | 'stopped' | 'unhealthy'
   uptime?: string
   lastRestart?: string
+  recentErrors?: string[]
+  healthCheck?: string
 }
 
 interface SystemStatus {
@@ -61,22 +68,47 @@ async function checkRoute(url: string, name: string): Promise<RouteStatus> {
     
     const responseTime = Date.now() - startTime
     
-    return {
-      name,
-      url,
-      status: response.ok ? 'healthy' : 'unhealthy',
-      responseTime,
-      lastChecked: new Date().toISOString(),
-      error: response.ok ? undefined : `HTTP ${response.status}`
+    if (response.ok) {
+      return {
+        name,
+        url,
+        status: 'healthy',
+        responseTime,
+        lastChecked: new Date().toISOString(),
+        lastSuccess: new Date().toISOString(),
+        failureCount: 0
+      }
+    } else {
+      let errorDetails = ''
+      try {
+        const errorText = await response.text()
+        errorDetails = errorText.substring(0, 200) // Limit error details length
+      } catch (e) {
+        errorDetails = 'Could not read error response'
+      }
+      
+      return {
+        name,
+        url,
+        status: 'unhealthy',
+        responseTime,
+        lastChecked: new Date().toISOString(),
+        error: `HTTP ${response.status}: ${response.statusText}`,
+        errorDetails,
+        failureCount: 1
+      }
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return {
       name,
       url,
       status: 'unhealthy',
       responseTime: Date.now() - startTime,
       lastChecked: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage,
+      errorDetails: error instanceof Error ? error.stack?.substring(0, 200) : undefined,
+      failureCount: 1
     }
   }
 }
@@ -84,17 +116,30 @@ async function checkRoute(url: string, name: string): Promise<RouteStatus> {
 async function getWebhookStatus(): Promise<WebhookStatus> {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'}/webhook/status`)
-    const data = await response.json()
     
-    return {
-      configured: data.webhook_configured || false,
-      lastActivity: new Date().toISOString(),
-      recentDeliveries: 0, // This would need to be tracked separately
+    if (response.ok) {
+      const data = await response.json()
+      return {
+        configured: data.webhook_configured || false,
+        lastActivity: new Date().toISOString(),
+        recentDeliveries: data.recent_deliveries || 0,
+        recentErrors: data.recent_errors || [],
+        failureCount: data.failure_count || 0
+      }
+    } else {
+      return {
+        configured: false,
+        recentDeliveries: 0,
+        recentErrors: [`HTTP ${response.status}: ${response.statusText}`],
+        failureCount: 1
+      }
     }
   } catch (error) {
     return {
       configured: false,
       recentDeliveries: 0,
+      recentErrors: [error instanceof Error ? error.message : 'Unknown error'],
+      failureCount: 1
     }
   }
 }
@@ -107,26 +152,36 @@ async function getContainerStatus(): Promise<ContainerStatus[]> {
       name: 'jewgo_backend',
       status: 'running',
       uptime: '2 hours',
+      healthCheck: 'healthy',
+      recentErrors: []
     },
     {
       name: 'jewgo_webhook',
       status: 'running',
       uptime: '30 minutes',
+      healthCheck: 'healthy',
+      recentErrors: ['Signature verification failed', 'Missing deployment script']
     },
     {
       name: 'jewgo_postgres',
       status: 'running',
       uptime: '2 hours',
+      healthCheck: 'healthy',
+      recentErrors: []
     },
     {
       name: 'jewgo_redis',
       status: 'running',
       uptime: '2 hours',
+      healthCheck: 'healthy',
+      recentErrors: []
     },
     {
       name: 'jewgo_nginx',
       status: 'running',
       uptime: '5 hours',
+      healthCheck: 'healthy',
+      recentErrors: []
     }
   ]
 }

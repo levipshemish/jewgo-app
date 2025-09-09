@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, CheckCircle, XCircle, AlertCircle, Clock, Server, Database, Webhook, Activity } from 'lucide-react'
+import { RefreshCw, CheckCircle, XCircle, AlertCircle, Clock, Server, Database, Webhook, Activity, ChevronDown, ChevronRight, FileText } from 'lucide-react'
 
 interface RouteStatus {
   name: string
@@ -13,6 +13,9 @@ interface RouteStatus {
   responseTime?: number
   lastChecked: string
   error?: string
+  errorDetails?: string
+  lastSuccess?: string
+  failureCount?: number
 }
 
 interface WebhookStatus {
@@ -25,6 +28,8 @@ interface WebhookStatus {
     timestamp: string
     status: 'success' | 'failed'
   }
+  recentErrors?: string[]
+  failureCount?: number
 }
 
 interface ContainerStatus {
@@ -32,6 +37,8 @@ interface ContainerStatus {
   status: 'running' | 'stopped' | 'unhealthy'
   uptime?: string
   lastRestart?: string
+  recentErrors?: string[]
+  healthCheck?: string
 }
 
 interface SystemStatus {
@@ -102,6 +109,37 @@ function StatusBadge({ status }: { status: string }) {
     <Badge className={colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'}>
       {status}
     </Badge>
+  )
+}
+
+function ErrorLogs({ errors, title }: { errors: string[], title: string }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  if (!errors || errors.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+      >
+        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        <FileText className="h-4 w-4" />
+        {title} ({errors.length})
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-2 ml-6 space-y-1">
+          {errors.map((error, index) => (
+            <div key={index} className="text-xs text-red-700 bg-red-50 p-2 rounded border-l-2 border-red-300">
+              {error}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -267,25 +305,42 @@ export default function StatusPage() {
             <CardContent>
               <div className="space-y-3">
                 {status.routes.map((route, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <StatusIcon status={route.status} />
-                      <div>
-                        <p className="font-medium">{route.name}</p>
-                        <p className="text-sm text-gray-500">{route.url}</p>
-                        {route.error && (
-                          <p className="text-sm text-red-600">{route.error}</p>
+                  <div key={index} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <StatusIcon status={route.status} />
+                        <div>
+                          <p className="font-medium">{route.name}</p>
+                          <p className="text-sm text-gray-500">{route.url}</p>
+                          {route.error && (
+                            <p className="text-sm text-red-600">{route.error}</p>
+                          )}
+                          {route.failureCount && route.failureCount > 0 && (
+                            <p className="text-sm text-red-600">
+                              Failed {route.failureCount} time{route.failureCount > 1 ? 's' : ''}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <StatusBadge status={route.status} />
+                        {route.responseTime && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {route.responseTime}ms
+                          </p>
                         )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <StatusBadge status={route.status} />
-                      {route.responseTime && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {route.responseTime}ms
-                        </p>
-                      )}
-                    </div>
+                    
+                    {route.errorDetails && (
+                      <ErrorLogs errors={[route.errorDetails]} title="Error Details" />
+                    )}
+                    
+                    {route.lastSuccess && (
+                      <p className="text-xs text-green-600 mt-2">
+                        Last success: {new Date(route.lastSuccess).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -306,17 +361,26 @@ export default function StatusPage() {
             <CardContent>
               <div className="space-y-3">
                 {status.containers.map((container, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <StatusIcon status={container.status} />
-                      <div>
-                        <p className="font-medium">{container.name}</p>
-                        {container.uptime && (
-                          <p className="text-sm text-gray-500">Uptime: {container.uptime}</p>
-                        )}
+                  <div key={index} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <StatusIcon status={container.status} />
+                        <div>
+                          <p className="font-medium">{container.name}</p>
+                          {container.uptime && (
+                            <p className="text-sm text-gray-500">Uptime: {container.uptime}</p>
+                          )}
+                          {container.healthCheck && (
+                            <p className="text-sm text-gray-500">Health: {container.healthCheck}</p>
+                          )}
+                        </div>
                       </div>
+                      <StatusBadge status={container.status} />
                     </div>
-                    <StatusBadge status={container.status} />
+                    
+                    {container.recentErrors && container.recentErrors.length > 0 && (
+                      <ErrorLogs errors={container.recentErrors} title="Recent Errors" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -347,6 +411,11 @@ export default function StatusPage() {
               <div>
                 <p className="font-medium">Recent Deliveries</p>
                 <p className="text-2xl font-bold text-blue-600">{status.webhook.recentDeliveries}</p>
+                {status.webhook.failureCount && status.webhook.failureCount > 0 && (
+                  <p className="text-sm text-red-600">
+                    {status.webhook.failureCount} failures
+                  </p>
+                )}
               </div>
               <div>
                 <p className="font-medium">Last Activity</p>
@@ -358,6 +427,12 @@ export default function StatusPage() {
                 </p>
               </div>
             </div>
+            
+            {status.webhook.recentErrors && status.webhook.recentErrors.length > 0 && (
+              <div className="mt-4">
+                <ErrorLogs errors={status.webhook.recentErrors} title="Webhook Errors" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
