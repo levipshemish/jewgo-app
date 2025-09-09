@@ -13,12 +13,14 @@ git reset --hard origin/main
 
 # Clear Redis cache to ensure fresh data
 echo "🧹 Clearing Redis cache..."
-docker-compose exec -T redis redis-cli FLUSHALL || echo "⚠️  Redis cache clear failed (container may not be running)"
+docker exec jewgo_redis redis-cli FLUSHALL || echo "⚠️  Redis cache clear failed (container may not be running)"
 
 # Rebuild and restart the backend container to pick up changes
 echo "🔨 Rebuilding backend container with latest code..."
-docker-compose build --no-cache backend
-docker-compose up -d backend
+docker build --no-cache -t jewgo-app-backend ./backend
+docker stop jewgo_backend || true
+docker rm jewgo_backend || true
+docker run -d --name jewgo_backend --network jewgo-app_default -p 5000:5000 --env-file .env jewgo-app-backend
 
 # Wait for the backend to start
 echo "⏳ Waiting for backend to start..."
@@ -56,4 +58,4 @@ fi
 
 echo "🎉 Deployment completed successfully!"
 echo "📊 Container status:"
-docker-compose ps
+docker ps --filter "name=jewgo_"
