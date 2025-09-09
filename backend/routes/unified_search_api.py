@@ -121,7 +121,7 @@ def search_suggestions():
             })
         
         # Initialize search service
-        with db_manager.get_session() as session:
+        with db_manager.connection_manager.session_scope() as session:
             search_service = UnifiedSearchService(session)
             
             # Get suggestions
@@ -146,7 +146,7 @@ def search_stats():
     Get search statistics and performance metrics.
     """
     try:
-        with db_manager.get_session() as session:
+        with db_manager.connection_manager.session_scope() as session:
             search_service = UnifiedSearchService(session)
             stats = search_service.get_search_stats()
             
