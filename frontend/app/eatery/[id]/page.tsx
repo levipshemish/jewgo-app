@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from 'next/navigation'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ListingPage } from '@/components/listing-details-utility/listing-page'
 import { ListingImage } from '@/components/listing/listing-image'
 import { mapEateryToListingData } from '@/utils/eatery-mapping'
@@ -570,12 +570,21 @@ function EateryIdPageContent() {
     )
   }
 
-  // Render eatery details
-  if (eatery) {
+  // Memoize the listing data to prevent infinite re-renders
+  const finalListingData = useMemo(() => {
+    if (!eatery) return null
+    
     try {
-      const finalListingData = mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
-      
-      
+      return mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
+    } catch (err) {
+      console.error('Error mapping eatery data:', err)
+      return null
+    }
+  }, [eatery, legacyUserLocation, reviews, requestLocation, permissionStatus])
+
+  // Render eatery details
+  if (eatery && finalListingData) {
+    try {
       // Add pagination and load more props
       const listingDataWithPagination = {
         ...finalListingData,

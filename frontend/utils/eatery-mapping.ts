@@ -131,6 +131,7 @@ export function mapEateryToListingData(
         const uniqueImages = Array.from(new Set(allImages));
         
         // If we only have one image, add some demo images for carousel testing
+        // Use a stable array reference to prevent infinite re-renders
         if (uniqueImages.length === 1) {
           const demoImages = [
             'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop',
@@ -138,7 +139,11 @@ export function mapEateryToListingData(
             'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop',
             'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&h=600&fit=crop'
           ];
-          uniqueImages.push(...demoImages);
+          // Create a new array instead of mutating the existing one
+          const imagesWithDemo = [...uniqueImages, ...demoImages];
+          return imagesWithDemo.map(img => 
+            getFallbackImageUrl(img, eatery.kosher_type, { enableLogging: process.env.NODE_ENV === 'development' })
+          );
         }
         
         return uniqueImages.map(img => 
