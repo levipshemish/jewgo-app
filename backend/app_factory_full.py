@@ -2107,9 +2107,16 @@ def create_app(config_class=None):
             success = restaurant_repo.increment_view_count(restaurant_id)
             
             if success:
-                # Get the updated view count
-                restaurant = restaurant_repo.get_by_id(restaurant_id)
-                view_count = restaurant.view_count if restaurant else 0
+                # Get the updated view count using raw SQL to avoid model caching issues
+                from sqlalchemy import text
+                session = connection_manager.get_session()
+                result = session.execute(
+                    text("SELECT view_count FROM restaurants WHERE id = :restaurant_id"),
+                    {"restaurant_id": restaurant_id}
+                )
+                view_count_row = result.fetchone()
+                view_count = view_count_row[0] if view_count_row else 0
+                session.close()
                 
                 # Invalidate cache for this restaurant
                 cache_key = f"restaurant:{restaurant_id}"

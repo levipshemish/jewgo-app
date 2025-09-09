@@ -305,16 +305,24 @@ class RestaurantRepository(BaseRepository[Restaurant]):
         """Increment the view count for a restaurant."""
         try:
             session = self.connection_manager.get_session()
-            restaurant = session.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
-            if restaurant:
-                restaurant.view_count += 1
-                restaurant.updated_at = datetime.utcnow()
+            
+            # Use raw SQL to increment view count to avoid model caching issues
+            from sqlalchemy import text
+            result = session.execute(
+                text("UPDATE restaurants SET view_count = COALESCE(view_count, 0) + 1, updated_at = NOW() WHERE id = :restaurant_id RETURNING view_count"),
+                {"restaurant_id": restaurant_id}
+            )
+            
+            updated_count = result.fetchone()
+            if updated_count:
                 session.commit()
                 session.close()
-                self.logger.info("Incremented view count", restaurant_id=restaurant_id, new_count=restaurant.view_count)
+                self.logger.info("Incremented view count", restaurant_id=restaurant_id, new_count=updated_count[0])
                 return True
-            session.close()
-            return False
+            else:
+                session.close()
+                return False
+                
         except Exception as e:
             self.logger.exception("Error incrementing view count", error=str(e))
             return False
