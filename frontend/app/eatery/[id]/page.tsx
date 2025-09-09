@@ -275,8 +275,9 @@ function EateryIdPageContent() {
         let restaurantData = null
         if (detailData.success && detailData.data) {
           // Handle nested data structure - check for double nesting
-          if (detailData.data.success && detailData.data.data && detailData.data.data.restaurant) {
-            restaurantData = detailData.data.data.restaurant
+          if (detailData.data.success && detailData.data.data && detailData.data.data.id) {
+            // Restaurant data is directly in detailData.data.data
+            restaurantData = detailData.data.data
           } else if (detailData.data.restaurant) {
             restaurantData = detailData.data.restaurant
           } else if (detailData.data.id) {
