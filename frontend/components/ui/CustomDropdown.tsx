@@ -32,16 +32,27 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
-  }, []);
+  }, [isOpen]);
 
   const selectedOption = options.find(option => option.value === value);
 
@@ -58,21 +69,41 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       if (dropdownRef.current) {
         const rect = dropdownRef.current.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
-        const dropdownHeight = options.length * 48 + 16; // Approximate height (48px per option + padding)
+        const viewportWidth = window.innerWidth;
+        const dropdownHeight = Math.min(options.length * 48 + 16, 300); // Max height 300px
+        const dropdownWidth = Math.max(rect.width, 200); // Min width 200px
         
         // If there's not enough space below, open upward
-        const shouldOpenUpward = rect.bottom + dropdownHeight > viewportHeight;
+        const shouldOpenUpward = rect.bottom + dropdownHeight > viewportHeight - 20;
         setOpenUpward(shouldOpenUpward);
         
-        // Calculate position for portal
-        const top = shouldOpenUpward 
+        // Calculate position for portal with bounds checking
+        let top = shouldOpenUpward 
           ? rect.top - dropdownHeight - 8 // 8px gap
           : rect.bottom + 8; // 8px gap
         
+        let left = rect.left;
+        
+        // Ensure dropdown doesn't go off screen horizontally
+        if (left + dropdownWidth > viewportWidth - 20) {
+          left = viewportWidth - dropdownWidth - 20;
+        }
+        if (left < 20) {
+          left = 20;
+        }
+        
+        // Ensure dropdown doesn't go off screen vertically
+        if (top < 20) {
+          top = 20;
+        }
+        if (top + dropdownHeight > viewportHeight - 20) {
+          top = viewportHeight - dropdownHeight - 20;
+        }
+        
         setDropdownPosition({
           top,
-          left: rect.left,
-          width: rect.width
+          left,
+          width: dropdownWidth
         });
       }
     }
@@ -81,7 +112,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef} style={{ zIndex: isOpen ? 10000 : 'auto' }}>
+    <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Dropdown Button */}
       <button
         type="button"
@@ -105,40 +136,35 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         />
       </button>
 
-      {/* Dropdown Popup - Rendered via Portal */}
+      {/* Dropdown Popup - Rendered via Portal with higher z-index */}
       {isOpen && createPortal(
         <div 
-          className="fixed z-[9999] bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
+          className="fixed bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
           style={{ 
             top: dropdownPosition.top,
             left: dropdownPosition.left,
             width: dropdownPosition.width,
-            backgroundColor: '#ffffff',
-            zIndex: 9999,
-            opacity: 1,
-            background: '#ffffff'
+            zIndex: 10001, // Higher than modal z-index
+            maxHeight: '300px',
+            overflowY: 'auto'
           }}
         >
-          <div className="py-2 bg-white" style={{ 
-            backgroundColor: '#ffffff', 
-            opacity: 1,
-            background: '#ffffff'
-          }}>
+          <div className="py-2">
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
-                onClick={() => handleOptionClick(option.value)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleOptionClick(option.value);
+                }}
                 className={`
                   w-full text-left px-4 py-3 text-sm font-medium transition-colors duration-200
-                  hover:bg-green-50 hover:text-green-800
+                  hover:bg-green-50 hover:text-green-800 focus:bg-green-50 focus:text-green-800
                   ${value === option.value ? 'bg-green-100 text-green-800' : 'text-black bg-white'}
                 `}
-                style={{ 
-                  backgroundColor: value === option.value ? '#dcfce7' : '#ffffff',
-                  opacity: 1,
-                  background: value === option.value ? '#dcfce7' : '#ffffff'
-                }}
+                onMouseDown={(e) => e.preventDefault()} // Prevent focus loss
               >
                 {option.label}
               </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Loader2, Users, AlertCircle } from 'lucide-react';
 import { DraftFilters } from '@/lib/filters/filters.types';
 import { validateFilters, normalizeFilters } from '@/lib/utils/filterValidation';
@@ -33,13 +33,17 @@ export function FilterPreview({
     hasValidationErrors: false
   });
 
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Validate filters
-  const validation = validateFilters(filters, userLocation);
-  const hasActiveFilters = Object.values(filters).some(value => 
-    value !== undefined && value !== null && value !== '' && 
-    !(Array.isArray(value) && value.length === 0)
+  // Memoize validation to prevent infinite re-renders
+  const validation = useMemo(() => validateFilters(filters, userLocation), [filters, userLocation]);
+  
+  // Memoize hasActiveFilters calculation
+  const hasActiveFilters = useMemo(() => 
+    Object.values(filters).some(value => 
+      value !== undefined && value !== null && value !== '' && 
+      !(Array.isArray(value) && value.length === 0)
+    ), [filters]
   );
 
   // Debounced preview fetch
@@ -109,24 +113,26 @@ export function FilterPreview({
 
   // Debounced effect
   useEffect(() => {
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
 
     const timeout = setTimeout(fetchPreview, debounceMs);
-    setDebounceTimeout(timeout);
+    debounceTimeoutRef.current = timeout;
 
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [fetchPreview, debounceMs, debounceTimeout]);
+  }, [fetchPreview, debounceMs]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimeout) clearTimeout(debounceTimeout);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
     };
-  }, [debounceTimeout]);
+  }, []);
 
   if (!hasActiveFilters) {
     return null;

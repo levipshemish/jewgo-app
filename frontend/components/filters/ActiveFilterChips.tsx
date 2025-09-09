@@ -3,7 +3,7 @@
 import React from 'react';
 import { X, MapPin, Clock, Star, DollarSign, Search, Building, Tag } from 'lucide-react';
 import { AppliedFilters, DraftFilters } from '@/lib/filters/filters.types';
-import { getFilterDescription, getCanonicalDistance } from '@/lib/utils/filterValidation';
+import { getCanonicalDistance } from '@/lib/utils/filterValidation';
 
 interface ActiveFilterChipsProps {
   filters: AppliedFilters | DraftFilters;

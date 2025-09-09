@@ -84,6 +84,7 @@ export function ModernFilterPopup({
   }, [isOpen, loadFilterOptions, preloadedFilterOptions]); // Now safe to include since loadFilterOptions is memoized
 
 
+
   const handleApply = () => {
     // Check validation before applying
     if (validation.errors.length > 0) {
@@ -93,7 +94,7 @@ export function ModernFilterPopup({
 
     // Normalize filters before applying
     const normalizedFilters = normalizeFilters(draftFilters);
-    applyFilters((filters) => onApplyFilters(normalizedFilters), true);
+    applyFilters((_filters) => onApplyFilters(normalizedFilters), true);
     onClose();
   };
 
