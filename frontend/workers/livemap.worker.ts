@@ -2,7 +2,7 @@
  * Livemap Worker - Heavy Filtering & Sorting
  * 
  * This worker handles:
- * - Restaurant filtering by kosher type, rating, distance, etc.
+ * - LivemapRestaurant filtering by kosher type, rating, distance, etc.
  * - Distance-based sorting from user location
  * - Performance limits (MAX_VISIBLE, CLUSTER_WHEN)
  * - All heavy computation off the main thread
@@ -23,7 +23,7 @@ interface Restaurant {
   id: string;
   name: string;
   pos: { lat: number; lng: number };
-  rating?: number;
+  rating?: number | null;
   kosher: 'MEAT' | 'DAIRY' | 'PAREVE';
   openNow?: boolean;
   agencies?: string[];
@@ -122,7 +122,7 @@ function handleFilter(payload: {
     }
     
     // Rating filter
-    if (filters.minRating && restaurant.rating !== undefined) {
+    if (filters.minRating && restaurant.rating !== undefined && restaurant.rating !== null) {
       if (restaurant.rating < filters.minRating) {
         return false;
       }

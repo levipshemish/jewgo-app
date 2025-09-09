@@ -2,7 +2,7 @@
 /* eslint-disable curly, prefer-const */
 
 // Lightweight types mirrored from app models (avoid importing React/Next types here)
-type Restaurant = {
+type MendelRestaurant = {
   id: number;
   name: string;
   address?: string;
@@ -38,7 +38,7 @@ type ActiveFilters = {
 type FilterRequest = {
   type: 'FILTER_RESTAURANTS';
   payload: {
-    restaurants: Restaurant[];
+    restaurants: MendelRestaurant[];
     searchQuery: string;
     activeFilters: ActiveFilters;
     userLocation?: UserLocation | null;
@@ -50,7 +50,7 @@ type WorkerRequest = FilterRequest;
 type WorkerResponse = {
   type: 'FILTER_RESTAURANTS_RESULT';
   payload: {
-    restaurants: Restaurant[];
+    restaurants: MendelRestaurant[];
   };
 };
 
@@ -81,7 +81,7 @@ function timeToMinutes(timeStr: string): number {
   return hours * 60 + minutes;
 }
 
-function passesOpenNow(restaurant: Restaurant): boolean {
+function passesOpenNow(restaurant: MendelRestaurant): boolean {
   const raw = restaurant.hours_of_operation as unknown;
   if (!raw) {
     return false;
@@ -112,7 +112,7 @@ function passesOpenNow(restaurant: Restaurant): boolean {
 }
 
 function filterAndSortRestaurants(
-  restaurants: Restaurant[], searchQuery: string, activeFilters: ActiveFilters, userLocation?: UserLocation | null, ): Restaurant[] {
+  restaurants: MendelRestaurant[], searchQuery: string, activeFilters: ActiveFilters, userLocation?: UserLocation | null, ): MendelRestaurant[] {
   const query = toLower(searchQuery).trim();
   const agencyQuery = toLower(activeFilters.agency);
   const dietary = toLower(activeFilters.dietary);

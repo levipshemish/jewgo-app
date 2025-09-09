@@ -165,12 +165,13 @@ export function runDistanceSort(ids: string[], userLocation: { lat: number; lng:
 
     // Sort by distance
     const sorted = restaurantObjects.sort((a, b) => {
+      if (!a || !b) return 0;
       const distA = calculateDistance(userLocation, a.pos);
       const distB = calculateDistance(userLocation, b.pos);
       return distA - distB;
     });
 
-    const sortedIds = sorted.map(r => r.id);
+    const sortedIds = sorted.map(r => r?.id).filter(Boolean) as string[];
     const sortTime = performance.now() - startTime;
 
     useLivemapStore.getState().applyFilterResults(sortedIds);

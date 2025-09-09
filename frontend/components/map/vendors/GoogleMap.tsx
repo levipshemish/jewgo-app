@@ -283,7 +283,12 @@ export default function GoogleMap({
 
     // Clear existing markers
     markersRef.current.forEach(({ marker }) => {
-      marker.setMap(null);
+      if ('setMap' in marker) {
+        marker.setMap(null);
+      } else {
+        // For AdvancedMarkerElement, remove from map by setting map to null
+        (marker as google.maps.marker.AdvancedMarkerElement).map = null;
+      }
     });
     markersRef.current.clear();
 

@@ -303,7 +303,7 @@ export function InteractiveRestaurantMap({
   // Announce map updates for accessibility
   useEffect(() => {
     _announceMapUpdate(restaurantsWithCoords.length);
-  }, [restaurantsWithCoords.length, _announceMapUpdate]);
+  }, [restaurantsWithCoords, _announceMapUpdate]);
 
   // Announce loading states
   useEffect(() => {
