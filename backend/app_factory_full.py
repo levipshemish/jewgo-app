@@ -1441,6 +1441,63 @@ def create_app(config_class=None):
             # 
             #     if 'performance_monitor' in locals():
             #         performance_monitor.record_cache_miss('restaurants')
+            
+            # Parse additional filter parameters
+            search = request.args.get("search", type=str)
+            kosher_category = request.args.get("kosher_category", type=str)
+            certifying_agency = request.args.get("certifying_agency", type=str)
+            price_min = request.args.get("price_min", type=int)
+            price_max = request.args.get("price_max", type=int)
+            min_rating = request.args.get("min_rating", type=float)
+            hours_filter = request.args.get("hours_filter", type=str)
+            
+            # Build additional filter conditions
+            additional_filters = []
+            filter_params = []
+            
+            if search:
+                additional_filters.append("(name ILIKE %s OR address ILIKE %s OR kosher_category ILIKE %s)")
+                search_term = f"%{search}%"
+                filter_params.extend([search_term, search_term, search_term])
+            
+            if kosher_category:
+                additional_filters.append("kosher_category = %s")
+                filter_params.append(kosher_category)
+            
+            if certifying_agency:
+                additional_filters.append("certifying_agency = %s")
+                filter_params.append(certifying_agency)
+            
+            if price_min is not None:
+                # Convert price range to numeric values for comparison
+                price_mapping = {'$': 1, '$$': 2, '$$$': 3, '$$$$': 4}
+                price_conditions = []
+                for symbol, value in price_mapping.items():
+                    if value >= price_min:
+                        price_conditions.append(f"price_range = '{symbol}'")
+                if price_conditions:
+                    additional_filters.append(f"({' OR '.join(price_conditions)})")
+            
+            if price_max is not None:
+                # Convert price range to numeric values for comparison
+                price_mapping = {'$': 1, '$$': 2, '$$$': 3, '$$$$': 4}
+                price_conditions = []
+                for symbol, value in price_mapping.items():
+                    if value <= price_max:
+                        price_conditions.append(f"price_range = '{symbol}'")
+                if price_conditions:
+                    additional_filters.append(f"({' OR '.join(price_conditions)})")
+            
+            if min_rating is not None:
+                additional_filters.append("google_rating >= %s")
+                filter_params.append(min_rating)
+            
+            # Add additional filters to the query
+            if additional_filters:
+                filter_clause = " AND " + " AND ".join(additional_filters)
+            else:
+                filter_clause = ""
+            
             # Build cursor-based query with distance sorting
             if lat is not None and lng is not None:
                 # Use PostGIS for efficient distance calculation
@@ -1457,6 +1514,7 @@ def create_app(config_class=None):
                           AND updated_at <= %s
                           {f'AND ST_DWithin(geom, ST_SetSRID(ST_Point(%s, %s), 4326)::geography, {radius_m})' if radius_m else ''}
                           {f'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
+                          {filter_clause}
                     )
                     SELECT * FROM scored
                     WHERE (%s IS NULL)
@@ -1472,6 +1530,7 @@ def create_app(config_class=None):
                 if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
                     # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
                     params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])
+                params.extend(filter_params)  # Add filter parameters
                 params.extend([last_dist_m, last_dist_m, last_dist_m, last_id, limit])
             else:
                 # No location provided, fallback to simple query with cursor support
@@ -1486,6 +1545,7 @@ def create_app(config_class=None):
                       AND updated_at <= %s
                       AND (%s IS NULL OR id > %s)
                       {f'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
+                      {filter_clause}
                     ORDER BY name ASC, id ASC
                     LIMIT %s
                 """
@@ -1493,15 +1553,14 @@ def create_app(config_class=None):
                 if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
                     # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
                     params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])
+                params.extend(filter_params)  # Add filter parameters
                 params.append(limit)
-            # Apply additional filters (simplified for cursor-based approach)
-            # Note: For complex filtering, consider moving to a separate endpoint
-            # or implementing filter-aware cursor encoding
-            
             # Execute the query
             logger.info(f"Executing query: {query}")
             logger.info(f"Query params: {params}")
             logger.info(f"Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
+            logger.info(f"Additional filters applied: {additional_filters}")
+            logger.info(f"Filter parameters: {filter_params}")
             
             db_manager = get_db_manager()
             if not db_manager:
@@ -1671,19 +1730,6 @@ def create_app(config_class=None):
                 500,
             )
 
-    @app.route("/api/restaurants/<int:restaurant_id>/view", methods=["POST"])
-    def track_restaurant_view(restaurant_id):
-        """Track a view for a restaurant"""
-        try:
-            # Use the restaurant repository to increment view count
-            from database.repositories.restaurant_repository import RestaurantRepository
-            from database.connection_manager import DatabaseConnectionManager
-            
-            connection_manager = DatabaseConnectionManager()
-            restaurant_repo = RestaurantRepository(connection_manager)
-            
-            success = restaurant_repo.increment_view_count(restaurant_id)
-            
             if success:
                 # Get the updated view count
                 restaurant = restaurant_repo.get_by_id(restaurant_id)
@@ -2021,7 +2067,7 @@ def create_app(config_class=None):
     
     @app.route("/api/restaurants/<int:restaurant_id>/view", methods=["POST"])
     def track_restaurant_view(restaurant_id):
-        """Track a view for a restaurant"""
+        """Track a view for a restaurant - Updated via webhook deployment"""
         try:
             # Use the restaurant repository to increment view count
             from database.repositories.restaurant_repository import RestaurantRepository
