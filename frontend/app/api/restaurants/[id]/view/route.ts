@@ -19,7 +19,7 @@ export async function POST(
 
     // Forward the request to the backend API
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
-    const response = await fetch(`${backendUrl}/api/v4/restaurants/${restaurantId}/view`, {
+    const response = await fetch(`${backendUrl}/api/restaurants/${restaurantId}/view`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
