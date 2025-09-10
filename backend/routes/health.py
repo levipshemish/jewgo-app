@@ -26,7 +26,8 @@ def health():
     try:
         from database.database_manager_v4 import DatabaseManager
         db_manager = DatabaseManager()
-        if db_manager.health_check():
+        # Ensure database is connected
+        if db_manager.connect() and db_manager.health_check():
             status["db_ok"] = True
         else:
             status["db_ok"] = False
