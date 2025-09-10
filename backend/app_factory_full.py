@@ -6,6 +6,7 @@ from typing import Any
 import sentry_sdk
 from flask import Flask, jsonify, request
 from flask_caching import Cache
+from sqlalchemy import text
 # from flask_cors import CORS  # Unused import
 import logging
 from flask_limiter import Limiter
@@ -1068,7 +1069,7 @@ def create_app(config_class=None):
         try:
             from database.database_manager_v3 import EnhancedDatabaseManager
             db_manager = EnhancedDatabaseManager()
-            with db_manager.get_connection() as conn:
+            with db_manager.connection_manager.session_scope() as session:
                 with conn.cursor() as cursor:
                     # Check if marketplace table exists
                     cursor.execute(
@@ -1621,13 +1622,12 @@ def create_app(config_class=None):
                     503,
                 )
             
-            with db_manager.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
+            with db_manager.connection_manager.session_scope() as session:
+                result = session.execute(text(query), params)
+                rows = result.fetchall()
                 
                 # Get column names
-                columns = [desc[0] for desc in cursor.description]
+                columns = [desc[0] for desc in result.description]
                 
                 # Convert rows to dictionaries
                 restaurants = []
@@ -1699,7 +1699,7 @@ def create_app(config_class=None):
                     ),
                     503,
                 )
-            with db_manager.get_connection() as conn:
+            with db_manager.connection_manager.session_scope() as session:
                 with conn.cursor() as cursor:
                     cursor.execute(
                         "SELECT * FROM restaurants WHERE id = %s", (restaurant_id,)
@@ -1753,7 +1753,7 @@ def create_app(config_class=None):
                     ),
                     503,
                 )
-            with db_manager.get_connection() as conn:
+            with db_manager.connection_manager.session_scope() as session:
                 with conn.cursor() as cursor:
                     cursor.execute(
                         "SELECT id, name, hours_structured, timezone, status FROM restaurants WHERE id = %s",
@@ -1857,7 +1857,7 @@ def create_app(config_class=None):
                         ),
                         503,
                     )
-                with db_manager.get_connection() as conn:
+                with db_manager.connection_manager.session_scope() as session:
                     with conn.cursor() as cursor:
                         # Check if subcategories table exists
                         cursor.execute(
@@ -1919,7 +1919,7 @@ def create_app(config_class=None):
             # Check database connection
             db_manager = app.config.get("DB_MANAGER")
             if db_manager:
-                with db_manager.get_connection() as conn:
+                with db_manager.connection_manager.session_scope() as session:
                     with conn.cursor() as cursor:
                         cursor.execute("SELECT 1")
                         db_healthy = True
