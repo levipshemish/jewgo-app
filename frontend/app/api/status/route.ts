@@ -190,8 +190,27 @@ async function getWebhookStatus(): Promise<WebhookStatus> {
 }
 
 async function getContainerStatus(): Promise<ContainerStatus[]> {
-  // This would typically be done by querying the Docker API
-  // For now, we'll return mock data based on what we know
+  try {
+    // Try to get real container status
+    const response = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/real-container-status`)
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && data.data.containers) {
+        // Convert real container data to our format
+        return data.data.containers.map((container: any) => ({
+          name: container.name,
+          status: container.status === 'running' ? 'running' : 'stopped',
+          uptime: container.uptime || 'unknown',
+          healthCheck: container.health || 'unknown',
+          recentErrors: container.recent_errors || []
+        }))
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get real container status:', error)
+  }
+  
+  // Fallback to mock data if real collection fails
   return [
     {
       name: 'jewgo_backend',
@@ -254,6 +273,8 @@ export async function GET(request: NextRequest) {
     
     // Get container status
     const containerStatus = await getContainerStatus()
+    const containerStatusSource = containerStatus.length > 0 && containerStatus[0].name === 'jewgo_backend' && 
+      containerStatus[0].uptime !== '2 hours' ? 'real' : 'mock'
     
     // Check backend health
     const backendHealth = await checkRoute(`${backendUrl}/health`, 'Backend Health')
@@ -337,7 +358,8 @@ export async function GET(request: NextRequest) {
       dataSources: {
         systemMetrics: systemMetricsSource,
         databaseStatus: databaseStatusSource,
-        externalAPIs: externalAPIsSource
+        externalAPIs: externalAPIsSource,
+        containerStatus: containerStatusSource
       }
     }
     

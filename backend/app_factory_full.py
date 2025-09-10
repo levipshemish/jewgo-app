@@ -668,10 +668,12 @@ def create_app(config_class=None):
         from routes.deploy_webhook import deploy_webhook_bp
         from routes.test_webhook import test_webhook_bp
         from routes.webhook_status_api import webhook_status_bp
+        from routes.container_status_api import container_status_bp
         app.register_blueprint(health_bp)
         app.register_blueprint(deploy_webhook_bp, url_prefix="/webhook")
         app.register_blueprint(test_webhook_bp)
         app.register_blueprint(webhook_status_bp)
+        app.register_blueprint(container_status_bp)
         logger.info("Health routes blueprint registered successfully")
     except ImportError as e:
         logger.warning(f"Could not register health routes blueprint: {e}")

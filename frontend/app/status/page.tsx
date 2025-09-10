@@ -92,6 +92,7 @@ interface SystemStatus {
     systemMetrics: string
     databaseStatus: string
     externalAPIs: string
+    containerStatus: string
   }
 }
 
@@ -405,6 +406,19 @@ export default function StatusPage() {
               <CardTitle className="flex items-center gap-2">
                 <Server className="h-5 w-5" />
                 Container Status
+                <div className="flex items-center gap-1 ml-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    status.dataSources?.containerStatus === 'real' ? 'bg-green-500' : 
+                    status.dataSources?.containerStatus === 'partial_real' ? 'bg-blue-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className={`text-xs ${
+                    status.dataSources?.containerStatus === 'real' ? 'text-green-700' : 
+                    status.dataSources?.containerStatus === 'partial_real' ? 'text-blue-700' : 'text-yellow-700'
+                  }`}>
+                    {status.dataSources?.containerStatus === 'real' ? 'Real' : 
+                     status.dataSources?.containerStatus === 'partial_real' ? 'Partial' : 'Mock'}
+                  </span>
+                </div>
               </CardTitle>
               <CardDescription>
                 Status of Docker containers
