@@ -1670,13 +1670,16 @@ def create_app(config_class=None):
                 return jsonify(response_data)
                 
         except Exception as e:
+            import traceback
             logger.error(f"Error in get_restaurants: {e}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             return (
                 jsonify(
                     {
                         "success": False,
                         "error": "Failed to fetch restaurants",
                         "details": str(e),
+                        "traceback": traceback.format_exc()
                     }
                 ),
                 500,
