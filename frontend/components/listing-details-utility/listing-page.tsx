@@ -209,6 +209,13 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
             />
           )}
 
+          {/* Description Section - moved above actions */}
+          {safeData.description && (
+            <div className="p-3 text-center">
+              <span className="text-sm text-gray-600 leading-relaxed">{safeData.description}</span>
+            </div>
+          )}
+
           {/* Actions */}
           {safeData.actions && (
             <ListingActions
@@ -223,17 +230,10 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
               onLocationRequest={safeData.actions.onLocationRequest}
             />
           )}
-
-          {/* Description Section */}
-          {safeData.description && (
-            <div className="p-3 text-center">
-              <span className="text-sm text-gray-600 leading-relaxed">{safeData.description}</span>
-            </div>
-          )}
         </Stack>
 
         {/* Bottom indicator */}
-        <div className="flex justify-center">
+        <div className="flex justify-center pt-6">
           <div className="w-48 h-0.5 bg-gray-300 rounded-full" />
         </div>
       </Stack>

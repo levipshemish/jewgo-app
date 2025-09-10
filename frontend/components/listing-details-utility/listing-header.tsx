@@ -77,18 +77,18 @@ export function ListingHeader({
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center px-4">
       {/* Header bar with consistent spacing and better visual hierarchy */}
-      <div className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white rounded-full mt-4 sm:mt-6 shadow-sm">
+      <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full mt-6 shadow-sm max-w-fit">
         {/* Back button */}
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-7 w-7 hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-5 w-5 hover:bg-gray-100 transition-colors">
+          <ArrowLeft className="h-3 w-3" />
         </Button>
 
         {/* Kosher information section */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {kosherType && (
-            <span className={`text-xs font-medium rounded-full px-2 py-1 ${
+            <span className={`text-xs font-medium rounded-full px-1 py-0.5 ${
               kosherType.toLowerCase() === 'meat' ? 'text-red-700 bg-red-100' :
               kosherType.toLowerCase() === 'dairy' ? 'text-blue-700 bg-blue-100' :
               kosherType.toLowerCase() === 'parve' || kosherType.toLowerCase() === 'pareve' ? 'text-orange-700 bg-orange-100' :
@@ -111,12 +111,12 @@ export function ListingHeader({
               return isClickable ? (
                 <button
                   onClick={handleAgencyClick}
-                  className="text-xs text-gray-600 hover:text-blue-600 underline transition-colors px-1 py-1 rounded"
+                  className="text-xs text-gray-600 hover:text-blue-600 underline transition-colors px-0.5 py-0.5 rounded"
                 >
                   {kosherAgency}
                 </button>
               ) : (
-                <span className="text-xs text-gray-600 px-1 py-1">
+                <span className="text-xs text-gray-600 px-0.5 py-0.5">
                   {kosherAgency}
                 </span>
               )
@@ -126,32 +126,32 @@ export function ListingHeader({
 
         {/* Stats section */}
         {viewCount !== undefined && viewCount >= 0 && (
-          <div className="flex items-center gap-1.5 text-gray-600">
-            <Eye className="h-4 w-4 text-blue-500" />
+          <div className="flex items-center gap-1 text-gray-600">
+            <Eye className="h-3 w-3 text-blue-500" />
             <span className="text-xs font-medium">{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
           </div>
         )}
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {shareCount !== undefined && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-7 w-7 hover:bg-gray-100 transition-colors"
+              className="h-5 w-5 hover:bg-gray-100 transition-colors"
             >
-              <Share className="h-4 w-4" />
+              <Share className="h-3 w-3" />
             </Button>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={onFavorite}
-            className="h-7 w-7 hover:bg-gray-100 transition-colors group"
+            className="h-5 w-5 hover:bg-gray-100 transition-colors group"
           >
             <Heart
-              className={`h-4 w-4 transition-colors ${
+              className={`h-3 w-3 transition-colors ${
                 isFavorited
                   ? 'fill-red-500 text-red-500'
                   : 'text-gray-600 group-hover:fill-red-500 group-hover:text-red-500'
