@@ -1706,8 +1706,11 @@ def create_app(config_class=None):
                             404,
                         )
                     # Convert to dictionary
-                    columns = [desc[0] for desc in cursor.description]
-                    restaurant_dict = dict(zip(columns, restaurant))
+                    if cursor.description:
+                        columns = [desc[0] for desc in cursor.description]
+                        restaurant_dict = dict(zip(columns, restaurant))
+                    else:
+                        restaurant_dict = {}
                     
                     # Fetch additional images from restaurant_images table
                     cursor.execute(

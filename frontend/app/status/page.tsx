@@ -24,7 +24,8 @@ import {
   Shield,
   TrendingUp,
   BarChart3,
-  Settings
+  Settings,
+  Globe
 } from 'lucide-react'
 
 interface RouteStatus {
