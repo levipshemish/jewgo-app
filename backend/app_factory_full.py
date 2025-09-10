@@ -1493,7 +1493,8 @@ def create_app(config_class=None):
                 price_conditions = []
                 for symbol, value in price_mapping.items():
                     if value >= price_min:
-                        price_conditions.append(f"price_range = '{symbol}'")
+                        price_conditions.append("price_range = %s")
+                        filter_params.append(symbol)
                 if price_conditions:
                     additional_filters.append(f"({' OR '.join(price_conditions)})")
             
@@ -1503,7 +1504,8 @@ def create_app(config_class=None):
                 price_conditions = []
                 for symbol, value in price_mapping.items():
                     if value <= price_max:
-                        price_conditions.append(f"price_range = '{symbol}'")
+                        price_conditions.append("price_range = %s")
+                        filter_params.append(symbol)
                 if price_conditions:
                     additional_filters.append(f"({' OR '.join(price_conditions)})")
             
