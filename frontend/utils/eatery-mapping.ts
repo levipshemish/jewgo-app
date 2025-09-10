@@ -219,10 +219,10 @@ export function mapEateryToListingData(
           label: "Call",
           onClick: () => window.location.href = `tel:${eatery.contact.phone}`,
         }] : []),
-        ...(eatery.contact?.email ? [{
+        {
           label: "Email",
-          onClick: () => handleEmail(eatery.contact.email),
-        }] : []),
+          onClick: () => handleEmail(eatery.contact?.email),
+        },
       ].slice(0, 3), // Max 3 secondary actions
 
       // Kosher Tags
@@ -258,7 +258,7 @@ export function mapEateryToListingData(
 
     // Additional sections
     address: eatery.address,
-    description: eatery.short_description,
+    description: eatery.short_description || eatery.description,
     reviews: (() => {
       // Debug logging
       console.log('=== REVIEWS MAPPING DEBUG ===');

@@ -346,17 +346,6 @@ export function ListingActions({
             </div>
           )}
 
-          {/* Primary action button */}
-          {primaryAction && primaryAction.label && primaryAction.onClick && (
-            <Button
-              onClick={primaryAction.onClick}
-              className="w-full bg-green-500 hover:bg-green-600 hover:scale-[1.02] active:scale-[0.98] text-white rounded-full py-3 transition-all shadow-lg flex items-center justify-center gap-2"
-            >
-              <ShoppingCart className="w-5 h-5 text-white" />
-              {primaryAction.label}
-            </Button>
-          )}
-
           {/* Secondary action buttons */}
           {secondaryActions.length > 0 && (
             <Cluster gap={3}>
@@ -388,6 +377,17 @@ export function ListingActions({
                 )
               })}
             </Cluster>
+          )}
+
+          {/* Primary action button */}
+          {primaryAction && primaryAction.label && primaryAction.onClick && (
+            <Button
+              onClick={primaryAction.onClick}
+              className="w-full bg-green-500 hover:bg-green-600 hover:scale-[1.02] active:scale-[0.98] text-white rounded-full py-3 transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <ShoppingCart className="w-5 h-5 text-white" />
+              {primaryAction.label}
+            </Button>
           )}
 
           {/* Tags */}
