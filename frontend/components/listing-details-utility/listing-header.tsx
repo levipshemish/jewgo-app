@@ -79,7 +79,7 @@ export function ListingHeader({
   return (
     <div className="flex justify-center px-4">
       {/* Header bar with consistent spacing and better visual hierarchy */}
-      <div className="inline-flex items-center px-3 py-1.5 bg-white rounded-full mt-6 shadow-sm max-w-fit">
+      <div className="inline-flex items-center px-3 py-1.5 rounded-full mt-6 shadow-lg max-w-fit backdrop-blur-md bg-white/80 border border-white/20 dark:bg-white/14 dark:border-white/22" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}>
         {/* Back button */}
         {onBack && (
           <Button 

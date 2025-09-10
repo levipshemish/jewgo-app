@@ -29,6 +29,13 @@ def register_postgres_auth(app: Flask):
         db_manager = DatabaseManager()
         logger.info("Database manager initialized for auth system")
         
+        # Connect to database
+        if db_manager.connect():
+            logger.info("Database connection established for auth system")
+        else:
+            logger.error("Failed to establish database connection for auth system")
+            raise RuntimeError("Database connection failed")
+        
         # Initialize PostgreSQL auth manager
         auth_manager = initialize_postgres_auth(db_manager)
         logger.info("PostgreSQL auth manager initialized")

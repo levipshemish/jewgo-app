@@ -538,29 +538,29 @@ def create_app(config_class=None):
         nonlocal db_manager_instance
         if db_manager_instance is None:
             try:
-                if "EnhancedDatabaseManager" in deps:
-                    logger.info("Creating new database manager instance")
-                    db_manager_instance = deps["EnhancedDatabaseManager"]()
+                if "DatabaseManagerV4" in deps:
+                    logger.info("Creating new database manager v4 instance")
+                    db_manager_instance = deps["DatabaseManagerV4"]()
                     if db_manager_instance.connect():
-                        logger.info("Database connection established")
+                        logger.info("Database v4 connection established")
                         # Test the connection by getting a few restaurants
                         test_restaurants = db_manager_instance.get_restaurants(
                             limit=5, as_dict=True
                         )
                         logger.info(
-                            "Database test: Found restaurants",
+                            "Database v4 test: Found restaurants",
                             count=len(test_restaurants),
                         )
                     else:
-                        logger.error("Failed to establish database connection")
+                        logger.error("Failed to establish database v4 connection")
                 else:
                     logger.error(
-                        "EnhancedDatabaseManager not available in dependencies",
+                        "DatabaseManagerV4 not available in dependencies",
                     )
             except Exception as e:
-                logger.exception("Database initialization failed", error=str(e))
+                logger.exception("Database v4 initialization failed", error=str(e))
         else:
-            logger.info("Using existing database manager instance")
+            logger.info("Using existing database manager v4 instance")
         return db_manager_instance
     # Add db_manager getter to dependencies
     deps["get_db_manager"] = get_db_manager
@@ -639,9 +639,9 @@ def create_app(config_class=None):
         if not app.config.get("TESTING") and not os.environ.get("PYTEST_CURRENT_TEST"):
             try:
                 logger.info("Initializing database managers...")
-                db_manager = get_db_manager()
+                db_manager = get_db_manager_v4()
                 if db_manager:
-                    logger.info("Database manager v3 initialized successfully")
+                    logger.info("Database manager v4 initialized successfully")
                     # Store in app config for health routes
                     app.config["DB_MANAGER"] = db_manager
                 else:
@@ -1369,14 +1369,14 @@ def create_app(config_class=None):
             query = "SELECT id, name FROM restaurants WHERE status = 'active' LIMIT 1"
             params = []
             
-            db_manager = get_db_manager()
+            db_manager = get_db_manager_v4()
             if not db_manager:
                 return jsonify({"success": False, "error": "Database connection unavailable"}), 503
             
-            with db_manager.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
+            with db_manager.connection_manager.session_scope() as session:
+                from sqlalchemy import text
+                result = session.execute(text(query), params)
+                rows = result.fetchall()
                 
                 return jsonify({
                     "success": True,
@@ -1687,7 +1687,7 @@ def create_app(config_class=None):
             logger.info(f"Additional filters applied: {additional_filters}")
             logger.info(f"Filter parameters: {filter_params}")
             
-            db_manager = get_db_manager()
+            db_manager = get_db_manager_v4()
             if not db_manager:
                 return (
                     jsonify(
@@ -1771,7 +1771,7 @@ def create_app(config_class=None):
                 return jsonify(cached_result)
             if performance_monitor:
                 performance_monitor.record_cache_miss("restaurant_detail")
-            db_manager = get_db_manager()
+            db_manager = get_db_manager_v4()
             if not db_manager:
                 return (
                     jsonify(
@@ -1780,47 +1780,51 @@ def create_app(config_class=None):
                     503,
                 )
             with db_manager.connection_manager.session_scope() as session:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT * FROM restaurants WHERE id = %s", (restaurant_id,)
+                from sqlalchemy import text
+                result = session.execute(
+                    text("SELECT * FROM restaurants WHERE id = :restaurant_id"), 
+                    {"restaurant_id": restaurant_id}
+                )
+                restaurant = result.fetchone()
+                if not restaurant:
+                    return (
+                        jsonify(
+                            {"success": False, "error": "Restaurant not found"}
+                        ),
+                        404,
                     )
-                    restaurant = cursor.fetchone()
-                    if not restaurant:
-                        return (
-                            jsonify(
-                                {"success": False, "error": "Restaurant not found"}
-                            ),
-                            404,
-                        )
-                    # Convert to dictionary
-                    if cursor.description:
-                        columns = [desc[0] for desc in cursor.description]
-                        restaurant_dict = dict(zip(columns, restaurant))
-                    else:
-                        restaurant_dict = {}
-                    
-                    # Fetch additional images from restaurant_images table
-                    cursor.execute(
-                        "SELECT image_url FROM restaurant_images WHERE restaurant_id = %s ORDER BY image_order ASC",
-                        (restaurant_id,)
+                # Convert to dictionary
+                if result.description:
+                    columns = [desc[0] for desc in result.description]
+                    restaurant_dict = dict(zip(columns, restaurant))
+                else:
+                    restaurant_dict = {}
+                
+                # Fetch additional images from restaurant_images table
+                image_result = session.execute(
+                    text("SELECT image_url FROM restaurant_images WHERE restaurant_id = :restaurant_id ORDER BY image_order ASC"),
+                    {"restaurant_id": restaurant_id}
+                )
+                image_rows = image_result.fetchall()
+                additional_images = [row[0] for row in image_rows if row[0]]
+                restaurant_dict["additional_images"] = additional_images
+                
+                # Add open now status
+                if restaurant_dict.get("hours_structured"):
+                    is_open = open_now_service.is_open_now(
+                        restaurant_dict["hours_structured"],
+                        restaurant_dict.get("timezone", "America/New_York"),
                     )
-                    image_rows = cursor.fetchall()
-                    additional_images = [row[0] for row in image_rows if row[0]]
-                    restaurant_dict["additional_images"] = additional_images
-                    # Add open now status
-                    if restaurant_dict.get("hours_structured"):
-                        is_open = open_now_service.is_open_now(
-                            restaurant_dict["hours_structured"],
-                            restaurant_dict.get("timezone", "America/New_York"),
-                        )
-                        restaurant_dict["is_open_now"] = is_open
-                    # Ensure view_count is included (default to 0 if not present)
-                    if "view_count" not in restaurant_dict:
-                        restaurant_dict["view_count"] = 0
-                    response_data = {"success": True, "data": restaurant_dict}
-                    # Cache the result
-                    redis_cache.set(cache_key, response_data, ttl=600)  # 10 minutes
-                    return jsonify(response_data)
+                    restaurant_dict["is_open_now"] = is_open
+                
+                # Ensure view_count is included (default to 0 if not present)
+                if "view_count" not in restaurant_dict:
+                    restaurant_dict["view_count"] = 0
+                
+                response_data = {"success": True, "data": restaurant_dict}
+                # Cache the result
+                redis_cache.set(cache_key, response_data, ttl=600)  # 10 minutes
+                return jsonify(response_data)
         except Exception as e:
             logger.error(f"Error fetching restaurant {restaurant_id}: {e}")
             return (
@@ -1837,7 +1841,7 @@ def create_app(config_class=None):
     def get_restaurant_status(restaurant_id):
         """Get real-time restaurant status"""
         try:
-            db_manager = get_db_manager()
+            db_manager = get_db_manager_v4()
             if not db_manager:
                 return (
                     jsonify(
@@ -1846,37 +1850,40 @@ def create_app(config_class=None):
                     503,
                 )
             with db_manager.connection_manager.session_scope() as session:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT id, name, hours_structured, timezone, status FROM restaurants WHERE id = %s",
-                        (restaurant_id,),
-                    )
-                    restaurant = cursor.fetchone()
-            if not restaurant:
-                return jsonify({"success": False, "error": "Restaurant not found"}), 404
-            # Check open now status
-            hours_structured = restaurant[2]
-            timezone_str = restaurant[3] or "America/New_York"
-            status = restaurant[4]
-            is_open = False
-            if hours_structured:
-                is_open = open_now_service.is_open_now(hours_structured, timezone_str)
-            response_data = {
-                "success": True,
-                "data": {
-                    "restaurant_id": restaurant_id,
-                    "name": restaurant[1],
-                    "is_open": is_open,
-                    "status": status,
-                    "last_updated": datetime.now(timezone.utc).isoformat(),
-                },
-            }
-            # Send real-time update
-            websocket_service.broadcast_to_room(
-                f"restaurant_{restaurant_id}",
-                {"type": "restaurant_status_update", "data": response_data["data"]},
-            )
-            return jsonify(response_data)
+                from sqlalchemy import text
+                result = session.execute(
+                    text("SELECT id, name, hours_structured, timezone, status FROM restaurants WHERE id = :restaurant_id"),
+                    {"restaurant_id": restaurant_id}
+                )
+                restaurant = result.fetchone()
+                if not restaurant:
+                    return jsonify({"success": False, "error": "Restaurant not found"}), 404
+                
+                # Check open now status
+                hours_structured = restaurant[2]
+                timezone_str = restaurant[3] or "America/New_York"
+                status = restaurant[4]
+                is_open = False
+                if hours_structured:
+                    is_open = open_now_service.is_open_now(hours_structured, timezone_str)
+                
+                response_data = {
+                    "success": True,
+                    "data": {
+                        "restaurant_id": restaurant_id,
+                        "name": restaurant[1],
+                        "is_open": is_open,
+                        "status": status,
+                        "last_updated": datetime.now(timezone.utc).isoformat(),
+                    },
+                }
+                
+                # Send real-time update
+                websocket_service.broadcast_to_room(
+                    f"restaurant_{restaurant_id}",
+                    {"type": "restaurant_status_update", "data": response_data["data"]},
+                )
+                return jsonify(response_data)
         except Exception as e:
             logger.error(f"Error fetching restaurant status {restaurant_id}: {e}")
             return (
@@ -1941,7 +1948,7 @@ def create_app(config_class=None):
         migrate = request.args.get("migrate")
         if migrate == "subcategories":
             try:
-                db_manager = get_db_manager()
+                db_manager = get_db_manager_v4()
                 if not db_manager:
                     return (
                         jsonify(
@@ -1950,51 +1957,47 @@ def create_app(config_class=None):
                         503,
                     )
                 with db_manager.connection_manager.session_scope() as session:
-                    with conn.cursor() as cursor:
-                        # Check if subcategories table exists
-                        cursor.execute(
-                            """
-                            SELECT EXISTS (
-                                SELECT FROM information_schema.tables
-                                WHERE table_name = 'subcategories'
+                    from sqlalchemy import text
+                    # Check if subcategories table exists
+                    result = session.execute(text("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables
+                            WHERE table_name = 'subcategories'
+                        );
+                    """))
+                    table_exists = result.fetchone()[0]
+                    if not table_exists:
+                        # Create the subcategories table
+                        session.execute(text("""
+                            CREATE TABLE subcategories (
+                                id SERIAL PRIMARY KEY,
+                                category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+                                name VARCHAR(100) NOT NULL,
+                                description TEXT,
+                                icon VARCHAR(50),
+                                slug VARCHAR(100) UNIQUE NOT NULL,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                             );
-                        """
+                            CREATE INDEX idx_subcategories_category_id ON subcategories(category_id);
+                            CREATE INDEX idx_subcategories_slug ON subcategories(slug);
+                        """))
+                        session.commit()
+                        return jsonify(
+                            {
+                                "status": "healthy",
+                                "migration": "subcategories table created successfully",
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                            }
                         )
-                        table_exists = cursor.fetchone()[0]
-                        if not table_exists:
-                            # Create the subcategories table
-                            cursor.execute(
-                                """
-                                CREATE TABLE subcategories (
-                                    id SERIAL PRIMARY KEY,
-                                    category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
-                                    name VARCHAR(100) NOT NULL,
-                                    description TEXT,
-                                    icon VARCHAR(50),
-                                    slug VARCHAR(100) UNIQUE NOT NULL,
-                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                );
-                                CREATE INDEX idx_subcategories_category_id ON subcategories(category_id);
-                                CREATE INDEX idx_subcategories_slug ON subcategories(slug);
-                            """
-                            )
-                            conn.commit()
-                            return jsonify(
-                                {
-                                    "status": "healthy",
-                                    "migration": "subcategories table created successfully",
-                                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                                }
-                            )
-                        else:
-                            return jsonify(
-                                {
-                                    "status": "healthy",
-                                    "migration": "subcategories table already exists",
-                                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                                }
-                            )
+                    else:
+                        return jsonify(
+                            {
+                                "status": "healthy",
+                                "migration": "subcategories table already exists",
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                            }
+                        )
             except Exception as e:
                 logger.error(f"Migration failed: {e}")
                 return (
