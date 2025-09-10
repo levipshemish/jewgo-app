@@ -36,6 +36,7 @@ interface ContainerStatus {
   lastRestart?: string
   recentErrors?: string[]
   healthCheck?: string
+  created?: string
 }
 
 interface SystemStatus {
@@ -203,7 +204,8 @@ async function getContainerStatus(): Promise<ContainerStatus[]> {
           status: container.status === 'running' ? 'running' : 'stopped',
           uptime: container.uptime || 'unknown',
           healthCheck: container.health || 'unknown',
-          recentErrors: container.recent_errors || []
+          recentErrors: container.recent_errors || [],
+          created: container.created // Preserve the created field for detection logic
         }))
       }
     }
@@ -225,7 +227,7 @@ async function getContainerStatus(): Promise<ContainerStatus[]> {
       status: 'running',
       uptime: '30 minutes',
       healthCheck: 'healthy',
-      recentErrors: ['Signature verification failed', 'Missing deployment script']
+      recentErrors: []
     },
     {
       name: 'jewgo_postgres',
@@ -272,10 +274,33 @@ export async function GET(_request: NextRequest) {
     // Get webhook status
     const webhookStatus = await getWebhookStatus()
     
-    // Get container status
-    const containerStatus = await getContainerStatus()
-    const containerStatusSource = containerStatus.length > 0 && containerStatus[0].name === 'jewgo_backend' && 
-      containerStatus[0].uptime !== '2 hours' ? 'real' : 'mock'
+    // Get container status with timeout
+    let containerStatus: ContainerStatus[] = []
+    let containerStatusSource = 'mock'
+    try {
+      const containerPromise = getContainerStatus()
+      const timeoutPromise = new Promise<ContainerStatus[]>((_, reject) => 
+        setTimeout(() => reject(new Error('Container status timeout')), 10000)
+      )
+      containerStatus = await Promise.race([containerPromise, timeoutPromise])
+      // Check if we have real container data (not mock data)
+      containerStatusSource = containerStatus.length > 0 && 
+        (containerStatus.some(c => c.name.includes('jewgo') && (c as any).created && (c as any).created !== 'unknown') ||
+         containerStatus.some(c => c.name.includes('supabase'))) ? 'real' : 'mock'
+    } catch (error) {
+      console.error('Container status failed or timed out:', error)
+      // Use fallback mock data
+      containerStatus = [
+        {
+          name: 'jewgo_backend',
+          status: 'running',
+          uptime: 'unknown',
+          healthCheck: 'unknown',
+          recentErrors: []
+        }
+      ]
+      containerStatusSource = 'mock'
+    }
     
     // Check backend health
     const backendHealth = await checkRoute(`${backendUrl}/health`, 'Backend Health')
@@ -331,6 +356,20 @@ export async function GET(_request: NextRequest) {
       console.error('Failed to fetch database status:', error)
     }
     
+    // Get API routes information
+    let apiRoutes = null
+    let apiRoutesSource = 'none'
+    try {
+      const apiRoutesResponse = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/real-api-routes`)
+      if (apiRoutesResponse.ok) {
+        const apiRoutesData = await apiRoutesResponse.json()
+        apiRoutes = apiRoutesData.data
+        apiRoutesSource = apiRoutesData.source
+      }
+    } catch (error) {
+      console.error('Failed to fetch API routes:', error)
+    }
+    
     const systemStatus: SystemStatus = {
       timestamp: new Date().toISOString(),
       backend: {
@@ -341,16 +380,18 @@ export async function GET(_request: NextRequest) {
       webhook: webhookStatus,
       containers: containerStatus,
       database: {
-        status: 'connected', // This would need to be checked
+        status: databaseStatus?.health?.status === 'healthy' ? 'connected' : 
+                databaseStatus?.health?.status === 'warning' ? 'connected' : 'disconnected',
         lastCheck: new Date().toISOString(),
       },
       redis: {
-        status: 'connected', // This would need to be checked
+        status: 'connected', // Redis status would need to be checked via backend
         lastCheck: new Date().toISOString(),
       },
       systemMetrics: systemMetrics || null,
       databaseStatus: databaseStatus || null,
       externalAPIs: externalAPIs || null,
+      // apiRoutes: apiRoutes || null, // Not in current interface
       serviceDependencies: systemMetrics?.serviceDependencies || null,
       performanceMetrics: systemMetrics?.performanceMetrics || null,
       securityMonitoring: systemMetrics?.securityMonitoring || null,
@@ -360,7 +401,8 @@ export async function GET(_request: NextRequest) {
         systemMetrics: systemMetricsSource,
         databaseStatus: databaseStatusSource,
         externalAPIs: externalAPIsSource,
-        containerStatus: containerStatusSource
+        containerStatus: containerStatusSource,
+        // apiRoutes: apiRoutesSource // Not in current interface
       }
     }
     
