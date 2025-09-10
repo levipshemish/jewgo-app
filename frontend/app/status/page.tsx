@@ -25,7 +25,7 @@ import {
   TrendingUp,
   BarChart3,
   Settings,
-  Globe
+  Globe2
 } from 'lucide-react'
 
 interface RouteStatus {
@@ -680,7 +680,7 @@ export default function StatusPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
+                <Globe2 className="h-5 w-5" />
                 External APIs Status
                 <div className="flex items-center gap-1 ml-2">
                   <div className={`w-2 h-2 rounded-full ${
@@ -862,7 +862,7 @@ export default function StatusPage() {
                 <div className="p-4 bg-orange-50 rounded-lg">
                   <div className="text-sm font-medium text-orange-800 mb-2">Feature Flags</div>
                   <div className="text-lg font-bold text-orange-900">
-                    {status.applicationHealth.featureFlags.filter(f => f.enabled).length}
+                    {status.applicationHealth.featureFlags.filter((f: any) => f.enabled).length}
                   </div>
                   <div className="text-xs text-orange-600">Enabled features</div>
                 </div>
@@ -898,7 +898,7 @@ export default function StatusPage() {
                   <div>
                     <h4 className="font-medium mb-2">Recent Deployments</h4>
                     <div className="space-y-2">
-                      {status.alertsNotifications.recentDeployments.map((deployment, index) => (
+                      {status.alertsNotifications.recentDeployments.map((deployment: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div>
                             <div className="font-medium">{deployment.version}</div>
@@ -919,7 +919,7 @@ export default function StatusPage() {
                   <div>
                     <h4 className="font-medium mb-2">Performance Alerts</h4>
                     <div className="space-y-2">
-                      {status.alertsNotifications.performanceAlerts.map((alert, index) => (
+                      {status.alertsNotifications.performanceAlerts.map((alert: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                           <div>
                             <div className="font-medium text-red-800">{alert.type.toUpperCase()}</div>
