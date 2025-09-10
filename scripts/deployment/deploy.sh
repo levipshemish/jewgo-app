@@ -23,6 +23,12 @@ docker stop jewgo_backend || true
 docker rm jewgo_backend || true
 docker run -d --name jewgo_backend --network jewgo-app_default -p 5000:5000 --env-file .env jewgo-app-backend
 
+# Clean up old Docker images to prevent storage issues
+echo "🧹 Cleaning up old Docker images..."
+docker image prune -f
+docker builder prune -f
+echo "✅ Docker cleanup completed"
+
 # Wait for the backend to start
 echo "⏳ Waiting for backend to start..."
 sleep 20
@@ -60,3 +66,5 @@ fi
 echo "🎉 Deployment completed successfully!"
 echo "📊 Container status:"
 docker ps --filter "name=jewgo_"
+echo "💾 Docker storage usage:"
+docker system df
