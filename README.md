@@ -1,856 +1,306 @@
 # JewGo - Kosher Restaurant Discovery Platform
 
-A comprehensive platform for discovering and reviewing kosher restaurants, synagogues, and Jewish community resources.
+A platform for discovering and reviewing kosher restaurants, synagogues, and Jewish community resources. This repository contains the Next.js frontend and a Flask backend used in production at https://api.jewgo.app.
 
-## 🚀 Recent Updates (September 2025)
+Last Updated: 2025-09-10  
+Status: Production Ready ✅
+<!-- Webhook test: Docker cleanup integration -->
 
-### ✅ **PostGIS Setup & Restaurant API Fix - PRODUCTION READY**
+## Recent highlights (Sep 2025)
 
-- **🎉 Critical API Fix**: Resolved `fetchRestaurants` returning 0 restaurants with location parameters
-- **✅ Database Enhancement**:
-  - Added PostGIS geometry column (`geom`) to restaurants table
-  - Populated geometry data for all 207 restaurants from existing lat/lng coordinates
-  - Created spatial indexes for efficient distance-based queries
-  - Added automatic triggers to maintain geometry data consistency
-- **✅ API Improvements**:
-  - Fixed backend PostGIS queries to use proper geometry column
-  - Restored location-based restaurant filtering and distance sorting
-  - Fixed cursor-based pagination with proper `next_cursor` and `hasMore` fields
-  - Enhanced frontend API route response format consistency
-- **✅ Performance Optimizations**:
-  - GIST spatial index for fast distance calculations
-  - Conditional indexes for active restaurants with valid coordinates
-  - Automatic geometry updates via database triggers
-- **📊 Results**: Restaurant API now works correctly with location parameters, returning proper distance-sorted results
-- **📝 Documentation**: Complete setup details in `docs/POSTGIS_SETUP_SUMMARY.md`
+- PostGIS integration for spatial queries (restaurants table now has a geometry column, spatial indexes, and automatic triggers).
+- Restaurant API fixes: location-based filtering, distance sorting, and correct cursor-based pagination.
+- Frontend ↔ backend API communication fixes (CORS resolved by using frontend routes, corrected backend endpoint calls).
+- Map popup UI updated to use a unified glassy Card design and consistent data display.
+- Unified listing page design across categories with mock-data fallbacks when backend endpoints are not available.
+- Shuls pagination fixed (increased page size, infinite scroll + explicit Load More fallback).
+- Restaurant listing page overhaul (reviews integrated, Google Places integration, improved image handling).
+- Shtel Marketplace feature released (store/product management, Stripe checkout, admin approval workflows).
+- Complete TypeScript migration — project compiles with type checking enabled.
+- Admin system production-ready with 4-tier RBAC and PostgreSQL-backed authentication.
+- Backend testing and CI/CD readiness: core tests passing and CI-ready pipelines.
 
-## 🚀 Recent Updates (September 2025)
+For detailed implementation and migration notes, see the docs/ directory.
 
-### ✅ **API Communication Fixes - PRODUCTION READY**
+## Table of contents
 
-- **🎉 Comprehensive API Fixes**: Resolved all frontend API communication issues across category pages
-- **✅ CORS Issues Resolved**:
-  - Fixed PostgresAuthClient to use frontend API routes instead of direct backend calls
-  - Eliminated CORS errors for `/api/auth/profile` endpoint
-  - Proper CORS handling through frontend API routes
-- **✅ Backend Endpoint Corrections**:
-  - Fixed synagogues API route to call correct `/api/v4/synagogues` endpoint
-  - Updated restaurants API route to use proper cursor-based pagination
-  - Ensured all API routes call existing backend endpoints
-- **✅ Fallback Systems Implemented**:
-  - Statistics API route returns default data (backend endpoint not implemented)
-  - Kosher types API route returns default data (backend endpoint not implemented)
-  - Graceful error handling with user-friendly fallbacks
-- **✅ Configuration Updates**:
-  - Removed Next.js redirects for non-existent backend endpoints
-  - Updated PostgresAuthClient baseUrl to use frontend domain
-  - Proper separation between frontend and backend API routes
-- **📊 Results**: All category pages now work correctly with proper API communication
-- **📝 Documentation**: Complete implementation details in `docs/API_FIXES_SUMMARY.md`
+- Features
+- Tech stack
+- Quick start
+- Development
+- Deployment
+- Admin system
+- API documentation
+- Contributing
+- Troubleshooting
+- Monitoring & Security
+- Support
 
-### ✅ **Map Popup Glassy Design Update - PRODUCTION READY**
+## Features
 
-- **🎉 Visual Consistency Enhancement**: Updated live map popup to use the same glassy tag design as eatery page cards
-- **✅ Design Improvements**:
-  - Added map variant to Card component with proper dimensions (h-40 image, reduced padding)
-  - Restored glassy design using `backdrop-filter: blur(8px)` for kosher tags
-  - Added yellow star rating display for restaurants with ratings
-  - Enhanced price range detection with multiple field fallbacks
-- **✅ Technical Fixes**:
-  - Updated map page to use unified API endpoint (`/api/restaurants/unified`)
-  - Removed CSS interference (`contain` properties) that blocked glassy effects
-  - Replaced inline HTML with reusable Card component
-  - Fixed all TypeScript compilation errors
-- **✅ Performance & UX**:
-  - Larger image display (160px height) for better visibility
-  - Better price range fallbacks (shows `$$` instead of "Price not available")
-  - Consistent design language across map and eatery pages
-- **📊 Results**: Map popup now provides consistent, modern glassy design with improved data display
-- **📝 Documentation**: Complete implementation details in `docs/map-popup-glassy-design-update.md`
+- Restaurant management: searchable kosher restaurant listings, reviews, ratings, hours, specials, map integration.
+- Synagogue directory: searchable synagogue listings and community contact information.
+- Reviews: user and Google reviews combined, with moderation tools.
+- User accounts: authentication, profile management, avatars, favorites.
+- Shtel Marketplace: store and product management, orders, payments (Stripe).
+- Admin dashboard: role-based access control, moderation, audit logging.
 
-### ✅ **Unified Page Design & Mock Data Fallback - PRODUCTION READY**
+## Tech stack
 
-- **🎉 Major Consistency Enhancement**: All listing pages (shuls, stores, mikvah, shtetl, marketplace) now have identical design and functionality
-- **✅ Design Standardization**: 
-  - Unified grid layout across all pages (2-column responsive grid)
-  - Consistent navigation with CategoryTabs and ActionButtons
-  - Standardized bottom navigation using ShulBottomNavigation
-  - Identical header structure and search functionality
-- **✅ Mock Data Fallback System**:
-  - Added robust fallback to mock data when backend APIs are unavailable
-  - Created comprehensive mock data generators for stores, mikvah, and shtetl listings
-  - Implemented graceful error handling with user-friendly notifications
-  - Added yellow warning banners to indicate when sample data is being shown
-- **✅ Technical Improvements**:
-  - Fixed import paths for ListingPage and ErrorBoundary components
-  - Registered missing API blueprints in backend (stores, mikvah, shtetl)
-  - Enhanced error handling with automatic fallback to mock data
-  - Improved user experience during backend outages
-- **✅ Backend API Registration**:
-  - Added stores_bp, mikvah_bp, and shtetl_bp blueprint registrations
-  - Ensured all frontend API routes have corresponding backend endpoints
-  - Fixed 500 errors by properly connecting frontend to backend APIs
-- **📊 Results**: All pages now provide consistent, reliable user experience with graceful degradation
-- **📝 Documentation**: Complete implementation details in commit history
+Frontend
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS
+- Prisma (DB schema used for some local tooling)
+- Google Maps (frontend)
 
-### ✅ **Fixed Shuls Pagination Issue - PRODUCTION READY**
+Backend
+- Flask (Python)
+- PostgreSQL (production DB with PostGIS for spatial queries)
+- Redis (caching)
+- Gunicorn
+- Alembic (migrations)
 
-- **🎉 Major Fix**: Resolved issue where shuls page was only showing 6 out of 130 available synagogues
-- **✅ Pagination Improvements**: 
-  - Increased batch size from 6 to 12 shuls per page for better UX
-  - Fixed infinite scroll functionality that was not working properly
-  - Added explicit "Load More" button as alternative to infinite scroll
-  - Fixed API configuration to properly connect to production database
-- **✅ Technical Fixes**:
-  - Updated frontend API route to use production URL (`https://api.jewgo.app`)
-  - Fixed `hasNext`/`hasPrev` calculation logic for proper pagination
-  - Added comprehensive debugging and error handling
-  - Enhanced state management for pagination
-- **📊 Results**: Users can now access all 130 synagogues with smooth pagination
-- **📝 Documentation**: Complete technical documentation in `docs/SHULS_PAGINATION_FIX.md`
+Infrastructure & tools
+- Vercel (frontend)
+- Render / VPS (backend)
+- Sentry (error monitoring)
+- Stripe (payments)
 
-### ✅ **Enhanced Restaurant Listing Page - PRODUCTION READY**
+## Quick start (developer)
 
-- **🎉 Major UI/UX Enhancement**: Complete redesign of restaurant listing pages with modern, professional interface
-- **✅ Visual Improvements**: 
-  - Updated action button to "View Gallery" for better clarity
-  - Added prominent view count icon with white background on bottom-left of images
-  - Implemented yellow star rating system with hover effects (☆ to ⭐)
-  - Fixed rating and distance mapping in content section
-- **✅ Reviews System Overhaul**:
-  - Connected reviews popup to database for real review data
-  - Implemented combined display of user reviews and Google reviews
-  - Added pagination support with "Load More" functionality
-  - Prioritized user reviews over Google reviews in display order
-  - Added Google review badges and profile photo support
-- **✅ Profile Image Handling**:
-  - Created robust image loading system with automatic fallbacks
-  - Implemented retry logic for failed image loads
-  - Added graceful degradation with User icon fallbacks
-  - Support for different image sizes (sm, md, lg)
-- **✅ Database Integration**:
-  - Enhanced review storage with Google Places integration
-  - Added `place_id` column for structured Google review fetching
-  - Created `google_reviews` table for organized review storage
-  - Implemented comprehensive review management services
-- **✅ Mobile Responsive**: Fully responsive design with accessibility compliance
-- **✅ Performance Optimized**: Optimized image loading and component rendering
-- **📋 Documentation**: Complete implementation documentation in `docs/`
-
-### ✅ **Shtel Marketplace - PRODUCTION READY**
-
-- **🎉 Major Feature Release**: Complete Shtel Marketplace implementation successfully merged
-- **✅ Store Management**: Full store creation, management, and approval system
-- **✅ Product Catalog**: Complete product management with inventory tracking
-- **✅ Order Processing**: Integrated checkout and payment processing with Stripe
-- **✅ Admin Dashboard**: Comprehensive admin interface for store approval and management
-- **✅ User Authentication**: Enhanced authentication with role-based access control
-- **✅ Mobile Responsive**: Fully responsive design with accessibility compliance
-- **✅ Security Hardened**: Comprehensive security measures and input validation
-- **✅ Performance Optimized**: Optimized bundle size and static generation
-- **📋 Documentation**: Complete implementation documentation in `docs/PR_45_MERGE_COMPLETION.md`
-
-### ✅ **TypeScript Migration - 100% COMPLETE**
-
-- **🎉 Mission Accomplished**: Successfully migrated from 961 TypeScript errors to **0 errors**
-- **✅ Complete Type Safety**: 100% TypeScript compliance across the entire codebase
-- **✅ Authentication System**: Fixed all auth types, session handling, and JWT token types
-- **✅ API Routes**: Resolved cookie handling, request/response types, and error handling
-- **✅ Component Types**: Fixed all prop types, callback signatures, and interface compatibility
-- **✅ External APIs**: Created comprehensive Google Places API types and type guards
-- **✅ Property Naming**: Standardized all properties to snake_case convention
-- **✅ Syntax Errors**: Eliminated all underscore prefix issues and merge conflicts
-- **✅ Production Ready**: Codebase now has robust type safety preventing runtime errors
-- **📋 Documentation**: Complete migration documentation in `docs/TYPESCRIPT_MIGRATION_COMPLETE.md`
-
-### ✅ **Frontend Build - FULLY FIXED AND WORKING**
-
-- **✅ Complete Fix**: All frontend build errors resolved, application now compiles successfully
-- **✅ Missing Components**: Created all missing UI components (Button, Card, Navigation, etc.)
-- **✅ Corrupted Files**: Rewrote all corrupted components with proper TypeScript interfaces
-- **✅ Server Actions**: Fixed server action import issues with client-side alternatives
-- **✅ Type Errors**: Resolved all TypeScript type errors and interface issues
-- **✅ Syntax Errors**: Fixed all syntax errors in components and utilities
-- **✅ Production Ready**: Frontend builds successfully with only minor warnings
-- **📋 Documentation**: Complete build fixes documentation in `docs/FRONTEND_BUILD_FIXES.md`
-
-### ✅ **API v4 Routes - FIXED AND FULLY WORKING**
-
-- **✅ Complete Fix**: All API v4 routes are now fully functional and production-ready
-- **✅ Database Integration**: Full PostgreSQL integration working with proper data storage
-- **✅ Feature Flag Resolution**: Fixed `api_v4_restaurants` feature flag blocking route access
-- **✅ Session Management**: Fixed SQLAlchemy session issues and data type handling
-- **✅ Service Layer**: Complete service layer architecture with proper error handling
-- **✅ Form Submission**: "Submit restaurant" button functionality fully implemented
-- **✅ Production Ready**: All endpoints working with proper validation and responses
-- **✅ Frontend Form Complete**: Added missing form fields (seating capacity, business details)
-- **✅ Form Validation**: All validation issues resolved, submit button now works properly
-- **📋 Documentation**: Complete status documentation in `docs/API_V4_ROUTES_STATUS.md`
-
-### ✅ **Profile System - Enhanced User Experience**
-
-- **✅ Clickable Avatar Upload**: Redesigned avatar upload with clickable avatar circle (no separate upload area)
-- **✅ Profile Page Fixes**: Resolved infinite loading issues and redirect loops
-- **✅ Settings Page Integration**: Seamless avatar upload integration in profile settings
-- **✅ Multiple Size Support**: Avatar upload supports sm, md, lg, and xl sizes
-- **✅ Hover Effects**: Visual feedback with scale and shadow effects on hover
-- **✅ Mobile Optimization**: Touch-friendly interface with responsive design
-
-### ✅ **Admin System - Production Ready**
-
-- **✅ Complete PostgreSQL Integration**: Fully migrated admin system to PostgreSQL with custom authentication
-- **✅ Role-Based Access Control (RBAC)**: Implemented 4-tier admin role system (super_admin, system_admin, data_admin, moderator)
-- **✅ Database Security**: Database-level security policies for admin tables
-- **✅ Admin Management Scripts**: Complete set of npm scripts for admin user management
-- **✅ Super Admin Setup**: admin@jewgo.app configured as super admin with full privileges
-
-### ✅ **Backend Testing & CI/CD - READY FOR PRODUCTION**
-
-- **🎉 Test Authentication Issues Resolved**: Successfully resolved all backend test failures and created CI-ready test suite
-- **✅ Core Functionality Verified**: 12/12 core tests passing, confirming all essential functionality works correctly
-- **✅ Authentication Framework**: Security decorators and PostgreSQL authentication properly implemented and tested
-- **✅ Performance Validated**: Endpoints responding in <1 second, handling concurrent requests successfully
-- **✅ Error Handling**: Proper HTTP status codes, structured logging, and comprehensive error responses
-- **✅ Test Coverage**: 15% coverage established, sufficient for CI/CD pipeline readiness
-- **✅ CI/CD Pipeline Ready**: All core functionality verified, ready for automated testing and deployment
-- **📋 Documentation**: Complete CI readiness report in `backend/CI_READINESS_REPORT.md`
-
-## 🔧 Technical Improvements
-
-- **Profile Authentication Flow**: Fixed redirect loops and loading state management
-- **Avatar Upload Components**: New ClickableAvatarUpload component with modern UX
-- **PostgreSQL Migration**: Complete admin system migration to PostgreSQL with custom authentication
-- **Admin Functions**: Database functions for role management (`get_user_admin_role`, `assign_admin_role`)
-- **Security Enhancements**: RLS policies, secure metadata storage, service role integration
-- **Management Tools**: Comprehensive admin verification and testing scripts
-- **Database Migration**: Complete transition from SQLite to PostgreSQL with enhanced performance
-- **Review System**: Comprehensive review management with Google Places integration
-- **Image Handling**: Robust image loading with fallbacks and retry logic
-
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Admin System](#admin-system)
-- [API Documentation](#api-documentation)
-- [Contributing](#contributing)
-- [Contributor Guide](#contributor-guide)
-- [Troubleshooting](#troubleshooting)
-
-## ✨ Features
-
-### 🍽️ Restaurant Management
-- **Comprehensive Restaurant Database**: Kosher restaurants with detailed information
-- **Advanced Search & Filtering**: Find restaurants by location, cuisine, kosher certification
-- **User Reviews & Ratings**: Community-driven reviews and ratings system
-- **Hours & Specials**: Real-time hours and special offers
-- **Map Integration**: Interactive maps with restaurant locations
-
-### 🏛️ Synagogue Directory
-- **Florida Synagogue Database**: Comprehensive directory of synagogues
-- **Location Services**: Find nearby synagogues and prayer times
-- **Community Information**: Contact details and community resources
-
-### 👥 User Management
-- **User Authentication**: Secure login with multiple providers (Google, Apple)
-- **Profile Management**: User profiles with preferences and history
-- **Avatar Upload**: Clickable avatar upload with hover effects and multiple sizes
-- **Review System**: User-generated reviews and ratings
-- **Favorites**: Save favorite restaurants and synagogues
-
-### 🔧 Admin System
-- **Comprehensive Admin Dashboard**: Real-time system metrics and management tools
-- **Database Management**: Manage restaurants, reviews, synagogues, and users
-- **Audit Logging**: Complete audit trail of all admin actions
-- **Role-Based Access Control**: Granular permissions for different admin functions
-- **CSRF Protection**: Secure admin actions with CSRF token validation
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Next.js 14**: React framework with App Router
-- **TypeScript**: Type-safe JavaScript
-- **Tailwind CSS**: Utility-first CSS framework
-- **PostgreSQL**: Authentication and database
-- **Prisma**: Database ORM
-- **Google Maps API**: Location services
-
-### Backend
-- **Flask**: Python web framework
-- **PostgreSQL**: Primary database
-- **Redis**: Caching and rate limiting
-- **Gunicorn**: WSGI server
-- **Alembic**: Database migrations
-
-### Infrastructure
-- **Vercel**: Frontend deployment
-- **Render**: Backend deployment
-- **PostgreSQL**: Database and authentication
-- **Sentry**: Error monitoring
-- **Google Analytics**: Analytics tracking
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+ and npm
+Prerequisites
+- Node.js 18+
+- npm / pnpm
 - Python 3.11+
-- PostgreSQL database
+- PostgreSQL (for local development)
 - Git
 
-### Installation
+Clone & install
+```bash
+git clone https://github.com/mml555/jewgo-app.git
+cd jewgo-app
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/jewgo-app.git
-   cd jewgo-app
-   ```
+Frontend
+```bash
+cd frontend
+cp .env.example .env.local
+# Edit .env.local with your configuration:
+#   NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+#   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-key
+npm install
+npm run dev
+```
 
-2. **Set up environment variables**
-   ```bash
-   # Copy environment template
-   cp .env.example .env
-   
-   # Edit .env with your configuration
-   nano .env
-   ```
+Backend
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with DATABASE_URL, SECRET_KEY, JWT_SECRET_KEY, REFRESH_PEPPER, etc.
+alembic upgrade head
+python app.py
+```
 
-3. **Install dependencies**
-   ```bash
-   # Frontend dependencies
-   cd frontend
-   npm install
-   
-   # Backend dependencies
-   cd ../backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+Access locally
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
 
-4. **Set up database**
-   ```bash
-   # Run database migrations
-   cd backend
-   python -m alembic upgrade head
-   ```
+## Development
 
-5. **Start development servers**
-   ```bash
-   # Start backend (from backend directory)
-   python app.py
-   
-   # Start frontend (from frontend directory)
-   npm run dev
-   ```
-
-6. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
-   - Admin Dashboard: http://localhost:3000/admin
-
-## 🏗️ Development
-
-### Project Structure
-
+Project structure (top-level)
 ```
 jewgo-app/
-├── frontend/                 # Next.js frontend application
-│   ├── app/                 # App Router pages and components
-│   ├── components/          # Reusable React components
-│   ├── lib/                 # Utility libraries and configurations
-│   ├── prisma/              # Database schema and migrations
-│   └── public/              # Static assets
-├── backend/                 # Flask backend application
-│   ├── routes/              # API route handlers
-│   ├── services/            # Business logic services
-│   ├── database/            # Database models and repositories
-│   └── utils/               # Utility functions
-├── docs/                    # Project documentation
-├── scripts/                 # Development and deployment scripts
-└── config/                  # Configuration files
+├── frontend/        # Next.js frontend (app router, components, pages)
+├── backend/         # Flask backend (routes, services, models)
+├── docs/            # Project documentation and migration notes
+├── scripts/         # Development and deployment helper scripts
+└── config/          # Config files and templates
 ```
 
-### Development Commands
-
+Common commands
+Frontend
 ```bash
-# Frontend development
 cd frontend
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run test         # Run tests
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript check
-
-# Prisma client (run after editing frontend/prisma/schema.prisma)
-npx prisma generate
-
-# Backend development
-cd backend
-python app.py        # Start development server
-pytest               # Run tests
-black .              # Format code
-flake8               # Lint code
-
-# Database management
-npm run db:migrate   # Run database migrations
-npm run db:seed      # Seed database with sample data
-npm run db:reset     # Reset database (development only)
+npm run dev        # dev server
+npm run build      # production build
+npm run test       # tests
+npm run lint
+npm run type-check
 ```
 
-### Environment Variables
-
-#### Frontend (.env.local)
+Backend
 ```bash
-NEXT_PUBLIC_BACKEND_URL=your-backend-url
-JWT_SECRET_KEY=your-jwt-secret-key
+cd backend
+source .venv/bin/activate
+python app.py      # start dev server
+pytest             # run tests
+black .            # format
+flake8             # lint
+```
+
+Database
+- Migrations are handled with Alembic (backend/migrations).
+- Local seed/reset scripts available in scripts/ (use with caution).
+
+## Environment variables (examples)
+
+Frontend (.env.local)
+```bash
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-key
-DATABASE_URL=postgresql://...
-JWT_ACCESS_EXPIRE_HOURS=24
+NEXT_PUBLIC_VERCEL_URL=your-vercel-url
 ```
 
-#### Backend (.env)
+Backend (.env)
 ```bash
-DATABASE_URL=postgresql://...
+DATABASE_URL=postgresql://user:pass@localhost:5432/jewgo
 FLASK_ENV=development
 ENVIRONMENT=development
 SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret-key
-JWT_ACCESS_EXPIRE_HOURS=24
-# Required in production:
-# - JWT_SECRET_KEY (or JWT_SECRET)
-# - REFRESH_PEPPER              # used to hash refresh tokens safely
-# Optional but recommended in production:
-# - COOKIE_DOMAIN=your.domain   # cookies scoped to domain
-# - CSRF_ENABLED=true           # enforced automatically in production
-# - ACCESS_TTL_SECONDS=900      # 15m default
-# - REFRESH_TTL_SECONDS=3888000 # 45d default
-# - GUEST_REFRESH_TTL_SECONDS=604800 # 7d default for guests
-# OAuth (if using Google login)
-# - GOOGLE_CLIENT_ID=
-# - GOOGLE_CLIENT_SECRET=
+REFRESH_PEPPER=some-random-pepper
+ACCESS_TTL_SECONDS=900
+REFRESH_TTL_SECONDS=3888000
 ```
 
-### Production Requirements (Auth)
+Notes
+- In production, ensure COOKIE_DOMAIN and proper SameSite/Secure cookie settings are configured if frontend and backend are on different domains.
+- JWT_SECRET_KEY (or JWT_SECRET) and REFRESH_PEPPER are required in production.
 
-- JWT secrets: set `JWT_SECRET_KEY` (or `JWT_SECRET`) — required. In production the app fails closed if missing.
-- Refresh pepper: set `REFRESH_PEPPER` — required in production to protect stored refresh-token hashes.
-- Cookies: if frontend and backend are on different domains, set `COOKIE_DOMAIN` and ensure cookies use `SameSite=None; Secure` (enabled when `ENVIRONMENT=production`). With same-site setups, default `SameSite=Lax` works.
-- Refresh endpoint: `/api/auth/refresh` prefers the HttpOnly `refresh_token` cookie. The JSON body param remains optional for backward compatibility.
-- CSRF: enforced for mutating auth routes in production. Frontend obtains `/api/auth/csrf` then sends `X-CSRF-Token` automatically.
+## Deployment
 
-## 🚀 Deployment
+Frontend (Vercel)
+1. Connect repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy on push to main (or your release branch)
 
-### Frontend (Vercel)
+Backend (Render / VPS / Docker)
+1. Create service and connect the repo
+2. Configure environment variables and secrets
+3. Deploy; use Docker or Gunicorn+nginx based on deployment plan
 
-1. **Connect repository to Vercel**
-2. **Configure environment variables**
-3. **Deploy automatically on push to main**
+Database (PostgreSQL)
+1. Provision a managed Postgres instance
+2. Run migrations (alembic upgrade head)
+3. Apply PostGIS extension if using spatial queries (CREATE EXTENSION postgis;)
 
-### Backend (Render)
+Health checks
+- Frontend: GET /healthz
+- Backend: GET /health
+- DB: GET /health/db
 
-1. **Create new Web Service**
-2. **Connect GitHub repository**
-3. **Set environment variables**
-4. **Deploy automatically**
+Production API
+- api.jewgo.app (production API host)
 
-### Database (PostgreSQL)
+## Admin system
 
-1. **Set up PostgreSQL database**
-2. **Run database migrations**
-3. **Configure authentication**
-4. **Set up admin users**
+- Role system: super_admin, system_admin, data_admin, moderator.
+- Admin UI accessible at /admin (frontend).
+- Admin actions protected by CSRF tokens and DB-level policies.
+- Quick SQL method to mark a user as super admin:
+```sql
+UPDATE auth.users
+SET raw_user_meta_data = jsonb_set(
+  COALESCE(raw_user_meta_data, '{}'::jsonb),
+  '{is_super_admin}', 'true'::jsonb
+)
+WHERE email = 'your-email@example.com';
+```
 
-For detailed deployment instructions, see [Deployment Guide](docs/DEPLOYMENT_GUIDE.md).
-
-## 🔧 Admin System
-
-### Overview
-
-The admin system provides comprehensive administrative capabilities for managing the JewGo platform with full PostgreSQL integration, role-based access control, and secure authentication.
-
-### ✅ **Status: Production Ready**
-
-The admin system is fully implemented and functional with:
-- **4-Tier Role System**: super_admin, system_admin, data_admin, moderator
-- **PostgreSQL Integration**: Complete migration to PostgreSQL with custom authentication
-- **Row Level Security**: Database-level access control policies
-- **Management Scripts**: Comprehensive admin user management tools
-
-### Features
-
-- **Dashboard**: Real-time system metrics and overview
-- **Restaurant Management**: Manage restaurant listings and details
-- **Review Moderation**: Moderate user reviews and ratings
-- **User Management**: Manage user accounts and permissions
-- **Synagogue Directory**: Manage synagogue listings
-- **Audit Logging**: Complete audit trail of all admin actions
-
-### Access
-
-- **URL**: `/admin`
-- **Authentication**: Requires admin role in PostgreSQL
-- **Security**: CSRF token protection for all actions
-
-### Quick Setup
-
-1. **Verify admin system**
-   ```bash
-   cd frontend
-   npm run admin:verify
-   ```
-
-2. **Create super admin** (Manual SQL method)
-   ```sql
-   UPDATE auth.users 
-   SET raw_user_meta_data = jsonb_set(
-     COALESCE(raw_user_meta_data, '{}'::jsonb),
-     '{is_super_admin}', 'true'::jsonb
-   ) WHERE email = 'your-email@example.com';
-   ```
-
-3. **Test admin access**
-   ```bash
-   npm run admin:test your-email@example.com
-   ```
-
-### Admin Management Commands
-
+Admin helper scripts (frontend)
 ```bash
-# Verify system setup
 npm run admin:verify
-
-# List all admin users
 npm run admin:list
-
-# Create super admin (provides SQL instructions)
 npm run admin:create-super-admin <email> "<name>"
-
-# Assign admin role
 npm run admin:assign-role <email> <role>
-
-# Test admin access
 npm run admin:test <email>
 ```
 
-For detailed admin system documentation, see [Admin Roles Production Setup](docs/setup/ADMIN_ROLES_PRODUCTION_SETUP.md).
+## API documentation (high-level)
 
-## 📚 API Documentation
+Restaurants
+- GET /api/restaurants
+- GET /api/restaurants/{id}
+- POST /api/restaurants (admin)
+- PUT /api/restaurants/{id} (admin)
 
-### REST API Endpoints
+Reviews
+- GET /api/reviews
+- POST /api/reviews
+- PUT /api/reviews/{id}
+- DELETE /api/reviews/{id}
 
-#### Restaurants
-- `GET /api/restaurants` - List restaurants
-- `GET /api/restaurants/{id}` - Get restaurant details
-- `POST /api/restaurants` - Create restaurant (admin)
-- `PUT /api/restaurants/{id}` - Update restaurant (admin)
+Users
+- GET /api/users/profile
+- PUT /api/users/profile
+- GET /api/admin/users (admin)
 
-#### Reviews
-- `GET /api/reviews` - List reviews
-- `POST /api/reviews` - Create review
-- `PUT /api/reviews/{id}` - Update review
-- `DELETE /api/reviews/{id}` - Delete review
+Synagogues
+- GET /api/synagogues
+- GET /api/synagogues/{id}
 
-#### Users
-- `GET /api/users/profile` - Get user profile
-- `PUT /api/users/profile` - Update user profile
-- `GET /api/admin/users` - List users (admin)
+Admin endpoints
+- GET /api/admin/csrf
+- GET /api/admin/restaurants
+- GET /api/admin/reviews
+- GET /api/admin/users
 
-#### Synagogues
-- `GET /api/synagogues` - List synagogues
-- `GET /api/synagogues/{id}` - Get synagogue details
+For full API reference and examples see docs/api/ and the backend routes folder.
 
-### Admin API Endpoints
+## Contributing
 
-- `GET /api/admin/csrf` - Generate CSRF token
-- `GET /api/admin/restaurants` - Manage restaurants
-- `GET /api/admin/submissions/restaurants` - Moderation list (server-driven)
-- `GET /api/admin/reviews` - Moderate reviews
-- `GET /api/admin/synagogues` - Manage synagogues
-- `GET /api/admin/users` - Manage users
+- Fork the repo, create a feature branch, make changes, run lint/tests, and open a pull request.
+- Follow Conventional Commits for commit messages.
+- Frontend uses ESLint + Prettier and TypeScript strict mode. Backend uses Black and Flake8.
 
-For complete API documentation, see [API Documentation](docs/api/).
+## Troubleshooting (common issues)
 
-## 🤝 Contributing
+CSRF token errors
+- Verify admin CSRF route exists and frontend is requesting /api/admin/csrf before mutating requests.
 
-### Contributor Guide
+Database / migration issues
+- Ensure DATABASE_URL points to correct instance and alembic migrations have been applied.
 
-- Contributor guidelines: see `docs/AGENTS.md` (Repository Guidelines).
-- Agent operating rules: see `AGENTS.md` (Codex Agent guardrails and workflow).
+CORS
+- Frontend should call backend via frontend API routes where possible. Backend CORS is configured for the production frontend domain.
 
-### Development Workflow
+Build / TypeScript errors
+- Run type checks: npm run type-check
+- Clear caches: rm -rf .next node_modules/.cache && npm install
 
-1. **Fork the repository**
-2. **Create a feature branch**
-3. **Make your changes**
-4. **Run tests and linting**
-5. **Submit a pull request**
+## Monitoring & analytics
 
-### Code Standards
+- Sentry for error monitoring
+- Google Analytics (optional)
+- Health endpoints for automated monitoring
 
-- **Frontend**: ESLint + Prettier, TypeScript strict mode
-- **Backend**: Black + Flake8, type hints
-- **Testing**: Jest (frontend), pytest (backend)
-- **Commits**: Conventional Commits format
+## Security
 
-### Testing
+- JWT-based authentication with rotating refresh tokens.
+- REFRESH_PEPPER required in production to secure refresh token hashing.
+- CSRF protection enabled for mutating admin routes.
+- RLS (Row Level Security) policies applied on admin tables when configured.
 
+## Production server (summary)
+
+- Domain: api.jewgo.app
+- Production stack: PostgreSQL + PostGIS, Redis, Flask backend, Next.js frontend
+- SSL: Let's Encrypt configured (auto-renew)
+- Service management: Docker containers and system-level monitoring in production
+
+Common ops commands
 ```bash
-# Frontend tests
-cd frontend
-npm test
-
-# Backend tests
-cd backend
-pytest
-
-# End-to-end tests
-npm run test:e2e
-```
-
-For detailed contributing guidelines, see [Contributing Guide](docs/CONTRIBUTING.md).
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-#### Admin System Issues
-
-1. **500 Internal Server Error on Admin Page**
-   ```bash
-   # Check environment variables
-   npm run env:check
-   
-   # Clear build cache
-   rm -rf .next && npm run build
-   ```
-
-2. **CSRF Token Errors**
-   ```bash
-   # Verify CSRF route exists
-   ls frontend/app/api/admin/csrf/route.ts
-   ```
-
-3. **Database Query Errors**
-   ```bash
-   # Test database connection
-   npm run db:test
-   ```
-
-#### Build Issues
-
-1. **Webpack Module Errors**
-   ```bash
-   # Clear all caches
-   rm -rf .next node_modules/.cache
-   npm install
-   ```
-
-2. **TypeScript Errors**
-   ```bash
-   # Run type check
-   npm run type-check
-   ```
-
-#### Deployment Issues
-
-1. **Environment Variables**
-   ```bash
-   # Validate environment
-   npm run env:check
-   ```
-
-2. **Database Connection**
-   ```bash
-   # Test database connectivity
-   curl -X GET "https://your-backend.onrender.com/health"
-   ```
-
-For comprehensive troubleshooting, see [Troubleshooting Guide](docs/TROUBLESHOOTING_GUIDE.md).
-
-### API v4 Issues
-
-If you're experiencing issues with the API v4 routes (restaurant submissions, form submissions), see the detailed status and troubleshooting guide:
-
-**📋 [API v4 Routes Status & Next Steps](docs/API_V4_ROUTES_STATUS.md)**
-
-This document includes:
-- Current working status of all API v4 endpoints
-- Known issues and their solutions
-- Debugging commands and environment setup
-- Next steps for fixing remaining problems
-
-## 📊 Monitoring & Analytics
-
-### Health Checks
-
-- **Frontend**: `GET /healthz`
-- **Backend**: `GET /health`
-- **Database**: `GET /health/db`
-- **Admin System**: `GET /api/admin/health`
-
-### Error Monitoring
-
-- **Sentry**: Error tracking and performance monitoring
-- **Google Analytics**: User behavior analytics
-- **Custom Logging**: Application-specific logging
-
-### Performance Monitoring
-
-- **Response Times**: API endpoint performance
-- **Database Queries**: Query performance and optimization
-- **User Experience**: Frontend performance metrics
-
-## 🔒 Security
-
-### Authentication
-
-- **PostgreSQL Auth**: Secure user authentication
-- **OAuth Providers**: Google, Apple integration
-- **Session Management**: Secure session handling
-
-### Authorization
-
-- **Role-Based Access Control**: Granular permissions
-- **Admin System**: Secure admin authentication
-- **API Security**: Rate limiting and validation
-
-### Data Protection
-
-- **Input Validation**: Comprehensive input sanitization
-- **CSRF Protection**: CSRF token validation
-- **SQL Injection Prevention**: Parameterized queries
-- **XSS Prevention**: Content Security Policy
-
-## 📈 Performance
-
-### Optimization
-
-- **Code Splitting**: Route-based code splitting
-- **Image Optimization**: Next.js Image component
-- **Caching**: Redis caching for API responses
-- **Database Indexing**: Optimized database queries
-
-### Monitoring
-
-- **Performance Metrics**: Response times and throughput
-- **Resource Usage**: Memory and CPU monitoring
-- **User Experience**: Core Web Vitals tracking
-
-## 🚀 Production Server Deployment
-
-### Overview
-JewGo backend is deployed on a production Ubuntu VPS with SSL certificates, Docker containerization, and comprehensive monitoring.
-
-### Current Production Server
-- **Server**: `141.148.50.111` (Ubuntu 24.04 LTS)
-- **Domain**: `api.jewgo.app`
-- **SSL**: Let's Encrypt certificate (auto-renewal configured)
-- **Status**: ✅ Production Ready
-
-### Quick Health Check
-```bash
-# Check API health
-curl -s https://api.jewgo.app/health
-
-# Check all services
-curl -s https://api.jewgo.app/api/restaurants | head -3
-```
-
-### Production Features
-- ✅ **SSL/TLS**: Valid Let's Encrypt certificate
-- ✅ **CORS**: Properly configured for frontend access
-- ✅ **Rate Limiting**: API protection with nginx
-- ✅ **Database**: PostgreSQL with Redis caching
-- ✅ **Monitoring**: Health checks and logging
-- ✅ **Auto-renewal**: SSL certificate automation
-
-### Service Management
-```bash
-# SSH to production server
 ssh ubuntu@141.148.50.111
-
-# Check container status
 docker ps
-
-# View logs
-docker logs jewgo-nginx --tail 20
-docker logs jewgo-backend --tail 20
-
-# Restart services
+docker logs jewgo-backend --tail 50
 docker-compose restart
 ```
 
-### Health Checks
-- **API Health**: `https://api.jewgo.app/health`
-- **Database**: `https://api.jewgo.app/health/db`
-- **Redis**: `https://api.jewgo.app/health/redis`
-- **Restaurants API**: `https://api.jewgo.app/api/restaurants`
-- **Synagogues API**: `https://api.jewgo.app/api/synagogues`
+## Support
 
-📖 **Complete Documentation**: 
-- [Server Deployment Guide](docs/SERVER_DEPLOYMENT_GUIDE.md) - Complete server setup and configuration
-- [API Documentation](docs/API_DOCUMENTATION.md) - Full API reference and examples
-- [Server Quick Reference](docs/SERVER_QUICK_REFERENCE.md) - Quick commands and troubleshooting
-- [Server Changelog](docs/SERVER_CHANGELOG.md) - Complete history of server improvements
-
-## 📞 Support
-
-### Getting Help
-
-1. **Documentation**: Check the `/docs` directory
-2. **Issues**: Create a GitHub issue with detailed information
-3. **Discussions**: Use GitHub Discussions for questions
-4. **Email**: Contact the development team
-
-### Issue Reporting
-
-When reporting issues, include:
-
-- **Error Details**: Full error messages and stack traces
-- **Environment**: OS, Node.js version, database version
-- **Steps to Reproduce**: Detailed reproduction steps
-- **Expected vs Actual**: What you expected vs what happened
-- **Screenshots**: Visual evidence of the issue
-- **Logs**: Relevant application and system logs
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **PostgreSQL**: Authentication and database services
-- **Vercel**: Frontend deployment platform
-- **Render**: Backend deployment platform
-- **Google Maps**: Location services
-- **Open Source Community**: Various open source libraries and tools
-
----
-
-**Last Updated**: January 2025  
-**Version**: 2.0.0  
-**Status**: Production Ready ✅
-# Webhook Test
-# Webhook Test - Fri Sep  5 02:12:49 EDT 2025
-# Webhook Test - Fri Sep  5 03:27:37 EDT 2025
-# Webhook Test 2 - Fri Sep  5 03:31:39 EDT 2025
-# Test webhook deployment
-# Test webhook deployment - final test
-# Test webhook with new secret
-# Test webhook with proper signature verification
-# Another webhook test
-# Test webhook with fixed backend and nginx
-# Test webhook deployment without signature verification
-# Test webhook with recreated container
-# Test webhook with updated code
-# Test webhook with signature verification disabled
-# Test webhook with updated file
-# Test webhook with signature verification enabled
-# Test optimized deployment flow
-# Test webhook fix
-# Test webhook after secret update
+- Check docs/ first.
+- Open a GitHub issue with reproduction steps, environment, and logs.
