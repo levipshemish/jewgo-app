@@ -18,8 +18,10 @@ docker exec jewgo_redis redis-cli FLUSHALL || echo "⚠️  Redis cache clear fa
 
 # Rebuild and restart the backend container to pick up changes
 echo "🔨 Rebuilding backend container with latest code..."
-docker-compose build backend
-docker-compose up -d backend
+docker build -t jewgo-app-backend ./backend
+docker stop jewgo_backend || true
+docker rm jewgo_backend || true
+docker run -d --name jewgo_backend --network jewgo-app_default -p 5000:5000 --env-file .env jewgo-app-backend
 
 # Wait for the backend to start
 echo "⏳ Waiting for backend to start..."
