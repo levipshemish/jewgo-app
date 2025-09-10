@@ -1671,6 +1671,8 @@ def create_app(config_class=None):
                 
         except Exception as e:
             import traceback
+            print(f"ERROR: {e}")
+            print(f"TRACEBACK: {traceback.format_exc()}")
             logger.error(f"Error in get_restaurants: {e}")
             logger.error(f"Full traceback: {traceback.format_exc()}")
             return (
