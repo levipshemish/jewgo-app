@@ -76,15 +76,8 @@ try:
     from utils.cache_manager_v4 import CacheManagerV4
 except ImportError:
     CacheManagerV4 = None
-try:
-    from routes.api_v4 import api_v4
-    logger.info("Successfully imported api_v4 blueprint")
-except ImportError as e:
-    logger.warning(f"Could not import api_v4 blueprint: {e}")
-    api_v4 = None
-except Exception as e:
-    logger.error(f"Unexpected error importing api_v4 blueprint: {e}")
-    api_v4 = None
+# v4 routes removed - not used in production
+api_v4 = None
 
 # Import synagogues blueprint
 try:
@@ -712,15 +705,7 @@ def create_app(config_class=None):
     except Exception as e:
         logger.error(f"Error initializing PostgreSQL auth system: {e}")
 
-    # Register v4 API routes
-    try:
-        if api_v4 is not None:
-            app.register_blueprint(api_v4)
-            logger.info("API v4 routes blueprint registered successfully")
-        else:
-            logger.warning("API v4 routes blueprint is None - skipping registration")
-    except ImportError as e:
-        logger.warning(f"Could not register API v4 routes blueprint: {e}")
+    # v4 API routes removed - not used in production
     
     # Register synagogues blueprint
     try:
@@ -1631,13 +1616,17 @@ def create_app(config_class=None):
                 rows = cursor.fetchall()
                 
                 # Get column names
-                columns = [desc[0] for desc in cursor.description]
+                if cursor.description:
+                    columns = [desc[0] for desc in cursor.description]
+                else:
+                    columns = []
                 
                 # Convert rows to dictionaries
                 restaurants = []
-                for row in rows:
-                    restaurant = dict(zip(columns, row))
-                    restaurants.append(restaurant)
+                if columns:  # Only process if we have column names
+                    for row in rows:
+                        restaurant = dict(zip(columns, row))
+                        restaurants.append(restaurant)
                 
                 # Generate next cursor if we have a full page
                 next_cursor = None
@@ -1719,6 +1708,15 @@ def create_app(config_class=None):
                     # Convert to dictionary
                     columns = [desc[0] for desc in cursor.description]
                     restaurant_dict = dict(zip(columns, restaurant))
+                    
+                    # Fetch additional images from restaurant_images table
+                    cursor.execute(
+                        "SELECT image_url FROM restaurant_images WHERE restaurant_id = %s ORDER BY image_order ASC",
+                        (restaurant_id,)
+                    )
+                    image_rows = cursor.fetchall()
+                    additional_images = [row[0] for row in image_rows if row[0]]
+                    restaurant_dict["additional_images"] = additional_images
                     # Add open now status
                     if restaurant_dict.get("hours_structured"):
                         is_open = open_now_service.is_open_now(

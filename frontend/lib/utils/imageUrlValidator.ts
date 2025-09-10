@@ -241,6 +241,11 @@ export function sanitizeRestaurantImageUrl(restaurant: any): string {
 export function sanitizeRestaurantData(restaurants: any[]): any[] {
   return restaurants.map(restaurant => ({
     ...restaurant,
-    image_url: sanitizeRestaurantImageUrl(restaurant)
+    image_url: sanitizeRestaurantImageUrl(restaurant),
+    additional_images: filterValidImageUrls(restaurant.additional_images || []).map(getSafeImageUrl),
+    images: Array.isArray(restaurant.images) ? restaurant.images.map((img: any) => ({
+      ...img,
+      image_url: getSafeImageUrl(img.image_url)
+    })) : []
   }));
 }
