@@ -44,7 +44,7 @@ done
 if [ $attempt -gt $max_attempts ]; then
     echo "❌ Backend health check failed after $max_attempts attempts"
     echo "📋 Backend logs:"
-    docker-compose logs --tail 20 backend
+    docker logs --tail 20 jewgo_backend
     exit 1
 fi
 

@@ -952,6 +952,7 @@ class DatabaseManager:
             "preferred_contact_time": getattr(restaurant, 'preferred_contact_time', None),
             "contact_notes": getattr(restaurant, 'contact_notes', None),
             "images": image_dicts,
+            "additional_images": [img["image_url"] for img in image_dicts if img.get("image_url")],
             "is_open": status_info.get("is_open", False),
             "status_info": status_info,
         }
