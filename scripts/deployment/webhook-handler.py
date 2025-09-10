@@ -39,13 +39,12 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"Body length: {content_length}", file=sys.stderr)
             
             # Verify the webhook signature
-            # Temporarily disabled for testing
-            # if not self.verify_signature(body):
-            #     print("Signature verification failed", file=sys.stderr)
-            #     self.send_response(401)
-            #     self.end_headers()
-            #     self.wfile.write(b'Unauthorized')
-            #     return
+            if not self.verify_signature(body):
+                print("Signature verification failed", file=sys.stderr)
+                self.send_response(401)
+                self.end_headers()
+                self.wfile.write(b'Unauthorized')
+                return
             
             # Parse the webhook payload
             payload = json.loads(body.decode('utf-8'))
