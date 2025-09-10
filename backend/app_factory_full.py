@@ -1565,6 +1565,11 @@ def create_app(config_class=None):
                     order_clause = f"name {sort_order}, id {sort_order}"
                     cursor_condition = f"({'id > %s' if sort_order == 'ASC' else 'id < %s'})"
                 
+                # Build bounds condition and parameters
+                bounds_condition = ""
+                if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
+                    bounds_condition = "AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s"
+                
                 query = f"""
                     SELECT id, name, address, city, state, zip_code,
                            phone_number, website, kosher_category,
@@ -1575,7 +1580,7 @@ def create_app(config_class=None):
                     WHERE status = 'active'
                       AND updated_at <= %s
                       AND (%s IS NULL OR {cursor_condition})
-                      {'AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s' if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]) else ''}
+                      {bounds_condition}
                       {filter_clause}
                     ORDER BY {order_clause}
                     LIMIT %s
