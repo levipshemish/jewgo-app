@@ -23,7 +23,7 @@ class RestaurantRepository(BaseRepository[Restaurant]):
     def __init__(self, connection_manager: DatabaseConnectionManager):
         """Initialize restaurant repository."""
         super().__init__(connection_manager, Restaurant)
-        self.logger = logger.bind(repository="RestaurantRepository")
+        self.logger = logger
 
     def get_restaurants_with_filters(
         self,
