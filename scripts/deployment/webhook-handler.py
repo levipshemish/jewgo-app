@@ -100,7 +100,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 ['/bin/sh', '/app/deploy.sh'],
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=600  # 10 minute timeout
             )
             
             if result.returncode == 0:
