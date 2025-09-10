@@ -67,7 +67,6 @@ export function FilterPreview({
       // Build query parameters
       const params = new URLSearchParams();
       params.set('limit', '1'); // Only need count, not actual data
-      params.set('preview', 'true'); // Special flag for preview requests
       
       // Add filter parameters
       Object.entries(normalizedFilters).forEach(([key, value]) => {
@@ -77,7 +76,13 @@ export function FilterPreview({
               params.set(key, JSON.stringify(value));
             }
           } else {
-            params.set(key, String(value));
+            // Special handling for distance: convert miles to meters and use radius_m parameter
+            if (key === 'distanceMi' && typeof value === 'number') {
+              const radiusMeters = value * 1609.34; // Convert miles to meters
+              params.set('radius_m', radiusMeters.toString());
+            } else {
+              params.set(key, String(value));
+            }
           }
         }
       });
@@ -90,16 +95,38 @@ export function FilterPreview({
 
       const response = await deduplicatedFetch(`/api/restaurants?${params.toString()}`);
       
-      if (response.success && typeof response.total === 'number') {
-        setPreview({
-          count: response.total,
-          loading: false,
-          error: null,
-          hasValidationErrors: false
-        });
+      // Debug: Log the response structure to understand what we're getting
+      console.log('FilterPreview response structure:', {
+        hasSuccess: 'success' in response,
+        hasItems: 'items' in response,
+        hasData: 'data' in response,
+        responseKeys: Object.keys(response),
+        responseType: typeof response,
+        isArray: Array.isArray(response)
+      });
+      
+      // Handle different response structures
+      let items: any[] = [];
+      if (response.success && Array.isArray(response.items)) {
+        // Direct response format
+        items = response.items;
+      } else if (response.data && response.data.success && Array.isArray(response.data.items)) {
+        // Wrapped response format
+        items = response.data.items;
+      } else if (Array.isArray(response)) {
+        // Array response format
+        items = response;
       } else {
+        console.error('Unexpected response format:', response);
         throw new Error('Invalid response format');
       }
+      
+      setPreview({
+        count: items.length,
+        loading: false,
+        error: null,
+        hasValidationErrors: false
+      });
     } catch (error) {
       console.error('Error fetching filter preview:', error);
       setPreview({

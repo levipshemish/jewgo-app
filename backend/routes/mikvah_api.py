@@ -21,7 +21,7 @@ from utils.api_caching import cache_mikvah_list
 try:
     from database.database_manager_v4 import DatabaseManager
 except ImportError:
-    from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManager
+    from database.database_manager_v4 import DatabaseManager
 
 # Import utilities
 try:

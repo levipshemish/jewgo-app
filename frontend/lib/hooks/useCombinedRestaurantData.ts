@@ -206,9 +206,10 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       if (apiFilters.nearMe && Number.isFinite(apiFilters.lat) && Number.isFinite(apiFilters.lng)) {
         params.set('lat', String(apiFilters.lat!));
         params.set('lng', String(apiFilters.lng!));
-        // Always use maxDistanceMi for API compatibility
+        // Convert maxDistanceMi (miles) to radius_m (meters) for backend compatibility
         if (Number.isFinite(apiFilters.maxDistanceMi)) {
-          params.set('max_distance_mi', String(apiFilters.maxDistanceMi!));
+          const radiusMeters = apiFilters.maxDistanceMi! * 1609.34; // Convert miles to meters
+          params.set('radius_m', String(radiusMeters));
         }
       }
       // Dietary filters (multi-select)

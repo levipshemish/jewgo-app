@@ -7,7 +7,7 @@ import json
 import uuid
 from datetime import datetime
 from typing import Any
-from database.database_manager_v3 import EnhancedDatabaseManager
+from database.database_manager_v4 import DatabaseManager as EnhancedDatabaseManager
 from sqlalchemy import text
 from utils.logging_config import get_logger
 

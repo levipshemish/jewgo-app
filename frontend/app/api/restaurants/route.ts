@@ -191,7 +191,13 @@ export async function GET(request: NextRequest) {
     // Add all search parameters from the request
     searchParams.forEach((value, key) => {
       if (value && value.trim() !== '') {
-        queryParams.append(key, value);
+        // Special handling for distance: convert maxDistanceMi (miles) to radius_m (meters)
+        if (key === 'maxDistanceMi' && !isNaN(parseFloat(value))) {
+          const radiusMeters = parseFloat(value) * 1609.34; // Convert miles to meters
+          queryParams.append('radius_m', radiusMeters.toString());
+        } else {
+          queryParams.append(key, value);
+        }
       }
     });
     

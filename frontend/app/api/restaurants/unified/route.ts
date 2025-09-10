@@ -165,7 +165,7 @@ async function fallbackToSeparateCalls(searchParams: URLSearchParams, _backendUr
       : 'https://api.jewgo.app';
     
     const [restaurantsResponse, filterOptionsResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/restaurants-with-images?${searchParams.toString()}`, {
+      fetch(`${baseUrl}/api/restaurants?${searchParams.toString()}`, {
         headers: { 'Content-Type': 'application/json' }
       }),
       fetch(`${baseUrl}/api/restaurants/filter-options`, {
@@ -183,13 +183,13 @@ async function fallbackToSeparateCalls(searchParams: URLSearchParams, _backendUr
     const unifiedResponse = {
       success: true,
       data: {
-        restaurants: restaurantsData.restaurants || restaurantsData.data?.restaurants || [],
+        restaurants: restaurantsData.items || restaurantsData.data?.items || [],
         filterOptions: filterOptionsData.data || filterOptionsData,
         pagination: {
           total: restaurantsData.total || restaurantsData.data?.total || 0,
           limit: parseInt(searchParams.get('limit') || '24'),
           offset: parseInt(searchParams.get('offset') || '0'),
-          hasMore: restaurantsData.hasMore || restaurantsData.data?.hasMore || false
+          hasMore: !!restaurantsData.next_cursor || false
         }
       },
       message: 'Data retrieved via fallback method'

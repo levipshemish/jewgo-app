@@ -14,7 +14,7 @@ Last Updated: 2024
 """
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from database.database_manager_v3 import Restaurant
+from database.models import Restaurant
 from sqlalchemy import or_, text
 from sqlalchemy.orm import Session
 from utils.logging_config import get_logger

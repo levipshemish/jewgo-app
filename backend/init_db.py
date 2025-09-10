@@ -6,7 +6,7 @@ import os
 import sys
 from sqlalchemy import create_engine, text
 from database.models import Base
-from database.database_manager_v3 import EnhancedDatabaseManager
+from database.database_manager_v4 import DatabaseManager as EnhancedDatabaseManager
 
 def init_database():
     """Initialize the PostgreSQL database with tables and sample data."""

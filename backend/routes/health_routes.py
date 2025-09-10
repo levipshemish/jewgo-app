@@ -78,7 +78,7 @@ def detailed_health_check() -> Dict[str, Any]:
         }
         # Check database connectivity
         try:
-            from database.database_manager_v3 import EnhancedDatabaseManager
+            from database.database_manager_v4 import DatabaseManager as EnhancedDatabaseManager
 
             db_manager = EnhancedDatabaseManager()
             db_manager.connect()

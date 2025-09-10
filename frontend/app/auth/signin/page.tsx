@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
+import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 import { useEffect, useState, Suspense } from "react";
 // import { useCallback } from "react"; // TODO: Implement callback functionality
 import Script from "next/script";
@@ -9,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
 import { useToast } from '@/components/ui/Toast';
+import { handleAuthError } from '@/lib/auth/error-handler';
 
 function SignInForm() {
   const [email, setEmail] = useState("");
@@ -112,7 +114,7 @@ function SignInForm() {
     
     try {
       // Execute reCAPTCHA v3 for 'login' action if site key is present and properly configured
-      let _recaptchaToken = null; // TODO: Use recaptcha token
+      let recaptchaToken = null;
       if (isRecaptchaReady && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
         appLogger.info('Executing reCAPTCHA v3 for login action');
         
@@ -138,7 +140,7 @@ function SignInForm() {
           
           if (finalToken) {
             appLogger.info('reCAPTCHA token obtained successfully');
-            _recaptchaToken = finalToken;
+            recaptchaToken = finalToken;
           } else {
             appLogger.warn('reCAPTCHA token was empty');
           }
@@ -150,8 +152,8 @@ function SignInForm() {
         appLogger.info('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
       }
       
-      // Sign in with PostgreSQL auth (include optional reCAPTCHA)
-      await postgresAuth.login({ email, password, recaptcha_token: _recaptchaToken || undefined });
+      // Sign in with PostgreSQL auth (include reCAPTCHA token)
+      await postgresAuth.login({ email, password, recaptcha_token: recaptchaToken || undefined });
       
       // Redirect on success
       if (typeof window !== 'undefined') {
@@ -161,8 +163,9 @@ function SignInForm() {
       }
       
     } catch (signinError) {
-      appLogger.error('Sign in failed', { error: String(signinError) });
-      setError(signinError instanceof Error ? signinError.message : 'Sign in failed');
+      const authError = handleAuthError(signinError, 'signin', { email });
+      setError(authError.message);
+      showError(authError.message);
     } finally {
       setIsEmailSigningIn(false);
     }
@@ -196,9 +199,10 @@ function SignInForm() {
       setMagicStatus(null);
       
     } catch (magicError) {
-      appLogger.error('Magic link sign-in failed', { error: String(magicError) });
-      setError('Failed to send magic link');
+      const authError = handleAuthError(magicError, 'magic_link_signin', { email });
+      setError(authError.message);
       setMagicStatus(null);
+      showError(authError.message);
     }
   };
 
@@ -222,8 +226,9 @@ function SignInForm() {
         router.push(redirectTo);
       }
     } catch (e) {
-      appLogger.error('Guest login failed', { error: String(e) });
-      setError('Failed to start a guest session');
+      const authError = handleAuthError(e, 'guest_login');
+      setError(authError.message);
+      showError(authError.message);
     }
   };
 
@@ -248,9 +253,9 @@ function SignInForm() {
         }
       }, 1200);
     } catch (err: any) {
-      const msg = err?.message || 'Failed to upgrade guest account';
-      setError(msg);
-      showError(msg);
+      const authError = handleAuthError(err, 'guest_upgrade', { email: upgradeEmail });
+      setError(authError.message);
+      showError(authError.message);
     } finally {
       setUpgradePending(false);
     }
@@ -447,6 +452,11 @@ function SignInForm() {
                       onChange={e => setUpgradePassword(e.target.value)}
                       required
                     />
+                    {upgradePassword && (
+                      <div className="mt-2">
+                        <PasswordStrengthIndicator password={upgradePassword} />
+                      </div>
+                    )}
                     <input
                       type="text"
                       placeholder="Full name (optional)"

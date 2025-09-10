@@ -20,7 +20,7 @@ from utils.geospatial import distance_select, distance_where_clause, knn_order_c
 try:
     from database.database_manager_v4 import DatabaseManager
 except ImportError:
-    from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManager
+    from database.database_manager_v4 import DatabaseManager
 
 # Import utilities
 try:

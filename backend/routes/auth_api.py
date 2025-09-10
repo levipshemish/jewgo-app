@@ -12,6 +12,7 @@ from utils.error_handler import ValidationError, AuthenticationError
 from utils.postgres_auth import get_postgres_auth
 from utils.rbac import require_auth, require_admin, get_current_user_id, optional_auth
 from utils.rate_limiter import rate_limit
+from utils.auth_error_handler import handle_auth_exception, create_auth_error_response
 import re
 import os
 
@@ -319,6 +320,7 @@ def oauth_google_callback():
 
 @auth_bp.route('/register', methods=['POST'])
 @rate_limit(limit=5, window=3600)  # 5 registrations per hour
+@csrf_protect
 def register():
     """Register a new user account."""
     try:
@@ -341,6 +343,11 @@ def register():
         if not validate_email(email):
             return jsonify({'error': 'Invalid email format'}), 400
         
+        # CSRF + optional reCAPTCHA validation via shared helper
+        ok, err = validate_auth_request(request, enforce_recaptcha=bool(data.get('recaptcha_token')))
+        if not ok:
+            return err
+        
         # Create user account
         auth_manager = get_postgres_auth()
         user_info = auth_manager.create_user(email, password, name)
@@ -359,15 +366,8 @@ def register():
         logger.info(f"User registration successful: {email}")
         return jsonify(response_data), 201
         
-    except ValidationError as e:
-        logger.warning(f"Registration validation error: {e}")
-        return jsonify({'error': str(e)}), 400
-    except AuthenticationError as e:
-        logger.error(f"Registration error: {e}")
-        return jsonify({'error': str(e)}), 500
     except Exception as e:
-        logger.error(f"Unexpected registration error: {e}")
-        return jsonify({'error': 'Registration failed'}), 500
+        return handle_auth_exception(e, "registration")
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -400,7 +400,7 @@ def login():
         
         if not user_info:
             inc_login('failure', 'password')
-            return jsonify({'error': 'Invalid email or password'}), 401
+            return create_auth_error_response('invalid_credentials')
         
         # Generate tokens, persist session family, set cookies via helper
         roles = user_info.get('roles', [])
@@ -429,8 +429,7 @@ def login():
         return resp
         
     except Exception as e:
-        logger.error(f"Login error: {e}")
-        return jsonify({'error': 'Login failed'}), 500
+        return handle_auth_exception(e, "login")
 
 
 @auth_bp.route('/refresh', methods=['POST'])
@@ -965,6 +964,11 @@ def me():
 def guest_login():
     """Create a guest user and issue cookies. Shorter refresh TTL is configured via env."""
     try:
+        # CSRF validation (reCAPTCHA not required for guest login)
+        ok, err = validate_auth_request(request, enforce_recaptcha=False)
+        if not ok:
+            return err
+        
         client_ip = get_client_ip()
         auth_manager = get_postgres_auth()
         user_info = auth_manager.create_guest_user(client_ip)

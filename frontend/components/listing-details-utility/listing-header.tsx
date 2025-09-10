@@ -79,26 +79,40 @@ export function ListingHeader({
   return (
     <div className="flex justify-center px-4">
       {/* Header bar with consistent spacing and better visual hierarchy */}
-      <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full mt-6 shadow-sm max-w-fit">
+      <div className="inline-flex items-center px-3 py-1.5 bg-white rounded-full mt-6 shadow-sm max-w-fit">
         {/* Back button */}
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-5 w-5 hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="h-3 w-3" />
-        </Button>
+        {onBack && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onBack} 
+            className="h-5 w-5 p-0 m-0 min-w-0 min-h-0 max-w-5 max-h-5 hover:bg-gray-100 transition-colors"
+            style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '1.25rem', maxHeight: '1.25rem' }}
+          >
+            <ArrowLeft className="h-3 w-3" />
+          </Button>
+        )}
 
-        {/* Kosher information section */}
-        <div className="flex items-center gap-1">
-          {kosherType && (
-            <span className={`text-xs font-medium rounded-full px-1 py-0.5 ${
-              kosherType.toLowerCase() === 'meat' ? 'text-red-700 bg-red-100' :
-              kosherType.toLowerCase() === 'dairy' ? 'text-blue-700 bg-blue-100' :
-              kosherType.toLowerCase() === 'parve' || kosherType.toLowerCase() === 'pareve' ? 'text-orange-700 bg-orange-100' :
-              'text-gray-700 bg-gray-100'
+        {/* Kosher type */}
+        {kosherType && (
+          <>
+            <div className="w-1.5" />
+            <span className={`text-xs font-medium m-0 ${
+              kosherType.toLowerCase() === 'meat' ? 'text-red-600' :
+              kosherType.toLowerCase() === 'dairy' ? 'text-blue-600' :
+              kosherType.toLowerCase() === 'parve' || kosherType.toLowerCase() === 'pareve' ? 'text-orange-600' :
+              'text-gray-600'
             }`}>
               {kosherType}
             </span>
-          )}
-          {kosherAgency && (
-            (() => {
+          </>
+        )}
+
+        {/* Kosher agency */}
+        {kosherAgency && (
+          <>
+            <div className="w-1.5" />
+            {(() => {
               const lowerAgency = kosherAgency.toLowerCase()
               const isClickable = kosherAgencyWebsite || 
                 lowerAgency.includes('orb') || 
@@ -111,54 +125,67 @@ export function ListingHeader({
               return isClickable ? (
                 <button
                   onClick={handleAgencyClick}
-                  className="text-xs text-gray-600 hover:text-blue-600 underline transition-colors px-0.5 py-0.5 rounded"
+                  className="text-xs text-gray-600 hover:text-blue-600 underline transition-colors rounded p-0 m-0"
                 >
                   {kosherAgency}
                 </button>
               ) : (
-                <span className="text-xs text-gray-600 px-0.5 py-0.5">
+                <span className="text-xs text-gray-600 m-0">
                   {kosherAgency}
                 </span>
               )
-            })()
-          )}
-        </div>
-
-        {/* Stats section */}
-        {viewCount !== undefined && viewCount >= 0 && (
-          <div className="flex items-center gap-1 text-gray-600">
-            <Eye className="h-3 w-3 text-blue-500" />
-            <span className="text-xs font-medium">{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
-          </div>
+            })()}
+          </>
         )}
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          {shareCount !== undefined && (
+        {/* View count */}
+        {viewCount !== undefined && viewCount >= 0 && (
+          <>
+            <div className="w-1.5" />
+            <div className="flex items-center gap-1 text-gray-600 m-0">
+              <Eye className="h-3 w-3 text-blue-500" />
+              <span className="text-xs font-medium">{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
+            </div>
+          </>
+        )}
+
+        {/* Share button */}
+        {shareCount !== undefined && (
+          <>
+            <div className="w-1.5" />
             <Button
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-5 w-5 hover:bg-gray-100 transition-colors"
+              className="h-5 w-5 p-0 m-0 min-w-0 min-h-0 max-w-5 max-h-5 hover:bg-gray-100 transition-colors"
+              style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '1.25rem', maxHeight: '1.25rem' }}
             >
               <Share className="h-3 w-3" />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onFavorite}
-            className="h-5 w-5 hover:bg-gray-100 transition-colors group"
-          >
-            <Heart
-              className={`h-3 w-3 transition-colors ${
-                isFavorited
-                  ? 'fill-red-500 text-red-500'
-                  : 'text-gray-600 group-hover:fill-red-500 group-hover:text-red-500'
-              }`}
-            />
-          </Button>
-        </div>
+          </>
+        )}
+
+        {/* Favorite button */}
+        {onFavorite && (
+          <>
+            <div className="w-1" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onFavorite}
+              className="h-5 w-5 p-0 m-0 min-w-0 min-h-0 max-w-5 max-h-5 hover:bg-gray-100 transition-colors group"
+              style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '1.25rem', maxHeight: '1.25rem' }}
+            >
+              <Heart
+                className={`h-3 w-3 transition-colors ${
+                  isFavorited
+                    ? 'fill-red-500 text-red-500'
+                    : 'text-gray-600 group-hover:fill-red-500 group-hover:text-red-500'
+                }`}
+              />
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

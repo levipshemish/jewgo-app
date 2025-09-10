@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { ProfileImage } from "@/components/ui/profile-image"
-import { Star, X, ChevronDown, MessageSquare } from "lucide-react"
+import { Star, X, ChevronDown, MessageSquare, Send, ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import { createPortal } from "react-dom"
 
@@ -34,6 +34,7 @@ interface ReviewsPopupProps {
   }
   onLoadMore?: () => void
   loading?: boolean
+  onSubmitReview?: (review: { rating: number; comment: string }) => Promise<void>
 }
 
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest'
@@ -66,9 +67,14 @@ export function ReviewsPopup({
   pagination,
   onLoadMore,
   loading = false,
+  onSubmitReview,
 }: ReviewsPopupProps) {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [showSortDropdown, setShowSortDropdown] = useState(false)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
 
@@ -112,9 +118,70 @@ export function ReviewsPopup({
   }
 
   const handleWriteReview = () => {
-    // In a real app, this would open a review form or navigate to a review page
-    console.log('Write review clicked')
-    alert('Write review functionality would be implemented here')
+    setShowReviewForm(true)
+  }
+
+  const handleBackToReviews = () => {
+    setShowReviewForm(false)
+    setReviewRating(0)
+    setReviewComment('')
+  }
+
+  const handleSubmitReview = async () => {
+    if (reviewRating === 0) {
+      alert('Please select a rating')
+      return
+    }
+    
+    if (!reviewComment.trim()) {
+      alert('Please write a comment')
+      return
+    }
+
+    if (onSubmitReview) {
+      setIsSubmitting(true)
+      try {
+        await onSubmitReview({
+          rating: reviewRating,
+          comment: reviewComment.trim()
+        })
+        // Reset form and go back to reviews
+        setReviewRating(0)
+        setReviewComment('')
+        setShowReviewForm(false)
+      } catch (error) {
+        console.error('Error submitting review:', error)
+        alert('Failed to submit review. Please try again.')
+      } finally {
+        setIsSubmitting(false)
+      }
+    } else {
+      // Fallback for demo purposes
+      console.log('Review submitted:', { rating: reviewRating, comment: reviewComment })
+      alert('Review submitted successfully! (Demo mode)')
+      setReviewRating(0)
+      setReviewComment('')
+      setShowReviewForm(false)
+    }
+  }
+
+  const renderInteractiveStars = (currentRating: number, onRatingChange: (rating: number) => void) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <button
+        key={i}
+        onClick={() => onRatingChange(i + 1)}
+        className="focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 rounded"
+        type="button"
+      >
+        <Star
+          className={`h-6 w-6 transition-colors ${
+            i < currentRating 
+              ? "text-yellow-500 fill-yellow-500" 
+              : "text-gray-300 hover:text-yellow-400"
+          }`}
+        />
+      </button>
+    ))
   }
 
   const sortedReviews = getSortedReviews()
@@ -146,118 +213,220 @@ export function ReviewsPopup({
         </div>
 
         {/* Action buttons */}
-        <div className="px-4 py-3 border-b border-gray-100 bg-white">
-          <div className="flex items-center justify-between gap-3">
-            {/* Sort dropdown */}
-            <div className="relative">
+        {!showReviewForm && (
+          <div className="px-4 py-3 border-b border-gray-100 bg-white">
+            <div className="flex items-center justify-between gap-3">
+              {/* Sort dropdown */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <span>Sort by: {sortOptions.find(opt => opt.value === sortBy)?.label}</span>
+                  <ChevronDown className={`h-3 w-3 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
+                </Button>
+                
+                {showSortDropdown && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[160px]">
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value)
+                          setShowSortDropdown(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
+                          sortBy === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Write review button */}
               <Button
-                variant="outline"
+                onClick={handleWriteReview}
+                className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm"
                 size="sm"
-                onClick={() => setShowSortDropdown(!showSortDropdown)}
-                className="flex items-center gap-2 text-sm"
               >
-                <span>Sort by: {sortOptions.find(opt => opt.value === sortBy)?.label}</span>
-                <ChevronDown className={`h-3 w-3 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
+                <MessageSquare className="h-3 w-3" />
+                Write Review
               </Button>
-              
-              {showSortDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[160px]">
-                  {sortOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => {
-                        setSortBy(option.value)
-                        setShowSortDropdown(false)
-                      }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                        sortBy === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
+            </div>
+          </div>
+        )}
+
+        {/* Review Form Header */}
+        {showReviewForm && (
+          <div className="px-4 py-3 border-b border-gray-100 bg-white">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToReviews}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Reviews
+              </Button>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">Write a Review</h4>
+                <p className="text-xs text-gray-600">{restaurantName}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reviews content or Review form */}
+        <div className="p-4 overflow-y-auto max-h-[60vh]">
+          {showReviewForm ? (
+            /* Review Form */
+            <div className="space-y-6">
+              {/* Rating Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  How would you rate this restaurant?
+                </label>
+                <div className="flex items-center gap-1">
+                  {renderInteractiveStars(reviewRating, setReviewRating)}
+                  {reviewRating > 0 && (
+                    <span className="ml-2 text-sm text-gray-600">
+                      {reviewRating === 1 ? 'Poor' : 
+                       reviewRating === 2 ? 'Fair' : 
+                       reviewRating === 3 ? 'Good' : 
+                       reviewRating === 4 ? 'Very Good' : 'Excellent'}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Comment Section */}
+              <div>
+                <label htmlFor="review-comment" className="block text-sm font-medium text-gray-900 mb-2">
+                  Tell us about your experience
+                </label>
+                <textarea
+                  id="review-comment"
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share details about your visit, the food, service, atmosphere, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                  rows={4}
+                  maxLength={500}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-xs text-gray-500">
+                    {reviewComment.length}/500 characters
+                  </span>
+                  {reviewComment.length > 450 && (
+                    <span className="text-xs text-orange-500">
+                      {500 - reviewComment.length} characters remaining
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleBackToReviews}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={reviewRating === 0 || !reviewComment.trim() || isSubmitting}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Submitting...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Send className="h-4 w-4" />
+                      Submit Review
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Reviews List */
+            <div className="space-y-4">
+              {sortedReviews.length > 0 ? (
+                <>
+                  {sortedReviews.map((review) => (
+                    <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <ProfileImage 
+                            src={review.profile_photo_url} 
+                            alt={review.user}
+                            size="md"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-gray-900">{review.user}</span>
+                            {review.source === 'google' && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                Google
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1">
+                              {renderStars(review.rating)}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-700 mb-2">{review.comment}</p>
+                          <span className="text-xs text-gray-500">
+                            {review.relative_time_description || formatRelativeDate(review.date)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
+                  
+                  {/* Load more button */}
+                  {pagination?.hasMore && onLoadMore && (
+                    <div className="pt-4 text-center">
+                      <Button
+                        onClick={onLoadMore}
+                        disabled={loading}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        {loading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                            Loading more reviews...
+                          </div>
+                        ) : (
+                          `Load More Reviews (${pagination.currentPage}/${pagination.totalPages})`
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Star className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No reviews yet</p>
+                  <p className="text-gray-400 text-xs mt-1">Be the first to review this restaurant!</p>
                 </div>
               )}
             </div>
-
-            {/* Write review button */}
-            <Button
-              onClick={handleWriteReview}
-              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm"
-              size="sm"
-            >
-              <MessageSquare className="h-3 w-3" />
-              Write Review
-            </Button>
-          </div>
-        </div>
-
-        {/* Reviews content */}
-        <div className="p-4 overflow-y-auto max-h-[60vh]">
-          <div className="space-y-4">
-            {sortedReviews.length > 0 ? (
-              <>
-                {sortedReviews.map((review) => (
-                  <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        <ProfileImage 
-                          src={review.profile_photo_url} 
-                          alt={review.user}
-                          size="md"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-900">{review.user}</span>
-                          {review.source === 'google' && (
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                              Google
-                            </span>
-                          )}
-                          <div className="flex items-center gap-1">
-                            {renderStars(review.rating)}
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-700 mb-2">{review.comment}</p>
-                        <span className="text-xs text-gray-500">
-                          {review.relative_time_description || formatRelativeDate(review.date)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Load more button */}
-                {pagination?.hasMore && onLoadMore && (
-                  <div className="pt-4 text-center">
-                    <Button
-                      onClick={onLoadMore}
-                      disabled={loading}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                    >
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                          Loading more reviews...
-                        </div>
-                      ) : (
-                        `Load More Reviews (${pagination.currentPage}/${pagination.totalPages})`
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <Star className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">No reviews yet</p>
-                <p className="text-gray-400 text-xs mt-1">Be the first to review this restaurant!</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>,

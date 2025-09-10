@@ -101,7 +101,12 @@ function getActiveFilterEntries(filters: AppliedFilters | DraftFilters): Array<[
   // Distance (use canonical distance)
   const distance = getCanonicalDistance(filters);
   if (distance) {
-    entries.push(['distance', distance]);
+    // Find the actual distance key that's set in the filters
+    const distanceKey = filters.distanceMi ? 'distanceMi' : 
+                       filters.maxDistanceMi ? 'maxDistanceMi' : 
+                       filters.maxDistance ? 'maxDistance' : 
+                       filters.radius ? 'radius' : 'distanceMi';
+    entries.push([distanceKey, distance]);
   }
 
   // Price range
@@ -152,6 +157,10 @@ function getFilterChipInfo(filterKey: string, value: any): {
         color: 'bg-purple-100 text-purple-800 hover:bg-purple-200'
       };
     case 'distance':
+    case 'distanceMi':
+    case 'maxDistanceMi':
+    case 'maxDistance':
+    case 'radius':
       return {
         icon: MapPin,
         label: `Within ${value} mi`,

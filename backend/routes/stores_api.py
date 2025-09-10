@@ -28,7 +28,7 @@ import math
 try:
     from database.database_manager_v4 import DatabaseManager
 except ImportError:
-    from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManager
+    from database.database_manager_v4 import DatabaseManager
 
 # Import utilities
 try:

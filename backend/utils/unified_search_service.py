@@ -26,7 +26,7 @@ except ImportError:
 
     ERROR_HANDLER_AVAILABLE = False
 import math
-from database.database_manager_v3 import Restaurant
+from database.models import Restaurant
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 from utils.config_manager import ConfigManager

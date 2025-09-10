@@ -7,7 +7,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
 import { useToast } from '@/components/ui/Toast';
+import { handleAuthError } from '@/lib/auth/error-handler';
 import { validatePassword } from "@/lib/utils/password-validation";
+import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 
 // Separate component to handle search params with proper Suspense boundary
 function SignUpFormWithParams() {
@@ -139,12 +141,9 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
       }, 2000);
       
     } catch (err) {
-      appLogger.error('Sign up error', { error: String(err) });
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
+      const authError = handleAuthError(err, 'signup', { email });
+      setError(authError.message);
+      showError(authError.message);
     }
     
     setPending(false);
@@ -172,9 +171,9 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
         }
       }, 1200);
     } catch (err: any) {
-      const msg = err?.message || 'Failed to upgrade guest account';
-      setError(msg);
-      showError(msg);
+      const authError = handleAuthError(err, 'guest_upgrade', { email: upgradeEmail });
+      setError(authError.message);
+      showError(authError.message);
     } finally {
       setUpgradePending(false);
     }
@@ -268,6 +267,11 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              {password && (
+                <div className="mt-2">
+                  <PasswordStrengthIndicator password={password} />
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="confirm-password" className="sr-only">
@@ -365,6 +369,11 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
                     onChange={e => setUpgradePassword(e.target.value)}
                     required
                   />
+                  {upgradePassword && (
+                    <div className="mt-2">
+                      <PasswordStrengthIndicator password={upgradePassword} />
+                    </div>
+                  )}
                   <input
                     type="text"
                     placeholder="Full name (optional)"
