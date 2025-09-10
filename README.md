@@ -844,3 +844,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 # Test webhook with new secret
 # Test webhook with proper signature verification
 # Another webhook test
+# Test webhook with fixed backend and nginx
