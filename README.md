@@ -842,3 +842,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 # Test webhook deployment
 # Test webhook deployment - final test
 # Test webhook with new secret
+# Test webhook with proper signature verification
