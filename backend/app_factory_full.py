@@ -15,7 +15,7 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from utils.logging_config import get_logger
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from database.database_manager_v3 import EnhancedDatabaseManager
+from database.database_manager_v4 import DatabaseManager as EnhancedDatabaseManager
 from utils.api_response import APIResponse
 from utils.error_handler import ErrorHandler
 from utils.feature_flags import FeatureFlag, feature_flag_manager
@@ -1055,7 +1055,7 @@ def create_app(config_class=None):
     def debug_marketplace_table():
         """Debug endpoint to check marketplace table status."""
         try:
-            from database.database_manager_v3 import EnhancedDatabaseManager
+            from database.database_manager_v4 import DatabaseManager as EnhancedDatabaseManager
             db_manager = EnhancedDatabaseManager()
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
@@ -1396,6 +1396,7 @@ def create_app(config_class=None):
     def get_restaurants():
         """Get restaurants with cursor-based pagination and distance sorting"""
         try:
+            print(f"DEBUG START: Function called with args: {dict(request.args)}")
             start_time = datetime.now()
             # Parse and validate query parameters
             lat = request.args.get("lat", type=float)
@@ -1418,6 +1419,11 @@ def create_app(config_class=None):
             # Parse sorting parameters
             sort_by = request.args.get("sort_by", "name")  # name, id, created_at, distance
             sort_order = request.args.get("sort_order", "ASC").upper()  # ASC, DESC
+            
+            # Debug logging for parameter parsing
+            print(f"DEBUG PARAMS: lat={lat}, lng={lng}, limit={limit}, sort_by={sort_by}, sort_order={sort_order}")
+            print(f"DEBUG PARAMS: last_id={last_id}, as_of={as_of}")
+            print(f"DEBUG PARAMS: bounds_ne_lat={bounds_ne_lat}, bounds_ne_lng={bounds_ne_lng}, bounds_sw_lat={bounds_sw_lat}, bounds_sw_lng={bounds_sw_lng}")
             
             # Validate sort parameters
             valid_sort_fields = ["name", "id", "created_at", "distance"]
@@ -1577,10 +1583,9 @@ def create_app(config_class=None):
                     ORDER BY dist_m ASC, id ASC
                     LIMIT %s
                 """
-                params = [lng, lat]  # ST_Point takes lng, lat
+                params = [lng, lat, as_of]  # ST_Point takes lng, lat, then as_of for updated_at filter
                 if radius_m:
                     params.extend([lng, lat])  # For ST_DWithin
-                params.extend([as_of])  # For updated_at filter
                 if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
                     # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
                     params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])
@@ -1604,21 +1609,30 @@ def create_app(config_class=None):
                 if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
                     bounds_condition = "AND latitude BETWEEN %s AND %s AND longitude BETWEEN %s AND %s"
                 
-                query = f"""
-                    SELECT id, name, address, city, state, zip_code,
-                           phone_number, website, kosher_category,
-                           certifying_agency, price_range, google_rating, google_review_count,
-                           latitude, longitude, status, created_at, updated_at, image_url,
-                           NULL AS dist_m
-                    FROM restaurants
-                    WHERE status = 'active'
-                      AND updated_at <= %s
-                      AND (%s IS NULL OR {cursor_condition})
-                      {bounds_condition}
-                      {filter_clause}
-                    ORDER BY {order_clause}
-                    LIMIT %s
-                """
+                try:
+                    query = f"""
+                        SELECT id, name, address, city, state, zip_code,
+                               phone_number, website, kosher_category,
+                               certifying_agency, price_range, google_rating, google_review_count,
+                               latitude, longitude, status, created_at, updated_at, image_url,
+                               NULL AS dist_m
+                        FROM restaurants
+                        WHERE status = 'active'
+                          AND updated_at <= %s
+                          AND (%s IS NULL OR {cursor_condition})
+                          {bounds_condition}
+                          {filter_clause}
+                        ORDER BY {order_clause}
+                        LIMIT %s
+                    """
+                    print(f"DEBUG QUERY CONSTRUCTION: Successfully constructed query")
+                except Exception as e:
+                    print(f"DEBUG QUERY ERROR: Error constructing query: {e}")
+                    print(f"DEBUG QUERY ERROR: cursor_condition={cursor_condition}")
+                    print(f"DEBUG QUERY ERROR: bounds_condition={bounds_condition}")
+                    print(f"DEBUG QUERY ERROR: filter_clause={filter_clause}")
+                    print(f"DEBUG QUERY ERROR: order_clause={order_clause}")
+                    raise
                 # Build cursor parameters based on sort type
                 if sort_by == "id":
                     cursor_params = [last_id] if last_id else [None]
@@ -1637,39 +1651,69 @@ def create_app(config_class=None):
                     else:
                         cursor_params = [None]
                 
-                params = [as_of] + cursor_params
-                if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
-                    # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
-                    params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])
-                params.extend(filter_params)  # Add filter parameters
-                params.append(limit)
+                try:
+                    params = [as_of, last_id, last_id]  # as_of for updated_at, last_id for NULL check, last_id for cursor condition
+                    if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
+                        # Add viewport bounds: SW lat, NE lat, SW lng, NE lng
+                        params.extend([bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng])
+                    params.extend(filter_params)  # Add filter parameters
+                    params.append(limit)
+                    print(f"DEBUG PARAMS CONSTRUCTION: Successfully constructed params: {params}")
+                except Exception as e:
+                    print(f"DEBUG PARAMS ERROR: Error constructing params: {e}")
+                    print(f"DEBUG PARAMS ERROR: as_of={as_of}, last_id={last_id}, limit={limit}")
+                    print(f"DEBUG PARAMS ERROR: filter_params={filter_params}")
+                    raise
+                
+                # Debug logging for simple query
+                print(f"DEBUG SIMPLE: Query: {query}")
+                print(f"DEBUG SIMPLE: Params: {params}")
+                print(f"DEBUG SIMPLE: Params count: {len(params)}")
+                print(f"DEBUG SIMPLE: Query placeholders: {query.count('%s')}")
+                print(f"DEBUG SIMPLE: Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
+                print(f"DEBUG SIMPLE: Additional filters applied: {additional_filters}")
+                print(f"DEBUG SIMPLE: Filter parameters: {filter_params}")
+                print(f"DEBUG SIMPLE: last_id: {last_id}")
+                print(f"DEBUG SIMPLE: as_of: {as_of}")
+                print(f"DEBUG SIMPLE: limit: {limit}")
             # Execute the query
-            print(f"DEBUG: Query: {query}")
-            print(f"DEBUG: Params: {params}")
-            print(f"DEBUG: Params count: {len(params)}")
-            print(f"DEBUG: Query placeholders: {query.count('%s')}")
-            print(f"DEBUG: Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
-            print(f"DEBUG: Additional filters applied: {additional_filters}")
-            print(f"DEBUG: Filter parameters: {filter_params}")
-            logger.info(f"Executing query: {query}")
-            logger.info(f"Query params: {params}")
-            logger.info(f"Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
-            logger.info(f"Additional filters applied: {additional_filters}")
-            logger.info(f"Filter parameters: {filter_params}")
-            
-            db_manager = get_db_manager()
-            if not db_manager:
-                return (
-                    jsonify(
-                        {"success": False, "error": "Database connection unavailable"}
-                    ),
-                    503,
-                )
-            
-            with db_manager.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
+            try:
+                print(f"DEBUG: Query: {query}")
+                print(f"DEBUG: Params: {params}")
+                print(f"DEBUG: Params count: {len(params)}")
+                print(f"DEBUG: Query placeholders: {query.count('%s')}")
+                print(f"DEBUG: Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
+                print(f"DEBUG: Additional filters applied: {additional_filters}")
+                print(f"DEBUG: Filter parameters: {filter_params}")
+                logger.info(f"Executing query: {query}")
+                logger.info(f"Query params: {params}")
+                logger.info(f"Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
+                logger.info(f"Additional filters applied: {additional_filters}")
+                logger.info(f"Filter parameters: {filter_params}")
+                
+                db_manager = get_db_manager()
+                if not db_manager:
+                    return (
+                        jsonify(
+                            {"success": False, "error": "Database connection unavailable"}
+                        ),
+                        503,
+                    )
+                
+                with db_manager.get_connection() as conn:
+                    cursor = conn.cursor()
+                    print(f"DEBUG EXECUTE: About to execute query with {len(params)} parameters")
+                    print(f"DEBUG EXECUTE: Query has {query.count('%s')} placeholders")
+                    print(f"DEBUG EXECUTE: Params: {params}")
+                    cursor.execute(query, params)
+                    rows = cursor.fetchall()
+            except Exception as e:
+                print(f"DEBUG ERROR: Exception during query execution: {e}")
+                print(f"DEBUG ERROR: Query: {query}")
+                print(f"DEBUG ERROR: Params: {params}")
+                print(f"DEBUG ERROR: Params count: {len(params) if params else 'None'}")
+                print(f"DEBUG ERROR: Query placeholders: {query.count('%s') if query else 'None'}")
+                raise
                 
                 # Get column names
                 if cursor.description:
