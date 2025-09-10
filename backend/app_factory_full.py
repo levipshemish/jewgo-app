@@ -2223,17 +2223,25 @@ def create_app(config_class=None):
     
     # Add cleanup handlers for proper resource management
     @app.teardown_appcontext
-    def cleanup_resources(error):
-        """Clean up resources when app context is torn down."""
+    def cleanup_request_resources(error):
+        """Clean up request-specific resources when app context is torn down."""
         try:
-            # Close database connections
-            from utils.database_connection_manager import close_db_manager
-            close_db_manager()
-            
-            # Close Redis connections
-            from utils.redis_client import close_redis_client
-            close_redis_client()
-            
+            # Only clean up request-specific resources here
+            # Global services should not be stopped on every request
+            pass
+        except Exception as e:
+            logger.error(f"Error during request cleanup: {e}")
+    
+    # Add signal handlers and atexit for graceful shutdown
+    import signal
+    import sys
+    import atexit
+    
+    def cleanup_global_resources():
+        """Clean up global resources on application shutdown."""
+        logger.info("Cleaning up global resources...")
+        
+        try:
             # Stop monitoring threads
             from utils.performance_metrics import performance_collector
             performance_collector.stop_monitoring()
@@ -2250,50 +2258,29 @@ def create_app(config_class=None):
             from utils.connection_pool_monitor import stop_connection_pool_monitoring
             stop_connection_pool_monitoring()
             
+            # Close Redis connections
+            from utils.redis_client import close_redis_client
+            close_redis_client()
+            
+            # Close database connections
+            from utils.database_connection_manager import close_db_manager
+            close_db_manager()
+            
+            logger.info("Global resources cleaned up successfully")
+            
         except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
-    
-    # Add signal handlers for graceful shutdown
-    import signal
-    import sys
+            logger.error(f"Error during global resource cleanup: {e}")
     
     def signal_handler(signum, frame):
         """Handle shutdown signals gracefully."""
         logger.info(f"Received signal {signum}, shutting down gracefully...")
-        
-        try:
-            # Stop monitoring threads
-            from utils.performance_metrics import performance_collector
-            performance_collector.stop_monitoring()
-            
-            # Stop role invalidation listener
-            from workers.role_invalidation_listener import stop_role_invalidation_listener
-            stop_role_invalidation_listener()
-            
-            # Stop v4 monitoring
-            from monitoring.v4_monitoring import stop_v4_monitoring
-            stop_v4_monitoring()
-            
-            # Stop connection pool monitoring
-            from utils.connection_pool_monitor import stop_connection_pool_monitoring
-            stop_connection_pool_monitoring()
-            
-            # Close Redis connections
-            from utils.redis_client import close_redis_client
-            close_redis_client()
-            
-            # Close database connections
-            from utils.database_connection_manager import close_db_manager
-            close_db_manager()
-            
-        except Exception as e:
-            logger.error(f"Error during graceful shutdown: {e}")
-        
+        cleanup_global_resources()
         sys.exit(0)
     
-    # Register signal handlers
+    # Register signal handlers and atexit
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
+    atexit.register(cleanup_global_resources)
     
     # Start connection pool monitoring
     try:

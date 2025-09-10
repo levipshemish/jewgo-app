@@ -112,24 +112,34 @@ class RestaurantRepository(BaseRepository[Restaurant]):
         limit: int = 50,
         offset: int = 0,
     ) -> List[Restaurant]:
-        """Get restaurants near a specific location using PostGIS."""
+        """Get restaurants near a specific location using Haversine formula."""
         try:
             with self.connection_manager.session_scope() as session:
-                # Use PostGIS ST_DWithin for efficient spatial queries
+                # Convert radius from km to miles for Haversine calculation
+                radius_miles = radius_km * 0.621371
+                
+                # Haversine formula for distance calculation
+                haversine_formula = (
+                    3959 * func.acos(
+                        func.cos(func.radians(latitude))
+                        * func.cos(func.radians(Restaurant.latitude))
+                        * func.cos(func.radians(Restaurant.longitude) - func.radians(longitude))
+                        + func.sin(func.radians(latitude))
+                        * func.sin(func.radians(Restaurant.latitude))
+                    )
+                )
+                
                 restaurants = (
                     session.query(Restaurant)
                     .filter(
-                        text(
-                            "ST_DWithin(location, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326), :radius)"
-                        ).params(
-                            lng=longitude, lat=latitude, radius=radius_km * 1000
+                        and_(
+                            Restaurant.latitude.isnot(None),
+                            Restaurant.longitude.isnot(None),
+                            Restaurant.status == "active",
+                            haversine_formula <= radius_miles,
                         )
                     )
-                    .order_by(
-                        text(
-                            "ST_Distance(location, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326))"
-                        ).params(lng=longitude, lat=latitude)
-                    )
+                    .order_by(haversine_formula)
                     .limit(limit)
                     .offset(offset)
                     .all()
@@ -147,8 +157,9 @@ class RestaurantRepository(BaseRepository[Restaurant]):
             with self.connection_manager.session_scope() as session:
                 count = (
                     session.query(Restaurant)
-                    .filter(Restaurant.hours.isnot(None))
-                    .filter(Restaurant.hours != "")
+                    .filter(Restaurant.hours_json.isnot(None))
+                    .filter(Restaurant.hours_json != "")
+                    .filter(Restaurant.status == "active")
                     .count()
                 )
                 return count
@@ -190,10 +201,12 @@ class RestaurantRepository(BaseRepository[Restaurant]):
                     session.query(Restaurant)
                     .filter(
                         or_(
-                            Restaurant.google_reviews_count == 0,
-                            Restaurant.google_reviews_count.is_(None),
+                            Restaurant.google_reviews == "",
+                            Restaurant.google_reviews == "[]",
+                            Restaurant.google_reviews.is_(None),
                         )
                     )
+                    .filter(Restaurant.status == "active")
                     .limit(limit)
                     .all()
                 )
