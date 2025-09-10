@@ -6,6 +6,7 @@ from typing import Any
 import sentry_sdk
 from flask import Flask, jsonify, request
 from flask_caching import Cache
+from sqlalchemy import text
 # from flask_cors import CORS  # Unused import
 import logging
 from flask_limiter import Limiter
@@ -1057,7 +1058,7 @@ def create_app(config_class=None):
         try:
             from database.database_manager_v4 import DatabaseManager as EnhancedDatabaseManager
             db_manager = EnhancedDatabaseManager()
-            with db_manager.get_connection() as conn:
+            with db_manager.connection_manager.session_scope() as session:
                 with conn.cursor() as cursor:
                     # Check if marketplace table exists
                     cursor.execute(
@@ -1680,49 +1681,27 @@ def create_app(config_class=None):
                 print(f"DEBUG SIMPLE: as_of: {as_of}")
                 print(f"DEBUG SIMPLE: limit: {limit}")
             # Execute the query
-            try:
-                print(f"DEBUG: Query: {query}")
-                print(f"DEBUG: Params: {params}")
-                print(f"DEBUG: Params count: {len(params)}")
-                print(f"DEBUG: Query placeholders: {query.count('%s')}")
-                print(f"DEBUG: Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
-                print(f"DEBUG: Additional filters applied: {additional_filters}")
-                print(f"DEBUG: Filter parameters: {filter_params}")
-                logger.info(f"Executing query: {query}")
-                logger.info(f"Query params: {params}")
-                logger.info(f"Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
-                logger.info(f"Additional filters applied: {additional_filters}")
-                logger.info(f"Filter parameters: {filter_params}")
-                
-                db_manager = get_db_manager()
-                if not db_manager:
-                    return (
-                        jsonify(
-                            {"success": False, "error": "Database connection unavailable"}
-                        ),
-                        503,
-                    )
-                
-                with db_manager.get_connection() as conn:
-                    cursor = conn.cursor()
-                    print(f"DEBUG EXECUTE: About to execute query with {len(params)} parameters")
-                    print(f"DEBUG EXECUTE: Query has {query.count('%s')} placeholders")
-                    print(f"DEBUG EXECUTE: Params: {params}")
-                    cursor.execute(query, params)
-                    rows = cursor.fetchall()
-            except Exception as e:
-                print(f"DEBUG ERROR: Exception during query execution: {e}")
-                print(f"DEBUG ERROR: Query: {query}")
-                print(f"DEBUG ERROR: Params: {params}")
-                print(f"DEBUG ERROR: Params count: {len(params) if params else 'None'}")
-                print(f"DEBUG ERROR: Query placeholders: {query.count('%s') if query else 'None'}")
-                raise
+            logger.info(f"Executing query: {query}")
+            logger.info(f"Query params: {params}")
+            logger.info(f"Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
+            logger.info(f"Additional filters applied: {additional_filters}")
+            logger.info(f"Filter parameters: {filter_params}")
+            
+            db_manager = get_db_manager()
+            if not db_manager:
+                return (
+                    jsonify(
+                        {"success": False, "error": "Database connection unavailable"}
+                    ),
+                    503,
+                )
+            
+            with db_manager.connection_manager.session_scope() as session:
+                result = session.execute(text(query), params)
+                rows = result.fetchall()
                 
                 # Get column names
-                if cursor.description:
-                    columns = [desc[0] for desc in cursor.description]
-                else:
-                    columns = []
+                columns = [desc[0] for desc in result.description]
                 
                 # Convert rows to dictionaries
                 restaurants = []
@@ -1800,7 +1779,7 @@ def create_app(config_class=None):
                     ),
                     503,
                 )
-            with db_manager.get_connection() as conn:
+            with db_manager.connection_manager.session_scope() as session:
                 with conn.cursor() as cursor:
                     cursor.execute(
                         "SELECT * FROM restaurants WHERE id = %s", (restaurant_id,)
@@ -1866,7 +1845,7 @@ def create_app(config_class=None):
                     ),
                     503,
                 )
-            with db_manager.get_connection() as conn:
+            with db_manager.connection_manager.session_scope() as session:
                 with conn.cursor() as cursor:
                     cursor.execute(
                         "SELECT id, name, hours_structured, timezone, status FROM restaurants WHERE id = %s",
@@ -1970,7 +1949,7 @@ def create_app(config_class=None):
                         ),
                         503,
                     )
-                with db_manager.get_connection() as conn:
+                with db_manager.connection_manager.session_scope() as session:
                     with conn.cursor() as cursor:
                         # Check if subcategories table exists
                         cursor.execute(
@@ -2032,7 +2011,7 @@ def create_app(config_class=None):
             # Check database connection
             db_manager = app.config.get("DB_MANAGER")
             if db_manager:
-                with db_manager.get_connection() as conn:
+                with db_manager.connection_manager.session_scope() as session:
                     with conn.cursor() as cursor:
                         cursor.execute("SELECT 1")
                         db_healthy = True
@@ -2309,6 +2288,99 @@ def create_app(config_class=None):
                 ),
                 500,
             )
+    
+    # Connection pool monitoring endpoints
+    @app.route("/api/admin/connection-pool/metrics", methods=["GET"])
+    def get_connection_pool_metrics():
+        """Get connection pool metrics for monitoring."""
+        try:
+            from utils.connection_pool_monitor import get_connection_pool_metrics
+            hours = request.args.get('hours', 1, type=int)
+            metrics = get_connection_pool_metrics(hours)
+            return jsonify(metrics), 200
+        except Exception as e:
+            logger.error(f"Error getting connection pool metrics: {e}")
+            return jsonify({"error": "Failed to get connection pool metrics"}), 500
+    
+    @app.route("/api/admin/connection-pool/alerts", methods=["GET"])
+    def get_connection_pool_alerts():
+        """Get connection pool alerts."""
+        try:
+            from utils.connection_pool_monitor import get_connection_pool_alerts
+            alerts = get_connection_pool_alerts()
+            return jsonify({"alerts": alerts}), 200
+        except Exception as e:
+            logger.error(f"Error getting connection pool alerts: {e}")
+            return jsonify({"error": "Failed to get connection pool alerts"}), 500
+    
+    # Add cleanup handlers for proper resource management
+    @app.teardown_appcontext
+    def cleanup_request_resources(error):
+        """Clean up request-specific resources when app context is torn down."""
+        try:
+            # Only clean up request-specific resources here
+            # Global services should not be stopped on every request
+            pass
+        except Exception as e:
+            logger.error(f"Error during request cleanup: {e}")
+    
+    # Add signal handlers and atexit for graceful shutdown
+    import signal
+    import sys
+    import atexit
+    
+    def cleanup_global_resources():
+        """Clean up global resources on application shutdown."""
+        logger.info("Cleaning up global resources...")
+        
+        try:
+            # Stop monitoring threads
+            from utils.performance_metrics import performance_collector
+            performance_collector.stop_monitoring()
+            
+            # Stop role invalidation listener
+            from workers.role_invalidation_listener import stop_role_invalidation_listener
+            stop_role_invalidation_listener()
+            
+            # Stop v4 monitoring
+            from monitoring.v4_monitoring import stop_v4_monitoring
+            stop_v4_monitoring()
+            
+            # Stop connection pool monitoring
+            from utils.connection_pool_monitor import stop_connection_pool_monitoring
+            stop_connection_pool_monitoring()
+            
+            # Close Redis connections
+            from utils.redis_client import close_redis_client
+            close_redis_client()
+            
+            # Close database connections
+            from utils.database_connection_manager import close_db_manager
+            close_db_manager()
+            
+            logger.info("Global resources cleaned up successfully")
+            
+        except Exception as e:
+            logger.error(f"Error during global resource cleanup: {e}")
+    
+    def signal_handler(signum, frame):
+        """Handle shutdown signals gracefully."""
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        cleanup_global_resources()
+        sys.exit(0)
+    
+    # Register signal handlers and atexit
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    atexit.register(cleanup_global_resources)
+    
+    # Start connection pool monitoring
+    try:
+        from utils.connection_pool_monitor import start_connection_pool_monitoring
+        start_connection_pool_monitoring()
+        logger.info("Connection pool monitoring started")
+    except Exception as e:
+        logger.error(f"Failed to start connection pool monitoring: {e}")
     
     return app, socketio
 

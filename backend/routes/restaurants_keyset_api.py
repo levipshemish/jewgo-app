@@ -193,11 +193,10 @@ def get_restaurants_keyset():
         
         # Fetch restaurants using keyset pagination
         try:
-            restaurants = repository.get_restaurants_with_keyset_pagination(
+            restaurants, next_cursor = repository.get_restaurants_with_keyset_pagination(
                 cursor_created_at=cursor_created_at,
                 cursor_id=cursor_id,
                 direction=direction,
-                sort_key=sort_key,
                 limit=limit,
                 filters=filters
             )
@@ -237,18 +236,8 @@ def get_restaurants_keyset():
                 logger.error("Restaurant serialization error", restaurant_id=getattr(restaurant, 'id', None), error=str(e))
                 continue
         
-        # Create next cursor if we have results
-        next_cursor = None
-        has_more = len(restaurants) == limit  # Heuristic: full page suggests more data
-        
-        if restaurants and has_more:
-            last_restaurant = restaurant_dicts[-1]
-            next_cursor = create_next_cursor(
-                last_item=last_restaurant,
-                sort_key=sort_key,
-                data_version=current_data_version,
-                ttl_hours=24
-            )
+        # Use next cursor from repository if available
+        has_more = next_cursor is not None
         
         # Get total count for metadata (optional, can be expensive)
         total_count = None

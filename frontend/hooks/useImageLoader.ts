@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface UseImageLoaderOptions {
   src: string | null | undefined
@@ -17,6 +17,7 @@ export function useImageLoader({
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [retries, setRetries] = useState(0)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!src) {
@@ -40,7 +41,7 @@ export function useImageLoader({
     const handleError = () => {
       if (retries < retryCount) {
         // Retry after delay
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           setRetries(prev => prev + 1)
           img.src = src
         }, retryDelay)
@@ -63,6 +64,11 @@ export function useImageLoader({
     return () => {
       img.onload = null
       img.onerror = null
+      // Clear timeout on cleanup
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
     }
   }, [src, fallbackSrc, retryCount, retryDelay, retries, imageSrc])
 
