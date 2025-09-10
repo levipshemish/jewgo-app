@@ -1612,6 +1612,13 @@ def create_app(config_class=None):
                 params.extend(filter_params)  # Add filter parameters
                 params.append(limit)
             # Execute the query
+            print(f"DEBUG: Query: {query}")
+            print(f"DEBUG: Params: {params}")
+            print(f"DEBUG: Params count: {len(params)}")
+            print(f"DEBUG: Query placeholders: {query.count('%s')}")
+            print(f"DEBUG: Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
+            print(f"DEBUG: Additional filters applied: {additional_filters}")
+            print(f"DEBUG: Filter parameters: {filter_params}")
             logger.info(f"Executing query: {query}")
             logger.info(f"Query params: {params}")
             logger.info(f"Bounds filtering enabled: {all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng])}")
