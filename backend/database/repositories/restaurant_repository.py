@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from database.base_repository import BaseRepository
 from database.connection_manager import DatabaseConnectionManager
-from database.models.restaurant import Restaurant
+from database.models import Restaurant
 
 logger = logging.getLogger(__name__)
 
