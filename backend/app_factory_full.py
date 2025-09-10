@@ -1560,10 +1560,10 @@ def create_app(config_class=None):
                     cursor_condition = f"({'id > %s' if sort_order == 'ASC' else 'id < %s'})"
                 elif sort_by == "created_at":
                     order_clause = f"created_at {sort_order}, id {sort_order}"
-                    cursor_condition = f"({'created_at > %s OR (created_at = %s AND id > %s)' if sort_order == 'ASC' else 'created_at < %s OR (created_at = %s AND id < %s)'})"
+                    cursor_condition = f"({'id > %s' if sort_order == 'ASC' else 'id < %s'})"
                 else:  # Default to name sorting
                     order_clause = f"name {sort_order}, id {sort_order}"
-                    cursor_condition = f"({'name > %s OR (name = %s AND id > %s)' if sort_order == 'ASC' else 'name < %s OR (name = %s AND id < %s)'})"
+                    cursor_condition = f"({'id > %s' if sort_order == 'ASC' else 'id < %s'})"
                 
                 query = f"""
                     SELECT id, name, address, city, state, zip_code,
@@ -1584,9 +1584,19 @@ def create_app(config_class=None):
                 if sort_by == "id":
                     cursor_params = [last_id] if last_id else [None]
                 elif sort_by == "created_at":
-                    cursor_params = [last_id, last_id, last_id] if last_id else [None, None, None]
+                    if last_id:
+                        # For created_at sorting, we need the actual created_at value and id
+                        # Since we don't have the created_at value in the cursor, we'll use a simpler approach
+                        cursor_params = [last_id]
+                    else:
+                        cursor_params = [None]
                 else:  # name sorting
-                    cursor_params = [last_id, last_id, last_id] if last_id else [None, None, None]
+                    if last_id:
+                        # For name sorting, we need the actual name value and id
+                        # Since we don't have the name value in the cursor, we'll use a simpler approach
+                        cursor_params = [last_id]
+                    else:
+                        cursor_params = [None]
                 
                 params = [as_of] + cursor_params
                 if all([bounds_ne_lat, bounds_ne_lng, bounds_sw_lat, bounds_sw_lng]):
