@@ -26,9 +26,12 @@ def health():
     try:
         from database.database_manager_v4 import DatabaseManager
         db_manager = DatabaseManager()
-        with db_manager.get_session() as session:
-            session.execute(text("SELECT 1"))
-        status["db_ok"] = True
+        if db_manager.health_check():
+            status["db_ok"] = True
+        else:
+            status["db_ok"] = False
+            status["db_error"] = "Database health check failed"
+            status["ok"] = False
     except Exception as e:
         status["db_ok"] = False
         status["db_error"] = str(e)[:200]
@@ -36,9 +39,15 @@ def health():
     
     # Check Redis
     try:
-        from utils.redis_client import redis_client
-        redis_client.ping()
-        status["redis_ok"] = True
+        from utils.redis_client import get_redis_client
+        redis_client = get_redis_client()
+        if redis_client:
+            redis_client.ping()
+            status["redis_ok"] = True
+        else:
+            status["redis_ok"] = False
+            status["redis_error"] = "Redis client not available"
+            status["ok"] = False
     except Exception as e:
         status["redis_ok"] = False
         status["redis_error"] = str(e)[:200]
