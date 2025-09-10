@@ -8,6 +8,7 @@ cd /home/ubuntu/jewgo-app
 
 # Pull the latest changes from the main branch
 echo "📥 Pulling latest changes from GitHub..."
+git config --global --add safe.directory /home/ubuntu/jewgo-app
 git fetch origin
 git reset --hard origin/main
 
