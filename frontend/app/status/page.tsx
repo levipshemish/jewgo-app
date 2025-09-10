@@ -23,8 +23,8 @@ import {
   Users,
   Shield,
   TrendingUp,
-  BarChart3,
-  Settings,
+  // BarChart3,
+  // Settings,
   Globe2
 } from 'lucide-react'
 
@@ -117,7 +117,7 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const variants = {
+  const _variants = {
     healthy: 'default',
     online: 'default',
     connected: 'default',

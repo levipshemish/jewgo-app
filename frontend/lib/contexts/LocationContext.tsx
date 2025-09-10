@@ -293,7 +293,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         cleanup();
       }
     };
-  }, [requestLocation]);
+  }, [requestLocation, permissionStatus]);
 
   // Save location data to localStorage whenever it changes (only save if we have valid data)
   useEffect(() => {

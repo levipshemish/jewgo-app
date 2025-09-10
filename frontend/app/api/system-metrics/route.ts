@@ -403,7 +403,7 @@ function generateMockAlertsNotifications(): AlertsNotifications {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // In a real implementation, you would gather this data from:
     // - System monitoring tools (Prometheus, Grafana, etc.)

@@ -58,7 +58,7 @@ async function checkExternalAPI(name: string, url: string): Promise<ExternalAPIC
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Define external APIs to check
     const apisToCheck = [

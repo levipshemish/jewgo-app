@@ -89,6 +89,7 @@ export function useAuth(): UseAuthReturn {
       const interval = setInterval(checkTokenExpiry, 5 * 60 * 1000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [authState, checkAuth]);
 
   // Anonymous sign-in functionality (if needed)

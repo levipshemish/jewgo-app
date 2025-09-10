@@ -261,6 +261,7 @@ export function useWebSocketRoom(roomId: string, config?: Partial<WebSocketConfi
         leaveRoom();
       };
     }
+    return undefined;
   }, [isConnected, joinRoom, leaveRoom]);
   
   return {

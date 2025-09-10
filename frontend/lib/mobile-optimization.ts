@@ -118,6 +118,7 @@ export const useMobileOptimization = () => {
         window.removeEventListener('load', updateMobileState);
       };
     }
+    return undefined;
   }, [isMobile, isTouch, pixelRatio, viewportHeight, viewportWidth]);
 
   return {
@@ -287,6 +288,7 @@ export const useMobileScroll = (containerRef: React.RefObject<HTMLElement>) => {
         }
       };
     }
+    return undefined;
   }, [containerRef, handleScroll]);
 
   return { isScrolling };
@@ -492,6 +494,7 @@ export const useMobilePerformanceMonitoring = () => {
 
       return () => observer.disconnect();
     }
+    return undefined;
   }, []);
 
   return { performanceMetrics };

@@ -177,7 +177,7 @@ async function getNetworkMetrics(): Promise<{ bytesIn: number; bytesOut: number;
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Collect real system metrics
     const [cpu, memory, disk, network, uptime] = await Promise.all([

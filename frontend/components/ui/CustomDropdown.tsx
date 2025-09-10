@@ -61,6 +61,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         document.removeEventListener('keydown', handleEscape);
       };
     }
+    return undefined;
   }, [isOpen]);
 
   const selectedOption = options.find(option => option.value === value);

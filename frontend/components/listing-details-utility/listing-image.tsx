@@ -21,7 +21,7 @@ export function ListingImage({
   className = '',
   restaurantName = 'Restaurant',
   allImages = [],
-  viewCount
+  viewCount: _viewCount
 }: ListingImageProps) {
   const images = allImages.length > 0 ? allImages : src ? [src] : [];
 

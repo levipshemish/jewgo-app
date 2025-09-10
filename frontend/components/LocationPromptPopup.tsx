@@ -40,6 +40,7 @@ export default function LocationPromptPopup({
       }, 2000); // Longer delay for denied to let user read the message
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isOpen, permissionStatus, onClose]);
 
   if (!isOpen) {

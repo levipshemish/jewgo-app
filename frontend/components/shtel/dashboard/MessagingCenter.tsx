@@ -148,6 +148,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
       loadMessages(selectedConversation.conversation_id, controller.signal);
       return () => controller.abort();
     }
+    return undefined;
   }, [selectedConversation, loadMessages]);
 
   useEffect(() => {

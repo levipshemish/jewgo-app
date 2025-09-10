@@ -180,6 +180,7 @@ function SignInForm() {
       }, 1000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [magicLinkCooldown]);
 
   const handleMagicLinkSignIn = async () => {

@@ -39,6 +39,7 @@ export default function BackToTopButton({
       window.addEventListener('scroll', toggleVisibility);
       return () => window.removeEventListener('scroll', toggleVisibility);
     }
+    return undefined;
   }, [toggleVisibility]);
 
   if (!isVisible) {

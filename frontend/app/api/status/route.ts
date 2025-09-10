@@ -68,6 +68,7 @@ interface SystemStatus {
     systemMetrics: string
     databaseStatus: string
     externalAPIs: string
+    containerStatus: string
   }
 }
 
@@ -109,7 +110,7 @@ async function checkRoute(url: string, name: string, method: string = 'GET'): Pr
       try {
         const errorText = await response.text()
         errorDetails = errorText.substring(0, 200) // Limit error details length
-      } catch (e) {
+      } catch (_e) {
         errorDetails = 'Could not read error response'
       }
       
@@ -250,7 +251,7 @@ async function getContainerStatus(): Promise<ContainerStatus[]> {
   ]
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
     

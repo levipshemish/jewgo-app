@@ -112,6 +112,7 @@ export function useScrollDetection(options: UseScrollDetectionOptions = {}) {
     if (context && !disabled) {
       return context.addListener(setIsScrolling);
     }
+    return undefined;
   }, [context, disabled]);
 
   const handleScroll = useCallback(() => {

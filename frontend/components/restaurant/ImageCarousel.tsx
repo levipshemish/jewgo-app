@@ -75,7 +75,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   }, [images, kosherCategory]);
 
   // Memoize the images array to prevent unnecessary re-renders
-  const stableImages = React.useMemo(() => allImages, [JSON.stringify(allImages)]);
+  const stableImages = React.useMemo(() => allImages, [allImages]);
 
   // Initialize image loading states
   useEffect(() => {
@@ -91,6 +91,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
       return () => clearTimeout(timeout);
     }
+    return undefined;
   }, [stableImages.length]);
 
   // Use the scroll-snap carousel hook
