@@ -1360,6 +1360,38 @@ def create_app(config_class=None):
         except Exception as e:
             logger.error(f"Error handling heartbeat: {e}")
     # API Routes
+    @app.route("/api/restaurants/debug", methods=["GET"])
+    def debug_restaurants():
+        """Debug endpoint to test restaurants query construction"""
+        try:
+            # Simple test query
+            query = "SELECT id, name FROM restaurants WHERE status = 'active' LIMIT 1"
+            params = []
+            
+            db_manager = get_db_manager()
+            if not db_manager:
+                return jsonify({"success": False, "error": "Database connection unavailable"}), 503
+            
+            with db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                
+                return jsonify({
+                    "success": True,
+                    "data": [{"id": row[0], "name": row[1]} for row in rows],
+                    "query": query,
+                    "params": params
+                })
+                
+        except Exception as e:
+            import traceback
+            return jsonify({
+                "success": False,
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            }), 500
+
     @app.route("/api/restaurants", methods=["GET"])
     def get_restaurants():
         """Get restaurants with cursor-based pagination and distance sorting"""
