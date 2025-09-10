@@ -4,7 +4,7 @@ A platform for discovering and reviewing kosher restaurants, synagogues, and Jew
 
 Last Updated: 2025-09-10  
 Status: Production Ready ✅
-<!-- Webhook test: Docker cleanup integration -->
+<!-- Webhook test: Docker cleanup integration - Round 2 -->
 
 ## Recent highlights (Sep 2025)
 
