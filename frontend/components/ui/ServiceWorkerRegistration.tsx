@@ -65,7 +65,8 @@ export default function ServiceWorkerRegistration() {
       eventListeners.push({ target: navigator.serviceWorker, event: 'error', handler: handleServiceWorkerError });
 
       // Optimized service worker message handler with debouncing
-      const debouncedMessageHandler = (event: MessageEvent) => {
+      const debouncedMessageHandler = (event: Event) => {
+        const messageEvent = event as MessageEvent;
         if (messageHandlerTimeout) {
           clearTimeout(messageHandlerTimeout);
         }
@@ -110,8 +111,8 @@ export default function ServiceWorkerRegistration() {
           };
           
           // Process message data
-          if (event.data) {
-            processMessageData(event.data);
+          if (messageEvent.data) {
+            processMessageData(messageEvent.data);
           }
         }, 16); // Debounce to ~60fps
       };
