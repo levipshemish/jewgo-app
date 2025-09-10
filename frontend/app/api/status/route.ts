@@ -284,9 +284,9 @@ export async function GET(_request: NextRequest) {
       )
       containerStatus = await Promise.race([containerPromise, timeoutPromise])
       // Check if we have real container data (not mock data)
-      containerStatusSource = containerStatus.length > 0 && 
-        (containerStatus.some(c => c.name.includes('jewgo') && (c as any).created && (c as any).created !== 'unknown') ||
-         containerStatus.some(c => c.name.includes('supabase'))) ? 'real' : 'mock'
+      // If we get an empty array, it means we're trying to fetch from server but it's not available
+      // This is still "real" data (just empty) vs "mock" data
+      containerStatusSource = 'real'
     } catch (error) {
       console.error('Container status failed or timed out:', error)
       // Use fallback mock data

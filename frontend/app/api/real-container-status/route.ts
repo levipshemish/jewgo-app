@@ -19,66 +19,33 @@ interface ContainerInfo {
 
 async function getContainerStatus(): Promise<ContainerInfo[]> {
   try {
-    // Get local containers (real data from the development environment)
-    // Note: Server endpoint /api/v5/monitoring/containers is not yet available
-    // TODO: Switch back to server endpoint once it's deployed
-    const { exec } = require('child_process')
-    const { promisify } = require('util')
-    const execAsync = promisify(exec)
+    // Get container status from the server
+    const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
+    const response = await fetch(`${serverUrl}/api/v5/monitoring/containers`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(10000)
+    })
 
-    // Get all containers with basic information only (much faster)
-    const { stdout: containersOutput } = await execAsync('docker ps -a --format "{{.Names}}|{{.Status}}|{{.Image}}|{{.Ports}}|{{.CreatedAt}}"', { timeout: 5000 })
-    
-    const containers: ContainerInfo[] = []
-    const containerLines = containersOutput.trim().split('\n').filter((line: string) => line.trim())
-
-    for (const line of containerLines) {
-      const parts = line.split('|')
-      if (parts.length >= 5) {
-        const name = parts[0]
-        const status = parts[1]
-        const image = parts[2]
-        const ports = parts[3]
-        const created = parts[4]
-
-        // Skip non-jewgo containers
-        if (!name.includes('jewgo')) {
-          continue
-        }
-
-        // Determine container status
-        let containerStatus: 'running' | 'stopped' | 'unhealthy' = 'stopped'
-        if (status.includes('Up')) {
-          if (status.includes('unhealthy')) {
-            containerStatus = 'unhealthy'
-          } else {
-            containerStatus = 'running'
-          }
-        }
-
-        // Get basic container information (without detailed stats to avoid delays)
-        const containerDetails = await getContainerDetailsFast(name)
-        
-        containers.push({
-          name,
-          status: containerStatus,
-          uptime: containerDetails.uptime,
-          created,
-          image,
-          ports,
-          health: containerDetails.health,
-          recent_errors: containerDetails.recent_errors,
-          restart_count: containerDetails.restart_count,
-          memory_usage: containerDetails.memory_usage,
-          cpu_usage: containerDetails.cpu_usage
-        })
-      }
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`)
     }
 
-    return containers
+    const data = await response.json()
+    if (data.success && data.data && data.data.containers) {
+      return data.data.containers
+    } else {
+      throw new Error('Invalid response format from server')
+    }
   } catch (error) {
-    console.error('Error getting container status:', error)
-    // Return empty array instead of throwing to prevent infinite loading
+    console.error('Error getting container status from server:', error)
+    
+    // Return empty array to prevent infinite loading
+    // This ensures we don't show local development containers
+    // The server endpoint /api/v5/monitoring/containers is not yet available
     return []
   }
 }
