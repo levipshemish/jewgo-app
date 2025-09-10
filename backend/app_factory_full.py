@@ -1422,7 +1422,6 @@ def create_app(config_class=None):
             
             # Debug logging for parameter parsing
             print(f"DEBUG PARAMS: lat={lat}, lng={lng}, limit={limit}, sort_by={sort_by}, sort_order={sort_order}")
-            print(f"DEBUG PARAMS: last_id={last_id}, as_of={as_of}")
             print(f"DEBUG PARAMS: bounds_ne_lat={bounds_ne_lat}, bounds_ne_lng={bounds_ne_lng}, bounds_sw_lat={bounds_sw_lat}, bounds_sw_lng={bounds_sw_lng}")
             
             # Validate sort parameters
@@ -1452,6 +1451,10 @@ def create_app(config_class=None):
             # Set as_of timestamp for session stability
             if not as_of:
                 as_of = datetime.utcnow().isoformat() + 'Z'
+            
+            # Debug logging for cursor variables
+            print(f"DEBUG PARAMS: last_id={last_id}, as_of={as_of}, last_dist_m={last_dist_m}")
+            
             # Build cache key
             cache_key = f"restaurants:{request.query_string.decode()}"
             # Debug logging for pagination
