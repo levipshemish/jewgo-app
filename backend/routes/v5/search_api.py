@@ -13,7 +13,7 @@ import re
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from middleware.auth_v5 import require_permission_v5, optional_auth_v5
-from utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
+from utils.cursor_v5 import CursorV5Manager, create_next_cursor_v5
 from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
 from cache.etag_cache import get_etag_cache
 from utils.logging_config import get_logger
@@ -113,17 +113,8 @@ def unified_search():
             return '', 304
 
         # Parse cursor
-        parsed_cursor = None
-        if cursor:
-            try:
-                from utils.data_version import get_current_data_version
-                parsed_cursor = decode_cursor_v5(cursor, current_data_version=get_current_data_version())
-            except Exception as e:
-                logger.warning(f"Invalid search cursor: {e}")
-                return jsonify({
-                    'success': False,
-                    'error': 'Invalid cursor'
-                }), 400
+        # Keep cursor as opaque string; repository handles decoding
+        parsed_cursor = cursor
 
         # Perform search across entity types
         search_results = []
@@ -200,7 +191,7 @@ def unified_search():
                     'filters_applied': filters
                 }
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         }
 
         # Create response with ETag
@@ -258,18 +249,8 @@ def search_by_type(entity_type: str):
         if if_none_match and if_none_match == etag:
             return '', 304
 
-        # Parse cursor
-        parsed_cursor = None
-        if cursor:
-            try:
-                from utils.data_version import get_current_data_version
-                parsed_cursor = decode_cursor_v5(cursor, current_data_version=get_current_data_version())
-            except Exception as e:
-                logger.warning(f"Invalid search cursor: {e}")
-                return jsonify({
-                    'success': False,
-                    'error': 'Invalid cursor'
-                }), 400
+        # Keep cursor opaque; repository handles decoding
+        parsed_cursor = cursor
 
         # Perform search
         entities, next_cursor, prev_cursor = entity_repository.search_entities(
@@ -307,7 +288,7 @@ def search_by_type(entity_type: str):
                     'search_type': 'entity_specific'
                 }
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         }
 
         # Create response with ETag
@@ -354,7 +335,7 @@ def search_suggestions():
                 'entity_type': entity_type,
                 'limit': limit
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         })
 
     except Exception as e:
@@ -387,7 +368,7 @@ def get_search_filters():
                 'entity_type': entity_type,
                 'supported_entities': SEARCH_CONFIG['supported_entities']
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         })
 
     except Exception as e:
@@ -603,7 +584,7 @@ def health_check():
                 'max_query_length': SEARCH_CONFIG['max_query_length'],
                 'default_limit': SEARCH_CONFIG['default_limit']
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         })
     except Exception as e:
         logger.error(f"Search API health check failed: {e}")
@@ -612,7 +593,7 @@ def health_check():
             'service': 'search_api_v5',
             'status': 'unhealthy',
             'error': str(e),
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         }), 503
 
 

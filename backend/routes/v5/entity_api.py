@@ -16,7 +16,7 @@ from database.services.synagogue_service_v5 import SynagogueServiceV5
 from database.services.mikvah_service_v5 import MikvahServiceV5
 from database.services.store_service_v5 import StoreServiceV5
 from middleware.auth_v5 import require_permission_v5, optional_auth_v5
-from utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
+from utils.cursor_v5 import CursorV5Manager, create_next_cursor_v5
 from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
 from cache.etag_cache import get_etag_cache
 from utils.logging_config import get_logger
@@ -62,7 +62,9 @@ etag_manager = ETagV5Manager()
 
 # Create blueprint using factory
 entity_bp = BlueprintFactoryV5.create_blueprint(
-    'entity_api', __name__, '/api/v5'
+    'entity_api', __name__, '/api/v5', config_override={
+        'factory_sets_etag': False
+    }
 )
 
 
@@ -129,24 +131,11 @@ def get_entities(entity_type: str):
         if if_none_match and if_none_match == etag:
             return '', 304
 
-        # Parse cursor
-        parsed_cursor = None
-        if cursor:
-            try:
-                from utils.data_version import get_current_data_version
-                parsed_cursor = decode_cursor_v5(cursor, current_data_version=get_current_data_version(entity_type))
-            except Exception as e:
-                logger.warning(f"Invalid cursor: {e}")
-                return jsonify({
-                    'success': False,
-                    'error': 'Invalid cursor'
-                }), 400
-
         # Fetch entities from repository
         entities, next_cursor, prev_cursor = entity_repository.get_entities_with_cursor(
             entity_type=entity_type,
             filters=filters,
-            cursor=parsed_cursor,
+            cursor=cursor,
             limit=limit,
             sort_key=sort
         )
@@ -166,7 +155,7 @@ def get_entities(entity_type: str):
                 'filters_applied': filters,
                 'entity_type': entity_type,
                 'sort_key': sort,
-                'timestamp': etag_manager._get_current_timestamp()
+                'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
             }
         }
 
@@ -208,7 +197,7 @@ def get_entity_by_id(entity_type: str, entity_id: int):
             }), 400
 
         # Generate ETag for caching
-        etag = etag_manager.generate_entity_etag(entity_type, entity_id, include_relations=True)
+        etag = etag_manager.generate_entity_etag(entity_type=entity_type, entity_id=entity_id, include_relations=True)
         
         # Check if-none-match header
         if_none_match = request.headers.get('If-None-Match')
@@ -286,7 +275,7 @@ def create_entity(entity_type: str):
                 'entity_type': entity_type,
                 'message': f'{entity_type[:-1].title()} created successfully'
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         }), 201
 
     except Exception as e:
@@ -350,7 +339,7 @@ def update_entity(entity_type: str, entity_id: int):
                 'entity_id': entity_id,
                 'message': f'{entity_type[:-1].title()} updated successfully'
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         })
 
     except Exception as e:
@@ -402,7 +391,7 @@ def delete_entity(entity_type: str, entity_id: int):
                 'entity_id': entity_id,
                 'message': f'{entity_type[:-1].title()} deleted successfully'
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         })
 
     except Exception as e:
@@ -494,7 +483,7 @@ def batch_operations(entity_type: str):
                     'failed': failed
                 }
             },
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         })
 
     except Exception as e:
@@ -519,7 +508,7 @@ def health_check():
             'status': 'healthy',
             'repository_status': health_status,
             'supported_entities': list(ENTITY_SERVICES.keys()),
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         })
     except Exception as e:
         logger.error(f"Entity API health check failed: {e}")
@@ -528,7 +517,7 @@ def health_check():
             'service': 'entity_api_v5',
             'status': 'unhealthy',
             'error': str(e),
-            'timestamp': etag_manager._get_current_timestamp()
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
         }), 503
 
 

@@ -70,6 +70,11 @@ class ETagCache:
         try:
             cache_key = self.CACHE_PATTERNS['watermark'].format(entity_type=entity_type)
             watermark = self.redis_manager.get(cache_key, prefix='etag')
+            if isinstance(watermark, bytes):
+                try:
+                    watermark = watermark.decode('utf-8')
+                except Exception:
+                    watermark = watermark.decode('latin-1', errors='ignore')
             
             if watermark:
                 self.stats['watermark_hits'] += 1
@@ -135,6 +140,11 @@ class ETagCache:
             )
             
             watermark = self.redis_manager.get(cache_key, prefix='etag')
+            if isinstance(watermark, bytes):
+                try:
+                    watermark = watermark.decode('utf-8')
+                except Exception:
+                    watermark = watermark.decode('latin-1', errors='ignore')
             
             if watermark:
                 self.stats['watermark_hits'] += 1
@@ -208,6 +218,11 @@ class ETagCache:
             )
             
             etag = self.redis_manager.get(cache_key, prefix='etag')
+            if isinstance(etag, bytes):
+                try:
+                    etag = etag.decode('utf-8')
+                except Exception:
+                    etag = etag.decode('latin-1', errors='ignore')
             
             if etag:
                 self.stats['etag_hits'] += 1
@@ -292,6 +307,11 @@ class ETagCache:
             )
             
             etag = self.redis_manager.get(cache_key, prefix='etag')
+            if isinstance(etag, bytes):
+                try:
+                    etag = etag.decode('utf-8')
+                except Exception:
+                    etag = etag.decode('latin-1', errors='ignore')
             
             if etag:
                 self.stats['etag_hits'] += 1

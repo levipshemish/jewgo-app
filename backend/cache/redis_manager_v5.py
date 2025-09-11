@@ -59,7 +59,8 @@ class RedisManagerV5:
         'feature_flags': 'flags_v5:',
         'metrics': 'metrics_v5:',
         'locks': 'lock_v5:',
-        'queues': 'queue_v5:'
+        'queues': 'queue_v5:',
+        'list': 'list_v5:'
     }
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):

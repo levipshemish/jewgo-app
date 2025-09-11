@@ -603,7 +603,14 @@ class ETagV5Manager:
             redis_manager = get_redis_manager_v5()
             redis_client = redis_manager.get_client()
             if redis_client:
-                return redis_client.get(key)
+                value = redis_client.get(key)
+                if isinstance(value, bytes):
+                    try:
+                        return value.decode('utf-8')
+                    except Exception:
+                        # Return raw string representation as fallback
+                        return value.decode('latin-1', errors='ignore')
+                return value
             return None
         except Exception:
             return None

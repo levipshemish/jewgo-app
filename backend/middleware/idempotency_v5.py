@@ -207,6 +207,9 @@ class IdempotencyV5Middleware:
             
             # Create response
             response = make_response(response_data, status_code)
+            # Ensure correct content type
+            content_type = headers.get('Content-Type') or headers.get('content-type') or 'application/json'
+            response.headers['Content-Type'] = content_type
             
             # Add cached headers (excluding some system headers)
             excluded_response_headers = {

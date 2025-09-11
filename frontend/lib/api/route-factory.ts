@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { validateAuth } from './auth-middleware';
+import { authMiddleware } from '@/lib/middleware/auth-middleware';
 import { EntityType } from './types-v5';
-import { apiClient } from './index-v5';
+import apiClient from '@/lib/api/client-v5';
 import { metricsCollector } from './metrics-v5';
 
 /**
@@ -220,7 +220,7 @@ async function createRouteContext(
 
   // Authentication if required
   if (config.auth?.required || config.auth?.requireAdmin) {
-    const authResult = await validateAuth(request, {
+    const authResult = await authMiddleware(request, {
       requireAdmin: config.auth.requireAdmin,
       // requiredRoles: config.auth.requiredRoles, // Not available in current config
     });

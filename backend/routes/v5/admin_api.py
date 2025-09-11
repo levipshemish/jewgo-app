@@ -30,16 +30,17 @@ logger = get_logger(__name__)
 
 # Create blueprint using the factory
 admin_bp = BlueprintFactoryV5.create_blueprint(
-    'admin_v5',
+    'admin_api',
     __name__,
     url_prefix='/api/v5/admin',
     config_override={
         'enable_cors': True,
-        'enable_auth': True,
+        'auth_required': True,
+        'min_role_level': 10,
+        'audit_logging': True,
         'enable_rate_limiting': True,
         'enable_idempotency': True,
         'enable_observability': True,
-        'enable_audit_logging': True,  # Enhanced audit logging for admin actions
         'rate_limit_tier': 'admin'
     }
 )

@@ -118,20 +118,7 @@ class DatabaseConnectionManager:
             "health_check_failures": 0
         }
 
-    def health_check(self) -> bool:
-        """Perform a health check on the database connection."""
-        try:
-            if not self._is_connected:
-                return False
-            
-            with self.get_session() as session:
-                session.execute(text("SELECT 1"))
-                self._connection_stats["health_check_count"] += 1
-                return True
-        except Exception as e:
-            logger.warning(f"Database health check failed: {e}")
-            self._connection_stats["health_check_failures"] += 1
-            return False
+    # Removed duplicate boolean health_check; structured health_check is defined below
 
     def connect(self) -> bool:
         """Establish database connection with retry logic and v5 metrics."""
@@ -303,13 +290,7 @@ class DatabaseConnectionManager:
         """Get a session context manager (alias for get_session_context)."""
         return self.get_session_context()
 
-    def close(self):
-        """Close database connection and cleanup resources."""
-        if self.engine:
-            self.engine.dispose()
-            logger.info("Database connection closed")
-        self._is_connected = False
-        self._session_factory = None
+    # Removed duplicate simple close; enhanced close is defined below
 
     def disconnect(self):
         """Disconnect from the database (alias for close)."""

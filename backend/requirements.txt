@@ -42,6 +42,7 @@ pytz==2025.1  # Updated for current DST rules
 # Production server
 gunicorn==21.2.0
 gevent==23.9.1
+greenlet==3.1.1  # Pin greenlet for gevent compatibility
 
 # Script dependencies (for CI validation)
 click==8.1.7

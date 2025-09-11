@@ -334,22 +334,32 @@ class BlueprintFactoryV5:
                     observability_middleware = ObservabilityV5Middleware()
                     observability_middleware.record_request_metrics(request, response)
                 
-                # ETag caching if enabled
+                # ETag caching if enabled and not already set by route handler
                 if config.get('enable_etag', False) and response.status_code == 200:
-                    from utils.etag_v5 import generate_entity_etag_v5
-                    cache_ttl = config.get('cache_ttl', 300)
-                    # Use deterministic ETag generation based on path and method, not full URL
-                    etag = generate_entity_etag_v5(
-                        entity_type=blueprint.name,
-                        filters={
-                            'path': request.path,
-                            'method': request.method,
-                            'blueprint': blueprint.name
-                        },
-                        user_context={'user_id': getattr(g, 'user_id', None)}
-                    )
-                    response.headers['ETag'] = etag
-                    response.headers['Cache-Control'] = f'public, max-age={cache_ttl}'
+                    if not response.headers.get('ETag') and not config.get('factory_sets_etag') is False:
+                        from utils.etag_v5 import generate_collection_etag_v5
+                        cache_ttl = config.get('cache_ttl', 300)
+                        # For entity routes under /api/v5/<entity>
+                        entity_type = None
+                        try:
+                            parts = request.path.split('/')
+                            # ['', 'api', 'v5', '<entity>', ...]
+                            if len(parts) > 3 and parts[1] == 'api' and parts[2] == 'v5':
+                                entity_type = parts[3]
+                        except Exception:
+                            entity_type = None
+
+                        if entity_type:
+                            etag = generate_collection_etag_v5(
+                                entity_type=entity_type,
+                                filters={},
+                                sort_key='created_at_desc',
+                                page_size=None,
+                                cursor_token=None,
+                                user_context={'user_id': getattr(g, 'user_id', None)}
+                            )
+                            response.headers['ETag'] = etag
+                            response.headers['Cache-Control'] = f'public, max-age={cache_ttl}'
                 
                 # Audit logging for admin operations
                 if config.get('audit_logging', False) and hasattr(g, 'user_id'):

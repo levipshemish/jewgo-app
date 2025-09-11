@@ -253,12 +253,23 @@ def create_app(config_class=None):
     )
     
     # Initialize Redis cache and session
-    try:
-        cache = Cache(app)
-        logger.info("Flask-Caching initialized successfully")
-    except Exception as e:
-        logger.warning("Failed to initialize Flask-Caching", error=str(e))
-        # Fallback to simple cache
+    redis_url = os.environ.get("REDIS_URL", "memory://")
+    if redis_url and redis_url != "memory://" and REDIS_AVAILABLE:
+        try:
+            app.config["CACHE_TYPE"] = "redis"
+            app.config["CACHE_REDIS_URL"] = redis_url
+            cache = Cache(app)
+            logger.info("Flask-Caching initialized with Redis")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Flask-Caching with Redis: {e}")
+            # Fallback to simple cache
+            app.config["CACHE_TYPE"] = "simple"
+            # Remove Redis-specific config for simple cache
+            app.config.pop("CACHE_REDIS_URL", None)
+            cache = Cache(app)
+            logger.info("Flask-Caching initialized with simple cache fallback")
+    else:
+        # Use simple cache
         app.config["CACHE_TYPE"] = "simple"
         cache = Cache(app)
         logger.info("Flask-Caching initialized with simple cache")
@@ -304,13 +315,7 @@ def create_app(config_class=None):
     # Make dependencies available to routes
     app.config["dependencies"] = deps
     
-    # Register v5 monitoring blueprint (consolidates health, metrics, container status)
-    try:
-        from routes.v5.monitoring_api import monitoring_v5
-        app.register_blueprint(monitoring_v5)
-        logger.info("V5 monitoring blueprint registered successfully")
-    except ImportError as e:
-        logger.warning(f"Could not register v5 monitoring blueprint: {e}")
+    # Monitoring blueprint registration is handled later after service init
     
     # Register PostgreSQL authentication system
     try:
