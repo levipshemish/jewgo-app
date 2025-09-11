@@ -61,12 +61,12 @@ export default function AdvancedSearchBox({
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
         const response = await fetch(
-          `${backendUrl}/api/restaurants/autocomplete?q=${encodeURIComponent(debouncedQuery)}&limit=8`
+          `${backendUrl}/api/v5/search/suggest?q=${encodeURIComponent(debouncedQuery)}&limit=8`
         );
         
         if (response.ok) {
           const data = await response.json();
-          setSuggestions(data.suggestions || []);
+          setSuggestions(data.data?.suggestions || []);
         }
       } catch {
         // eslint-disable-next-line no-console

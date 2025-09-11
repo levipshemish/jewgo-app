@@ -9,24 +9,24 @@ with consistent patterns, authentication, caching, and monitoring.
 from flask import request, jsonify, g
 from typing import Dict, Any, Optional
 
-from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from database.repositories.entity_repository_v5 import EntityRepositoryV5
-from database.services.restaurant_service_v5 import RestaurantServiceV5
-from database.services.synagogue_service_v5 import SynagogueServiceV5
-from database.services.mikvah_service_v5 import MikvahServiceV5
-from database.services.store_service_v5 import StoreServiceV5
-from middleware.auth_v5 import require_permission_v5, optional_auth_v5
-from utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
-from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
-from cache.etag_cache import get_etag_cache
-from utils.logging_config import get_logger
-from utils.feature_flags_v5 import feature_flags_v5
+from backend.utils.blueprint_factory_v5 import BlueprintFactoryV5
+from backend.database.repositories.entity_repository_v5 import EntityRepositoryV5
+from backend.database.services.restaurant_service_v5 import RestaurantServiceV5
+from backend.database.services.synagogue_service_v5 import SynagogueServiceV5
+from backend.database.services.mikvah_service_v5 import MikvahServiceV5
+from backend.database.services.store_service_v5 import StoreServiceV5
+from backend.middleware.auth_v5 import require_permission_v5, optional_auth_v5
+from backend.utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
+from backend.utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
+from backend.cache.etag_cache import get_etag_cache
+from backend.utils.logging_config import get_logger
+from backend.utils.feature_flags_v5 import feature_flags_v5
 
 logger = get_logger(__name__)
 
 # Initialize services
-from backend.database.connection_manager import DatabaseConnectionManager
-entity_repository = EntityRepositoryV5(DatabaseConnectionManager())
+from backend.database.connection_manager import get_connection_manager
+entity_repository = EntityRepositoryV5(get_connection_manager())
 
 # Initialize cache manager
 try:
@@ -62,7 +62,7 @@ etag_manager = ETagV5Manager()
 
 # Create blueprint using factory
 entity_bp = BlueprintFactoryV5.create_blueprint(
-    'entity_v5', __name__, '/api/v5'
+    'entity_api', __name__, '/api/v5'
 )
 
 
@@ -133,7 +133,8 @@ def get_entities(entity_type: str):
         parsed_cursor = None
         if cursor:
             try:
-                parsed_cursor = decode_cursor_v5(cursor)
+                from backend.utils.data_version import get_current_data_version
+                parsed_cursor = decode_cursor_v5(cursor, current_data_version=get_current_data_version(entity_type))
             except Exception as e:
                 logger.warning(f"Invalid cursor: {e}")
                 return jsonify({
@@ -207,11 +208,11 @@ def get_entity_by_id(entity_type: str, entity_id: int):
             }), 400
 
         # Generate ETag for caching
-        cache_key = f"{entity_type}:{entity_id}"
-        etag = etag_manager.generate_etag(cache_key, {'type': 'entity', 'id': entity_id})
+        etag = etag_manager.generate_entity_etag(entity_type, entity_id, include_relations=True)
         
         # Check if-none-match header
-        if etag_manager.check_etag_match(request.headers.get('If-None-Match'), etag):
+        if_none_match = request.headers.get('If-None-Match')
+        if if_none_match and etag_manager.validate_etag(if_none_match, etag):
             return '', 304
 
         # Get entity from repository

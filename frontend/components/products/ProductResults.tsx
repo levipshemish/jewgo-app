@@ -70,7 +70,7 @@ const ProductResults: React.FC<ProductResultsProps> = ({
     if (data && onResultsUpdate) {
       onResultsUpdate(data.data || [], data.total || 0);
     }
-  }, [data, onResultsUpdate]);
+  }, [data]); // Remove onResultsUpdate from dependencies to prevent infinite loops
 
   if (isLoading && !data) {
     if (displayMode === 'hidden') {return null;}

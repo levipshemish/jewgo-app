@@ -11,6 +11,7 @@ import Link from 'next/link'
 import ErrorBoundary from '../components/ErrorBoundary'
 import LocationAwarePage from '@/components/LocationAwarePage'
 import { deduplicatedFetch } from '@/lib/utils/request-deduplication'
+import { getRestaurant } from '@/lib/api/restaurants'
 
 /**
  * Parse hours from the backend JSON format into EateryDB format
@@ -265,25 +266,13 @@ function EateryIdPageContent() {
           return
         }
 
-        // Use deduplicated fetch for restaurant details
-        const detailUrl = `/api/restaurants/${restaurantId}`
-        
-        const detailData = await deduplicatedFetch(detailUrl)
+        // Use the restaurants API module for restaurant details
+        const detailData = await getRestaurant(parseInt(restaurantId))
         
         // Extract restaurant data from the response
         let restaurantData = null
-        if (detailData.success && detailData.data) {
-          // Handle nested data structure - check for double nesting
-          if (detailData.data.success && detailData.data.data && detailData.data.data.id) {
-            // Restaurant data is directly in detailData.data.data
-            restaurantData = detailData.data.data
-          } else if (detailData.data.restaurant) {
-            restaurantData = detailData.data.restaurant
-          } else if (detailData.data.id) {
-            restaurantData = detailData.data
-          }
-        } else if (detailData.id) {
-          // Direct restaurant object
+        if (detailData) {
+          // The getRestaurant function returns the restaurant directly or null
           restaurantData = detailData
         }
 

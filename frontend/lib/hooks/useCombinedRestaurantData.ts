@@ -3,6 +3,7 @@ import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
 import { IS_MEMORY_CAP_ITEMS, IS_MEMORY_COMPACTION_THRESHOLD, IS_MEMORY_MONITORING_INTERVAL_MS } from '@/lib/config/infiniteScroll.constants';
+import { fetchRestaurants } from '@/lib/api/restaurants';
 
 interface Restaurant {
   id: string | number;
@@ -278,20 +279,40 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       
       setLoading(true);
       setError(null);
-      const url = `/api/restaurants/unified?${key}`;
       
-      const response: CombinedApiResponse = await deduplicatedFetch(url);
+      // Parse the key to extract parameters
+      const searchParams = new URLSearchParams(key);
+      const location = searchParams.get('lat') && searchParams.get('lng') ? {
+        latitude: parseFloat(searchParams.get('lat')!),
+        longitude: parseFloat(searchParams.get('lng')!)
+      } : undefined;
+      
+      // Build filters from search params
+      const filters: Record<string, any> = {};
+      for (const [paramKey, value] of searchParams.entries()) {
+        if (paramKey !== 'lat' && paramKey !== 'lng') {
+          filters[paramKey] = value;
+        }
+      }
+      
+      // Use the restaurants API module
+      const response = await fetchRestaurants({
+        page: 1,
+        limit: 200, // Use a reasonable limit for unified data
+        filters,
+        location
+      });
       let receivedCount = 0;
       let hasMoreFromServer: boolean | undefined = undefined;
       
-      if (response.success && response.data) {
+      if (response.success) {
         // Handle filter options from unified response
-        if (response.data.filterOptions) {
+        if (response.data?.filterOptions) {
           setFilterOptions(response.data.filterOptions);
         }
         
         // Handle pagination from unified response (pagination is top-level)
-        const pagination = (response.pagination as any) || {};
+        const pagination = response.pagination || {};
         
         if (append) {
           // Append new restaurants to existing ones, avoiding duplicates

@@ -7,7 +7,7 @@ const apiClient = new ApiClientV5();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { entity: string; id: string } }
+  { params }: { params: { entityType: string; id: string } }
 ) {
   try {
     // Apply authentication middleware
@@ -16,11 +16,11 @@ export async function GET(
       return NextResponse.json(authResult, { status: 401 });
     }
 
-    const { entity, id } = params;
+    const { entityType, id } = params;
 
     // Validate entity type
     const validEntities = ['restaurants', 'synagogues', 'mikvah', 'stores'];
-    if (!validEntities.includes(entity)) {
+    if (!validEntities.includes(entityType)) {
       return NextResponse.json({
         success: false,
         error: 'Invalid entity type',
@@ -37,7 +37,7 @@ export async function GET(
     }
 
     // Call backend API
-    const response = await apiClient.get(`/api/v5/admin/entities/${entity}/${id}`, {
+    const response = await apiClient.get(`/api/v5/admin/entities/${entityType}/${id}`, {
       headers: {
         'Authorization': `Bearer ${authResult.token}`,
         'Content-Type': 'application/json'
@@ -57,7 +57,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { entity: string; id: string } }
+  { params }: { params: { entityType: string; id: string } }
 ) {
   try {
     // Apply authentication middleware
@@ -66,12 +66,12 @@ export async function PUT(
       return NextResponse.json(authResult, { status: 401 });
     }
 
-    const { entity, id } = params;
+    const { entityType, id } = params;
     const body = await request.json();
 
     // Validate entity type
     const validEntities = ['restaurants', 'synagogues', 'mikvah', 'stores'];
-    if (!validEntities.includes(entity)) {
+    if (!validEntities.includes(entityType)) {
       return NextResponse.json({
         success: false,
         error: 'Invalid entity type',
@@ -88,7 +88,7 @@ export async function PUT(
     }
 
     // Call backend API
-    const response = await apiClient.put(`/api/v5/admin/entities/${entity}/${id}`, body, {
+    const response = await apiClient.put(`/api/v5/admin/entities/${entityType}/${id}`, body, {
       headers: {
         'Authorization': `Bearer ${authResult.token}`,
         'Content-Type': 'application/json'
@@ -108,7 +108,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { entity: string; id: string } }
+  { params }: { params: { entityType: string; id: string } }
 ) {
   try {
     // Apply authentication middleware
@@ -117,11 +117,11 @@ export async function DELETE(
       return NextResponse.json(authResult, { status: 401 });
     }
 
-    const { entity, id } = params;
+    const { entityType, id } = params;
 
     // Validate entity type
     const validEntities = ['restaurants', 'synagogues', 'mikvah', 'stores'];
-    if (!validEntities.includes(entity)) {
+    if (!validEntities.includes(entityType)) {
       return NextResponse.json({
         success: false,
         error: 'Invalid entity type',
@@ -138,7 +138,7 @@ export async function DELETE(
     }
 
     // Call backend API
-    const response = await apiClient.delete(`/api/v5/admin/entities/${entity}/${id}`, {
+    const response = await apiClient.delete(`/api/v5/admin/entities/${entityType}/${id}`, {
       headers: {
         'Authorization': `Bearer ${authResult.token}`,
         'Content-Type': 'application/json'

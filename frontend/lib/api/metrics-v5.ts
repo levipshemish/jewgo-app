@@ -1,460 +1,223 @@
 /**
- * V5 Metrics Collector
+ * Metrics collection for v5 API client.
  * 
- * Collects and reports client-side performance metrics and usage statistics.
+ * Collects performance metrics, error rates, and usage statistics
+ * for API monitoring and optimization.
  */
 
-export interface MetricData {
-  name: string;
-  value: number;
-  timestamp: number;
-  tags?: Record<string, string>;
-  metadata?: Record<string, any>;
+export interface ApiMetrics {
+  requestCount: number;
+  successCount: number;
+  errorCount: number;
+  averageResponseTime: number;
+  lastRequestTime: number;
+  errorRate: number;
 }
 
-export interface PerformanceMetric extends MetricData {
-  type: 'performance';
-  duration?: number;
-  startTime?: number;
+export interface RequestMetrics {
+  url: string;
+  method: string;
+  startTime: number;
   endTime?: number;
-}
-
-export interface UsageMetric extends MetricData {
-  type: 'usage';
-  action: string;
-  entity?: string;
-  success?: boolean;
-}
-
-export interface ErrorMetric extends MetricData {
-  type: 'error';
-  errorType: string;
-  errorMessage?: string;
-  stack?: string;
-}
-
-export type Metric = PerformanceMetric | UsageMetric | ErrorMetric;
-
-export interface MetricsConfig {
-  enabled: boolean;
-  batchSize: number;
-  flushInterval: number;
-  endpoint: string;
-  sampleRate: number;
-  maxRetries: number;
+  duration?: number;
+  status?: number;
+  error?: string;
+  retryCount: number;
 }
 
 export class MetricsCollector {
-  private static instance: MetricsCollector;
-  private metrics: Metric[] = [];
-  private config: MetricsConfig;
-  private flushTimer: NodeJS.Timeout | null = null;
-  private isFlushing = false;
+  private metrics: Map<string, ApiMetrics> = new Map();
+  private requestHistory: RequestMetrics[] = [];
+  private maxHistorySize = 1000;
 
-  private constructor() {
-    this.config = {
-      enabled: true,
-      batchSize: 50,
-      flushInterval: 30000, // 30 seconds
-      endpoint: '/api/v5/metrics',
-      sampleRate: 1.0,
-      maxRetries: 3
+  /**
+   * Record API request start
+   */
+  recordRequestStart(url: string, method: string): RequestMetrics {
+    const request: RequestMetrics = {
+      url,
+      method,
+      startTime: Date.now(),
+      retryCount: 0
     };
-    
-    this.startFlushTimer();
-  }
 
-  /**
-   * Get singleton instance
-   */
-  static getInstance(): MetricsCollector {
-    if (!this.instance) {
-      this.instance = new MetricsCollector();
+    this.requestHistory.push(request);
+    
+    // Trim history if it gets too large
+    if (this.requestHistory.length > this.maxHistorySize) {
+      this.requestHistory = this.requestHistory.slice(-this.maxHistorySize);
     }
-    return this.instance;
+
+    return request;
   }
 
   /**
-   * Configure metrics collector
+   * Record API request completion
    */
-  configure(config: Partial<MetricsConfig>): void {
-    this.config = { ...this.config, ...config };
-    
-    if (this.config.enabled) {
-      this.startFlushTimer();
+  recordRequestEnd(request: RequestMetrics, status: number, error?: string): void {
+    request.endTime = Date.now();
+    request.duration = request.endTime - request.startTime;
+    request.status = status;
+    request.error = error;
+
+    this.updateMetrics(request);
+  }
+
+  /**
+   * Record retry attempt
+   */
+  recordRetry(request: RequestMetrics): void {
+    request.retryCount++;
+  }
+
+  /**
+   * Update metrics for a specific endpoint
+   */
+  private updateMetrics(request: RequestMetrics): void {
+    const key = this.getMetricsKey(request.url, request.method);
+    const existing = this.metrics.get(key) || {
+      requestCount: 0,
+      successCount: 0,
+      errorCount: 0,
+      averageResponseTime: 0,
+      lastRequestTime: 0,
+      errorRate: 0
+    };
+
+    existing.requestCount++;
+    existing.lastRequestTime = request.startTime;
+
+    if (request.error || (request.status && request.status >= 400)) {
+      existing.errorCount++;
     } else {
-      this.stopFlushTimer();
-    }
-  }
-
-  /**
-   * Record performance metric
-   */
-  recordPerformance(
-    name: string,
-    duration: number,
-    tags?: Record<string, string>,
-    metadata?: Record<string, any>
-  ): void {
-    if (!this.shouldSample()) return;
-
-    const metric: PerformanceMetric = {
-      type: 'performance',
-      name,
-      value: duration,
-      timestamp: Date.now(),
-      duration,
-      tags,
-      metadata
-    };
-
-    this.addMetric(metric);
-  }
-
-  /**
-   * Record usage metric
-   */
-  recordUsage(
-    action: string,
-    entity?: string,
-    success: boolean = true,
-    tags?: Record<string, string>,
-    metadata?: Record<string, any>
-  ): void {
-    if (!this.shouldSample()) return;
-
-    const metric: UsageMetric = {
-      type: 'usage',
-      name: `usage.${action}`,
-      value: success ? 1 : 0,
-      timestamp: Date.now(),
-      action,
-      entity,
-      success,
-      tags,
-      metadata
-    };
-
-    this.addMetric(metric);
-  }
-
-  /**
-   * Record error metric
-   */
-  recordError(
-    errorType: string,
-    errorMessage?: string,
-    stack?: string,
-    tags?: Record<string, string>,
-    metadata?: Record<string, any>
-  ): void {
-    if (!this.shouldSample()) return;
-
-    const metric: ErrorMetric = {
-      type: 'error',
-      name: `error.${errorType}`,
-      value: 1,
-      timestamp: Date.now(),
-      errorType,
-      errorMessage,
-      stack,
-      tags,
-      metadata
-    };
-
-    this.addMetric(metric);
-  }
-
-  /**
-   * Record a generic metric
-   */
-  record(metric: Metric): void {
-    if (!this.config.enabled) return;
-    
-    this.metrics.push(metric);
-    
-    // Auto-flush if batch size reached
-    if (this.metrics.length >= this.config.batchSize) {
-      this.flush();
-    }
-  }
-
-  /**
-   * Time a function execution
-   */
-  async timeFunction<T>(
-    name: string,
-    fn: () => Promise<T>,
-    tags?: Record<string, string>
-  ): Promise<T> {
-    const startTime = Date.now();
-    
-    try {
-      const result = await fn();
-      const duration = Date.now() - startTime;
-      
-      this.recordPerformance(name, duration, { ...tags, success: 'true' });
-      return result;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      
-      this.recordPerformance(name, duration, { ...tags, success: 'false' });
-      this.recordError(
-        'function_error',
-        error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error.stack : undefined,
-        { ...tags, function: name }
-      );
-      
-      throw error;
-    }
-  }
-
-  /**
-   * Time a synchronous function execution
-   */
-  timeSyncFunction<T>(
-    name: string,
-    fn: () => T,
-    tags?: Record<string, string>
-  ): T {
-    const startTime = Date.now();
-    
-    try {
-      const result = fn();
-      const duration = Date.now() - startTime;
-      
-      this.recordPerformance(name, duration, { ...tags, success: 'true' });
-      return result;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      
-      this.recordPerformance(name, duration, { ...tags, success: 'false' });
-      this.recordError(
-        'function_error',
-        error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error.stack : undefined,
-        { ...tags, function: name }
-      );
-      
-      throw error;
-    }
-  }
-
-  /**
-   * Add metric to collection
-   */
-  private addMetric(metric: Metric): void {
-    if (!this.config.enabled) return;
-
-    this.metrics.push(metric);
-
-    // Flush if batch size reached
-    if (this.metrics.length >= this.config.batchSize) {
-      this.flush();
-    }
-  }
-
-  /**
-   * Check if metric should be sampled
-   */
-  private shouldSample(): boolean {
-    return Math.random() < this.config.sampleRate;
-  }
-
-  /**
-   * Start flush timer
-   */
-  private startFlushTimer(): void {
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer);
+      existing.successCount++;
     }
 
-    this.flushTimer = setInterval(() => {
-      this.flush();
-    }, this.config.flushInterval);
+    // Update average response time
+    if (request.duration) {
+      const totalTime = existing.averageResponseTime * (existing.requestCount - 1) + request.duration;
+      existing.averageResponseTime = totalTime / existing.requestCount;
+    }
+
+    // Calculate error rate
+    existing.errorRate = existing.errorCount / existing.requestCount;
+
+    this.metrics.set(key, existing);
   }
 
   /**
-   * Stop flush timer
+   * Get metrics for a specific endpoint
    */
-  private stopFlushTimer(): void {
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer);
-      this.flushTimer = null;
-    }
+  getMetrics(url: string, method: string): ApiMetrics | null {
+    const key = this.getMetricsKey(url, method);
+    return this.metrics.get(key) || null;
   }
 
   /**
-   * Flush metrics to server
+   * Get all metrics
    */
-  async flush(): Promise<void> {
-    if (this.isFlushing || this.metrics.length === 0) {
-      return;
-    }
-
-    this.isFlushing = true;
-    const metricsToFlush = [...this.metrics];
-    this.metrics = [];
-
-    try {
-      await this.sendMetrics(metricsToFlush);
-    } catch (error) {
-      console.error('Failed to send metrics:', error);
-      
-      // Re-add metrics to queue for retry
-      this.metrics.unshift(...metricsToFlush);
-      
-      // Limit queue size
-      if (this.metrics.length > this.config.batchSize * 2) {
-        this.metrics = this.metrics.slice(0, this.config.batchSize);
-      }
-    } finally {
-      this.isFlushing = false;
-    }
+  getAllMetrics(): Map<string, ApiMetrics> {
+    return new Map(this.metrics);
   }
 
   /**
-   * Send metrics to server
+   * Get request history
    */
-  private async sendMetrics(metrics: Metric[]): Promise<void> {
-    const response = await fetch(this.config.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Version': 'v5'
-      },
-      body: JSON.stringify({
-        metrics,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent,
-        url: window.location.href
-      })
+  getRequestHistory(): RequestMetrics[] {
+    return [...this.requestHistory];
+  }
+
+  /**
+   * Get recent requests
+   */
+  getRecentRequests(count: number = 100): RequestMetrics[] {
+    return this.requestHistory.slice(-count);
+  }
+
+  /**
+   * Get error summary
+   */
+  getErrorSummary(): {
+    totalErrors: number;
+    errorRate: number;
+    commonErrors: Array<{ error: string; count: number }>;
+    recentErrors: RequestMetrics[];
+  } {
+    const errors = this.requestHistory.filter(r => r.error || (r.status && r.status >= 400));
+    const errorCounts = new Map<string, number>();
+
+    errors.forEach(error => {
+      const errorKey = error.error || `HTTP ${error.status}`;
+      errorCounts.set(errorKey, (errorCounts.get(errorKey) || 0) + 1);
     });
 
-    if (!response.ok) {
-      throw new Error(`Metrics send failed: ${response.status}`);
-    }
-  }
+    const commonErrors = Array.from(errorCounts.entries())
+      .map(([error, count]) => ({ error, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
 
-  /**
-   * Get current metrics
-   */
-  getMetrics(): Metric[] {
-    return [...this.metrics];
+    const totalRequests = this.requestHistory.length;
+    const totalErrors = errors.length;
+    const errorRate = totalRequests > 0 ? totalErrors / totalRequests : 0;
+
+    return {
+      totalErrors,
+      errorRate,
+      commonErrors,
+      recentErrors: errors.slice(-20)
+    };
   }
 
   /**
    * Clear all metrics
    */
   clear(): void {
-    this.metrics = [];
+    this.metrics.clear();
+    this.requestHistory = [];
   }
 
   /**
-   * Get metrics statistics
+   * Export metrics as JSON
    */
-  getStats(): {
-    totalMetrics: number;
-    performanceMetrics: number;
-    usageMetrics: number;
-    errorMetrics: number;
-    oldestMetric: number | null;
-    newestMetric: number | null;
+  export(): {
+    metrics: Record<string, ApiMetrics>;
+    requestHistory: RequestMetrics[];
+    summary: {
+      totalRequests: number;
+      totalErrors: number;
+      averageResponseTime: number;
+      errorRate: number;
+    };
   } {
-    // const now = Date.now(); // Currently unused but may be needed for future features
-    let oldest: number | null = null;
-    let newest: number | null = null;
-
-    const stats = this.metrics.reduce(
-      (acc, metric) => {
-        acc.totalMetrics++;
-        
-        if (metric.type === 'performance') acc.performanceMetrics++;
-        else if (metric.type === 'usage') acc.usageMetrics++;
-        else if (metric.type === 'error') acc.errorMetrics++;
-        
-        if (!oldest || metric.timestamp < oldest) oldest = metric.timestamp;
-        if (!newest || metric.timestamp > newest) newest = metric.timestamp;
-        
-        return acc;
-      },
-      {
-        totalMetrics: 0,
-        performanceMetrics: 0,
-        usageMetrics: 0,
-        errorMetrics: 0
-      }
-    );
+    const allMetrics = Object.fromEntries(this.metrics);
+    const totalRequests = this.requestHistory.length;
+    const totalErrors = this.requestHistory.filter(r => r.error || (r.status && r.status >= 400)).length;
+    const totalResponseTime = this.requestHistory.reduce((sum, r) => sum + (r.duration || 0), 0);
+    const averageResponseTime = totalRequests > 0 ? totalResponseTime / totalRequests : 0;
+    const errorRate = totalRequests > 0 ? totalErrors / totalRequests : 0;
 
     return {
-      ...stats,
-      oldestMetric: oldest,
-      newestMetric: newest
+      metrics: allMetrics,
+      requestHistory: this.requestHistory,
+      summary: {
+        totalRequests,
+        totalErrors,
+        averageResponseTime,
+        errorRate
+      }
     };
   }
 
   /**
-   * Get summary of metrics for a time range
+   * Create metrics key from URL and method
    */
-  getSummary(timeRange?: { start?: number; end?: number }): any {
-    const now = Date.now();
-    const start = timeRange?.start || (now - 24 * 60 * 60 * 1000); // Default to last 24 hours
-    const end = timeRange?.end || now;
+  private getMetricsKey(url: string, method: string): string {
+    // Normalize URL by removing query parameters and IDs
+    const normalizedUrl = url
+      .replace(/\?.*$/, '')
+      .replace(/\/\d+/g, '/:id')
+      .replace(/\/[a-f0-9-]{36}/g, '/:uuid');
     
-    const filteredMetrics = this.metrics.filter(m => 
-      m.timestamp >= start && m.timestamp <= end
-    );
-    
-    const summary = {
-      totalMetrics: filteredMetrics.length,
-      timeRange: { start, end },
-      byType: {} as Record<string, number>,
-      byName: {} as Record<string, number>,
-      errors: 0,
-      performance: {
-        avgDuration: 0,
-        maxDuration: 0,
-        minDuration: Infinity
-      }
-    };
-    
-    filteredMetrics.forEach(metric => {
-      summary.byType[metric.type] = (summary.byType[metric.type] || 0) + 1;
-      summary.byName[metric.name] = (summary.byName[metric.name] || 0) + 1;
-      
-      if (metric.type === 'error') {
-        summary.errors++;
-      }
-      
-      if (metric.type === 'performance' && 'duration' in metric) {
-        const duration = metric.duration || 0;
-        summary.performance.avgDuration += duration;
-        summary.performance.maxDuration = Math.max(summary.performance.maxDuration, duration);
-        summary.performance.minDuration = Math.min(summary.performance.minDuration, duration);
-      }
-    });
-    
-    if (summary.performance.avgDuration > 0) {
-      summary.performance.avgDuration /= filteredMetrics.filter(m => m.type === 'performance').length;
-    }
-    
-    if (summary.performance.minDuration === Infinity) {
-      summary.performance.minDuration = 0;
-    }
-    
-    return summary;
-  }
-
-  /**
-   * Destroy metrics collector
-   */
-  destroy(): void {
-    this.stopFlushTimer();
-    this.flush();
-    this.metrics = [];
+    return `${method.toUpperCase()} ${normalizedUrl}`;
   }
 }
-
-// Export singleton instance
-export const metricsCollector = MetricsCollector.getInstance();

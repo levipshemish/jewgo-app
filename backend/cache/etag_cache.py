@@ -366,7 +366,7 @@ class ETagCache:
             
             total_invalidated = 0
             for pattern in patterns:
-                keys = self.redis_manager.keys(pattern, prefix='etag')
+                keys = self.redis_manager.scan_keys(pattern, prefix='etag')
                 if keys:
                     for key in keys:
                         self.redis_manager.delete(key, prefix='etag')
@@ -406,7 +406,7 @@ class ETagCache:
             
             total_invalidated = 0
             for pattern in patterns:
-                keys = self.redis_manager.keys(pattern, prefix='etag')
+                keys = self.redis_manager.scan_keys(pattern, prefix='etag')
                 if keys:
                     for key in keys:
                         self.redis_manager.delete(key, prefix='etag')
@@ -580,7 +580,7 @@ class ETagCache:
             
             cleaned_count = 0
             for pattern in patterns_to_check:
-                keys = self.redis_manager.keys(pattern, prefix='etag')
+                keys = self.redis_manager.scan_keys(pattern, prefix='etag')
                 
                 # Check if keys exist (Redis will have auto-expired some)
                 for key in keys:

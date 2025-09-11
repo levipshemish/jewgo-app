@@ -13,30 +13,30 @@ export const V5_API_BASE_URL = getApiBaseUrl();
 // V5 API Endpoints
 export const V5_API_ENDPOINTS = {
   // Unified Entity API - consolidates restaurants, synagogues, mikvah, stores
-  ENTITIES: '/v5/entities',
-  ENTITY_DETAILS: (id: string) => `/v5/entities/${id}`,
-  ENTITY_SEARCH: '/v5/entities/search',
+  ENTITIES: '/api/v5/entities',
+  ENTITY_DETAILS: (id: string) => `/api/v5/entities/${id}`,
+  ENTITY_SEARCH: '/api/v5/entities/search',
   
   // Unified Search API - cross-entity search
-  SEARCH: '/v5/search',
-  SEARCH_SUGGESTIONS: '/v5/search/suggestions',
+  SEARCH: '/api/v5/search',
+  SEARCH_SUGGESTIONS: '/api/v5/search/suggestions',
   
   // Admin API - consolidated admin endpoints
-  ADMIN_USERS: '/v5/admin/users',
-  ADMIN_USER_DETAILS: (id: string) => `/v5/admin/users/${id}`,
-  ADMIN_ENTITIES: (entityType: string) => `/v5/admin/entities/${entityType}`,
-  ADMIN_ENTITY_DETAILS: (entityType: string, id: string) => `/v5/admin/entities/${entityType}/${id}`,
-  ADMIN_ANALYTICS: '/v5/admin/analytics',
-  ADMIN_SYSTEM: '/v5/admin/system',
+  ADMIN_USERS: '/api/v5/admin/users',
+  ADMIN_USER_DETAILS: (id: string) => `/api/v5/admin/users/${id}`,
+  ADMIN_ENTITIES: (entityType: string) => `/api/v5/admin/entities/${entityType}`,
+  ADMIN_ENTITY_DETAILS: (entityType: string, id: string) => `/api/v5/admin/entities/${entityType}/${id}`,
+  ADMIN_ANALYTICS: '/api/v5/admin/analytics',
+  ADMIN_SYSTEM: '/api/v5/admin/system',
   
   // Monitoring API - health and metrics
-  HEALTH: '/v5/monitoring/health',
-  METRICS: '/v5/monitoring/metrics',
-  SYSTEM_STATUS: '/v5/monitoring/system-status',
+  HEALTH: '/api/v5/monitoring/health',
+  METRICS: '/api/v5/monitoring/metrics',
+  SYSTEM_STATUS: '/api/v5/monitoring/system-status',
   
   // Webhook API - unified webhook handling
-  WEBHOOKS: '/v5/webhooks',
-  WEBHOOK_DETAILS: (id: string) => `/v5/webhooks/${id}`,
+  WEBHOOKS: '/api/v5/webhooks',
+  WEBHOOK_DETAILS: (id: string) => `/api/v5/webhooks/${id}`,
 } as const;
 
 // Entity Types for V5 API

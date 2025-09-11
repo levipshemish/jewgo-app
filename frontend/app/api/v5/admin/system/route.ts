@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authMiddleware } from '@/lib/api/auth-middleware';
-import { simpleErrorHandler } from '@/lib/api/error-middleware';
+import { authMiddleware } from '@/lib/middleware/auth-middleware';
+import { simpleErrorHandler } from '@/lib/middleware/error-middleware';
 import { ApiClientV5 } from '@/lib/api/client-v5';
 
 const apiClient = new ApiClientV5();

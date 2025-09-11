@@ -298,4 +298,191 @@ class ReviewFlag(Base):
     reported_by = Column(String(50), nullable=False)
     created_at = Column(DateTime, default=utc_now, nullable=False)
     status = Column(String(20), nullable=False, default="pending")
+
+
+class Synagogue(Base):
+    """Synagogue model for Jewish places of worship.
+    This model represents synagogues and Jewish community centers.
+    """
+    __tablename__ = "synagogues"
+    
+    # System fields
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+    
+    # Basic information
+    name = Column(String(255), nullable=False)
+    address = Column(String(500), nullable=False)
+    city = Column(String(100), nullable=False)
+    state = Column(String(50), nullable=False)
+    zip_code = Column(String(20), nullable=False)
+    phone_number = Column(String(50))
+    website = Column(String(500))
+    email = Column(String(255))
+    
+    # Location data
+    latitude = Column(Float)
+    longitude = Column(Float)
+    
+    # Synagogue details
+    denomination = Column(String(100))  # Orthodox, Conservative, Reform, etc.
+    services_type = Column(String(100))  # Daily, Shabbat, High Holidays, etc.
+    rabbi_name = Column(String(255))
+    congregation_size = Column(String(50))  # Small, Medium, Large, etc.
+    
+    # Services and amenities
+    daily_minyan = Column(Boolean, default=False)
+    shabbat_services = Column(Boolean, default=False)
+    high_holiday_services = Column(Boolean, default=False)
+    hebrew_school = Column(Boolean, default=False)
+    adult_education = Column(Boolean, default=False)
+    social_events = Column(Boolean, default=False)
+    kosher_kitchen = Column(Boolean, default=False)
+    parking_available = Column(Boolean, default=False)
+    wheelchair_accessible = Column(Boolean, default=False)
+    
+    # Hours and schedule
+    hours_of_operation = Column(Text)  # JSON or text description
+    hours_json = Column(Text)  # Structured hours data
+    special_hours = Column(Text)  # Holiday hours, etc.
+    
+    # Additional information
+    description = Column(Text)
+    image_url = Column(String(2000))
+    status = Column(String(20), default="active", nullable=False)
+    
+    # Audit fields
+    created_by = Column(String(255))
+    updated_by = Column(String(255))
+    deleted_at = Column(DateTime)
+    
+    def __repr__(self):
+        return f"<Synagogue(id={self.id}, name='{self.name}', city='{self.city}')>"
+
+
+class Mikvah(Base):
+    """Mikvah model for Jewish ritual baths.
+    This model represents mikvahs with specialized religious requirements.
+    """
+    __tablename__ = "mikvah"
+    
+    # System fields
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+    
+    # Basic information
+    name = Column(String(255), nullable=False)
+    address = Column(String(500), nullable=False)
+    city = Column(String(100), nullable=False)
+    state = Column(String(50), nullable=False)
+    zip_code = Column(String(20), nullable=False)
+    phone_number = Column(String(50))
+    website = Column(String(500))
+    email = Column(String(255))
+    
+    # Location data
+    latitude = Column(Float)
+    longitude = Column(Float)
+    
+    # Mikvah details
+    mikvah_type = Column(String(100))  # Women's, Men's, Both
+    supervision = Column(String(100))  # Orthodox, Conservative, etc.
+    appointment_required = Column(Boolean, default=True)
+    walk_ins_accepted = Column(Boolean, default=False)
+    
+    # Accessibility and amenities
+    accessibility = Column(String(100))  # Fully accessible, Limited, Not accessible
+    wheelchair_accessible = Column(Boolean, default=False)
+    private_changing_rooms = Column(Boolean, default=True)
+    towels_provided = Column(Boolean, default=False)
+    soap_provided = Column(Boolean, default=False)
+    hair_dryer_available = Column(Boolean, default=False)
+    
+    # Hours and schedule
+    hours_of_operation = Column(Text)  # JSON or text description
+    hours_json = Column(Text)  # Structured hours data
+    special_hours = Column(Text)  # Holiday hours, etc.
+    
+    # Pricing and policies
+    cost = Column(String(100))  # Free, $X, etc.
+    payment_methods = Column(Text)  # Cash, Credit, etc.
+    cancellation_policy = Column(Text)
+    
+    # Additional information
+    description = Column(Text)
+    image_url = Column(String(2000))
+    status = Column(String(20), default="active", nullable=False)
+    
+    # Audit fields
+    created_by = Column(String(255))
+    updated_by = Column(String(255))
+    deleted_at = Column(DateTime)
+    
+    def __repr__(self):
+        return f"<Mikvah(id={self.id}, name='{self.name}', city='{self.city}')>"
+
+
+class Store(Base):
+    """Store model for Jewish businesses and retail stores.
+    This model represents stores selling Jewish products and services.
+    """
+    __tablename__ = "stores"
+    
+    # System fields
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+    
+    # Basic information
+    name = Column(String(255), nullable=False)
+    address = Column(String(500), nullable=False)
+    city = Column(String(100), nullable=False)
+    state = Column(String(50), nullable=False)
+    zip_code = Column(String(20), nullable=False)
+    phone_number = Column(String(50))
+    website = Column(String(500))
+    email = Column(String(255))
+    
+    # Location data
+    latitude = Column(Float)
+    longitude = Column(Float)
+    
+    # Store details
+    store_type = Column(String(100))  # Kosher grocery, Judaica, Books, etc.
+    business_category = Column(String(100))  # Retail, Wholesale, Online, etc.
+    kosher_certification = Column(String(100))  # OU, Kof-K, etc.
+    
+    # Services and features
+    delivery_available = Column(Boolean, default=False)
+    pickup_available = Column(Boolean, default=True)
+    online_ordering = Column(Boolean, default=False)
+    catering_available = Column(Boolean, default=False)
+    gift_wrapping = Column(Boolean, default=False)
+    
+    # Hours and schedule
+    hours_of_operation = Column(Text)  # JSON or text description
+    hours_json = Column(Text)  # Structured hours data
+    special_hours = Column(Text)  # Holiday hours, etc.
+    
+    # Payment and policies
+    payment_methods = Column(Text)  # Cash, Credit, Check, etc.
+    return_policy = Column(Text)
+    shipping_policy = Column(Text)
+    
+    # Additional information
+    description = Column(Text)
+    image_url = Column(String(2000))
+    status = Column(String(20), default="active", nullable=False)
+    
+    # Audit fields
+    created_by = Column(String(255))
+    updated_by = Column(String(255))
+    deleted_at = Column(DateTime)
+    
+    def __repr__(self):
+        return f"<Store(id={self.id}, name='{self.name}', city='{self.city}')>"
+
+
 # NextAuth.js legacy models removed; using PostgreSQL auth tables exclusively

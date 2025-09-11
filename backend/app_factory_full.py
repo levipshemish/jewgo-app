@@ -345,7 +345,13 @@ def create_app(config_class=None):
     # Register v5 API blueprints with feature flag controls
     try:
         from utils.feature_flags_v5 import FeatureFlagsV5
+        from cache.redis_manager_v5 import get_redis_manager_v5
+        from database.connection_manager import get_connection_manager
+        
+        # Initialize v5 services
         feature_flags_v5 = FeatureFlagsV5()
+        redis_manager_v5 = get_redis_manager_v5()
+        connection_manager_v5 = get_connection_manager()
         
         # Register v5 entity API (consolidates restaurants, synagogues, mikvah, stores)
         if feature_flags_v5.is_enabled('entity_api_v5', default=True):
@@ -383,7 +389,9 @@ def create_app(config_class=None):
         # Register v5 admin API
         if feature_flags_v5.is_enabled('admin_api_v5', default=True):
             try:
-                from routes.v5.admin_api import admin_bp
+                from routes.v5.admin_api import admin_bp, init_services as init_admin_services
+                # Initialize admin services
+                init_admin_services(connection_manager_v5, redis_manager_v5, feature_flags_v5)
                 app.register_blueprint(admin_bp)
                 logger.info("V5 admin API blueprint registered successfully")
             except ImportError as e:
@@ -394,13 +402,37 @@ def create_app(config_class=None):
         # Register v5 webhook API
         if feature_flags_v5.is_enabled('webhook_api_v5', default=True):
             try:
-                from routes.v5.webhook_api import webhook_bp
+                from routes.v5.webhook_api import webhook_bp, init_services as init_webhook_services
+                # Initialize webhook services
+                init_webhook_services(redis_manager_v5, feature_flags_v5)
                 app.register_blueprint(webhook_bp)
                 logger.info("V5 webhook API blueprint registered successfully")
             except ImportError as e:
                 logger.warning(f"Could not import v5 webhook API blueprint: {e}")
             except Exception as e:
                 logger.warning(f"Could not register v5 webhook API blueprint: {e}")
+        
+        # Register v5 monitoring API
+        try:
+            from routes.v5.monitoring_api import monitoring_v5, init_services as init_monitoring_services
+            # Initialize monitoring services
+            init_monitoring_services(redis_manager_v5, connection_manager_v5, feature_flags_v5)
+            app.register_blueprint(monitoring_v5)
+            logger.info("V5 monitoring API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 monitoring API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 monitoring API blueprint: {e}")
+        
+        # Register v5 feature flags API (always enabled for frontend access)
+        try:
+            from routes.v5.feature_flags_api import feature_flags_bp
+            app.register_blueprint(feature_flags_bp)
+            logger.info("V5 feature flags API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 feature flags API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 feature flags API blueprint: {e}")
                 
     except ImportError as e:
         logger.warning(f"Could not import v5 feature flags: {e}")
@@ -439,6 +471,13 @@ def create_app(config_class=None):
             from routes.v5.webhook_api import webhook_bp
             app.register_blueprint(webhook_bp)
             logger.info("V5 webhook API blueprint registered (fallback)")
+        except ImportError:
+            pass
+            
+        try:
+            from routes.v5.feature_flags_api import feature_flags_bp
+            app.register_blueprint(feature_flags_bp)
+            logger.info("V5 feature flags API blueprint registered (fallback)")
         except ImportError:
             pass
     

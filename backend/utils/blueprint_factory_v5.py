@@ -14,7 +14,7 @@ from functools import wraps
 
 from flask import Blueprint, jsonify, request, g
 
-from utils.logging_config import get_logger
+from backend.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -42,6 +42,7 @@ class BlueprintFactoryV5:
             'auth_required': False,  # Optional auth for public endpoints
             'enable_caching': True,
             'cache_ttl': 300,  # 5 minutes
+            'enable_etag': True,
         },
         'auth_api': {
             'rate_limit_tier': 'auth',
@@ -54,6 +55,7 @@ class BlueprintFactoryV5:
             'auth_required': False,  # Optional auth
             'enable_caching': True,
             'cache_ttl': 60,  # 1 minute for search results
+            'enable_etag': True,
         },
         'admin_api': {
             'rate_limit_tier': 'admin',
@@ -235,7 +237,7 @@ class BlueprintFactoryV5:
                 
                 # Rate limiting check if enabled
                 if config.get('enable_rate_limiting', True):
-                    from middleware.rate_limit_v5 import RateLimitV5Middleware
+                    from backend.middleware.rate_limit_v5 import RateLimitV5Middleware
                     rate_limit_middleware = RateLimitV5Middleware()
                     rate_limit_result = rate_limit_middleware.check_rate_limit(
                         request, config.get('rate_limit_tier', 'standard')
@@ -250,7 +252,7 @@ class BlueprintFactoryV5:
                 
                 # Idempotency check if enabled
                 if config.get('enable_idempotency', False):
-                    from middleware.idempotency_v5 import IdempotencyV5Middleware
+                    from backend.middleware.idempotency_v5 import IdempotencyV5Middleware
                     idempotency_middleware = IdempotencyV5Middleware()
                     idempotency_result = idempotency_middleware.check_idempotency(request)
                     if idempotency_result['is_duplicate']:
@@ -328,17 +330,22 @@ class BlueprintFactoryV5:
                 
                 # Observability metrics if enabled
                 if config.get('enable_observability', True):
-                    from middleware.observability_v5 import ObservabilityV5Middleware
+                    from backend.middleware.observability_v5 import ObservabilityV5Middleware
                     observability_middleware = ObservabilityV5Middleware()
                     observability_middleware.record_request_metrics(request, response)
                 
                 # ETag caching if enabled
-                if config.get('enable_etag', True) and response.status_code == 200:
-                    from utils.etag_v5 import generate_entity_etag_v5
+                if config.get('enable_etag', False) and response.status_code == 200:
+                    from backend.utils.etag_v5 import generate_entity_etag_v5
                     cache_ttl = config.get('cache_ttl', 300)
+                    # Use deterministic ETag generation based on path and method, not full URL
                     etag = generate_entity_etag_v5(
                         entity_type=blueprint.name,
-                        filters={'url': request.url},
+                        filters={
+                            'path': request.path,
+                            'method': request.method,
+                            'blueprint': blueprint.name
+                        },
                         user_context={'user_id': getattr(g, 'user_id', None)}
                     )
                     response.headers['ETag'] = etag

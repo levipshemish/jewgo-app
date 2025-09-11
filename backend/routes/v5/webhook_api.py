@@ -241,11 +241,14 @@ def perform_health_check() -> Dict[str, Any]:
 def github_webhook():
     """Handle GitHub webhook events."""
     try:
+        # Fallback for feature flags
+        local_flags = feature_flags or FeatureFlagsV5()
+        
         # Check feature flag
         user_id = getattr(g, 'user_id', None)
         user_roles = [role.get('role') for role in getattr(g, 'user_roles', []) if role.get('role')]
         
-        if not feature_flags.is_enabled('webhook_api_v5', user_id=user_id, user_roles=user_roles):
+        if not local_flags.is_enabled('webhook_api_v5', user_id=user_id, user_roles=user_roles):
             return jsonify({
                 'success': False,
                 'error': 'Webhook API v5 is not enabled for your account'
@@ -579,31 +582,31 @@ def rollback_deployment():
 
 
 # Error handlers
-@webhook_v5.errorhandler(400)
+@webhook_bp.errorhandler(400)
 def bad_request(error):
     """Handle bad request errors."""
     return jsonify({'error': 'Bad request'}), 400
 
 
-@webhook_v5.errorhandler(401)
+@webhook_bp.errorhandler(401)
 def unauthorized(error):
     """Handle unauthorized errors."""
     return jsonify({'error': 'Authentication required'}), 401
 
 
-@webhook_v5.errorhandler(403)
+@webhook_bp.errorhandler(403)
 def forbidden(error):
     """Handle forbidden errors."""
     return jsonify({'error': 'Insufficient permissions'}), 403
 
 
-@webhook_v5.errorhandler(413)
+@webhook_bp.errorhandler(413)
 def payload_too_large(error):
     """Handle payload too large errors."""
     return jsonify({'error': 'Payload too large'}), 413
 
 
-@webhook_v5.errorhandler(500)
+@webhook_bp.errorhandler(500)
 def internal_server_error(error):
     """Handle internal server errors."""
     logger.exception("Webhook API internal server error", error=str(error))

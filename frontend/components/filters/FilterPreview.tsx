@@ -5,6 +5,7 @@ import { Loader2, Users, AlertCircle } from 'lucide-react';
 import { DraftFilters } from '@/lib/filters/filters.types';
 import { validateFilters, normalizeFilters } from '@/lib/utils/filterValidation';
 import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
+import { fetchRestaurants } from '@/lib/api/restaurants';
 
 interface FilterPreviewProps {
   filters: DraftFilters;
@@ -93,7 +94,25 @@ export function FilterPreview({
         params.set('lng', userLocation.longitude.toString());
       }
 
-      const response = await deduplicatedFetch(`/api/restaurants?${params.toString()}`);
+      // Use the restaurants API module
+      const filters: Record<string, any> = {};
+      for (const [key, value] of params.entries()) {
+        if (key !== 'lat' && key !== 'lng') {
+          filters[key] = value;
+        }
+      }
+      
+      const location = userLocation ? {
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude
+      } : undefined;
+      
+      const response = await fetchRestaurants({
+        page: 1,
+        limit: 50,
+        filters,
+        location
+      });
       
       // Debug: Log the response structure to understand what we're getting
       console.log('FilterPreview response structure:', {

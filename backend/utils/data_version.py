@@ -1,326 +1,262 @@
 #!/usr/bin/env python3
-"""Server-authored data version computation for cursor consistency.
+"""
+Data version utility for v5 API cursor validation.
 
-This module computes deterministic data version hashes to ensure cursor
-validity across data changes, following Phase 2 requirements.
+Provides data version management for cursor pagination to ensure
+cursor compatibility across API versions and data schema changes.
 """
 
-import hashlib
-import json
-import math
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from utils.logging_config import get_logger
+import hashlib
+import os
+import time
+from datetime import datetime, timezone
+from typing import Dict, Any, Optional
+
+from backend.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-# Version constants
-SCHEMA_VERSION = "v4.1"
-SORT_VERSION = "sort_v2"
-GEOHASH_PRECISION = 3  # Decimal places for location rounding
 
-
-def round_coordinates(lat: Optional[float], lng: Optional[float]) -> Optional[str]:
-    """Round coordinates to reduce version noise from minor location changes.
+class DataVersionManager:
+    """Manages data versioning for cursor validation and API compatibility."""
     
-    Args:
-        lat: Latitude coordinate
-        lng: Longitude coordinate
+    def __init__(self):
+        self._version_cache: Dict[str, str] = {}
+        self._cache_ttl = 300  # 5 minutes
+        self._last_cache_update = 0
+    
+    def get_current_data_version(self, entity_type: Optional[str] = None) -> str:
+        """
+        Get the current data version for cursor validation.
         
-    Returns:
-        Rounded geohash string or None if coordinates invalid
-    """
-    try:
-        if lat is None or lng is None:
-            return None
+        Args:
+            entity_type: Optional entity type for entity-specific versioning
             
-        # Round to specified precision to reduce noise
-        rounded_lat = round(lat, GEOHASH_PRECISION)
-        rounded_lng = round(lng, GEOHASH_PRECISION)
-        
-        # Create simple geohash-like string
-        return f"{rounded_lat},{rounded_lng}"
-        
-    except (TypeError, ValueError):
-        return None
-
-
-def normalize_filters(filters: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize filters for consistent hashing.
-    
-    Args:
-        filters: Raw filter dictionary
-        
-    Returns:
-        Normalized filter dictionary
-    """
-    normalized = {}
-    
-    # Handle common filter fields
-    if filters.get('search'):
-        # Normalize search queries
-        search = str(filters['search']).strip().lower()
-        if search:
-            normalized['search'] = search
-    
-    if filters.get('kosher_category'):
-        normalized['kosher_category'] = str(filters['kosher_category']).strip()
-    
-    if filters.get('status'):
-        normalized['status'] = str(filters['status']).strip()
-    
-    if filters.get('business_types'):
-        # Sort business types for consistency
-        business_types = filters['business_types']
-        if isinstance(business_types, list):
-            normalized['business_types'] = sorted([str(bt).strip() for bt in business_types])
-        elif business_types:
-            normalized['business_types'] = [str(business_types).strip()]
-    
-    if filters.get('certifying_agency'):
-        normalized['certifying_agency'] = str(filters['certifying_agency']).strip()
-    
-    if filters.get('city'):
-        normalized['city'] = str(filters['city']).strip().lower()
-    
-    if filters.get('state'):
-        normalized['state'] = str(filters['state']).strip().upper()
-    
-    if filters.get('price_range'):
-        normalized['price_range'] = str(filters['price_range']).strip()
-    
-    if filters.get('min_rating'):
-        # Round rating to avoid float precision issues
+        Returns:
+            Current data version string
+        """
         try:
-            rating = float(filters['min_rating'])
-            normalized['min_rating'] = round(rating, 1)
-        except (TypeError, ValueError):
-            pass
+            # Check cache first
+            cache_key = entity_type or 'global'
+            current_time = time.time()
+            
+            if (cache_key in self._version_cache and 
+                current_time - self._last_cache_update < self._cache_ttl):
+                return self._version_cache[cache_key]
+            
+            # Generate or retrieve version
+            version = self._generate_data_version(entity_type)
+            
+            # Update cache
+            self._version_cache[cache_key] = version
+            self._last_cache_update = current_time
+            
+            logger.debug(f"Generated data version for {cache_key}: {version}")
+            return version
+            
+        except Exception as e:
+            logger.error(f"Error getting data version: {e}")
+            return self._get_fallback_version()
     
-    # Handle location-based filters
-    if filters.get('latitude') and filters.get('longitude'):
-        geohash = round_coordinates(
-            filters.get('latitude'), 
-            filters.get('longitude')
-        )
-        if geohash:
-            normalized['location'] = geohash
-    
-    if filters.get('radius'):
+    def _generate_data_version(self, entity_type: Optional[str] = None) -> str:
+        """Generate a data version based on current system state."""
         try:
-            # Round radius to avoid minor variations
-            radius = float(filters['radius'])
-            normalized['radius'] = round(radius, 1)
-        except (TypeError, ValueError):
-            pass
+            # Base version components
+            version_components = []
+            
+            # API version
+            version_components.append('v5.0')
+            
+            # Environment
+            env = os.getenv('ENVIRONMENT', 'development')
+            version_components.append(env)
+            
+            # Entity type if specified
+            if entity_type:
+                version_components.append(entity_type)
+            
+            # Schema version (could be based on migration state)
+            schema_version = self._get_schema_version(entity_type)
+            if schema_version:
+                version_components.append(schema_version)
+            
+            # Build version string
+            base_version = '.'.join(version_components)
+            
+            # Add hash for uniqueness
+            timestamp = datetime.now(timezone.utc).isoformat()
+            hash_input = f"{base_version}:{timestamp}"
+            version_hash = hashlib.md5(hash_input.encode()).hexdigest()[:8]
+            
+            return f"{base_version}.{version_hash}"
+            
+        except Exception as e:
+            logger.error(f"Error generating data version: {e}")
+            return self._get_fallback_version()
     
-    # Sort keys for deterministic output
-    return dict(sorted(normalized.items()))
-
-
-def get_feature_flags() -> Dict[str, bool]:
-    """Get current feature flag states that affect data.
+    def _get_schema_version(self, entity_type: Optional[str] = None) -> Optional[str]:
+        """Get schema version for the entity type."""
+        try:
+            # This could be enhanced to check actual database schema versions
+            # For now, return a static version based on entity type
+            
+            schema_versions = {
+                'restaurants': 'schema_v1',
+                'synagogues': 'schema_v1', 
+                'mikvahs': 'schema_v1',
+                'stores': 'schema_v1',
+                'reviews': 'schema_v1',
+                'orders': 'schema_v1'
+            }
+            
+            if entity_type:
+                return schema_versions.get(entity_type, 'schema_v1')
+            
+            return 'schema_v1'
+            
+        except Exception as e:
+            logger.error(f"Error getting schema version: {e}")
+            return None
     
-    Returns:
-        Dictionary of feature flags affecting data queries
-    """
-    # In a real implementation, this would read from your feature flag system
-    # For now, return static flags that affect restaurant queries
-    return {
-        'filter_test_restaurants': True,
-        'include_inactive_restaurants': False,
-        'enhanced_search': True,
-        'kosher_verification': True
-    }
-
-
-def get_cohorts(user_id: Optional[int] = None) -> List[str]:
-    """Get user cohorts for A/B testing that affect data presentation.
+    def _get_fallback_version(self) -> str:
+        """Get a fallback version when generation fails."""
+        return 'v5.0.fallback'
     
-    Args:
-        user_id: Optional user ID for cohort assignment
+    def validate_cursor_version(
+        self, 
+        cursor_version: str, 
+        entity_type: Optional[str] = None,
+        strict: bool = False
+    ) -> bool:
+        """
+        Validate if a cursor version is compatible with current data version.
         
-    Returns:
-        List of cohort names affecting data queries
-    """
-    cohorts = []
+        Args:
+            cursor_version: Version from cursor
+            entity_type: Entity type for validation
+            strict: If True, requires exact match; if False, allows compatible versions
+            
+        Returns:
+            True if compatible, False otherwise
+        """
+        try:
+            current_version = self.get_current_data_version(entity_type)
+            
+            if strict:
+                return cursor_version == current_version
+            
+            # Non-strict validation - check major version compatibility
+            cursor_parts = cursor_version.split('.')
+            current_parts = current_version.split('.')
+            
+            # Check major version (v5)
+            if len(cursor_parts) >= 1 and len(current_parts) >= 1:
+                if cursor_parts[0] != current_parts[0]:
+                    logger.warning(
+                        f"Cursor version incompatible: {cursor_version} vs {current_version}"
+                    )
+                    return False
+            
+            # Check minor version compatibility
+            if len(cursor_parts) >= 2 and len(current_parts) >= 2:
+                cursor_minor = cursor_parts[1]
+                current_minor = current_parts[1]
+                
+                # Allow backward compatibility within same minor version
+                if cursor_minor != current_minor:
+                    logger.info(
+                        f"Cursor minor version differs: {cursor_version} vs {current_version}"
+                    )
+                    # Could implement more sophisticated compatibility logic here
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating cursor version: {e}")
+            return False
     
-    # Example cohort logic - replace with your actual implementation
-    if user_id:
-        # Simple hash-based cohort assignment
-        cohort_hash = hash(str(user_id)) % 100
-        
-        if cohort_hash < 10:
-            cohorts.append('enhanced_filtering_v2')
-        elif cohort_hash < 30:
-            cohorts.append('location_boost_v1')
-        
-        if cohort_hash % 2 == 0:
-            cohorts.append('image_optimization_v1')
+    def get_version_info(self) -> Dict[str, Any]:
+        """Get comprehensive version information."""
+        try:
+            return {
+                'current_global_version': self.get_current_data_version(),
+                'entity_versions': {
+                    entity: self.get_current_data_version(entity)
+                    for entity in ['restaurants', 'synagogues', 'mikvahs', 'stores']
+                },
+                'cache_info': {
+                    'cached_versions': list(self._version_cache.keys()),
+                    'cache_ttl': self._cache_ttl,
+                    'last_update': self._last_cache_update
+                },
+                'environment': os.getenv('ENVIRONMENT', 'development'),
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Error getting version info: {e}")
+            return {
+                'error': str(e),
+                'fallback_version': self._get_fallback_version()
+            }
     
-    return sorted(cohorts)  # Sort for consistency
+    def clear_cache(self):
+        """Clear the version cache."""
+        self._version_cache.clear()
+        self._last_cache_update = 0
+        logger.info("Data version cache cleared")
 
 
-def compute_data_version(
-    *,
-    filters: Optional[Dict[str, Any]] = None,
-    latitude: Optional[float] = None,
-    longitude: Optional[float] = None,
-    sort_key: str = 'created_at_desc',
-    user_id: Optional[int] = None,
-    include_metadata: bool = False
-) -> str:
-    """Compute server-authored data version hash for cursor consistency.
-    
-    Args:
-        filters: Query filters affecting results
-        latitude: User latitude for location-based queries
-        longitude: User longitude for location-based queries
-        sort_key: Sorting strategy used
-        user_id: Optional user ID for personalization
-        include_metadata: Whether to include detailed metadata
-        
-    Returns:
-        16-character hex hash representing current data version
-    """
-    try:
-        # Build version computation input
-        version_input = {
-            'schema': SCHEMA_VERSION,
-            'sort': SORT_VERSION,
-            'sort_key': sort_key
-        }
-        
-        # Add normalized filters
-        if filters:
-            normalized_filters = normalize_filters(filters)
-            if normalized_filters:
-                version_input['filters'] = normalized_filters
-        
-        # Add location if provided
-        geohash = round_coordinates(latitude, longitude)
-        if geohash:
-            version_input['geo'] = geohash
-        
-        # Add feature flags that affect data
-        feature_flags = get_feature_flags()
-        if feature_flags:
-            version_input['flags'] = feature_flags
-        
-        # Add user cohorts
-        cohorts = get_cohorts(user_id)
-        if cohorts:
-            version_input['cohorts'] = cohorts
-        
-        # Add metadata if requested
-        if include_metadata:
-            import time
-            # Round to hour to prevent constant version changes
-            hour_timestamp = int(time.time() // 3600) * 3600
-            version_input['computed_at'] = hour_timestamp
-        
-        # Create deterministic JSON and hash
-        version_json = json.dumps(version_input, sort_keys=True, separators=(',', ':'))
-        version_hash = hashlib.sha256(version_json.encode('utf-8')).hexdigest()
-        
-        # Return first 16 characters for reasonable length
-        short_hash = version_hash[:16]
-        
-        logger.debug("Computed data version",
-                    version=short_hash,
-                    input_keys=list(version_input.keys()),
-                    sort_key=sort_key)
-        
-        return short_hash
-        
-    except Exception as e:
-        logger.error("Failed to compute data version", error=str(e))
-        # Return a fallback version based on sort key and timestamp
-        import time
-        fallback_input = f"{sort_key}:{int(time.time() // 3600)}"
-        fallback_hash = hashlib.md5(fallback_input.encode('utf-8')).hexdigest()
-        return fallback_hash[:16]
+# Global instance
+data_version_manager = DataVersionManager()
 
 
-def validate_data_version(
-    current_version: str,
-    cursor_version: str,
-    tolerance_hours: int = 1
+# Convenience functions
+def get_current_data_version(entity_type: Optional[str] = None) -> str:
+    """Get the current data version."""
+    return data_version_manager.get_current_data_version(entity_type)
+
+
+def validate_cursor_version(
+    cursor_version: str, 
+    entity_type: Optional[str] = None,
+    strict: bool = False
 ) -> bool:
-    """Validate if a cursor's data version is still compatible.
-    
-    Args:
-        current_version: Currently computed data version
-        cursor_version: Data version from the cursor
-        tolerance_hours: Hours of tolerance for version mismatches
-        
-    Returns:
-        True if versions are compatible, False otherwise
-    """
-    try:
-        # Exact match is always valid
-        if current_version == cursor_version:
-            return True
-        
-        # For development/testing, be more lenient
-        if tolerance_hours > 0:
-            logger.info("Data version mismatch with tolerance",
-                       current=current_version,
-                       cursor=cursor_version,
-                       tolerance_hours=tolerance_hours)
-            return True
-        
-        logger.warning("Data version validation failed",
-                      current=current_version,
-                      cursor=cursor_version)
-        return False
-        
-    except Exception as e:
-        logger.error("Data version validation error", error=str(e))
-        return False
+    """Validate cursor version compatibility."""
+    return data_version_manager.validate_cursor_version(cursor_version, entity_type, strict)
 
 
-def get_version_metadata(version_hash: str) -> Dict[str, Any]:
-    """Get metadata about a data version for debugging.
-    
-    Args:
-        version_hash: The version hash to analyze
-        
-    Returns:
-        Dictionary with version metadata
-    """
-    return {
-        'hash': version_hash,
-        'length': len(version_hash),
-        'schema_version': SCHEMA_VERSION,
-        'sort_version': SORT_VERSION,
-        'geohash_precision': GEOHASH_PRECISION,
-        'created_at': None  # Could store creation time if needed
-    }
+def get_version_info() -> Dict[str, Any]:
+    """Get version information."""
+    return data_version_manager.get_version_info()
 
 
-def compute_query_signature(
-    filters: Optional[Dict[str, Any]] = None,
-    sort_key: str = 'created_at_desc',
-    limit: int = 24
-) -> str:
-    """Compute a signature for caching query results.
-    
-    Args:
-        filters: Query filters
-        sort_key: Sorting strategy
-        limit: Result limit
-        
-    Returns:
-        Query signature hash for caching
-    """
-    query_input = {
-        'filters': normalize_filters(filters or {}),
-        'sort_key': sort_key,
-        'limit': limit
-    }
-    
-    query_json = json.dumps(query_input, sort_keys=True, separators=(',', ':'))
-    query_hash = hashlib.sha256(query_json.encode('utf-8')).hexdigest()
-    
-    return query_hash[:12]  # Shorter hash for cache keys
+def clear_version_cache():
+    """Clear version cache."""
+    data_version_manager.clear_cache()
+
+
+# Version constants for common use cases
+V5_DATA_VERSION = 'v5.0'
+FALLBACK_VERSION = 'v5.0.fallback'
+
+# Entity-specific version getters
+def get_restaurant_data_version() -> str:
+    """Get data version for restaurants."""
+    return get_current_data_version('restaurants')
+
+
+def get_synagogue_data_version() -> str:
+    """Get data version for synagogues."""
+    return get_current_data_version('synagogues')
+
+
+def get_mikvah_data_version() -> str:
+    """Get data version for mikvahs."""
+    return get_current_data_version('mikvahs')
+
+
+def get_store_data_version() -> str:
+    """Get data version for stores."""
+    return get_current_data_version('stores')

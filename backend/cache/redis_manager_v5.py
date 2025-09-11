@@ -405,6 +405,31 @@ class RedisManagerV5:
             self.stats['errors'] += 1
             return []
     
+    def scan_keys(self, pattern: str, prefix: str = 'cache', count: int = 100) -> List[str]:
+        """Get keys matching a pattern using SCAN to avoid blocking Redis."""
+        try:
+            full_pattern = self._build_key(prefix, pattern)
+            keys = []
+            cursor = 0
+            
+            while True:
+                cursor, batch_keys = self.redis_client.scan(cursor, match=full_pattern, count=count)
+                keys.extend(batch_keys)
+                
+                if cursor == 0:
+                    break
+            
+            self.stats['commands_executed'] += 1
+            
+            # Remove prefix from returned keys
+            prefix_len = len(self.KEY_PREFIXES[prefix])
+            return [key[prefix_len:] for key in keys if isinstance(key, str)]
+            
+        except Exception as e:
+            logger.error(f"Redis SCAN error for pattern {pattern}: {e}")
+            self.stats['errors'] += 1
+            return []
+    
     def mget(self, keys: List[str], prefix: str = 'cache') -> Dict[str, Any]:
         """Get multiple values at once."""
         try:

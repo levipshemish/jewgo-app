@@ -1,245 +1,147 @@
 /**
- * V5 Retry Manager
+ * Retry management for v5 API client.
  * 
- * Handles automatic retry logic with exponential backoff and circuit breaker patterns.
+ * Provides intelligent retry logic with exponential backoff,
+ * jitter, and circuit breaker integration.
  */
 
-export interface RetryOptions {
-  maxRetries?: number;
-  baseDelay?: number;
-  maxDelay?: number;
-  backoffMultiplier?: number;
-  retryCondition?: (error: any) => boolean;
-  onRetry?: (attempt: number, error: any) => void;
+export interface RetryConfig {
+  maxAttempts: number;
+  baseDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
+  jitter: boolean;
+  retryableStatusCodes: number[];
+  retryableErrors: string[];
 }
 
-export interface RetryResult<T> {
-  success: boolean;
-  data?: T;
-  error?: any;
-  attempts: number;
-  totalTime: number;
+export interface RetryContext {
+  attempt: number;
+  maxAttempts: number;
+  delay: number;
+  error?: Error;
+  response?: Response;
 }
 
 export class RetryManager {
-  private static readonly DEFAULT_OPTIONS: Required<RetryOptions> = {
-    maxRetries: 3,
-    baseDelay: 1000, // 1 second
-    maxDelay: 30000, // 30 seconds
-    backoffMultiplier: 2,
-    retryCondition: (error) => this.isRetryableError(error),
-    onRetry: () => {}
-  };
+  private config: RetryConfig;
+
+  constructor(config: Partial<RetryConfig> = {}) {
+    this.config = {
+      maxAttempts: 3,
+      baseDelay: 1000,
+      maxDelay: 10000,
+      backoffMultiplier: 2,
+      jitter: true,
+      retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+      retryableErrors: ['NetworkError', 'TimeoutError', 'AbortError'],
+      ...config
+    };
+  }
 
   /**
    * Execute function with retry logic
    */
-  static async execute<T>(
+  async execute<T>(
     fn: () => Promise<T>,
-    options: RetryOptions = {}
-  ): Promise<RetryResult<T>> {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
-    const startTime = Date.now();
-    let lastError: any;
-    
-    for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
+    context?: Partial<RetryContext>
+  ): Promise<T> {
+    let lastError: Error | undefined;
+    let attempt = 0;
+
+    while (attempt < this.config.maxAttempts) {
       try {
-        const data = await fn();
-        return {
-          success: true,
-          data,
-          attempts: attempt + 1,
-          totalTime: Date.now() - startTime
-        };
+        return await fn();
       } catch (error) {
-        lastError = error;
-        
-        // Don't retry on last attempt
-        if (attempt === opts.maxRetries) {
+        lastError = error as Error;
+        attempt++;
+
+        if (attempt >= this.config.maxAttempts) {
           break;
         }
-        
-        // Check if error is retryable
-        if (!opts.retryCondition(error)) {
+
+        if (!this.shouldRetry(error as Error)) {
           break;
         }
-        
-        // Calculate delay with exponential backoff
-        const delay = Math.min(
-          opts.baseDelay * Math.pow(opts.backoffMultiplier, attempt),
-          opts.maxDelay
-        );
-        
-        // Call retry callback
-        opts.onRetry(attempt + 1, error);
-        
-        // Wait before retry
-        await this.delay(delay);
+
+        const delay = this.calculateDelay(attempt);
+        await this.sleep(delay);
       }
     }
-    
-    return {
-      success: false,
-      error: lastError,
-      attempts: opts.maxRetries + 1,
-      totalTime: Date.now() - startTime
-    };
+
+    throw lastError;
   }
 
   /**
-   * Check if error is retryable
+   * Check if error should trigger a retry
    */
-  private static isRetryableError(error: any): boolean {
-    // Network errors
-    if (error.name === 'NetworkError' || error.name === 'TypeError') {
+  private shouldRetry(error: Error): boolean {
+    // Check for retryable error types
+    if (this.config.retryableErrors.includes(error.name)) {
       return true;
     }
-    
-    // HTTP status codes that should be retried
-    if (error.status) {
-      const retryableStatuses = [408, 429, 500, 502, 503, 504];
-      return retryableStatuses.includes(error.status);
+
+    // Check for fetch response errors
+    if ('response' in error && error.response instanceof Response) {
+      return this.config.retryableStatusCodes.includes(error.response.status);
     }
-    
-    // Timeout errors
-    if (error.message?.includes('timeout') || error.message?.includes('TIMEOUT')) {
+
+    // Check for network errors
+    if (error.message.includes('fetch')) {
       return true;
     }
-    
-    // Connection errors
-    if (error.message?.includes('connection') || error.message?.includes('network')) {
-      return true;
-    }
-    
+
     return false;
   }
 
   /**
-   * Delay execution for specified milliseconds
+   * Calculate delay for next retry attempt
    */
-  private static delay(ms: number): Promise<void> {
+  private calculateDelay(attempt: number): number {
+    let delay = this.config.baseDelay * Math.pow(this.config.backoffMultiplier, attempt - 1);
+    
+    // Apply maximum delay limit
+    delay = Math.min(delay, this.config.maxDelay);
+    
+    // Add jitter to prevent thundering herd
+    if (this.config.jitter) {
+      delay = delay * (0.5 + Math.random() * 0.5);
+    }
+    
+    return Math.floor(delay);
+  }
+
+  /**
+   * Sleep for specified milliseconds
+   */
+  private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
-   * Create retry wrapper for fetch requests
+   * Create retry context for logging
    */
-  static withRetry<T>(
-    fn: () => Promise<T>,
-    options: RetryOptions = {}
-  ): () => Promise<T> {
-    return async () => {
-      const result = await this.execute(fn, options);
-      
-      if (result.success) {
-        return result.data!;
-      } else {
-        throw result.error;
-      }
-    };
-  }
-
-  /**
-   * Retry with circuit breaker pattern
-   */
-  static withCircuitBreaker<T>(
-    fn: () => Promise<T>,
-    options: RetryOptions & {
-      failureThreshold?: number;
-      recoveryTimeout?: number;
-    } = {}
-  ): () => Promise<T> {
-    const {
-      failureThreshold = 5,
-      recoveryTimeout = 60000, // 1 minute
-      ...retryOptions
-    } = options;
-    
-    let failureCount = 0;
-    let lastFailureTime = 0;
-    let circuitState: 'closed' | 'open' | 'half-open' = 'closed';
-    
-    return async () => {
-      const now = Date.now();
-      
-      // Check circuit breaker state
-      if (circuitState === 'open') {
-        if (now - lastFailureTime > recoveryTimeout) {
-          circuitState = 'half-open';
-        } else {
-          throw new Error('Circuit breaker is open');
-        }
-      }
-      
-      try {
-        const result = await this.execute(fn, retryOptions);
-        
-        if (result.success) {
-          // Reset circuit breaker on success
-          if (circuitState === 'half-open') {
-            circuitState = 'closed';
-            failureCount = 0;
-          }
-          return result.data!;
-        } else {
-          throw result.error;
-        }
-      } catch (error) {
-        failureCount++;
-        lastFailureTime = now;
-        
-        if (failureCount >= failureThreshold) {
-          circuitState = 'open';
-        }
-        
-        throw error;
-      }
-    };
-  }
-
-  /**
-   * Retry with jitter to avoid thundering herd
-   */
-  static withJitter<T>(
-    fn: () => Promise<T>,
-    options: RetryOptions & { jitterFactor?: number } = {}
-  ): () => Promise<T> {
-    const { jitterFactor = 0.1, ...retryOptions } = options;
-    
-    const originalOnRetry = retryOptions.onRetry;
-    retryOptions.onRetry = (attempt, error) => {
-      // Add jitter to delay
-      const baseDelay = retryOptions.baseDelay || this.DEFAULT_OPTIONS.baseDelay;
-      const jitter = baseDelay * jitterFactor * Math.random();
-      const delay = baseDelay + jitter;
-      
-      // Override the delay calculation
-      retryOptions.baseDelay = delay;
-      
-      if (originalOnRetry) {
-        originalOnRetry(attempt, error);
-      }
-    };
-    
-    return this.withRetry(fn, retryOptions);
-  }
-
-  /**
-   * Get retry statistics
-   */
-  static getStats(): {
-    totalRetries: number;
-    successfulRetries: number;
-    failedRetries: number;
-    averageRetryTime: number;
-  } {
-    // This would typically be implemented with a global stats tracker
-    // For now, return placeholder data
+  createContext(attempt: number, error?: Error, response?: Response): RetryContext {
     return {
-      totalRetries: 0,
-      successfulRetries: 0,
-      failedRetries: 0,
-      averageRetryTime: 0
+      attempt,
+      maxAttempts: this.config.maxAttempts,
+      delay: this.calculateDelay(attempt),
+      error,
+      response
     };
+  }
+
+  /**
+   * Get retry configuration
+   */
+  getConfig(): RetryConfig {
+    return { ...this.config };
+  }
+
+  /**
+   * Update retry configuration
+   */
+  updateConfig(updates: Partial<RetryConfig>): void {
+    this.config = { ...this.config, ...updates };
   }
 }

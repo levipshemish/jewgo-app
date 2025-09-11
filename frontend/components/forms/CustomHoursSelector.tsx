@@ -118,7 +118,7 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
         setDaysHours(defaultHours);
       }
     }
-  }, [value, testMode, daysHours]);
+  }, [value, testMode]); // Remove daysHours from dependencies to prevent infinite loops
 
   // Update parent form when hours change
   useEffect(() => {

@@ -840,6 +840,58 @@ export class ApiClientV5 {
   getCurrentUser(): any {
     return AuthTokenManager.getCurrentUser();
   }
+
+  /**
+   * Get admin audit logs
+   */
+  async getAdminAuditLogs(
+    queryParams: Record<string, string> = {},
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<any>> {
+    const searchParams = new URLSearchParams(queryParams);
+    const endpoint = `/api/v5/admin/audit?${searchParams.toString()}`;
+    
+    return this.request(endpoint, {
+      method: 'GET',
+      ...options
+    });
+  }
+
+  /**
+   * Get admin health status
+   */
+  async getAdminHealth(options: RequestOptions = {}): Promise<ApiResponse<any>> {
+    return this.request('/api/v5/admin/health', {
+      method: 'GET',
+      ...options
+    });
+  }
+
+  /**
+   * Get admin analytics
+   */
+  async getAdminAnalytics(
+    queryParams: Record<string, string> = {},
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<any>> {
+    const searchParams = new URLSearchParams(queryParams);
+    const endpoint = `/api/v5/admin/analytics?${searchParams.toString()}`;
+    
+    return this.request(endpoint, {
+      method: 'GET', 
+      ...options
+    });
+  }
+
+  /**
+   * Get admin system status
+   */
+  async getAdminSystem(options: RequestOptions = {}): Promise<ApiResponse<any>> {
+    return this.request('/api/v5/admin/system', {
+      method: 'GET',
+      ...options
+    });
+  }
 }
 
 // Export singleton instance

@@ -8,6 +8,7 @@ import type { LightRestaurant } from "../types"
 import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
 import { getBestAvailableRating, formatRating } from "@/lib/utils/ratingCalculation"
 import EateryGridSkeleton from "./EateryGridSkeleton"
+import { fetchRestaurants as apiFetchRestaurants } from "@/lib/api/restaurants"
 
 // Import the mock data generator (fallback)
 import { generateMockRestaurants, type MockRestaurant } from "@/lib/mockData/restaurants"
@@ -83,68 +84,48 @@ export default function EateryGrid({
   // Real API function with cursor-based pagination
   const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, timeoutMs: number = 8000) => {
     try {
-      // Build API URL with parameters - use frontend API route
-      const apiUrl = new URL('/api/restaurants', window.location.origin)
-      apiUrl.searchParams.set('limit', limit.toString())
-      apiUrl.searchParams.set('include_reviews', 'true') // Include Google reviews for consistent rating calculation
+      // Use the restaurants API module which handles v5 endpoints
+      const searchParams = new URLSearchParams(params || '')
+      const location = searchParams.get('lat') && searchParams.get('lng') ? {
+        latitude: parseFloat(searchParams.get('lat')!),
+        longitude: parseFloat(searchParams.get('lng')!)
+      } : undefined
       
-      // Determine sorting strategy based on location availability
-      const hasLocation = params && new URLSearchParams(params).get('lat') && new URLSearchParams(params).get('lng')
-      if (hasLocation) {
-        // When location is available, use distance sorting (backend will handle this automatically)
-        // Don't set sort_by parameter - let backend use distance sorting
-      } else {
-        // When no location, sort by name for consistent ordering
-        apiUrl.searchParams.set('sort_by', 'name')
-        apiUrl.searchParams.set('sort_order', 'ASC')
+      // Build filters from search params
+      const filters: Record<string, any> = {}
+      for (const [key, value] of searchParams.entries()) {
+        if (key !== 'lat' && key !== 'lng' && key !== 'cursor') {
+          filters[key] = value
+        }
       }
       
-      // Add cursor for pagination
-      if (cursor) {
-        apiUrl.searchParams.set('cursor', cursor)
-      }
-      
-      // Add location and other parameters
-      if (params) {
-        const searchParams = new URLSearchParams(params)
-        searchParams.forEach((value, key) => {
-          if (value && value.trim() !== '') {
-            apiUrl.searchParams.set(key, value)
-          }
-        })
-      }
-
-      // Add timeout to fetch (shorter than API timeout to fail fast)
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => {
-        controller.abort()
-      }, timeoutMs)
-
-      const data = await deduplicatedFetch(apiUrl.toString(), {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Use the restaurants API module
+      const response = await apiFetchRestaurants({
+        page: 1, // For now, we'll handle pagination differently
+        limit,
+        filters,
+        location
       })
-
-      clearTimeout(timeoutId)
       
-      if (data.success === false && data.message?.includes('temporarily unavailable')) {
-        throw new Error('Backend service unavailable')
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch restaurants')
       }
 
-      // Handle cursor-based endpoint response format
-      const responseRestaurants = data.items || []
-      const newNextCursor = data.next_cursor
-      const hasMoreData = !!newNextCursor
+      // Handle the response format from the restaurants API
+      const responseRestaurants = response.restaurants || []
       
-      console.log('fetchRestaurants cursor response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', newNextCursor)
+      // For now, we'll simulate cursor-based pagination
+      // TODO: Implement proper cursor-based pagination with v5 API
+      const hasMoreData = responseRestaurants.length === limit
+      const newNextCursor = hasMoreData ? `page_${2}` : null
+      
+      console.log('fetchRestaurants v5 response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', newNextCursor)
       
       return {
         restaurants: responseRestaurants,
         hasMore: hasMoreData,
         nextCursor: newNextCursor,
-        limit: data.limit || limit
+        limit: response.limit || limit
       }
 
     } catch (error) {

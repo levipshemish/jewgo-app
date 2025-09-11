@@ -190,7 +190,7 @@ function MikvahPageContent() {
     }
     
     loadMikvah()
-  }, [searchQuery, activeFilters, userLocation])
+  }, [searchQuery, activeFilters, userLocation?.latitude, userLocation?.longitude])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)

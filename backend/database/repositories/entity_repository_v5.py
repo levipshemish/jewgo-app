@@ -19,7 +19,7 @@ from sqlalchemy.exc import IntegrityError, StatementError
 
 from database.base_repository import BaseRepository
 from database.connection_manager import DatabaseConnectionManager
-from utils.logging_config import get_logger
+from backend.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -100,14 +100,13 @@ class EntityRepositoryV5(BaseRepository):
     def _load_models(self):
         """Load and cache SQLAlchemy model classes."""
         try:
-            from database.models import Restaurant, Synagogue
+            from database.models import Restaurant, Synagogue, Mikvah, Store
             
             self._model_cache = {
                 'restaurants': Restaurant,
                 'synagogues': Synagogue,
-                # TODO: Add Mikvah and Store models when they are created
-                # 'mikvahs': Mikvah,
-                # 'stores': Store
+                'mikvahs': Mikvah,
+                'stores': Store
             }
             
             logger.debug(f"Loaded {len(self._model_cache)} entity models")
@@ -764,13 +763,15 @@ class EntityRepositoryV5(BaseRepository):
                 except ValueError:
                     pass
             
+            from backend.utils.data_version import get_current_data_version
+            
             return create_cursor_v5(
                 primary_value=primary_value,
                 record_id=entity_id,
                 sort_key=sort_key,
                 direction=direction,
                 entity_type=entity_type,
-                data_version='v5.0'  # Could be made dynamic
+                data_version=get_current_data_version(entity_type)
             )
             
         except Exception as e:
@@ -851,8 +852,8 @@ class EntityRepositoryV5(BaseRepository):
                             from sqlalchemy import func, text
                             query = query.filter(
                                 func.ST_DWithin(
-                                    func.ST_Point(model_class.longitude, model_class.latitude)::geography,
-                                    func.ST_Point(lng, lat)::geography,
+                                    func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
+                                    func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
                                     radius * 1000  # Convert km to meters
                                 )
                             )
@@ -872,42 +873,42 @@ class EntityRepositoryV5(BaseRepository):
                             entity_dict, search_query, filters
                         )
                         all_results.append(entity_dict)
-                    
-                    # Sort by relevance score
-                    all_results.sort(key=lambda x: x['search_score'], reverse=True)
-                    
-                    # Apply pagination
-                    start_idx = 0
-                    if cursor:
-                        try:
-                            parsed_cursor = self._parse_cursor(cursor)
-                            start_idx = parsed_cursor.get('offset', 0)
-                        except:
-                            start_idx = 0
-                    
-                    end_idx = start_idx + limit
-                    paginated_results = all_results[start_idx:end_idx]
-                    
-                    # Generate cursors
-                    next_cursor = None
-                    prev_cursor = None
-                    
-                    if end_idx < len(all_results):
-                        next_cursor = self._generate_cursor({
-                            'offset': end_idx,
-                            'query': search_query,
-                            'entity_types': entity_types
-                        })
-                    
-                    if start_idx > 0:
-                        prev_start = max(0, start_idx - limit)
-                        prev_cursor = self._generate_cursor({
-                            'offset': prev_start,
-                            'query': search_query,
-                            'entity_types': entity_types
-                        })
-                    
-                    return paginated_results, next_cursor, prev_cursor
+                
+                # Sort by relevance score after processing all entity types
+                all_results.sort(key=lambda x: x['search_score'], reverse=True)
+                
+                # Apply pagination
+                start_idx = 0
+                if cursor:
+                    try:
+                        parsed_cursor = self._parse_cursor(cursor)
+                        start_idx = parsed_cursor.get('offset', 0)
+                    except:
+                        start_idx = 0
+                
+                end_idx = start_idx + limit
+                paginated_results = all_results[start_idx:end_idx]
+                
+                # Generate cursors
+                next_cursor = None
+                prev_cursor = None
+                
+                if end_idx < len(all_results):
+                    next_cursor = self._generate_cursor({
+                        'offset': end_idx,
+                        'query': search_query,
+                        'entity_types': entity_types
+                    })
+                
+                if start_idx > 0:
+                    prev_start = max(0, start_idx - limit)
+                    prev_cursor = self._generate_cursor({
+                        'offset': prev_start,
+                        'query': search_query,
+                        'entity_types': entity_types
+                    })
+                
+                return paginated_results, next_cursor, prev_cursor
                     
         except Exception as e:
             logger.error(f"Search entities error: {e}")

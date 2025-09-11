@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Set, Callable
 import psycopg2
 import psycopg2.extensions
 
-from utils.logging_config import get_logger
+from backend.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -60,11 +60,11 @@ class CacheInvalidationWorker:
             'synagogue_hours:*'
         ],
         'mikvah': [
-            'mikvah:*',
-            'entity_v5:mikvah:*',
-            'search:*mikvah*',
-            'etag_v5:watermark:mikvah',
-            'etag_v5:entity:mikvah:*',
+            'mikvahs:*',
+            'entity_v5:mikvahs:*',
+            'search:*mikvahs*',
+            'etag_v5:watermark:mikvahs',
+            'etag_v5:entity:mikvahs:*',
             'mikvah_hours:*'
         ],
         'store': [
@@ -134,14 +134,14 @@ class CacheInvalidationWorker:
     def _init_redis_client(self):
         """Initialize Redis client for cache operations."""
         try:
-            from backend.services.redis_cache_service import RedisCacheService
-            cache_service = RedisCacheService()
-            self.redis_client = cache_service.redis_client
+            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            redis_manager = get_redis_manager_v5()
+            self.redis_client = redis_manager.get_client()
             
             if self.redis_client:
                 # Test connection
                 self.redis_client.ping()
-                logger.info("Cache invalidation worker connected to Redis")
+                logger.info("Cache invalidation worker connected to Redis v5")
             else:
                 logger.warning("Cache invalidation worker: Redis not available")
         except Exception as e:
@@ -358,22 +358,27 @@ class CacheInvalidationWorker:
         return patterns
     
     def _invalidate_cache_pattern(self, pattern: str) -> int:
-        """Invalidate cache keys matching a pattern."""
+        """Invalidate cache keys matching a pattern using SCAN to avoid blocking Redis."""
         try:
-            # Get all keys matching the pattern
-            keys = self.redis_client.keys(pattern)
-            
-            if not keys:
-                return 0
-            
-            # Delete keys in batches to avoid blocking Redis
-            batch_size = 100
+            # Use SCAN to iterate through keys matching the pattern
+            cursor = 0
             deleted_count = 0
+            batch_size = 100
             
-            for i in range(0, len(keys), batch_size):
-                batch = keys[i:i + batch_size]
-                deleted = self.redis_client.delete(*batch)
-                deleted_count += deleted
+            while True:
+                # SCAN with cursor and pattern
+                cursor, keys = self.redis_client.scan(cursor, match=pattern, count=batch_size)
+                
+                if keys:
+                    # Delete keys in batches
+                    for i in range(0, len(keys), batch_size):
+                        batch = keys[i:i + batch_size]
+                        deleted = self.redis_client.delete(*batch)
+                        deleted_count += deleted
+                
+                # If cursor is 0, we've completed the iteration
+                if cursor == 0:
+                    break
             
             logger.debug(f"Invalidated {deleted_count} keys matching pattern: {pattern}")
             return deleted_count

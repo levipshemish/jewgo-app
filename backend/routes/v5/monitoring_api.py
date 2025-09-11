@@ -14,14 +14,14 @@ from functools import wraps
 import time
 import psutil
 import os
-from utils.logging_config import get_logger
+from backend.utils.logging_config import get_logger
 from middleware.auth_v5 import AuthV5Middleware
 from middleware.rate_limit_v5 import RateLimitV5Middleware
 from middleware.observability_v5 import ObservabilityV5Middleware
-from utils.blueprint_factory_v5 import BlueprintFactoryV5
+from backend.utils.blueprint_factory_v5 import BlueprintFactoryV5
 from backend.cache.redis_manager_v5 import RedisManagerV5
-from database.connection_manager import DatabaseConnectionManager
-from utils.feature_flags_v5 import FeatureFlagsV5
+from backend.database.database_manager_v5 import get_database_manager_v5
+from backend.utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)
 
@@ -68,7 +68,7 @@ def init_services(redis_manager_instance, database_manager_instance, feature_fla
     global redis_manager, database_manager, feature_flags
     
     redis_manager = redis_manager_instance
-    database_manager = database_manager_instance
+    database_manager = database_manager_instance or get_database_manager_v5()
     feature_flags = feature_flags_instance
 
 
@@ -104,12 +104,17 @@ def check_database_health() -> Dict[str, Any]:
         
         response_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
+        # Get connection info using v5 database manager
+        connection_stats = database_manager.get_connection_stats()
+        
         return {
             'status': 'healthy',
             'response_time_ms': response_time,
             'connection_pool': {
-                'active_connections': database_manager.get_active_connections(),
-                'max_connections': database_manager.get_max_connections()
+                'active_connections': connection_stats.get('active_connections', 0),
+                'max_connections': connection_stats.get('max_connections', 0),
+                'total_connections': connection_stats.get('total_connections', 0),
+                'failed_connections': connection_stats.get('failed_connections', 0)
             }
         }
     except Exception as e:
@@ -225,11 +230,14 @@ def check_external_services() -> Dict[str, Any]:
 def health_check():
     """Comprehensive health check endpoint."""
     try:
+        # Fallback for feature flags
+        local_flags = feature_flags or FeatureFlagsV5()
+        
         # Check feature flag
         user_id = getattr(g, 'user_id', None)
         user_roles = [role.get('role') for role in getattr(g, 'user_roles', []) if role.get('role')]
         
-        if not feature_flags.is_enabled('monitoring_api_v5', user_id=user_id, user_roles=user_roles):
+        if not local_flags.is_enabled('monitoring_api_v5', user_id=user_id, user_roles=user_roles):
             return jsonify({
                 'success': False,
                 'error': 'Monitoring API v5 is not enabled for your account'
@@ -376,8 +384,11 @@ def system_metrics():
         }
         
         # Application metrics
+        connection_stats = database_manager.get_connection_stats() if database_manager else {}
         metrics_data['application'] = {
-            'active_connections': database_manager.get_active_connections() if database_manager else 0,
+            'active_connections': connection_stats.get('active_connections', 0),
+            'total_connections': connection_stats.get('total_connections', 0),
+            'failed_connections': connection_stats.get('failed_connections', 0),
             'request_count_last_hour': redis_manager.get_counter('requests_last_hour', default=0) if redis_manager else 0,
             'error_count_last_hour': redis_manager.get_counter('errors_last_hour', default=0) if redis_manager else 0,
             'cache_hit_rate': redis_manager.get_avg_metric('cache_hit_rate', default=0) if redis_manager else 0

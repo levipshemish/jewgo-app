@@ -16,7 +16,7 @@ from functools import wraps
 
 from flask import g, request, jsonify
 
-from utils.logging_config import get_logger
+from backend.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
