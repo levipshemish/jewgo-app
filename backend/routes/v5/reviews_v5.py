@@ -13,10 +13,10 @@ from datetime import datetime, timedelta
 from functools import wraps
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
-from backend.middleware.auth_v5 import AuthMiddlewareV5
-from backend.middleware.rate_limit_v5 import RateLimitMiddlewareV5
-from backend.middleware.idempotency_v5 import IdempotencyMiddlewareV5
-from backend.middleware.observability_v5 import ObservabilityMiddlewareV5
+from middleware.auth_v5 import AuthMiddlewareV5
+from middleware.rate_limit_v5 import RateLimitMiddlewareV5
+from middleware.idempotency_v5 import IdempotencyMiddlewareV5
+from middleware.observability_v5 import ObservabilityMiddlewareV5
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from utils.cursor_v5 import CursorV5
 from utils.etag_v5 import ETagV5

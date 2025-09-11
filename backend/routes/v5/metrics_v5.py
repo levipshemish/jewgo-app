@@ -13,9 +13,9 @@ from datetime import datetime, timedelta
 from functools import wraps
 import time
 from utils.logging_config import get_logger
-from backend.middleware.auth_v5 import AuthMiddlewareV5
-from backend.middleware.rate_limit_v5 import RateLimitMiddlewareV5
-from backend.middleware.observability_v5 import ObservabilityMiddlewareV5
+from middleware.auth_v5 import AuthMiddlewareV5
+from middleware.rate_limit_v5 import RateLimitMiddlewareV5
+from middleware.observability_v5 import ObservabilityMiddlewareV5
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from cache.redis_manager_v5 import RedisManagerV5
 from utils.feature_flags_v5 import FeatureFlagsV5

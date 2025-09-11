@@ -15,9 +15,9 @@ import time
 import psutil
 import os
 from backend.utils.logging_config import get_logger
-from backend.middleware.auth_v5 import AuthV5Middleware
-from backend.middleware.rate_limit_v5 import RateLimitV5Middleware
-from backend.middleware.observability_v5 import ObservabilityV5Middleware
+from middleware.auth_v5 import AuthV5Middleware
+from middleware.rate_limit_v5 import RateLimitV5Middleware
+from middleware.observability_v5 import ObservabilityV5Middleware
 from backend.utils.blueprint_factory_v5 import BlueprintFactoryV5
 from backend.cache.redis_manager_v5 import RedisManagerV5
 from backend.database.database_manager_v5 import get_database_manager_v5
