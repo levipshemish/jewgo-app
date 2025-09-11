@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies in a single layer
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
@@ -12,25 +12,27 @@ RUN apt-get update && apt-get install -y \
     curl \
     fonts-liberation \
     fonts-unifont \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Copy requirements first for better caching
+# Copy requirements first for better Docker layer caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with cache mount for faster rebuilds
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright browsers (if playwright is in requirements)
+# This is done before copying source code to avoid invalidating cache
 RUN if command -v playwright >/dev/null 2>&1; then playwright install chromium; fi
 
-# Copy source code
-COPY . .
+# Create non-root user before copying source code
+RUN useradd -m -u 1000 appuser
 
-# Copy environment file if provided (relative to build context)
-ARG ENV_FILE=.env
+# Copy source code (this layer will be rebuilt when code changes)
+COPY --chown=appuser:appuser . .
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Switch to non-root user
 USER appuser
 
 # Expose port
