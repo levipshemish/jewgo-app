@@ -1,8 +1,6 @@
-# Use Python 3.11 slim image
-FROM python:3.11-slim
-
-# Set working directory
-WORKDIR /app
+# Multi-stage Dockerfile for optimal backend build performance
+# Stage 1: Build dependencies
+FROM python:3.11-slim as builder
 
 # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,29 +8,45 @@ ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install only essential system dependencies for backend
+# Install only build dependencies needed for Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Build tools for Python packages
     gcc \
     g++ \
     libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --user -r requirements.txt
+
+# Stage 2: Runtime image
+FROM python:3.11-slim as runtime
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/root/.local/bin:${PATH}"
+
+# Install only essential runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     # Runtime tools
     curl \
     # Clean up
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Copy requirements first for better Docker layer caching
-COPY requirements.txt .
+# Copy Python packages from builder stage
+COPY --from=builder /root/.local /root/.local
 
-# Install Python dependencies with BuildKit cache mount
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir -r requirements.txt
-
-# Create non-root user before copying source code
+# Create non-root user
 RUN useradd -m -u 1000 appuser
 
-# Copy source code (this layer will be rebuilt when code changes)
+# Set working directory
+WORKDIR /app
+
+# Copy source code
 COPY --chown=appuser:appuser . .
 
 # Switch to non-root user

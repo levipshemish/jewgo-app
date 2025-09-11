@@ -49,19 +49,13 @@ build_with_buildkit() {
     # Create cache directory if it doesn't exist
     mkdir -p /tmp/.buildx-cache
     
-    # Build with cache mount and inline cache using multi-stage Dockerfile
-    docker buildx build \
-        --platform linux/amd64 \
-        --cache-from type=local,src=/tmp/.buildx-cache \
-        --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
-        --tag jewgo-app-backend:latest \
-        --file backend/Dockerfile.multistage \
-        --load \
-        backend/
-    
-    # Update cache
-    rm -rf /tmp/.buildx-cache
-    mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+           # Build with cache mount using multi-stage Dockerfile
+           docker buildx build \
+               --platform linux/amd64 \
+               --tag jewgo-app-backend:latest \
+               --file backend/Dockerfile \
+               --load \
+               backend/
     
     print_success "Build completed with BuildKit"
 }
