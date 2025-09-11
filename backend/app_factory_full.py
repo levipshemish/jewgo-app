@@ -88,7 +88,7 @@ def _load_dependencies():
         # Try to import v4 components
         v4_deps = {}
         try:
-            from database.database_manager_v4 import DatabaseManagerV4
+            from database.database_manager_v4 import DatabaseManager as DatabaseManagerV4
             from utils.cache_manager_v4 import CacheManagerV4
             from utils.config_manager import ConfigManager
             v4_deps = {

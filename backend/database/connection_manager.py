@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 # Import v5 metrics collection
 try:
-    from utils.metrics_collector_v5 import MetricsCollector
+    # from utils.metrics_collector_v5 import MetricsCollector  # Module not found
     METRICS_AVAILABLE = True
 except ImportError:
     MetricsCollector = None

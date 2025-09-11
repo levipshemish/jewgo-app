@@ -10,7 +10,7 @@ from flask import Flask
 from utils.logging_config import get_logger
 from utils.postgres_auth import initialize_postgres_auth
 # from utils.error_handler import register_error_handlers  # Function not implemented yet
-from utils.metrics import register_metrics_endpoint
+# from utils.metrics import register_metrics_endpoint  # Module not found
 
 logger = get_logger(__name__)
 
