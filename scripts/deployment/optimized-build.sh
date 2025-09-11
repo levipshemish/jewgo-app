@@ -46,13 +46,17 @@ build_with_buildkit() {
     export DOCKER_BUILDKIT=1
     export COMPOSE_DOCKER_CLI_BUILD=1
     
-    # Build with cache mount and inline cache
+    # Create cache directory if it doesn't exist
+    mkdir -p /tmp/.buildx-cache
+    
+    # Build with cache mount and inline cache using multi-stage Dockerfile
     docker buildx build \
         --platform linux/amd64 \
         --cache-from type=local,src=/tmp/.buildx-cache \
         --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
         --tag jewgo-app-backend:latest \
-        --file backend/Dockerfile \
+        --file backend/Dockerfile.multistage \
+        --load \
         backend/
     
     # Update cache
