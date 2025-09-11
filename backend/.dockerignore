@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -20,6 +21,9 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.pyc
+*.pyo
+*.pyd
 
 # Virtual environments
 venv/
@@ -27,16 +31,27 @@ venv/
 env/
 .env/
 ENV/
+**/venv/
+**/.venv/
+**/.venv/**
+**/venv/**
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+**/htmlcov/
 .tox/
 .nox/
 coverage.xml
 *.cover
 .hypothesis/
+
+# Cache directories
+.ruff_cache/
+.mypy_cache/
+**/.ruff_cache/
+**/.mypy_cache/
 
 # IDE
 .vscode/
