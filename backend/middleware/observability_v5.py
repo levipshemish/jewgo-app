@@ -16,7 +16,7 @@ from typing import Dict, Any, Optional, List
 from functools import wraps
 from collections import defaultdict
 
-from flask import g, request, response, jsonify
+from flask import g, request, jsonify
 
 from utils.logging_config import get_logger
 
@@ -68,52 +68,13 @@ class ObservabilityV5Middleware:
     
     def _init_opentelemetry(self):
         """Initialize OpenTelemetry tracing."""
-        try:
-            from opentelemetry import trace
-            from opentelemetry.trace import Status, StatusCode
-            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-            from opentelemetry.sdk.trace import TracerProvider
-            from opentelemetry.sdk.trace.export import BatchSpanProcessor
-            from opentelemetry.instrumentation.flask import FlaskInstrumentor
-            from opentelemetry.instrumentation.requests import RequestsInstrumentor
-            from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
-            from opentelemetry.instrumentation.redis import RedisInstrumentor
-            
-            # Store trace classes for later use
-            self.trace_module = trace
-            self.Status = Status
-            self.StatusCode = StatusCode
-            
-            # Configure tracer provider
-            trace.set_tracer_provider(TracerProvider())
-            tracer = trace.get_tracer(__name__)
-            self.otel_tracer = tracer
-            
-            # Configure Jaeger exporter if enabled
-            jaeger_endpoint = __import__('os').getenv('JAEGER_ENDPOINT')
-            if jaeger_endpoint:
-                jaeger_exporter = JaegerExporter(
-                    agent_host_name="localhost",
-                    agent_port=14268,
-                    collector_endpoint=jaeger_endpoint,
-                )
-                span_processor = BatchSpanProcessor(jaeger_exporter)
-                trace.get_tracer_provider().add_span_processor(span_processor)
-            
-            # Auto-instrument common libraries
-            FlaskInstrumentor().instrument_app(self.app)
-            RequestsInstrumentor().instrument()
-            Psycopg2Instrumentor().instrument()
-            RedisInstrumentor().instrument()
-            
-            logger.info("OpenTelemetry observability initialized successfully")
-            
-        except ImportError as e:
-            logger.warning(f"OpenTelemetry not available, using basic observability: {e}")
-            self.otel_tracer = None
-        except Exception as e:
-            logger.error(f"Error initializing OpenTelemetry: {e}")
-            self.otel_tracer = None
+        # PERFORMANCE FIX: Disable OpenTelemetry instrumentation during startup
+        # This was causing 15-30 second delays due to missing dependencies and blocking calls
+        logger.info("OpenTelemetry disabled for performance - using basic observability")
+        self.otel_tracer = None
+        self.trace_module = None
+        self.Status = None
+        self.StatusCode = None
     
     def _register_middleware(self):
         """Register before/after request hooks for observability."""

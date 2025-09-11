@@ -109,7 +109,7 @@ class RedisManagerV5:
         
         # Handle Redis URL if provided
         redis_url = os.getenv('REDIS_URL')
-        if redis_url:
+        if redis_url and redis_url != 'memory://':
             final_config['url'] = redis_url
         
         # Sentinel configuration
@@ -129,9 +129,19 @@ class RedisManagerV5:
         
         return final_config
     
+    def _is_redis_available(self) -> bool:
+        """Check if Redis is available and configured."""
+        return self.redis_client is not None
+    
     def _initialize_client(self):
         """Initialize Redis client based on configuration."""
         try:
+            # Check if Redis is disabled (memory:// URL)
+            redis_url = self.config.get('url', '')
+            if redis_url == 'memory://' or (not self.config.get('url') and not self.config.get('host')):
+                logger.info("Redis disabled (memory:// URL), skipping initialization")
+                return
+                
             if self.config.get('cluster_hosts'):
                 self._initialize_cluster_client()
             elif self.config.get('sentinel_hosts'):
@@ -139,13 +149,17 @@ class RedisManagerV5:
             else:
                 self._initialize_single_client()
                 
-            # Test connection
-            self.redis_client.ping()
-            logger.info("Redis v5 manager initialized successfully")
+            # Test connection with timeout
+            if self.redis_client:
+                self.redis_client.ping()
+                logger.info("Redis v5 manager initialized successfully")
+            else:
+                logger.warning("Redis client not available, using fallback mode")
             
         except Exception as e:
-            logger.error(f"Failed to initialize Redis v5 manager: {e}")
-            raise
+            logger.warning(f"Failed to initialize Redis v5 manager: {e}")
+            # Don't raise - allow fallback to memory mode
+            self.redis_client = None
     
     def _initialize_single_client(self):
         """Initialize single Redis instance client."""
@@ -265,6 +279,9 @@ class RedisManagerV5:
             True if successful, False otherwise
         """
         try:
+            if not self._is_redis_available():
+                return True  # Return True for no-op when Redis is disabled
+                
             full_key = self._build_key(prefix, key)
             
             # Serialize value
@@ -315,6 +332,9 @@ class RedisManagerV5:
             Stored value or default
         """
         try:
+            if not self._is_redis_available():
+                return default
+                
             full_key = self._build_key(prefix, key)
             value = self.redis_client.get(full_key)
             

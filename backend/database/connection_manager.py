@@ -193,9 +193,9 @@ class DatabaseConnectionManager:
         """Create SQLAlchemy engine with optimized settings."""
         # Parse database URL
         parsed_url = urlparse(self.database_url)
-        # Build connection arguments
+        # Build connection arguments with optimized timeouts for startup
         connect_args = {
-            "connect_timeout": 10,
+            "connect_timeout": 5,  # Reduced from 10 for faster startup
             "application_name": "jewgo_app",
         }
         # Check if using provider pooled connection (which may not support statement_timeout)
@@ -225,12 +225,12 @@ class DatabaseConnectionManager:
                 "keepalives_count": ConfigManager.get_pg_keepalives_count(),
             }
         )
-        # Create engine with connection pooling
+        # Create engine with optimized connection pooling for startup performance
         engine = create_engine(
             self.database_url,
-            pool_size=ConfigManager.get_db_pool_size(),
-            max_overflow=ConfigManager.get_db_max_overflow(),
-            pool_timeout=ConfigManager.get_db_pool_timeout(),
+            pool_size=min(ConfigManager.get_db_pool_size(), 3),  # Cap at 3 for startup
+            max_overflow=min(ConfigManager.get_db_max_overflow(), 5),  # Cap at 5 for startup
+            pool_timeout=min(ConfigManager.get_db_pool_timeout(), 10),  # Reduce timeout for startup
             pool_recycle=ConfigManager.get_db_pool_recycle(),
             pool_pre_ping=True,
             echo=False,  # Set to True for SQL debugging

@@ -42,8 +42,14 @@ pytz==2025.1  # Updated for current DST rules
 # Production server
 gunicorn==21.2.0
 gevent==23.9.1
-greenlet==3.2.4  # Pin greenlet for gevent compatibility (recommended version)
+greenlet>=3.0.0,<4.0.0  # Allow flexible greenlet version for compatibility
 
 # Script dependencies (for CI validation)
 click==8.1.7
 PyYAML==6.0.1
+
+# System monitoring
+psutil==5.9.8
+
+# Browser automation (for auth API) - using latest version for better compatibility
+playwright>=1.40.0

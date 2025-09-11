@@ -8,6 +8,7 @@ and removes all the inline route definitions that are now handled by v5 blueprin
 
 import os
 import logging
+import time
 import traceback
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, g
@@ -119,6 +120,10 @@ def _load_dependencies():
 
 def create_app(config_class=None):
     """Application factory function that creates and configures the Flask app with v5 APIs."""
+    
+    # Start performance monitoring
+    startup_start_time = time.time()
+    logger.info("Starting application factory initialization")
     
     # Initialize Sentry first
     _initialize_sentry()
@@ -339,28 +344,34 @@ def create_app(config_class=None):
     except Exception as e:
         logger.error(f"Error initializing PostgreSQL auth system: {e}")
     
-    # Register v5 middleware
+    # Register v5 middleware with optimized initialization
     try:
         from middleware.auth_v5 import register_auth_v5_middleware
         from middleware.rate_limit_v5 import RateLimitV5Middleware
         from middleware.idempotency_v5 import IdempotencyV5Middleware
         from middleware.observability_v5 import ObservabilityV5Middleware
         
-        # Register v5 authentication middleware
+        # Register v5 authentication middleware (essential)
         register_auth_v5_middleware(app)
         logger.info("V5 authentication middleware registered successfully")
         
-        # Register v5 rate limiting middleware
+        # Register v5 rate limiting middleware (essential)
         rate_limit_middleware = RateLimitV5Middleware(app)
         logger.info("V5 rate limiting middleware registered successfully")
         
-        # Register v5 idempotency middleware
-        idempotency_middleware = IdempotencyV5Middleware(app)
-        logger.info("V5 idempotency middleware registered successfully")
+        # Register v5 idempotency middleware (non-critical, lazy load)
+        try:
+            idempotency_middleware = IdempotencyV5Middleware(app)
+            logger.info("V5 idempotency middleware registered successfully")
+        except Exception as e:
+            logger.warning(f"V5 idempotency middleware failed to initialize: {e}")
         
-        # Register v5 observability middleware
-        observability_middleware = ObservabilityV5Middleware(app)
-        logger.info("V5 observability middleware registered successfully")
+        # Register v5 observability middleware (non-critical, lazy load)
+        try:
+            observability_middleware = ObservabilityV5Middleware(app)
+            logger.info("V5 observability middleware registered successfully")
+        except Exception as e:
+            logger.warning(f"V5 observability middleware failed to initialize: {e}")
         
     except ImportError as e:
         logger.warning(f"Could not import v5 middleware: {e}")
@@ -378,24 +389,26 @@ def create_app(config_class=None):
             # 1. Initialize connection manager first (no dependencies)
             connection_manager_v5 = get_connection_manager()
             logger.info("Database connection manager initialized")
-            
-            # 2. Initialize Redis manager (may depend on connection manager)
-            redis_manager_v5 = get_redis_manager_v5()
-            logger.info("Redis manager initialized")
-            
-            # 3. Initialize feature flags (may depend on Redis for caching)
+
+            # 2. Initialize Redis manager with proper error handling
+            try:
+                redis_manager_v5 = get_redis_manager_v5()
+                logger.info("Redis manager initialized successfully")
+            except Exception as e:
+                logger.warning(f"Redis manager initialization failed: {e}")
+                redis_manager_v5 = None
+
+            # 3. Initialize feature flags (without Redis dependency)
             feature_flags_v5 = FeatureFlagsV5()
             logger.info("Feature flags initialized")
-            
+
             # 4. Verify all services are ready
             if not connection_manager_v5:
                 raise RuntimeError("Database connection manager not available")
-            if not redis_manager_v5:
-                logger.warning("Redis manager not available, using fallbacks")
             if not feature_flags_v5:
                 raise RuntimeError("Feature flags not available")
-                
-            logger.info("All v5 services initialized successfully")
+
+            logger.info("All v5 services initialized successfully (Redis disabled)")
         except Exception as e:
             logger.error(f"Failed to initialize v5 services: {e}")
             raise RuntimeError(f"Critical service initialization failed: {e}") from e
@@ -493,12 +506,13 @@ def create_app(config_class=None):
         except ImportError:
             pass
             
-        try:
-            from routes.v5.auth_api import auth_bp
-            app.register_blueprint(auth_bp)
-            logger.info("V5 auth API blueprint registered (fallback)")
-        except ImportError:
-            pass
+        # Auth API blueprint already registered in main v5 section
+        # try:
+        #     from routes.v5.auth_api import auth_bp
+        #     app.register_blueprint(auth_bp)
+        #     logger.info("V5 auth API blueprint registered (fallback)")
+        # except ImportError:
+        #     pass
             
         try:
             from routes.v5.search_api import search_bp
@@ -543,5 +557,7 @@ def create_app(config_class=None):
     def healthz():
         return jsonify({"ok": True}), 200
     
-    logger.info("V5 application factory initialization completed successfully")
+    # Log startup performance
+    startup_time = time.time() - startup_start_time
+    logger.info(f"V5 application factory initialization completed successfully in {startup_time:.2f} seconds")
     return app

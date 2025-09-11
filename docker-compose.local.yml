@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jewgo_backend_local
+    environment:
+      # Database - Local development database
+      DATABASE_URL: postgresql://jewgo_user:jewgo_password@host.docker.internal:5433/jewgo_dev
+      PGHOST: host.docker.internal
+      PGPORT: 5433
+      PGDATABASE: jewgo_dev
+      PGUSER: jewgo_user
+      PGPASSWORD: jewgo_password
+      
+      # Redis - Use memory mode for local development
+      REDIS_URL: memory://
+      REDIS_HOST: 
+      REDIS_PORT: 
+      REDIS_PASSWORD: 
+      REDIS_DB: 0
+      
+      # Application - Local development settings
+      NODE_ENV: development
+      FLASK_ENV: development
+      SECRET_KEY: dev-secret-key-change-in-production
+      JWT_SECRET_KEY: dev-jwt-secret-key-change-in-production
+      
+      # CORS - Local development
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5000,http://127.0.0.1:5000
+      
+      # Cursor HMAC Secret for v5
+      CURSOR_HMAC_SECRET_V5: dev-cursor-hmac-secret-change-in-production
+      
+      # Google Maps (optional)
+      GOOGLE_MAPS_API_KEY: 
+      
+      # Email (optional for local dev)
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: 
+      SMTP_PASSWORD: 
+      FROM_EMAIL: 
+      
+      # GitHub Webhook (optional for local dev)
+      GITHUB_WEBHOOK_SECRET: dev-webhook-secret
+      
+      # Sentry (optional for local dev)
+      SENTRY_DSN: 
+      
+      # AWS S3 (optional for local dev)
+      AWS_REGION: us-east-1
+      S3_BACKUP_BUCKET: jewgo-backups1
+      
+      # Database Pool Configuration (optimized for startup)
+      DB_POOL_SIZE: 3
+      DB_MAX_OVERFLOW: 5
+      DB_POOL_TIMEOUT: 10
+      DB_POOL_RECYCLE: 180
+      
+      # PostgreSQL Connection Settings
+      PG_KEEPALIVES_IDLE: 60
+      PG_KEEPALIVES_INTERVAL: 20
+      PG_KEEPALIVES_COUNT: 5
+      PG_STATEMENT_TIMEOUT: 60000
+      PG_IDLE_TX_TIMEOUT: 120000
+      PG_SSLMODE: prefer
+      
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

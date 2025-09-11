@@ -15,8 +15,8 @@ worker_class = "sync"
 worker_connections = 1000
 max_requests = 1000
 max_requests_jitter = 50
-timeout = 60  # Increased timeout for cold starts
-keepalive = 5  # Increased keepalive
+timeout = 30  # Reduced timeout for faster startup
+keepalive = 2  # Reduced keepalive for faster startup
 # Restart workers after this many requests, to help prevent memory leaks
 preload_app = True
 # Logging

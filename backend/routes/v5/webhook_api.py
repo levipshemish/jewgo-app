@@ -32,6 +32,7 @@ webhook_bp = BlueprintFactoryV5.create_blueprint(
     url_prefix='/api/v5/webhooks',
     config_override={
         'enable_cors': True,
+        'enable_health_check': False,  # Disable default health check, we'll add our own
         'auth_required': False,  # Webhooks use signature verification instead
         'enable_signature_verification': True,
         'enable_rate_limiting': True,
@@ -579,6 +580,30 @@ def rollback_deployment():
         logger.exception("Rollback failed", error=str(e))
         log_webhook_event('rollback', {}, 'error', f'Rollback error: {str(e)}')
         return jsonify({'error': 'Rollback failed'}), 500
+
+
+# Health check endpoint
+@webhook_bp.route('/health', methods=['GET'])
+def webhook_health_check():
+    """Health check for webhook API."""
+    try:
+        return jsonify({
+            'blueprint': 'webhook_api',
+            'status': 'healthy',
+            'version': 'v5',
+            'timestamp': datetime.utcnow().timestamp(),
+            'correlation_id': getattr(g, 'correlation_id', None)
+        })
+    except Exception as e:
+        logger.exception("Webhook health check failed", error=str(e))
+        return jsonify({
+            'blueprint': 'webhook_api',
+            'status': 'unhealthy',
+            'version': 'v5',
+            'error': str(e),
+            'timestamp': datetime.utcnow().timestamp(),
+            'correlation_id': getattr(g, 'correlation_id', None)
+        }), 500
 
 
 # Error handlers

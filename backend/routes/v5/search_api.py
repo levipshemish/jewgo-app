@@ -568,7 +568,7 @@ def _get_available_filters(entity_type: Optional[str]) -> Dict[str, Any]:
 
 # Health check endpoint
 @search_bp.route('/health', methods=['GET'])
-def health_check():
+def search_health_check():
     """Health check for search API."""
     try:
         # Test repository connection

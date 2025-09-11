@@ -286,8 +286,8 @@ class BlueprintFactoryV5:
                             'correlation_id': getattr(g, 'correlation_id', None)
                         }), 403
                 
-                # Signature verification for webhooks
-                if config.get('enable_signature_verification', False):
+                # Signature verification for webhooks (exclude health route)
+                if config.get('enable_signature_verification', False) and request.endpoint not in [f"{blueprint.name}.health_check", f"{blueprint.name}.webhook_health_check"]:
                     if not cls._verify_webhook_signature():
                         return jsonify({
                             'error': 'Invalid signature',

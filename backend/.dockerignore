@@ -111,8 +111,8 @@ tmp/
 temp/
 *.tmp
 
-# Monitoring and reports
-monitoring/
+# Monitoring reports (but not the monitoring module)
+# monitoring/ - REMOVED: monitoring module is needed
 *.json
 *.csv
 

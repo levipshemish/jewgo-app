@@ -496,7 +496,7 @@ def batch_operations(entity_type: str):
 
 # Health check endpoint
 @entity_bp.route('/health', methods=['GET'])
-def health_check():
+def entity_health_check():
     """Health check for entity API."""
     try:
         # Test repository connection

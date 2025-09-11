@@ -29,7 +29,7 @@ class RateLimitV5Middleware:
         'anonymous': {
             'requests_per_minute': 60,
             'requests_per_hour': 1000,
-            'burst_allowance': 10,
+            'burst_allowance': 100,  # Increased for local testing
             'sliding_window_minutes': 5
         },
         'guest': {

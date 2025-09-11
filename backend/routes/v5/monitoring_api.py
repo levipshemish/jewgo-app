@@ -227,7 +227,7 @@ def check_external_services() -> Dict[str, Any]:
 # Monitoring endpoints
 @monitoring_v5.route('/health', methods=['GET'])
 @require_monitoring_permission()
-def health_check():
+def monitoring_health_check():
     """Comprehensive health check endpoint."""
     try:
         # Fallback for feature flags

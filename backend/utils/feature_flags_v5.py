@@ -106,6 +106,44 @@ class FeatureFlagsV5:
                 "depends_on": ["v5_api_enabled"]
             },
             
+            # API Endpoint Flags
+            "auth_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": True,
+                "description": "V5 authentication API endpoints",
+                "rollout_percentage": 100.0,
+                "depends_on": ["v5_api_enabled", "auth_v5"]
+            },
+            
+            # Legacy Compatibility Flags
+            "auth_v5_for_legacy": {
+                "type": FeatureFlagType.CONFIG,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": False,
+                "description": "Enable v5 auth middleware for legacy endpoints",
+                "rollout_percentage": 0.0,
+                "depends_on": ["auth_v5"]
+            },
+            
+            "rate_limit_v5_for_legacy": {
+                "type": FeatureFlagType.CONFIG,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": False,
+                "description": "Enable v5 rate limiting for legacy endpoints",
+                "rollout_percentage": 0.0,
+                "depends_on": ["rate_limit_v5"]
+            },
+            
+            "observability_v5_for_legacy": {
+                "type": FeatureFlagType.CONFIG,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": False,
+                "description": "Enable v5 observability for legacy endpoints",
+                "rollout_percentage": 0.0,
+                "depends_on": ["observability_v5"]
+            },
+            
             # API Consolidation Features
             "entity_api_v5": {
                 "type": FeatureFlagType.MIGRATION,

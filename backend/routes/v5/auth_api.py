@@ -541,7 +541,7 @@ def get_permissions():
 
 # Health check endpoint
 @auth_bp.route('/health', methods=['GET'])
-def health_check():
+def auth_health_check():
     """Health check for auth API."""
     try:
         # Test auth service

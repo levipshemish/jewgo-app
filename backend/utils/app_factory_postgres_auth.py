@@ -44,10 +44,10 @@ def register_postgres_auth(app: Flask):
         app.config['DB_MANAGER'] = db_manager
         app.config['AUTH_MANAGER'] = auth_manager
         
-        # Register auth blueprint (use the new auth_api routes)
-        from routes.auth_api import auth_bp
-        app.register_blueprint(auth_bp)
-        logger.info("Auth API blueprint registered")
+        # Auth blueprint already registered in main app factory
+        # from routes.v5.auth_api import auth_bp
+        # app.register_blueprint(auth_bp)
+        # logger.info("Auth API blueprint registered")
         # Register auth middleware (auto cookie-based auth + refresh)
         try:
             from middleware.auth_middleware import register_auth_middleware
@@ -60,10 +60,10 @@ def register_postgres_auth(app: Flask):
         register_auth_error_handlers(app)
 
         # Optional Prometheus metrics endpoint (robust/noise-free)
-        try:
-            register_metrics_endpoint(app)
-        except Exception as _e:
-            logger.info("Metrics endpoint not enabled or unavailable")
+        # try:
+        #     register_metrics_endpoint(app)
+        # except Exception as _e:
+        #     logger.info("Metrics endpoint not enabled or unavailable")
         
         logger.info("PostgreSQL authentication system registered successfully")
         
