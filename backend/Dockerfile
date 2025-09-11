@@ -27,7 +27,7 @@ FROM python:3.11-slim as runtime
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
-ENV PATH="/root/.local/bin:${PATH}"
+ENV PATH="/home/appuser/.local/bin:${PATH}"
 
 # Install only essential runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -37,11 +37,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Copy Python packages from builder stage
-COPY --from=builder /root/.local /root/.local
-
-# Create non-root user
+# Create non-root user first
 RUN useradd -m -u 1000 appuser
+
+# Copy Python packages from builder stage to user's home
+COPY --from=builder /root/.local /home/appuser/.local
 
 # Set working directory
 WORKDIR /app
