@@ -14,14 +14,14 @@ from functools import wraps
 import time
 import psutil
 import os
-from backend.utils.logging_config import get_logger
+from utils.logging_config import get_logger
 from middleware.auth_v5 import AuthV5Middleware
 from middleware.rate_limit_v5 import RateLimitV5Middleware
 from middleware.observability_v5 import ObservabilityV5Middleware
-from backend.utils.blueprint_factory_v5 import BlueprintFactoryV5
-from backend.cache.redis_manager_v5 import RedisManagerV5
-from backend.database.database_manager_v5 import get_database_manager_v5
-from backend.utils.feature_flags_v5 import FeatureFlagsV5
+from utils.blueprint_factory_v5 import BlueprintFactoryV5
+from cache.redis_manager_v5 import RedisManagerV5
+from database.database_manager_v5 import get_database_manager_v5
+from utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)
 
