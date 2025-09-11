@@ -4,25 +4,7 @@ import { AppliedFilters } from '@/lib/filters/filters.types';
 import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
 import { IS_MEMORY_CAP_ITEMS, IS_MEMORY_COMPACTION_THRESHOLD, IS_MEMORY_MONITORING_INTERVAL_MS } from '@/lib/config/infiniteScroll.constants';
 import { fetchRestaurants } from '@/lib/api/restaurants';
-
-interface Restaurant {
-  id: string | number;
-  name: string;
-  address: string;
-  phone?: string;
-  phone_number?: string;
-  website: string;
-  cuisine?: string;
-  kosher_category?: string;
-  rating?: number | string;
-  google_rating?: number | string;
-  price_range: string;
-  image_url: string;
-  is_open: boolean;
-  distance?: number;
-  latitude?: number;
-  longitude?: number;
-}
+import { Restaurant } from '@/lib/types/restaurant';
 
 interface FilterOptions {
   agencies: string[];
@@ -233,6 +215,9 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     append: boolean = false
   ): Promise<{ received: number; hasMore?: boolean }> => {
     try {
+      // Initialize filters early
+      const filters: Record<string, any> = {};
+      
       // CRITICAL FIX: Add safety check to prevent infinite API calls
       if (page > 100) { // Arbitrary safety limit
         console.error('API safety limit reached: page', page);
@@ -288,7 +273,6 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       } : undefined;
       
       // Build filters from search params
-      const filters: Record<string, any> = {};
       for (const [paramKey, value] of searchParams.entries()) {
         if (paramKey !== 'lat' && paramKey !== 'lng') {
           filters[paramKey] = value;
@@ -307,19 +291,19 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       
       if (response.success) {
         // Handle filter options from unified response
-        if (response.data?.filterOptions) {
-          setFilterOptions(response.data.filterOptions);
+        if (response.filterOptions) {
+          setFilterOptions(response.filterOptions);
         }
         
         // Handle pagination from unified response (pagination is top-level)
-        const pagination = response.pagination || {};
+        const pagination = response.pagination || { limit: 0, offset: 0, page: 1, totalPages: 1, total: 0, hasMore: false };
         
         if (append) {
           // Append new restaurants to existing ones, avoiding duplicates
           // Normalize IDs to strings to avoid type-mismatch duplicates (e.g., 123 vs "123")
           setRestaurants(prev => {
             const existingIds = new Set(prev.map(r => String(r.id)));
-            const newRestaurants = response.data.restaurants.filter(r => !existingIds.has(String(r.id)));
+            const newRestaurants = response.restaurants.filter((r: any) => !existingIds.has(String(r.id)));
             receivedCount = newRestaurants.length;
             return [...prev, ...newRestaurants];
           });
@@ -327,27 +311,27 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
           // Update pageItems for infinite scroll (accumulate across pages)
           setPageItems(prev => {
             const existingIds = new Set(prev.map(r => String(r.id)));
-            const newRestaurants = response.data.restaurants.filter(r => !existingIds.has(String(r.id)));
+            const newRestaurants = response.restaurants.filter((r: any) => !existingIds.has(String(r.id)));
             return [...prev, ...newRestaurants];
           });
           
           // Update totalRestaurants when appending to maintain accurate count
-          if (pagination.total > 0) {
+          if (pagination && pagination.total && pagination.total > 0) {
             setTotalRestaurants(pagination.total);
           }
         } else {
           // Replace restaurants (default behavior)
-          setRestaurants(response.data.restaurants);
-          receivedCount = Array.isArray(response.data.restaurants) ? response.data.restaurants.length : 0;
+          setRestaurants(response.restaurants);
+          receivedCount = Array.isArray(response.restaurants) ? response.restaurants.length : 0;
           
           // Reset pageItems on new search/filter
-          setPageItems(response.data.restaurants);
+          setPageItems(response.restaurants);
           
           // Only update totalRestaurants on initial load, not when appending
-          setTotalRestaurants(pagination.total || 0);
+          setTotalRestaurants(pagination?.total || 0);
           // Ensure totalPages is always a valid number
-          const limit = Number(pagination.limit) || itemsPerPage;
-          const total = Number(pagination.total) || 0;
+          const limit = Number(pagination?.limit) || itemsPerPage;
+          const total = Number(pagination?.total) || 0;
           const computedTotalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
           setTotalPages(computedTotalPages);
         }
@@ -384,8 +368,8 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
         }
         
         // Only update filter options if we got them (they might be cached separately)
-        if (response.data.filterOptions) {
-          setFilterOptions(response.data.filterOptions);
+        if (response.filterOptions) {
+          setFilterOptions(response.filterOptions);
         }
       } else {
         setError(response.error || 'Failed to fetch data');

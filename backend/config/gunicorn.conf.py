@@ -4,7 +4,7 @@ import os
 # Gunicorn configuration file for JewGo Backend
 # Updated for new file structure for production deployment
 # Get port from environment variable or use default
-port = int(os.environ.get("PORT", 8081))
+port = int(os.environ.get("PORT", 5000))
 # Server socket
 bind = f"0.0.0.0:{port}"
 backlog = 2048

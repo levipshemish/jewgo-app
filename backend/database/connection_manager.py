@@ -25,13 +25,16 @@ except ImportError:
 try:
     from utils.unified_database_config import UnifiedDatabaseConfig as ConfigManager
 except ImportError:
-    # Fallback for when utils module is not available
+    logger.warning("UnifiedDatabaseConfig not available, using fallback")
     import os
-
+    
     class ConfigManager:
         @staticmethod
         def get_database_url():
-            return os.getenv("DATABASE_URL")
+            url = os.getenv("DATABASE_URL")
+            if not url and os.getenv("FLASK_ENV") == "production":
+                raise RuntimeError("DATABASE_URL is required in production")
+            return url
 
         @staticmethod
         def get_pg_keepalives_idle():
@@ -115,11 +118,31 @@ class DatabaseConnectionManager:
             "health_check_failures": 0
         }
 
+    def health_check(self) -> bool:
+        """Perform a health check on the database connection."""
+        try:
+            if not self._is_connected:
+                return False
+            
+            with self.get_session() as session:
+                session.execute(text("SELECT 1"))
+                self._connection_stats["health_check_count"] += 1
+                return True
+        except Exception as e:
+            logger.warning(f"Database health check failed: {e}")
+            self._connection_stats["health_check_failures"] += 1
+            return False
+
     def connect(self) -> bool:
         """Establish database connection with retry logic and v5 metrics."""
         if self._is_connected:
-            logger.info("Database already connected")
-            return True
+            # Perform health check to ensure connection is still valid
+            if self.health_check():
+                logger.info("Database already connected and healthy")
+                return True
+            else:
+                logger.warning("Database connection unhealthy, reconnecting")
+                self._is_connected = False
         
         connection_start = time.time()
         while self._connection_attempts < self._max_retries:

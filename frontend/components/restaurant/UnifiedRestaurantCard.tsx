@@ -99,7 +99,8 @@ export default function UnifiedRestaurantCard({
     
     // Fallback to existing rating fields (EateryCard logic)
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating;
-    return rating && rating > 0 ? rating : 0.0;
+    const numericRating = typeof rating === 'string' ? parseFloat(rating) : rating;
+    return numericRating && numericRating > 0 ? numericRating : 0.0;
   };
 
   const getReviewCount = () => {

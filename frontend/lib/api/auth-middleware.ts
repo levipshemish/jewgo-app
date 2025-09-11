@@ -389,11 +389,7 @@ function recordAuthMetrics(
   try {
     metricsCollector.recordUsage(
       'auth',
-      'authentication',
-      true,
-      {
-        userId: userId?.toString() || 'anonymous',
-      }
+      'authentication'
     );
   } catch (error) {
     console.warn('Failed to record auth metrics:', error);

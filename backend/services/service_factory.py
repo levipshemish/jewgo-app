@@ -27,22 +27,22 @@ class ServiceFactory:
         logger.info("Service factory dependencies set")
 
     def get_restaurant_service(self) -> Optional[Any]:
-        """Get or create RestaurantServiceV4 instance."""
+        """Get or create RestaurantServiceV5 instance."""
         if "restaurant" not in self._services:
             try:
-                from services.restaurant_service_v4 import RestaurantServiceV4
+                from database.services.restaurant_service_v5 import RestaurantServiceV5
 
-                self._services["restaurant"] = RestaurantServiceV4(
+                self._services["restaurant"] = RestaurantServiceV5(
                     db_manager=self._db_manager,
                     cache_manager=self._cache_manager,
                     config=self._config_manager,
                 )
-                logger.info("RestaurantServiceV4 created successfully")
+                logger.info("RestaurantServiceV5 created successfully")
             except ImportError as e:
-                logger.error(f"Could not import RestaurantServiceV4: {e}")
+                logger.error(f"Could not import RestaurantServiceV5: {e}")
                 return None
             except Exception as e:
-                logger.error(f"Error creating RestaurantServiceV4: {e}")
+                logger.error(f"Error creating RestaurantServiceV5: {e}")
                 return None
         return self._services["restaurant"]
 

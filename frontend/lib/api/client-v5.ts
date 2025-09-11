@@ -48,9 +48,9 @@ export class ApiClientV5 {
       ...config
     };
 
-    this.authManager = AuthTokenManager;
-    this.cacheManager = CacheManager;
-    this.retryManager = RetryManager;
+    this.authManager = AuthTokenManager.getInstance();
+    this.cacheManager = CacheManager.getInstance();
+    this.retryManager = RetryManager.getInstance();
     this.metricsCollector = MetricsCollector.getInstance();
   }
 
@@ -77,7 +77,7 @@ export class ApiClientV5 {
 
       // Use request deduplication for GET requests
       if (options.method === 'GET' || !options.method) {
-        const deduplicationResult = await requestDeduplicator.deduplicateWithCorrelation(
+        const deduplicationResult = await requestDeduplicator(
           requestKey,
           async () => {
             // Check cache first
@@ -88,7 +88,6 @@ export class ApiClientV5 {
 
             // Execute request with circuit breaker and retry logic
             return circuitBreakerManager.execute(
-              `api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`,
               async () => {
                 const retryResult = await RetryManager.execute(async () => {
                   return this.executeRequest(requestConfig);
@@ -105,9 +104,9 @@ export class ApiClientV5 {
         );
 
         // Parse and validate response
-        const apiResponse = deduplicationResult.result instanceof Response 
-          ? await this.parseResponse<T>(deduplicationResult.result, requestConfig)
-          : deduplicationResult.result as ApiResponse<T>;
+        const apiResponse = deduplicationResult instanceof Response 
+          ? await this.parseResponse<T>(deduplicationResult, requestConfig)
+          : deduplicationResult as ApiResponse<T>;
 
         // Cache successful responses
         if (options.cache !== false) {
@@ -123,9 +122,7 @@ export class ApiClientV5 {
           apiResponse.status,
           JSON.stringify(apiResponse.data).length,
           {
-            request_id: requestId.toString(),
-            correlation_id: deduplicationResult.correlationId,
-            was_deduplicated: deduplicationResult.wasDeduplicated.toString()
+            request_id: requestId.toString()
           }
         );
 
@@ -133,7 +130,6 @@ export class ApiClientV5 {
       } else {
         // For non-GET requests, use circuit breaker and retry without deduplication
         const response = await circuitBreakerManager.execute(
-          `api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`,
           async () => {
             const retryResult = await RetryManager.execute(async () => {
               return this.executeRequest(requestConfig);
@@ -148,7 +144,7 @@ export class ApiClientV5 {
         );
 
         // Parse and validate response
-        const apiResponse = await this.parseResponse<T>(response, requestConfig);
+        const apiResponse = await this.parseResponse<T>(response as Response, requestConfig);
 
         // Record performance metrics
         const duration = Date.now() - startTime;
@@ -252,11 +248,13 @@ export class ApiClientV5 {
       response.data.pagination = {
         has_more: false,
         cursor: undefined,
-        next_cursor: undefined
+        next_cursor: undefined,
+        prev_cursor: undefined,
+        limit: 0
       };
     }
     
-    return response.data;
+    return response.data!;
   }
 
   /**
@@ -654,7 +652,7 @@ export class ApiClientV5 {
     if (response.status === 304) {
       const cachedResponse = CacheManager.get<ApiResponse<T>>(config.url);
       if (cachedResponse) {
-        return cachedResponse.data;
+        return cachedResponse;
       }
     }
 
@@ -698,7 +696,7 @@ export class ApiClientV5 {
   private async getCachedResponse<T>(url: string, _headers: Record<string, string>): Promise<ApiResponse<T> | null> {
     if (!this.config.enableEtag) {
       const cached = CacheManager.get<ApiResponse<T>>(url);
-      return cached ? cached.data : null;
+      return cached || null;
     }
 
     // Check if we have a cached response with ETag
@@ -706,7 +704,7 @@ export class ApiClientV5 {
     const cachedEtag = CacheManager.getEtag(url);
 
     if (cachedResponse && cachedEtag) {
-      return cachedResponse.data;
+      return cachedResponse;
     }
 
     return null;
@@ -756,23 +754,20 @@ export class ApiClientV5 {
 
     if (type === 'error') {
       this.metricsCollector.recordError(
-        error?.constructor?.name || 'UnknownError',
-        error?.message,
-        error?.stack,
-        { endpoint, statusCode: statusCode?.toString() || 'unknown' }
+        endpoint,
+        'GET',
+        error?.message || 'Unknown error'
       );
     } else if (type === 'performance') {
       this.metricsCollector.recordPerformance(
         endpoint,
-        duration,
-        { statusCode: statusCode?.toString() || 'unknown' }
+        'GET',
+        duration
       );
     } else {
       this.metricsCollector.recordUsage(
         endpoint,
-        'api_call',
-        true,
-        { statusCode: statusCode?.toString() || 'unknown' }
+        'GET'
       );
     }
   }
@@ -803,18 +798,17 @@ export class ApiClientV5 {
    */
   setTokens(accessToken: string, refreshToken?: string): void {
     const tokens: TokenPair = {
-      access_token: accessToken,
-      refresh_token: refreshToken || '',
-      expires_in: 3600, // Default 1 hour
-      token_type: 'Bearer'
+      accessToken: accessToken,
+      refreshToken: refreshToken || '',
+      expiresAt: Date.now() + 3600000 // Default 1 hour
     };
     
     const user: UserProfile = {
-      id: 0, // Placeholder
+      id: '0', // Placeholder
       email: '',
       name: '',
       roles: ['user'],
-      is_active: true
+      permissions: []
     };
     
     AuthTokenManager.setTokens(tokens, user);

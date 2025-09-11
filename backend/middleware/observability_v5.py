@@ -205,7 +205,7 @@ class ObservabilityV5Middleware:
         
         # Apply to endpoints with v5 feature flag enabled
         try:
-            from backend.utils.feature_flags_v5 import FeatureFlagsV5
+            from utils.feature_flags_v5 import FeatureFlagsV5
             feature_flags = FeatureFlagsV5()
             return feature_flags.is_enabled('observability_v5_for_legacy', default=False)
         except ImportError:

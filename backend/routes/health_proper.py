@@ -8,8 +8,8 @@ import time
 import logging
 import os
 from datetime import datetime
-from backend.monitoring.v4_monitoring import v4_monitor, get_v4_metrics_summary, get_v4_alerts
-from backend.monitoring.performance_monitor import performance_monitor
+from monitoring.v4_monitoring import v4_monitor, get_v4_metrics_summary, get_v4_alerts
+from monitoring.performance_monitor import performance_monitor
 
 logger = logging.getLogger(__name__)
 

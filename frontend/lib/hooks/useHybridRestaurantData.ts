@@ -3,6 +3,7 @@ import { useCombinedRestaurantData } from './useCombinedRestaurantData';
 import { useCursorPagination } from './useCursorPagination';
 import { useUrlScrollState } from './useUrlScrollState';
 import { AppliedFilters } from '@/lib/filters/filters.types';
+import { Restaurant } from '@/lib/types/restaurant';
 
 /**
  * Configuration for hybrid pagination mode
@@ -15,37 +16,6 @@ interface HybridPaginationConfig {
   offsetLimit: number;
 }
 
-/**
- * Unified restaurant data interface
- */
-interface Restaurant {
-  id: string | number;
-  name: string;
-  address: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  phone?: string;
-  phone_number?: string;
-  website: string;
-  kosher_category?: string;
-  listing_type?: string;
-  certifying_agency?: string;
-  rating?: number | string;
-  google_rating?: number | string;
-  price_range?: string;
-  image_url?: string;
-  is_open?: boolean;
-  distance?: number;
-  latitude?: number;
-  longitude?: number;
-  created_at?: string;
-  updated_at?: string;
-  short_description?: string;
-  is_cholov_yisroel?: boolean;
-  is_pas_yisroel?: boolean;
-  status?: string;
-}
 
 /**
  * Filter options for restaurant data

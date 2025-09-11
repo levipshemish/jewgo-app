@@ -24,9 +24,10 @@ export interface RetryContext {
 }
 
 export class RetryManager {
+  private static instance: RetryManager;
   private config: RetryConfig;
 
-  constructor(config: Partial<RetryConfig> = {}) {
+  private constructor(config: Partial<RetryConfig> = {}) {
     this.config = {
       maxAttempts: 3,
       baseDelay: 1000,
@@ -37,6 +38,23 @@ export class RetryManager {
       retryableErrors: ['NetworkError', 'TimeoutError', 'AbortError'],
       ...config
     };
+  }
+
+  static getInstance(): RetryManager {
+    if (!RetryManager.instance) {
+      RetryManager.instance = new RetryManager();
+    }
+    return RetryManager.instance;
+  }
+
+  static async execute<T>(fn: () => Promise<T>): Promise<{ success: boolean; data?: T; error?: string }> {
+    const instance = RetryManager.getInstance();
+    try {
+      const result = await instance.execute(fn, undefined);
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   }
 
   /**

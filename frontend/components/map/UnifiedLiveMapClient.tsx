@@ -832,7 +832,9 @@ export default function UnifiedLiveMapClient() {
     const ratingText = typeof ratingNum === 'number' && !isNaN(ratingNum) ? ratingNum.toFixed(1) : undefined;
     
     // Calculate distance if user location is available and restaurant has coordinates
-    let distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
+    let distanceText = restaurant.distance && 
+      (typeof restaurant.distance === 'string' ? restaurant.distance.trim() !== '' : restaurant.distance > 0) 
+      ? restaurant.distance : '';
     if (!distanceText && userLocation && restaurant.latitude && restaurant.longitude) {
       const distance = calculateDistance(
         userLocation.latitude, 
@@ -871,7 +873,7 @@ export default function UnifiedLiveMapClient() {
       title: restaurant.name || 'Unknown Restaurant',
       badge: ratingText,
       subtitle: priceRange, // Now has proper fallback to '$$'
-      additionalText: distanceText,
+      additionalText: typeof distanceText === 'number' ? distanceText.toString() : distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
       kosherCategory: restaurant.kosher_category || 'Unknown',
@@ -1046,7 +1048,7 @@ export default function UnifiedLiveMapClient() {
             <InteractiveRestaurantMap
               restaurants={displayedRestaurants}
               userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
-              selectedRestaurantId={selectedRestaurant?.id || null}
+              selectedRestaurantId={selectedRestaurant?.id ? Number(selectedRestaurant.id) : null}
               onRestaurantSelect={handleRestaurantSelectCallback}
               mapCenter={mapCenter || undefined}
               className="h-full rounded-none shadow-none bg-transparent"

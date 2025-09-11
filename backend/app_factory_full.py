@@ -141,13 +141,21 @@ def create_app(config_class=None):
         app.config.from_object(config_class)
         logger.info("Configuration loaded successfully")
     except Exception as e:
-        logger.exception("Failed to load configuration", error=str(e))
-        # Set default configuration
-        app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
-        app.config["DATABASE_URL"] = os.environ.get(
-            "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/postgres",
-        )
+        logger.error(f"Failed to load configuration: {e}")
+        if os.environ.get("FLASK_ENV") == "production":
+            raise RuntimeError(f"Configuration loading failed in production: {e}") from e
+        else:
+            logger.warning("Using fallback configuration for development")
+            # Only use fallback secrets in development
+            if os.environ.get("FLASK_ENV") == "development":
+                app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
+                app.config["DATABASE_URL"] = os.environ.get(
+                    "DATABASE_URL",
+                    "postgresql://postgres:postgres@localhost:5432/postgres",
+                )
+            else:
+                # In staging/testing, require proper configuration
+                raise RuntimeError("Configuration required for non-development environment")
     
     # Configure CORS
     cors_origins_env = os.environ.get("CORS_ORIGINS", "")
@@ -348,10 +356,32 @@ def create_app(config_class=None):
         from cache.redis_manager_v5 import get_redis_manager_v5
         from database.connection_manager import get_connection_manager
         
-        # Initialize v5 services
-        feature_flags_v5 = FeatureFlagsV5()
-        redis_manager_v5 = get_redis_manager_v5()
-        connection_manager_v5 = get_connection_manager()
+        # Initialize v5 services in dependency order
+        try:
+            # 1. Initialize connection manager first (no dependencies)
+            connection_manager_v5 = get_connection_manager()
+            logger.info("Database connection manager initialized")
+            
+            # 2. Initialize Redis manager (may depend on connection manager)
+            redis_manager_v5 = get_redis_manager_v5()
+            logger.info("Redis manager initialized")
+            
+            # 3. Initialize feature flags (may depend on Redis for caching)
+            feature_flags_v5 = FeatureFlagsV5()
+            logger.info("Feature flags initialized")
+            
+            # 4. Verify all services are ready
+            if not connection_manager_v5:
+                raise RuntimeError("Database connection manager not available")
+            if not redis_manager_v5:
+                logger.warning("Redis manager not available, using fallbacks")
+            if not feature_flags_v5:
+                raise RuntimeError("Feature flags not available")
+                
+            logger.info("All v5 services initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize v5 services: {e}")
+            raise RuntimeError(f"Critical service initialization failed: {e}") from e
         
         # Register v5 entity API (consolidates restaurants, synagogues, mikvah, stores)
         if feature_flags_v5.is_enabled('entity_api_v5', default=True):

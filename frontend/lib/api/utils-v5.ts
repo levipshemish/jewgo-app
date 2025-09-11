@@ -81,11 +81,28 @@ export function parseLocationFromParams(request: NextRequest): {
   longitude?: number;
   radius?: number;
   isValid: boolean;
+};
+
+export function parseLocationFromParams(searchParams: URLSearchParams): {
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  isValid: boolean;
+};
+
+export function parseLocationFromParams(requestOrParams: NextRequest | URLSearchParams): {
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  isValid: boolean;
 } {
-  const url = new URL(request.url);
-  const lat = url.searchParams.get('latitude');
-  const lng = url.searchParams.get('longitude');
-  const radius = url.searchParams.get('radius');
+  const searchParams = requestOrParams instanceof URLSearchParams 
+    ? requestOrParams 
+    : new URL(requestOrParams.url).searchParams;
+  
+  const lat = searchParams.get('latitude');
+  const lng = searchParams.get('longitude');
+  const radius = searchParams.get('radius');
 
   if (!lat || !lng) {
     return { isValid: false };
@@ -254,9 +271,9 @@ export function getCorrelationId(request: NextRequest): string {
 }
 
 /**
- * Validate request body
+ * Validate request body from NextRequest
  */
-export async function validateRequestBody(request: NextRequest): Promise<{
+export async function validateRequestBodyFromRequest(request: NextRequest): Promise<{
   isValid: boolean;
   data?: any;
   error?: string;

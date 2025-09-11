@@ -46,12 +46,12 @@ class RestaurantServiceV5:
         """Initialize restaurant service with dependencies."""
         self.repository = repository
         if not self.repository:
-            from backend.database.repositories.entity_repository_v5 import get_entity_repository_v5
+            from database.repositories.entity_repository_v5 import get_entity_repository_v5
             self.repository = get_entity_repository_v5()
         
         self.cache_manager = cache_manager
         if not self.cache_manager:
-            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            from cache.redis_manager_v5 import get_redis_manager_v5
             self.cache_manager = get_redis_manager_v5()
         
         self.event_publisher = event_publisher

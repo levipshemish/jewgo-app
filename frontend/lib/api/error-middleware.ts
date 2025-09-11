@@ -586,11 +586,9 @@ export class ErrorHandler {
   ): void {
     try {
       metricsCollector.recordError(
-        error.constructor.name,
-        error.message,
-        error.stack,
-        { statusCode: statusCode.toString() },
-        { processingTime }
+        'error-middleware',
+        'POST',
+        error.message
       );
     } catch (metricsError) {
       console.warn('Failed to record error metrics:', metricsError);

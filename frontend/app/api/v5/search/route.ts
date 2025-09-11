@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       query.trim(),
       entityTypes,
       {
-        location,
+        ...(location.isValid && location.latitude && location.longitude ? { location: { latitude: location.latitude, longitude: location.longitude, radius: location.radius } } : {}),
         includeFacets,
         filters,
         pagination: {

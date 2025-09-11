@@ -20,7 +20,7 @@ from middleware.auth_v5 import AuthV5Middleware
 from middleware.rate_limit_v5 import RateLimitV5Middleware
 from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from backend.cache.redis_manager_v5 import RedisManagerV5
+from cache.redis_manager_v5 import RedisManagerV5
 from utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)

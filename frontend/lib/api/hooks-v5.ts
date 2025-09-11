@@ -121,7 +121,7 @@ export function useEntity<T = any>(
     try {
       const response = await apiClient.getEntity<T>(entityType, entityId);
       if (response.success) {
-        setData(response.data);
+        setData(response.data || null);
         lastFetchRef.current = Date.now();
       } else {
         setError('Failed to fetch entity');

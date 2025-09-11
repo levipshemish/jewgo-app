@@ -267,7 +267,7 @@ function EateryIdPageContent() {
         }
 
         // Use the restaurants API module for restaurant details
-        const detailData = await getRestaurant(parseInt(restaurantId))
+        const detailData = await getRestaurant(restaurantId)
         
         // Extract restaurant data from the response
         let restaurantData = null
@@ -343,7 +343,8 @@ function EateryIdPageContent() {
             // Default to 0 if still no rating
             finalRating = finalRating ?? 0;
             
-            return finalRating;
+            // Convert to number if it's a string
+            return typeof finalRating === 'string' ? parseFloat(finalRating) || 0 : finalRating;
           })(),
           price_range: restaurantData.price_range || '$',
           kosher_type: restaurantData.kosher_category || '',
@@ -383,7 +384,7 @@ function EateryIdPageContent() {
             if (restaurantData.hours_parsed) {
               console.log('Using hours_parsed from restaurantData')
               // hours_parsed is already a parsed object, not a JSON string
-              return parseHoursFromJson(restaurantData.hours_parsed)
+              return parseHoursFromJson(restaurantData.hours_json || '{}')
             } else if (restaurantData.hours_json) {
               console.log('Using hours_json from restaurantData')
               return parseHoursFromJson(restaurantData.hours_json)

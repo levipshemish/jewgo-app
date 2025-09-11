@@ -62,6 +62,9 @@ export function FilterPreview({
     setPreview(prev => ({ ...prev, loading: true, error: null }));
 
     try {
+      // Use the restaurants API module
+      const filters: Record<string, any> = {};
+      
       // Normalize filters to use standard field names
       const normalizedFilters = normalizeFilters(filters);
       
@@ -93,9 +96,6 @@ export function FilterPreview({
         params.set('lat', userLocation.latitude.toString());
         params.set('lng', userLocation.longitude.toString());
       }
-
-      // Use the restaurants API module
-      const filters: Record<string, any> = {};
       for (const [key, value] of params.entries()) {
         if (key !== 'lat' && key !== 'lng') {
           filters[key] = value;
@@ -126,12 +126,9 @@ export function FilterPreview({
       
       // Handle different response structures
       let items: any[] = [];
-      if (response.success && Array.isArray(response.items)) {
+      if (response.success && Array.isArray(response.restaurants)) {
         // Direct response format
-        items = response.items;
-      } else if (response.data && response.data.success && Array.isArray(response.data.items)) {
-        // Wrapped response format
-        items = response.data.items;
+        items = response.restaurants;
       } else if (Array.isArray(response)) {
         // Array response format
         items = response;

@@ -19,16 +19,24 @@ export interface CacheConfig {
 }
 
 export class CacheManager {
+  private static instance: CacheManager;
   private cache = new Map<string, CacheEntry>();
   private config: CacheConfig;
 
-  constructor(config: Partial<CacheConfig> = {}) {
+  private constructor(config: Partial<CacheConfig> = {}) {
     this.config = {
       defaultTtl: 300000, // 5 minutes
       maxSize: 1000,
       enableEtag: true,
       ...config
     };
+  }
+
+  static getInstance(): CacheManager {
+    if (!CacheManager.instance) {
+      CacheManager.instance = new CacheManager();
+    }
+    return CacheManager.instance;
   }
 
   /**
@@ -53,7 +61,7 @@ export class CacheManager {
   /**
    * Set cached data
    */
-  set<T>(key: string, data: T, ttl?: number, etag?: string): void {
+  set<T>(key: string, data: T, etag?: string, ttl?: number): void {
     // Remove oldest entries if cache is full
     if (this.cache.size >= this.config.maxSize) {
       this.evictOldest();
@@ -67,6 +75,40 @@ export class CacheManager {
     };
 
     this.cache.set(key, entry);
+  }
+
+  /**
+   * Get ETag for a key
+   */
+  getEtag(key: string): string | null {
+    const entry = this.cache.get(key);
+    return entry?.etag || null;
+  }
+
+  /**
+   * Set ETag for a key
+   */
+  setEtag(key: string, etag: string, ttl?: number): void {
+    const entry = this.cache.get(key);
+    if (entry) {
+      entry.etag = etag;
+      if (ttl) {
+        entry.ttl = ttl;
+      }
+    }
+  }
+
+  /**
+   * Invalidate cache entries matching pattern
+   */
+  invalidate(pattern: string): void {
+    const regex = new RegExp(pattern);
+    const keys = Array.from(this.cache.keys());
+    for (const key of keys) {
+      if (regex.test(key)) {
+        this.cache.delete(key);
+      }
+    }
   }
 
   /**
@@ -109,7 +151,7 @@ export class CacheManager {
    * Set cache entry with ETag
    */
   setWithEtag<T>(key: string, data: T, etag: string, ttl?: number): void {
-    this.set(key, data, ttl, etag);
+    this.set(key, data, etag, ttl);
   }
 
   /**
@@ -181,5 +223,30 @@ export class CacheManager {
     }
     
     return urlObj.toString();
+  }
+
+  // Static methods for backward compatibility
+  static get<T>(key: string): T | null {
+    return CacheManager.getInstance().get<T>(key);
+  }
+
+  static set<T>(key: string, data: T, etag?: string, ttl?: number): void {
+    CacheManager.getInstance().set(key, data, etag, ttl);
+  }
+
+  static getEtag(key: string): string | null {
+    return CacheManager.getInstance().getEtag(key);
+  }
+
+  static setEtag(key: string, etag: string, ttl?: number): void {
+    CacheManager.getInstance().setEtag(key, etag, ttl);
+  }
+
+  static clear(): void {
+    CacheManager.getInstance().clear();
+  }
+
+  static invalidate(pattern: string): void {
+    CacheManager.getInstance().invalidate(pattern);
   }
 }

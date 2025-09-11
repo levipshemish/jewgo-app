@@ -16,7 +16,7 @@ from functools import wraps
 
 from flask import request, jsonify, g, make_response
 
-from backend.utils.logging_config import get_logger
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -52,7 +52,7 @@ class IdempotencyV5Middleware:
     def _init_redis(self):
         """Initialize Redis connection for idempotency storage."""
         try:
-            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            from cache.redis_manager_v5 import get_redis_manager_v5
             redis_manager = get_redis_manager_v5()
             self.redis_client = redis_manager.get_client()
             
@@ -119,7 +119,7 @@ class IdempotencyV5Middleware:
         
         # Apply to endpoints with v5 feature flag enabled
         try:
-            from backend.utils.feature_flags_v5 import FeatureFlagsV5
+            from utils.feature_flags_v5 import FeatureFlagsV5
             feature_flags = FeatureFlagsV5()
             return feature_flags.is_enabled('idempotency_v5_for_legacy', default=False)
         except ImportError:
@@ -342,7 +342,7 @@ def optional_idempotency_v5(f):
 def get_idempotency_stats_v5() -> Dict[str, Any]:
     """Get idempotency middleware statistics."""
     try:
-        from backend.cache.redis_manager_v5 import get_redis_manager_v5
+        from cache.redis_manager_v5 import get_redis_manager_v5
         redis_manager = get_redis_manager_v5()
         redis_client = redis_manager.get_client()
         

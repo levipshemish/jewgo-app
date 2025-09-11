@@ -11,6 +11,23 @@ export type RestaurantsResponse = {
   page: number;
   limit: number;
   message?: string;
+  error?: string;
+  pagination?: {
+    limit: number;
+    offset: number;
+    page: number;
+    totalPages: number;
+    total?: number;
+    hasMore?: boolean;
+  };
+  filterOptions?: {
+    agencies: string[];
+    kosherCategories: string[];
+    listingTypes: string[];
+    priceRanges: string[];
+    cities: string[];
+    states: string[];
+  };
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;

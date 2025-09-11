@@ -1,8 +1,8 @@
 // Kosher category enumeration
-export type KosherCategory = 'Meat' | 'Dairy' | 'Pareve' | 'Unknown';
+export type KosherCategory = 'Meat' | 'Dairy' | 'Pareve' | 'Unknown' | string;
 
 // Restaurant status enumeration
-export type RestaurantStatus = 'open' | 'closed' | 'unknown';
+export type RestaurantStatus = 'open' | 'closed' | 'unknown' | string;
 
 // Special type enumeration
 export type SpecialType = 'discount' | 'promotion' | 'event';
@@ -99,35 +99,40 @@ export interface CategoryNavProps {
 
 export interface Restaurant {
   // Hours and category with proper types
-  hours: HoursData;
-  category: RestaurantCategory;
+  hours?: HoursData;
+  category?: RestaurantCategory;
   
   // Core identification
-  id: number;
+  id: string | number;
   name: string;
   
   // Location information
   address: string;
-  city: string;
-  state: string;
-  zip_code: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
   latitude?: number;
   longitude?: number;
   
   // Contact information
-  phone_number: string;
+  phone_number?: string;
+  owner_phone?: string;
+  business_email?: string;
+  owner_email?: string;
   website?: string;
   google_listing_url?: string;
   
   // Kosher certification
-  kosher_category: KosherCategory;
-  certifying_agency: string;
+  kosher_category?: KosherCategory;
+  kosher_certification?: string;
+  certifying_agency?: string;
   is_cholov_yisroel?: boolean;
   is_pas_yisroel?: boolean;
   cholov_stam?: boolean;
   
   // Business details
-  listing_type: string;
+  listing_type?: string;
+  description?: string;
   short_description?: string;
   price_range?: string;
   min_avg_meal_cost?: number;
@@ -142,24 +147,27 @@ export interface Restaurant {
   hours_parsed?: boolean;
   
   // Status information
-  status: RestaurantStatus;
+  status?: RestaurantStatus;
   is_open?: boolean;
   status_reason?: string;
   next_open_time?: string;
   
   // Media
   image_url?: string;
+  images?: Array<{ image_url: string }>;
+  business_images?: string[];
   additional_images?: string[];
   
   // Specials and offers
   specials?: RestaurantSpecial[];
   
   // Ratings and reviews
-  rating?: number;
+  rating?: number | string;
   star_rating?: number;
   quality_rating?: number;
   review_count?: number;
-  google_rating?: number;
+  view_count?: number;
+  google_rating?: number | string;
   google_review_count?: number;
   google_reviews?: string;
   
@@ -184,8 +192,14 @@ export interface Restaurant {
   // Additional fields that may be present in data
   dietary_restrictions?: string[];
   
+  // Admin settings
+  admin_settings?: {
+    show_order_button?: boolean;
+    order_url?: string;
+  };
+  
   // Computed fields (not from database)
-  distance?: string;
+  distance?: string | number;
 }
 
 // Utility function to compute restaurant status

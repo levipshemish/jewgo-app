@@ -13,7 +13,7 @@ from flask import current_app
 import json
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
-from backend.cache.redis_manager_v5 import RedisManagerV5
+from cache.redis_manager_v5 import RedisManagerV5
 from utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)

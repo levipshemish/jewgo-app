@@ -13,11 +13,11 @@ import jwt
 import bcrypt
 from typing import Dict, Any, Optional
 
-from backend.utils.blueprint_factory_v5 import BlueprintFactoryV5
-from backend.middleware.auth_v5 import require_permission_v5
-from backend.services.auth_service_v5 import AuthServiceV5
-from backend.utils.logging_config import get_logger
-from backend.utils.feature_flags_v5 import feature_flags_v5
+from utils.blueprint_factory_v5 import BlueprintFactoryV5
+from middleware.auth_v5 import require_permission_v5
+from services.auth_service_v5 import AuthServiceV5
+from utils.logging_config import get_logger
+from utils.feature_flags_v5 import feature_flags_v5
 
 logger = get_logger(__name__)
 

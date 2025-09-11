@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 import jwt
 import hashlib
 import secrets
-from backend.utils.logging_config import get_logger
-from backend.cache.redis_manager_v5 import get_redis_manager_v5
-from backend.database.connection_manager import get_connection_manager
-from backend.utils.feature_flags_v5 import FeatureFlagsV5
+from utils.logging_config import get_logger
+from cache.redis_manager_v5 import get_redis_manager_v5
+from database.connection_manager import get_connection_manager
+from utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)
 

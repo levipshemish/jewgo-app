@@ -15,9 +15,9 @@ from functools import wraps
 
 from flask import g, request, jsonify
 
-from backend.utils.logging_config import get_logger
-from backend.utils.postgres_auth import get_postgres_auth
-from backend.utils.rbac import RoleBasedAccessControl
+from utils.logging_config import get_logger
+from utils.postgres_auth import get_postgres_auth
+from utils.rbac import RoleBasedAccessControl
 
 logger = get_logger(__name__)
 

@@ -235,7 +235,26 @@ export default function EateryGrid({
         setRestaurants((prev) => {
           // Deduplicate by id to prevent duplicate restaurants
           const existingIds = new Set(prev.map((r: LightRestaurant) => r.id));
-          const newRestaurants = response.restaurants.filter((r: LightRestaurant) => !existingIds.has(r.id));
+          const newRestaurants = response.restaurants
+            .filter((r: any) => !existingIds.has(r.id))
+            .map((r: any): LightRestaurant => ({
+              id: r.id,
+              name: r.name,
+              address: r.address,
+              city: r.city,
+              state: r.state,
+              zip_code: r.zip_code,
+              image_url: r.image_url,
+              price_range: r.price_range,
+              google_rating: r.google_rating,
+              google_reviews: r.google_reviews,
+              kosher_category: r.kosher_category,
+              cuisine: r.cuisine,
+              is_open: r.is_open,
+              latitude: r.latitude,
+              longitude: r.longitude,
+              distance: typeof r.distance === 'string' ? parseFloat(r.distance) : r.distance
+            }));
           return [...prev, ...newRestaurants];
         });
         setHasMore(response.hasMore);
@@ -330,7 +349,24 @@ export default function EateryGrid({
             if (useRealData && currentRetryCount < 3) {
               // Try real API first with cursor-based pagination
               const response = await fetchRestaurants(200, undefined, buildSearchParams())
-              setRestaurants(response.restaurants)
+              setRestaurants(response.restaurants.map((r: any): LightRestaurant => ({
+                id: r.id,
+                name: r.name,
+                address: r.address,
+                city: r.city,
+                state: r.state,
+                zip_code: r.zip_code,
+                image_url: r.image_url,
+                price_range: r.price_range,
+                google_rating: r.google_rating,
+                google_reviews: r.google_reviews,
+                kosher_category: r.kosher_category,
+                cuisine: r.cuisine,
+                is_open: r.is_open,
+                latitude: r.latitude,
+                longitude: r.longitude,
+                distance: typeof r.distance === 'string' ? parseFloat(r.distance) : r.distance
+              })))
               setHasMore(response.hasMore)
               setNextCursor(response.nextCursor || null)
               isRetryingRef.current = false

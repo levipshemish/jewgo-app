@@ -20,13 +20,21 @@ export interface UserProfile {
 }
 
 export class AuthTokenManager {
+  private static instance: AuthTokenManager;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private expiresAt: number = 0;
   private refreshPromise: Promise<TokenPair> | null = null;
 
-  constructor() {
+  private constructor() {
     this.loadTokensFromStorage();
+  }
+
+  static getInstance(): AuthTokenManager {
+    if (!AuthTokenManager.instance) {
+      AuthTokenManager.instance = new AuthTokenManager();
+    }
+    return AuthTokenManager.instance;
   }
 
   /**
@@ -120,7 +128,38 @@ export class AuthTokenManager {
   }
 
   /**
+   * Get current access token synchronously (without refresh)
+   */
+  getAccessTokenSync(): string | null {
+    return this.accessToken;
+  }
+
+  /**
+   * Set user profile
+   */
+  setUser(user: UserProfile): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_profile', JSON.stringify(user));
+    }
+  }
+
+  /**
    * Get current user profile
+   */
+  getCurrentUser(): UserProfile | null {
+    if (typeof window !== 'undefined') {
+      try {
+        const userStr = localStorage.getItem('user_profile');
+        return userStr ? JSON.parse(userStr) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get current user profile (async version)
    */
   async getUserProfile(): Promise<UserProfile | null> {
     if (!this.isAuthenticated()) {
@@ -186,4 +225,88 @@ export class AuthTokenManager {
       localStorage.removeItem('auth_tokens');
     }
   }
+
+  // Static methods for backward compatibility
+  static getAccessToken(): string | null {
+    return AuthTokenManager.getInstance().getAccessTokenSync();
+  }
+
+  static getRefreshToken(): string | null {
+    return AuthTokenManager.getInstance().refreshToken;
+  }
+
+  static setTokens(tokens: TokenPair, user?: UserProfile): void {
+    AuthTokenManager.getInstance().setTokens(tokens);
+    if (user) {
+      AuthTokenManager.getInstance().setUser(user);
+    }
+  }
+
+  static clearTokens(): void {
+    AuthTokenManager.getInstance().clearTokens();
+  }
+
+  static isAuthenticated(): boolean {
+    return AuthTokenManager.getInstance().isAuthenticated();
+  }
+
+  static getCurrentUser(): UserProfile | null {
+    return AuthTokenManager.getInstance().getCurrentUser();
+  }
+
+  /**
+   * Verify token with backend
+   */
+  async verifyToken(token: string): Promise<{ valid: boolean; error?: string }> {
+    try {
+      const response = await fetch('/api/v5/auth/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        return { valid: true };
+      } else {
+        return { valid: false, error: 'Token verification failed' };
+      }
+    } catch (error) {
+      return { valid: false, error: 'Token verification error' };
+    }
+  }
+
+  /**
+   * Get current auth state
+   */
+  getAuthState(): AuthState {
+    return {
+      isAuthenticated: this.isAuthenticated(),
+      user: this.getCurrentUser(),
+      loading: false
+    };
+  }
+
+  /**
+   * Add auth state listener
+   */
+  addListener(callback: (state: AuthState) => void): () => void {
+    // Simple implementation - in a real app you'd use an event emitter
+    const interval = setInterval(() => {
+      callback(this.getAuthState());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }
+}
+
+// Export singleton instance and types
+export const authManager = AuthTokenManager.getInstance();
+export const authClient = AuthTokenManager.getInstance();
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  loading: boolean;
 }

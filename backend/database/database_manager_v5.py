@@ -18,7 +18,7 @@ from sqlalchemy import create_engine, event, text, MetaData
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool, StaticPool
 from sqlalchemy.exc import SQLAlchemyError, DisconnectionError
-from backend.utils.logging_config import get_logger
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 

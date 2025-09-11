@@ -19,7 +19,7 @@ from sqlalchemy.exc import IntegrityError, StatementError
 
 from database.base_repository import BaseRepository
 from database.connection_manager import DatabaseConnectionManager
-from backend.utils.logging_config import get_logger
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -607,7 +607,7 @@ class EntityRepositoryV5(BaseRepository):
         
         if cursor:
             try:
-                from backend.utils.cursor_v5 import decode_cursor_v5, extract_cursor_position_v5
+                from utils.cursor_v5 import decode_cursor_v5, extract_cursor_position_v5
                 cursor_payload = decode_cursor_v5(cursor)
                 cursor_position = extract_cursor_position_v5(cursor_payload)
                 
@@ -745,7 +745,7 @@ class EntityRepositoryV5(BaseRepository):
     def _generate_cursor(self, entity: Dict[str, Any], sort_key: str, direction: str, entity_type: str) -> Optional[str]:
         """Generate cursor for pagination."""
         try:
-            from backend.utils.cursor_v5 import create_cursor_v5
+            from utils.cursor_v5 import create_cursor_v5
             
             strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
             primary_field = strategy['field']
@@ -763,7 +763,7 @@ class EntityRepositoryV5(BaseRepository):
                 except ValueError:
                     pass
             
-            from backend.utils.data_version import get_current_data_version
+            from utils.data_version import get_current_data_version
             
             return create_cursor_v5(
                 primary_value=primary_value,
@@ -1076,7 +1076,7 @@ class EntityRepositoryV5(BaseRepository):
 def get_entity_repository_v5(connection_manager: Optional[DatabaseConnectionManager] = None) -> EntityRepositoryV5:
     """Get entity repository v5 instance."""
     if not connection_manager:
-        from backend.database.connection_manager import get_connection_manager
+        from database.connection_manager import get_connection_manager
         connection_manager = get_connection_manager()
     
     return EntityRepositoryV5(connection_manager)

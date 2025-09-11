@@ -16,7 +16,7 @@ from functools import wraps
 
 from flask import g, request, jsonify
 
-from backend.utils.logging_config import get_logger
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -95,7 +95,7 @@ class RateLimitV5Middleware:
     def _init_redis(self):
         """Initialize Redis connection for rate limiting."""
         try:
-            from backend.cache.redis_manager_v5 import RedisManagerV5
+            from cache.redis_manager_v5 import RedisManagerV5
             redis_manager = RedisManagerV5()
             self.redis_client = redis_manager.get_client()
             
@@ -145,7 +145,7 @@ class RateLimitV5Middleware:
         
         # Apply to endpoints with v5 feature flag enabled
         try:
-            from backend.utils.feature_flags_v5 import FeatureFlagsV5
+            from utils.feature_flags_v5 import FeatureFlagsV5
             feature_flags = FeatureFlagsV5()
             return feature_flags.is_enabled('rate_limit_v5_for_legacy', default=False)
         except ImportError:
@@ -443,7 +443,7 @@ def rate_limit_v5(tier_override: str = None, endpoint_type_override: str = None)
 def get_rate_limit_stats_v5() -> Dict[str, Any]:
     """Get rate limiting statistics for v5."""
     try:
-        from backend.cache.redis_manager_v5 import RedisManagerV5
+        from cache.redis_manager_v5 import RedisManagerV5
         redis_manager = RedisManagerV5()
         redis_client = redis_manager.get_client()
         

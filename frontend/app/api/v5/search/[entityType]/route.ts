@@ -85,7 +85,7 @@ export async function GET(
       entityType as EntityType,
       query.trim(),
       {
-        location,
+        ...(location.isValid && location.latitude && location.longitude ? { location: { latitude: location.latitude, longitude: location.longitude, radius: location.radius } } : {}),
         includeFacets,
         filters,
         pagination: {

@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Set, Callable
 import psycopg2
 import psycopg2.extensions
 
-from backend.utils.logging_config import get_logger
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -134,7 +134,7 @@ class CacheInvalidationWorker:
     def _init_redis_client(self):
         """Initialize Redis client for cache operations."""
         try:
-            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            from cache.redis_manager_v5 import get_redis_manager_v5
             redis_manager = get_redis_manager_v5()
             self.redis_client = redis_manager.get_client()
             

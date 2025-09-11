@@ -358,7 +358,7 @@ class ETagV5Manager:
     def _query_database_watermark(self, strategy: Dict[str, Any]) -> str:
         """Query database for collection watermark."""
         try:
-            from backend.database.connection_manager import get_connection_manager
+            from database.connection_manager import get_connection_manager
             
             connection_manager = get_connection_manager()
             
@@ -452,7 +452,7 @@ class ETagV5Manager:
     def _query_single_entity_watermark(self, strategy: Dict[str, Any], entity_id: int) -> str:
         """Query database for single entity watermark."""
         try:
-            from backend.database.connection_manager import get_connection_manager
+            from database.connection_manager import get_connection_manager
             
             connection_manager = get_connection_manager()
             
@@ -480,7 +480,7 @@ class ETagV5Manager:
     
     def _normalize_filters(self, filters: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize filters for consistent ETag generation."""
-        from backend.utils.data_version import normalize_filters
+        from utils.data_version import normalize_filters
         return normalize_filters(filters)
     
     def _extract_cursor_position_for_etag(self, cursor_token: str) -> Optional[str]:
@@ -599,7 +599,7 @@ class ETagV5Manager:
     def _get_from_cache(self, key: str) -> Optional[str]:
         """Get value from cache (Redis)."""
         try:
-            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            from cache.redis_manager_v5 import get_redis_manager_v5
             redis_manager = get_redis_manager_v5()
             redis_client = redis_manager.get_client()
             if redis_client:
@@ -611,7 +611,7 @@ class ETagV5Manager:
     def _set_in_cache(self, key: str, value: str, ttl: int):
         """Set value in cache (Redis)."""
         try:
-            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            from cache.redis_manager_v5 import get_redis_manager_v5
             redis_manager = get_redis_manager_v5()
             redis_client = redis_manager.get_client()
             if redis_client:

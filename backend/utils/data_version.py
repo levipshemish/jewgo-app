@@ -14,7 +14,7 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
-from backend.utils.logging_config import get_logger
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 

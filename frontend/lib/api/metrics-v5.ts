@@ -26,9 +26,19 @@ export interface RequestMetrics {
 }
 
 export class MetricsCollector {
+  private static instance: MetricsCollector;
   private metrics: Map<string, ApiMetrics> = new Map();
   private requestHistory: RequestMetrics[] = [];
   private maxHistorySize = 1000;
+
+  private constructor() {}
+
+  static getInstance(): MetricsCollector {
+    if (!MetricsCollector.instance) {
+      MetricsCollector.instance = new MetricsCollector();
+    }
+    return MetricsCollector.instance;
+  }
 
   /**
    * Record API request start
@@ -209,6 +219,84 @@ export class MetricsCollector {
   }
 
   /**
+   * Record an error
+   */
+  recordError(url: string, method: string, error: string): void {
+    const key = this.getMetricsKey(url, method);
+    const metrics = this.metrics.get(key) || this.createEmptyMetrics();
+    metrics.errorCount++;
+    metrics.errorRate = metrics.errorCount / metrics.requestCount;
+    this.metrics.set(key, metrics);
+  }
+
+  /**
+   * Record performance metrics
+   */
+  recordPerformance(url: string, method: string, duration: number): void {
+    const key = this.getMetricsKey(url, method);
+    const metrics = this.metrics.get(key) || this.createEmptyMetrics();
+    metrics.averageResponseTime = (metrics.averageResponseTime * (metrics.requestCount - 1) + duration) / metrics.requestCount;
+    this.metrics.set(key, metrics);
+  }
+
+  /**
+   * Record usage metrics
+   */
+  recordUsage(url: string, method: string): void {
+    const key = this.getMetricsKey(url, method);
+    const metrics = this.metrics.get(key) || this.createEmptyMetrics();
+    metrics.requestCount++;
+    metrics.lastRequestTime = Date.now();
+    this.metrics.set(key, metrics);
+  }
+
+  /**
+   * Get summary metrics for a time range
+   */
+  getSummary(timeRange?: { start?: number; end?: number }): {
+    metrics: Record<string, ApiMetrics>;
+    requestHistory: RequestMetrics[];
+    summary: {
+      totalRequests: number;
+      totalErrors: number;
+      averageResponseTime: number;
+      errorRate: number;
+    };
+  } {
+    const allMetrics = Object.fromEntries(this.metrics);
+    const totalRequests = this.requestHistory.length;
+    const totalErrors = this.requestHistory.filter(r => r.error || (r.status && r.status >= 400)).length;
+    const totalResponseTime = this.requestHistory.reduce((sum, r) => sum + (r.duration || 0), 0);
+    const averageResponseTime = totalRequests > 0 ? totalResponseTime / totalRequests : 0;
+    const errorRate = totalRequests > 0 ? totalErrors / totalRequests : 0;
+
+    return {
+      metrics: allMetrics,
+      requestHistory: this.requestHistory,
+      summary: {
+        totalRequests,
+        totalErrors,
+        averageResponseTime,
+        errorRate
+      }
+    };
+  }
+
+  /**
+   * Create empty metrics object
+   */
+  private createEmptyMetrics(): ApiMetrics {
+    return {
+      requestCount: 0,
+      successCount: 0,
+      errorCount: 0,
+      averageResponseTime: 0,
+      lastRequestTime: 0,
+      errorRate: 0
+    };
+  }
+
+  /**
    * Create metrics key from URL and method
    */
   private getMetricsKey(url: string, method: string): string {
@@ -221,3 +309,6 @@ export class MetricsCollector {
     return `${method.toUpperCase()} ${normalizedUrl}`;
   }
 }
+
+// Export singleton instance
+export const metricsCollector = MetricsCollector.getInstance();

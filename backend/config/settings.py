@@ -5,8 +5,8 @@ from typing import Any
 This module contains all configurable settings for the JewGo backend application,
 including database connections, API keys, cron job schedules, and feature flags.
 """
-# Environment detection
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+# Environment detection - standardize on FLASK_ENV
+ENVIRONMENT = os.getenv("FLASK_ENV", os.getenv("ENVIRONMENT", "development"))
 DEBUG = ENVIRONMENT == "development"
 # Database Configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -28,8 +28,8 @@ RENDER_SERVICE_URL = os.getenv("RENDER_SERVICE_URL")
 # Deprecated: remove old provider-specific variable; prefer DATABASE_URL
 # If present, allow it to seed DATABASE_URL but log deprecation at startup.
 API_JEWGO_APP_DATABASE_URL = os.getenv("API_JEWGO_APP_DATABASE_URL")
-# Security
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+# Security - standardize on FLASK_SECRET_KEY
+SECRET_KEY = os.getenv("FLASK_SECRET_KEY", os.getenv("SECRET_KEY", "your-secret-key-change-in-production"))
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 # CORS Configuration - Remove wildcard default for security
 cors_origins_env = os.getenv("CORS_ORIGINS", "")

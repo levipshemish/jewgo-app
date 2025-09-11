@@ -10,19 +10,19 @@ from flask import request, jsonify, g
 from typing import Dict, Any, List, Optional
 import re
 
-from backend.utils.blueprint_factory_v5 import BlueprintFactoryV5
-from backend.database.repositories.entity_repository_v5 import EntityRepositoryV5
-from backend.middleware.auth_v5 import require_permission_v5, optional_auth_v5
-from backend.utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
-from backend.utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
-from backend.cache.etag_cache import get_etag_cache
-from backend.utils.logging_config import get_logger
-from backend.utils.feature_flags_v5 import feature_flags_v5
+from utils.blueprint_factory_v5 import BlueprintFactoryV5
+from database.repositories.entity_repository_v5 import EntityRepositoryV5
+from middleware.auth_v5 import require_permission_v5, optional_auth_v5
+from utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
+from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
+from cache.etag_cache import get_etag_cache
+from utils.logging_config import get_logger
+from utils.feature_flags_v5 import feature_flags_v5
 
 logger = get_logger(__name__)
 
 # Initialize components
-from backend.database.connection_manager import get_connection_manager
+from database.connection_manager import get_connection_manager
 entity_repository = EntityRepositoryV5(get_connection_manager())
 etag_manager = ETagV5Manager()
 
@@ -116,7 +116,7 @@ def unified_search():
         parsed_cursor = None
         if cursor:
             try:
-                from backend.utils.data_version import get_current_data_version
+                from utils.data_version import get_current_data_version
                 parsed_cursor = decode_cursor_v5(cursor, current_data_version=get_current_data_version())
             except Exception as e:
                 logger.warning(f"Invalid search cursor: {e}")
@@ -262,7 +262,7 @@ def search_by_type(entity_type: str):
         parsed_cursor = None
         if cursor:
             try:
-                from backend.utils.data_version import get_current_data_version
+                from utils.data_version import get_current_data_version
                 parsed_cursor = decode_cursor_v5(cursor, current_data_version=get_current_data_version())
             except Exception as e:
                 logger.warning(f"Invalid search cursor: {e}")

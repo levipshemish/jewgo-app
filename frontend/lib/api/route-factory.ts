@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { validateAuthFromRequest } from './utils-v5';
+import { validateAuth } from './auth-middleware';
 import { EntityType } from './types-v5';
 import { apiClient } from './index-v5';
 import { metricsCollector } from './metrics-v5';
@@ -182,12 +182,8 @@ export function createRoute(
       if (mergedConfig.monitoring?.recordMetrics) {
         metricsCollector.recordError(
           'route_error',
-          error instanceof Error ? error.message : String(error),
-          error instanceof Error ? error.stack : undefined,
-          {
-            endpoint: request.nextUrl.pathname,
-            method: request.method,
-          }
+          request.method,
+          error instanceof Error ? error.message : String(error)
         );
       }
 
@@ -224,7 +220,7 @@ async function createRouteContext(
 
   // Authentication if required
   if (config.auth?.required || config.auth?.requireAdmin) {
-    const authResult = await validateAuthFromRequest(request, {
+    const authResult = await validateAuth(request, {
       requireAdmin: config.auth.requireAdmin,
       // requiredRoles: config.auth.requiredRoles, // Not available in current config
     });
@@ -233,7 +229,7 @@ async function createRouteContext(
       throw new AuthenticationError(authResult.error || 'Authentication failed');
     }
 
-    user = authResult.user;
+    user = authResult.user!;
     userRoles = authResult.user?.roles || [];
   }
 
@@ -378,12 +374,7 @@ async function runPostRequestMiddleware(
   if (config.monitoring?.recordMetrics) {
     metricsCollector.recordUsage(
       request.nextUrl.pathname,
-      'api_call',
-      true,
-      {
-        statusCode: response.status.toString(),
-        userId: context.user?.id?.toString(),
-      }
+      request.method
     );
   }
   

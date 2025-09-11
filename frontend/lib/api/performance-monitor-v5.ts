@@ -27,6 +27,17 @@ export class PerformanceMonitor {
     this.metrics.fastestRequest = Math.min(this.metrics.fastestRequest, duration);
   }
 
+  recordApiCall(
+    endpoint: string,
+    method: string,
+    duration: number,
+    status?: number,
+    responseSize?: number,
+    metadata?: Record<string, string>
+  ): void {
+    this.recordRequest(duration);
+  }
+
   getMetrics(): PerformanceMetrics {
     return { ...this.metrics };
   }

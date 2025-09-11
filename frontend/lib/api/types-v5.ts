@@ -35,20 +35,33 @@ export interface PaginatedResponse<T = any> {
   headers?: Record<string, string>;  // Add headers property
 }
 
-export interface ApiError {
+export class ApiError extends Error {
   code: string;
-  message: string;
   details?: any;
   correlation_id?: string;
+  status?: number;
+
+  constructor(message: string, status: number = 500, code: string = 'UNKNOWN_ERROR', details?: any, correlation_id?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
+    this.details = details;
+    this.correlation_id = correlation_id;
+  }
 }
 
 export interface RequestOptions {
+  method?: string;
+  body?: any;
   timeout?: number;
   retries?: number;
   cache?: boolean;
+  cacheTtl?: number;
   etag?: string;
   headers?: Record<string, string>;
   idempotencyKey?: string;  // Add idempotency key support
+  abortSignal?: AbortSignal;
 }
 
 export interface EntityFilters {
@@ -67,4 +80,11 @@ export interface PaginationOptions {
   cursor?: string;
   limit?: number;
   sort?: string;
+}
+
+export interface MetricsSummary {
+  totalRequests: number;
+  totalErrors: number;
+  averageResponseTime: number;
+  errorRate: number;
 }

@@ -9,28 +9,28 @@ with consistent patterns, authentication, caching, and monitoring.
 from flask import request, jsonify, g
 from typing import Dict, Any, Optional
 
-from backend.utils.blueprint_factory_v5 import BlueprintFactoryV5
-from backend.database.repositories.entity_repository_v5 import EntityRepositoryV5
-from backend.database.services.restaurant_service_v5 import RestaurantServiceV5
-from backend.database.services.synagogue_service_v5 import SynagogueServiceV5
-from backend.database.services.mikvah_service_v5 import MikvahServiceV5
-from backend.database.services.store_service_v5 import StoreServiceV5
-from backend.middleware.auth_v5 import require_permission_v5, optional_auth_v5
-from backend.utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
-from backend.utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
-from backend.cache.etag_cache import get_etag_cache
-from backend.utils.logging_config import get_logger
-from backend.utils.feature_flags_v5 import feature_flags_v5
+from utils.blueprint_factory_v5 import BlueprintFactoryV5
+from database.repositories.entity_repository_v5 import EntityRepositoryV5
+from database.services.restaurant_service_v5 import RestaurantServiceV5
+from database.services.synagogue_service_v5 import SynagogueServiceV5
+from database.services.mikvah_service_v5 import MikvahServiceV5
+from database.services.store_service_v5 import StoreServiceV5
+from middleware.auth_v5 import require_permission_v5, optional_auth_v5
+from utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
+from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
+from cache.etag_cache import get_etag_cache
+from utils.logging_config import get_logger
+from utils.feature_flags_v5 import feature_flags_v5
 
 logger = get_logger(__name__)
 
 # Initialize services
-from backend.database.connection_manager import get_connection_manager
+from database.connection_manager import get_connection_manager
 entity_repository = EntityRepositoryV5(get_connection_manager())
 
 # Initialize cache manager
 try:
-    from backend.cache.redis_manager_v5 import RedisManagerV5
+    from cache.redis_manager_v5 import RedisManagerV5
     cache_manager = RedisManagerV5()
 except ImportError:
     cache_manager = None
@@ -133,7 +133,7 @@ def get_entities(entity_type: str):
         parsed_cursor = None
         if cursor:
             try:
-                from backend.utils.data_version import get_current_data_version
+                from utils.data_version import get_current_data_version
                 parsed_cursor = decode_cursor_v5(cursor, current_data_version=get_current_data_version(entity_type))
             except Exception as e:
                 logger.warning(f"Invalid cursor: {e}")

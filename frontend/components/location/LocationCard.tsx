@@ -57,7 +57,8 @@ export default function LocationCard({ location, type, onClick }: LocationCardPr
 
   const getRating = () => {
     const rating = location.rating || location.star_rating || location.google_rating;
-    return rating && rating > 0 ? rating : null;
+    const numericRating = typeof rating === 'string' ? parseFloat(rating) : rating;
+    return numericRating && numericRating > 0 ? numericRating : null;
   };
 
   return (

@@ -44,7 +44,7 @@ class ETagCache:
     def __init__(self, redis_manager=None):
         self.redis_manager = redis_manager
         if not self.redis_manager:
-            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            from cache.redis_manager_v5 import get_redis_manager_v5
             self.redis_manager = get_redis_manager_v5()
         
         # Statistics
