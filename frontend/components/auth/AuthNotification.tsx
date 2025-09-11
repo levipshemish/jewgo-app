@@ -32,6 +32,7 @@ export const AuthNotification: React.FC<AuthNotificationProps> = ({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [autoClose, autoCloseDelay, isVisible, onClose]);
 
   const handleClose = () => {

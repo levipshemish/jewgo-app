@@ -5,11 +5,9 @@ Author: JewGo Development Team
 Version: 1.0
 """
 
-from . import health_routes, redis_health
-from . import deploy_webhook
+# Import only the proper health routes
+from . import health_proper
 
 __all__ = [
-    "health_routes",
-    "redis_health",
-    "deploy_webhook",
+    "health_proper",
 ]

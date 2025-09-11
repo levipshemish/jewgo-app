@@ -5,13 +5,21 @@ Separated from business logic to follow single responsibility principle.
 """
 import os
 import time
-from typing import Optional
+from typing import Optional, Dict, Any
 from urllib.parse import urlparse
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+# Import v5 metrics collection
+try:
+    from utils.metrics_collector_v5 import MetricsCollector
+    METRICS_AVAILABLE = True
+except ImportError:
+    MetricsCollector = None
+    METRICS_AVAILABLE = False
 # Import ConfigManager at module level
 try:
     from utils.unified_database_config import UnifiedDatabaseConfig as ConfigManager
@@ -70,7 +78,7 @@ except ImportError:
 
 
 class DatabaseConnectionManager:
-    """Manages database connections, sessions, and connection pooling."""
+    """Manages database connections, sessions, and connection pooling with v5 enhancements."""
 
     def __init__(self, database_url: Optional[str] = None) -> None:
         """Initialize connection manager with connection string."""
@@ -93,12 +101,26 @@ class DatabaseConnectionManager:
         self._is_connected = False
         self._connection_attempts = 0
         self._max_retries = 3
+        
+        # v5 enhancements: metrics and monitoring
+        self._metrics_collector = MetricsCollector() if METRICS_AVAILABLE else None
+        self._connection_stats = {
+            "total_connections": 0,
+            "active_connections": 0,
+            "failed_connections": 0,
+            "connection_time_avg_ms": 0,
+            "last_connection_time": None,
+            "health_check_count": 0,
+            "health_check_failures": 0
+        }
 
     def connect(self) -> bool:
-        """Establish database connection with retry logic."""
+        """Establish database connection with retry logic and v5 metrics."""
         if self._is_connected:
             logger.info("Database already connected")
             return True
+        
+        connection_start = time.time()
         while self._connection_attempts < self._max_retries:
             try:
                 logger.info("Attempting database connection")
@@ -113,10 +135,37 @@ class DatabaseConnectionManager:
                 )
                 self._is_connected = True
                 self._connection_attempts = 0
-                logger.info("Database connection established successfully")
+                
+                # v5: Update connection metrics
+                connection_time = (time.time() - connection_start) * 1000
+                self._connection_stats["total_connections"] += 1
+                self._connection_stats["active_connections"] += 1
+                self._connection_stats["connection_time_avg_ms"] = (
+                    (self._connection_stats["connection_time_avg_ms"] * 
+                     (self._connection_stats["total_connections"] - 1) + connection_time) /
+                    self._connection_stats["total_connections"]
+                )
+                self._connection_stats["last_connection_time"] = time.time()
+                
+                if self._metrics_collector:
+                    self._metrics_collector.record_database_connection(
+                        success=True,
+                        duration_ms=connection_time
+                    )
+                
+                logger.info("Database connection established successfully", 
+                          extra={"connection_time_ms": connection_time})
                 return True
             except Exception as e:
                 self._connection_attempts += 1
+                self._connection_stats["failed_connections"] += 1
+                
+                if self._metrics_collector:
+                    self._metrics_collector.record_database_connection(
+                        success=False,
+                        error=str(e)
+                    )
+                
                 logger.error(
                     f"Database connection attempt {self._connection_attempts} failed: {e}"
                 )
@@ -247,23 +296,89 @@ class DatabaseConnectionManager:
         return self._is_connected
 
     def health_check(self) -> dict:
-        """Perform database health check."""
+        """Perform database health check with v5 metrics."""
         if not self._is_connected:
             return {"status": "disconnected", "error": "Database not connected"}
+        
+        start_time = time.time()
+        self._connection_stats["health_check_count"] += 1
+        
         try:
             with self.get_session() as session:
                 # Test basic query
                 result = session.execute(text("SELECT 1 as test"))
                 test_value = result.scalar()
+                
+                response_time_ms = (time.time() - start_time) * 1000
+                
                 if test_value == 1:
+                    if self._metrics_collector:
+                        self._metrics_collector.record_database_health_check(
+                            success=True,
+                            duration_ms=response_time_ms
+                        )
+                    
                     return {
                         "status": "healthy",
-                        "response_time_ms": 0,  # Could add timing here
+                        "response_time_ms": round(response_time_ms, 2),
+                        "connection_stats": self._connection_stats.copy(),
+                        "pool_status": self.get_pool_status()
                     }
                 else:
+                    self._connection_stats["health_check_failures"] += 1
                     return {"status": "unhealthy", "error": "Unexpected test result"}
         except Exception as e:
+            self._connection_stats["health_check_failures"] += 1
+            
+            if self._metrics_collector:
+                self._metrics_collector.record_database_health_check(
+                    success=False,
+                    error=str(e)
+                )
+            
             return {"status": "unhealthy", "error": str(e)}
+
+    def get_pool_status(self) -> Dict[str, Any]:
+        """Get connection pool status information."""
+        if not self.engine or not hasattr(self.engine, 'pool'):
+            return {"error": "Pool not available"}
+        
+        try:
+            pool = self.engine.pool
+            return {
+                "size": pool.size(),
+                "checked_out": pool.checkedout(),
+                "invalid": pool.invalid(),
+                "checked_in": pool.checkedin(),
+            }
+        except Exception as e:
+            return {"error": f"Could not get pool status: {e}"}
+
+    def get_connection_stats(self) -> Dict[str, Any]:
+        """Get v5 connection statistics."""
+        return self._connection_stats.copy()
+
+    def reset_connection_stats(self):
+        """Reset v5 connection statistics."""
+        self._connection_stats = {
+            "total_connections": 0,
+            "active_connections": 0,
+            "failed_connections": 0,
+            "connection_time_avg_ms": 0,
+            "last_connection_time": None,
+            "health_check_count": 0,
+            "health_check_failures": 0
+        }
+        logger.info("Connection statistics reset")
+
+    def close(self):
+        """Close database connection and cleanup resources with v5 metrics."""
+        if self.engine:
+            self.engine.dispose()
+            self._connection_stats["active_connections"] = max(0, self._connection_stats["active_connections"] - 1)
+            logger.info("Database connection closed")
+        self._is_connected = False
+        self._session_factory = None
 
 
 class SessionContextManager:

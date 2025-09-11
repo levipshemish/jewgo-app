@@ -90,16 +90,8 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Unexpected error importing synagogues blueprint: {e}")
     synagogues_bp = None
-# Import Redis health blueprint with fallback
-try:
-    from routes.redis_health import redis_bp
-    logger.info("Redis health blueprint imported successfully")
-except ImportError as e:
-    logger.warning(f"Could not import Redis health blueprint: {e}")
-    redis_bp = None
-except Exception as e:
-    logger.error(f"Error importing Redis health blueprint: {e}")
-    redis_bp = None
+# Redis health blueprint removed - using proper health endpoints instead
+redis_bp = None
 # Thread-safe caching functions using CacheManager
 def get_cached_restaurants(cache_key: str, deps=None):
     """Get cached restaurant data using the thread-safe CacheManager."""
@@ -656,23 +648,13 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.exception("Error initializing database managers", error=str(e))
     # Routes will be registered later just before returning the app
-    # Register health blueprint
+    # Register v5 monitoring blueprint (consolidates health, metrics, container status)
     try:
-        from routes.health import health_bp
-        from routes.deploy_webhook import deploy_webhook_bp
-        from routes.test_webhook import test_webhook_bp
-        from routes.webhook_status_api import webhook_status_bp
-        from routes.container_status_api import container_status_bp
-        app.register_blueprint(health_bp)
-        app.register_blueprint(deploy_webhook_bp, url_prefix="/webhook")
-        app.register_blueprint(test_webhook_bp)
-        app.register_blueprint(webhook_status_bp)
-        app.register_blueprint(container_status_bp)
         from routes.v5.monitoring_api import monitoring_v5
         app.register_blueprint(monitoring_v5)
-        logger.info("Health routes blueprint registered successfully")
+        logger.info("V5 monitoring blueprint registered successfully")
     except ImportError as e:
-        logger.warning(f"Could not register health routes blueprint: {e}")
+        logger.warning(f"Could not register v5 monitoring blueprint: {e}")
     # Register Redis health blueprint (only if Redis is configured)
     redis_url = os.environ.get("REDIS_URL") or os.environ.get("CACHE_REDIS_URL")
     if redis_url and redis_url != "memory://":
@@ -708,69 +690,133 @@ def create_app(config_class=None):
     except Exception as e:
         logger.error(f"Error initializing PostgreSQL auth system: {e}")
 
-    # v4 API routes removed - not used in production
-    
-    # Register synagogues blueprint
+    # Register v5 middleware
     try:
-        if synagogues_bp is not None:
-            app.register_blueprint(synagogues_bp)
-            logger.info("Synagogues blueprint registered successfully")
-        else:
-            logger.warning("Synagogues blueprint is None - skipping registration")
+        from middleware.auth_v5 import register_auth_v5_middleware
+        from middleware.rate_limit_v5 import RateLimitV5Middleware
+        from middleware.idempotency_v5 import IdempotencyV5Middleware
+        from middleware.observability_v5 import ObservabilityV5Middleware
+        
+        # Register v5 authentication middleware
+        register_auth_v5_middleware(app)
+        logger.info("V5 authentication middleware registered successfully")
+        
+        # Register v5 rate limiting middleware
+        rate_limit_middleware = RateLimitV5Middleware(app)
+        logger.info("V5 rate limiting middleware registered successfully")
+        
+        # Register v5 idempotency middleware
+        idempotency_middleware = IdempotencyV5Middleware(app)
+        logger.info("V5 idempotency middleware registered successfully")
+        
+        # Register v5 observability middleware
+        observability_middleware = ObservabilityV5Middleware(app)
+        logger.info("V5 observability middleware registered successfully")
+        
+    except ImportError as e:
+        logger.warning(f"Could not import v5 middleware: {e}")
     except Exception as e:
-        logger.warning(f"Could not register synagogues blueprint: {e}")
+        logger.error(f"Error registering v5 middleware: {e}")
 
-    # Register stores blueprint
+    # Register v5 API blueprints with feature flag controls
     try:
-        from routes.stores_api import stores_bp
-        if stores_bp is not None:
-            app.register_blueprint(stores_bp)
-            logger.info("Stores blueprint registered successfully")
-        else:
-            logger.warning("Stores blueprint is None - skipping registration")
+        from utils.feature_flags_v5 import FeatureFlagsV5
+        feature_flags_v5 = FeatureFlagsV5()
+        
+        # Register v5 entity API (consolidates restaurants, synagogues, mikvah, stores)
+        if feature_flags_v5.is_enabled('entity_api_v5', default=True):
+            try:
+                from routes.v5.entity_api import entity_bp
+                app.register_blueprint(entity_bp)
+                logger.info("V5 entity API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 entity API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 entity API blueprint: {e}")
+        
+        # Register v5 auth API
+        if feature_flags_v5.is_enabled('auth_api_v5', default=True):
+            try:
+                from routes.v5.auth_api import auth_bp
+                app.register_blueprint(auth_bp)
+                logger.info("V5 auth API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 auth API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 auth API blueprint: {e}")
+        
+        # Register v5 search API
+        if feature_flags_v5.is_enabled('search_api_v5', default=True):
+            try:
+                from routes.v5.search_api import search_bp
+                app.register_blueprint(search_bp)
+                logger.info("V5 search API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 search API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 search API blueprint: {e}")
+        
+        # Register v5 admin API
+        if feature_flags_v5.is_enabled('admin_api_v5', default=True):
+            try:
+                from routes.v5.admin_api import admin_bp
+                app.register_blueprint(admin_bp)
+                logger.info("V5 admin API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 admin API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 admin API blueprint: {e}")
+        
+        # Register v5 webhook API
+        if feature_flags_v5.is_enabled('webhook_api_v5', default=True):
+            try:
+                from routes.v5.webhook_api import webhook_bp
+                app.register_blueprint(webhook_bp)
+                logger.info("V5 webhook API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 webhook API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 webhook API blueprint: {e}")
+                
     except ImportError as e:
-        logger.warning(f"Could not import stores blueprint: {e}")
-    except Exception as e:
-        logger.warning(f"Could not register stores blueprint: {e}")
-
-    # Register mikvah blueprint
-    try:
-        from routes.mikvah_api import mikvah_bp
-        if mikvah_bp is not None:
-            app.register_blueprint(mikvah_bp)
-            logger.info("Mikvah blueprint registered successfully")
-        else:
-            logger.warning("Mikvah blueprint is None - skipping registration")
-    except ImportError as e:
-        logger.warning(f"Could not import mikvah blueprint: {e}")
-    except Exception as e:
-        logger.warning(f"Could not register mikvah blueprint: {e}")
-    
-    # Register unified search blueprint
-    try:
-        from routes.unified_search_api import unified_search_bp
-        if unified_search_bp is not None:
-            app.register_blueprint(unified_search_bp)
-            logger.info("Unified search blueprint registered successfully")
-        else:
-            logger.warning("Unified search blueprint is None - skipping registration")
-    except ImportError as e:
-        logger.warning(f"Could not register unified search blueprint: {e}")
-    except Exception as e:
-        logger.warning(f"Could not register unified search blueprint: {e}")
-    
-    # Register metrics API blueprint
-    try:
-        from routes.metrics_api import metrics_bp
-        if metrics_bp is not None:
-            app.register_blueprint(metrics_bp)
-            logger.info("Metrics API blueprint registered successfully")
-        else:
-            logger.warning("Metrics API blueprint is None - skipping registration")
-    except ImportError as e:
-        logger.warning(f"Could not register metrics API blueprint: {e}")
-    except Exception as e:
-        logger.warning(f"Could not register metrics API blueprint: {e}")
+        logger.warning(f"Could not import v5 feature flags: {e}")
+        logger.info("V5 API blueprints will be registered with default settings")
+        
+        # Fallback: register v5 blueprints without feature flag checks
+        try:
+            from routes.v5.entity_api import entity_bp
+            app.register_blueprint(entity_bp)
+            logger.info("V5 entity API blueprint registered (fallback)")
+        except ImportError:
+            pass
+            
+        try:
+            from routes.v5.auth_api import auth_bp
+            app.register_blueprint(auth_bp)
+            logger.info("V5 auth API blueprint registered (fallback)")
+        except ImportError:
+            pass
+            
+        try:
+            from routes.v5.search_api import search_bp
+            app.register_blueprint(search_bp)
+            logger.info("V5 search API blueprint registered (fallback)")
+        except ImportError:
+            pass
+            
+        try:
+            from routes.v5.admin_api import admin_bp
+            app.register_blueprint(admin_bp)
+            logger.info("V5 admin API blueprint registered (fallback)")
+        except ImportError:
+            pass
+            
+        try:
+            from routes.v5.webhook_api import webhook_bp
+            app.register_blueprint(webhook_bp)
+            logger.info("V5 webhook API blueprint registered (fallback)")
+        except ImportError:
+            pass
     
     # Register mock API routes for development
     # Note: mock_api module not available, skipping registration

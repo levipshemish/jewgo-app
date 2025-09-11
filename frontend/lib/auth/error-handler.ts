@@ -94,7 +94,7 @@ export class AuthErrorHandler {
 
     // Classify the error
     const errorCode = this.classifyError(error);
-    const message = AUTH_ERROR_MESSAGES[errorCode] || AUTH_ERROR_MESSAGES[AUTH_ERROR_CODES.INTERNAL_ERROR];
+    const message = AUTH_ERROR_MESSAGES[errorCode as keyof typeof AUTH_ERROR_MESSAGES] || AUTH_ERROR_MESSAGES[AUTH_ERROR_CODES.INTERNAL_ERROR];
 
     return {
       code: errorCode,
@@ -211,7 +211,7 @@ export class AuthErrorHandler {
    * Create a user-friendly error message from an error code.
    */
   static getErrorMessage(errorCode: string): string {
-    return AUTH_ERROR_MESSAGES[errorCode] || AUTH_ERROR_MESSAGES[AUTH_ERROR_CODES.INTERNAL_ERROR];
+    return AUTH_ERROR_MESSAGES[errorCode as keyof typeof AUTH_ERROR_MESSAGES] || AUTH_ERROR_MESSAGES[AUTH_ERROR_CODES.INTERNAL_ERROR];
   }
 
   /**
@@ -223,7 +223,7 @@ export class AuthErrorHandler {
       AUTH_ERROR_CODES.NETWORK_ERROR,
       AUTH_ERROR_CODES.RATE_LIMIT_EXCEEDED,
       AUTH_ERROR_CODES.INTERNAL_ERROR,
-    ].includes(errorCode);
+    ].includes(errorCode as any);
   }
 
   /**
