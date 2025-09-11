@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
-import DataTable, { Column } from '../../../components/admin/DataTable';
+import DataTable, { Column } from '@/components/admin/DataTable';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 import { adminFetch } from '@/lib/admin/fetch';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '../../../components/ui/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';
 

@@ -25,39 +25,39 @@ ON CONFLICT (version) DO NOTHING;
 -- PERFORMANCE OPTIMIZATIONS
 -- =============================================================================
 
--- Add indexes for v5 API performance
+-- Add indexes for v5 API performance (non-concurrent for transaction compatibility)
 -- Entity-based indexes for consolidated queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_restaurants_status_created 
+CREATE INDEX IF NOT EXISTS idx_restaurants_status_created 
     ON restaurants(status, created_at) WHERE status = 'active';
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_restaurants_kosher_location 
+CREATE INDEX IF NOT EXISTS idx_restaurants_kosher_location 
     ON restaurants(kosher_category, latitude, longitude) 
     WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_restaurants_rating_reviews 
+CREATE INDEX IF NOT EXISTS idx_restaurants_rating_reviews 
     ON restaurants(google_rating, google_reviews_count) 
     WHERE google_rating IS NOT NULL;
 
 -- Synagogue indexes
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_synagogues_status_created 
+CREATE INDEX IF NOT EXISTS idx_synagogues_status_created 
     ON synagogues(status, created_at) WHERE status = 'active';
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_synagogues_location 
+CREATE INDEX IF NOT EXISTS idx_synagogues_location 
     ON synagogues(latitude, longitude) 
     WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 
 -- Review indexes for cross-entity reviews
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_reviews_entity_type_status 
+CREATE INDEX IF NOT EXISTS idx_reviews_entity_type_status 
     ON reviews(entity_type, entity_id, status) WHERE status = 'approved';
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_reviews_created_rating 
+CREATE INDEX IF NOT EXISTS idx_reviews_created_rating 
     ON reviews(created_at DESC, rating) WHERE rating IS NOT NULL;
 
 -- Full-text search indexes
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_restaurants_name_gin 
+CREATE INDEX IF NOT EXISTS idx_restaurants_name_gin 
     ON restaurants USING gin(to_tsvector('english', name));
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_synagogues_name_gin 
+CREATE INDEX IF NOT EXISTS idx_synagogues_name_gin 
     ON synagogues USING gin(to_tsvector('english', name));
 
 -- =============================================================================
@@ -84,8 +84,16 @@ CREATE TABLE IF NOT EXISTS api_metrics_v5 (
     trace_id VARCHAR(255)
 );
 
--- Partition api_metrics_v5 by month for performance
-SELECT create_hypertable('api_metrics_v5', 'timestamp', if_not_exists => TRUE);
+-- Partition api_metrics_v5 by month for performance (with error handling)
+DO $$ 
+BEGIN 
+    PERFORM create_hypertable('api_metrics_v5', 'timestamp', if_not_exists => TRUE);
+EXCEPTION 
+    WHEN undefined_function THEN 
+        RAISE NOTICE 'TimescaleDB extension not available, skipping hypertable creation';
+    WHEN OTHERS THEN 
+        RAISE NOTICE 'Error creating hypertable: %', SQLERRM;
+END $$;
 
 -- Indexes for api_metrics_v5
 CREATE INDEX IF NOT EXISTS idx_api_metrics_v5_timestamp_endpoint 

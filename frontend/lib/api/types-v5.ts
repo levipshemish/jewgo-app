@@ -37,11 +37,16 @@ export interface PaginatedResponse<T = unknown> {
 }
 
 export interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   timeout?: number;
   retries?: number;
   cache?: boolean;
   cacheTtl?: number;
   headers?: Record<string, string>;
+  body?: any;
+  retry?: boolean;
+  idempotencyKey?: string;
+  abortSignal?: AbortSignal;
 }
 
 export interface SortOptions {

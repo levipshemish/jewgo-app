@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import RestaurantDatabaseClient from '../../../../components/admin/RestaurantDatabaseClient';
+import RestaurantDatabaseClient from '@/components/admin/RestaurantDatabaseClient';
 import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';
 // import { AdminDatabaseService } from '@/lib/admin/database';
 // import { prisma } from '@/lib/db/prisma';

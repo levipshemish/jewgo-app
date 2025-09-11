@@ -368,34 +368,82 @@ class ETagV5Manager:
                 table = strategy['table']
                 timestamp_col = strategy['timestamp_column']
                 
-                # Base query for max timestamp
-                query = f"SELECT MAX({timestamp_col}) as max_timestamp FROM {table}"
-                conditions = ["status != 'deleted'"]  # Exclude deleted entities
-                
-                # Add related tables if needed
-                if strategy.get('include_reviews'):
-                    query += f" LEFT JOIN reviews r ON r.{table[:-1]}_id = {table}.id"
-                    query += f" LEFT JOIN (SELECT MAX(updated_at) as max_review_updated FROM reviews) rv ON true"
-                
-                if strategy.get('include_hours'):
-                    query += f" LEFT JOIN {table}_hours h ON h.{table[:-1]}_id = {table}.id"
-                
-                # Add conditions
-                if conditions:
-                    query += " WHERE " + " AND ".join(conditions)
-                
-                result = session.execute(text(query)).fetchone()
-                
-                if result and result.max_timestamp:
-                    # Convert to timestamp
-                    if isinstance(result.max_timestamp, datetime):
-                        timestamp = int(result.max_timestamp.timestamp())
-                    else:
-                        timestamp = int(time.time())
+                # Build a proper CTE-based query for unambiguous results
+                if strategy.get('include_reviews') and strategy.get('include_hours'):
+                    # Complex query with reviews and hours
+                    query = f"""
+                    WITH base AS (
+                        SELECT MAX(t.{timestamp_col}) AS max_ts
+                        FROM {table} t
+                        WHERE t.status <> 'deleted'
+                    ), hours AS (
+                        SELECT MAX(h.updated_at) AS max_ts
+                        FROM {table}_hours h
+                    ), reviews AS (
+                        SELECT MAX(r.updated_at) AS max_ts
+                        FROM reviews r
+                        WHERE r.entity_type = :entity_type
+                    )
+                    SELECT EXTRACT(EPOCH FROM GREATEST(
+                        COALESCE(base.max_ts, 'epoch'::timestamp),
+                        COALESCE(hours.max_ts, 'epoch'::timestamp),
+                        COALESCE(reviews.max_ts, 'epoch'::timestamp)
+                    ))::bigint AS watermark
+                    FROM base, hours, reviews
+                    """
+                    params = {'entity_type': table[:-1]}  # Remove 's' from table name
+                elif strategy.get('include_reviews'):
+                    # Query with reviews only
+                    query = f"""
+                    WITH base AS (
+                        SELECT MAX(t.{timestamp_col}) AS max_ts
+                        FROM {table} t
+                        WHERE t.status <> 'deleted'
+                    ), reviews AS (
+                        SELECT MAX(r.updated_at) AS max_ts
+                        FROM reviews r
+                        WHERE r.entity_type = :entity_type
+                    )
+                    SELECT EXTRACT(EPOCH FROM GREATEST(
+                        COALESCE(base.max_ts, 'epoch'::timestamp),
+                        COALESCE(reviews.max_ts, 'epoch'::timestamp)
+                    ))::bigint AS watermark
+                    FROM base, reviews
+                    """
+                    params = {'entity_type': table[:-1]}
+                elif strategy.get('include_hours'):
+                    # Query with hours only
+                    query = f"""
+                    WITH base AS (
+                        SELECT MAX(t.{timestamp_col}) AS max_ts
+                        FROM {table} t
+                        WHERE t.status <> 'deleted'
+                    ), hours AS (
+                        SELECT MAX(h.updated_at) AS max_ts
+                        FROM {table}_hours h
+                    )
+                    SELECT EXTRACT(EPOCH FROM GREATEST(
+                        COALESCE(base.max_ts, 'epoch'::timestamp),
+                        COALESCE(hours.max_ts, 'epoch'::timestamp)
+                    ))::bigint AS watermark
+                    FROM base, hours
+                    """
+                    params = {}
                 else:
-                    timestamp = int(time.time())
+                    # Simple query for base table only
+                    query = f"""
+                    SELECT EXTRACT(EPOCH FROM MAX({timestamp_col}))::bigint AS watermark
+                    FROM {table}
+                    WHERE status <> 'deleted'
+                    """
+                    params = {}
                 
-                return str(timestamp)
+                result = session.execute(text(query), params).fetchone()
+                
+                if result and result.watermark:
+                    return str(result.watermark)
+                else:
+                    return str(int(time.time()))
                 
         except Exception as e:
             logger.error("Database watermark query failed", error=str(e))
@@ -551,18 +599,23 @@ class ETagV5Manager:
     def _get_from_cache(self, key: str) -> Optional[str]:
         """Get value from cache (Redis)."""
         try:
-            from backend.services.redis_cache_service import RedisCacheService
-            cache_service = RedisCacheService()
-            return cache_service.get(key)
+            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            redis_manager = get_redis_manager_v5()
+            redis_client = redis_manager.get_client()
+            if redis_client:
+                return redis_client.get(key)
+            return None
         except Exception:
             return None
     
     def _set_in_cache(self, key: str, value: str, ttl: int):
         """Set value in cache (Redis)."""
         try:
-            from backend.services.redis_cache_service import RedisCacheService
-            cache_service = RedisCacheService()
-            cache_service.set(key, value, ttl=ttl)
+            from backend.cache.redis_manager_v5 import get_redis_manager_v5
+            redis_manager = get_redis_manager_v5()
+            redis_client = redis_manager.get_client()
+            if redis_client:
+                redis_client.setex(key, ttl, value)
         except Exception:
             pass
 

@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import ImageDatabaseClient from '../../../../components/admin/ImageDatabaseClient';
+import ImageDatabaseClient from '@/components/admin/ImageDatabaseClient';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
 import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';

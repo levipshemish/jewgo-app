@@ -15,11 +15,11 @@ import time
 import psutil
 import os
 from utils.logging_config import get_logger
-from middleware.auth_v5 import AuthMiddlewareV5
-from middleware.rate_limit_v5 import RateLimitMiddlewareV5
-from middleware.observability_v5 import ObservabilityMiddlewareV5
+from middleware.auth_v5 import AuthV5Middleware
+from middleware.rate_limit_v5 import RateLimitV5Middleware
+from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from cache.redis_manager_v5 import RedisManagerV5
+from backend.cache.redis_manager_v5 import RedisManagerV5
 from database.connection_manager import DatabaseConnectionManager
 from utils.feature_flags_v5 import FeatureFlagsV5
 
@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 
 # Create blueprint using the factory
 monitoring_v5 = BlueprintFactoryV5.create_blueprint(
-    'monitoring_v5',
+    'monitoring_api',
     __name__,
     url_prefix='/api/v5/monitoring',
     config_override={
@@ -225,6 +225,16 @@ def check_external_services() -> Dict[str, Any]:
 def health_check():
     """Comprehensive health check endpoint."""
     try:
+        # Check feature flag
+        user_id = getattr(g, 'user_id', None)
+        user_roles = [role.get('role') for role in getattr(g, 'user_roles', []) if role.get('role')]
+        
+        if not feature_flags.is_enabled('monitoring_api_v5', user_id=user_id, user_roles=user_roles):
+            return jsonify({
+                'success': False,
+                'error': 'Monitoring API v5 is not enabled for your account'
+            }), 503
+        
         health_data = {
             'timestamp': datetime.utcnow().isoformat(),
             'overall_status': 'healthy',

@@ -414,3 +414,12 @@ class SessionContextManager:
 
 # Global connection manager instance - will be initialized when needed
 connection_manager = None
+
+
+def get_connection_manager() -> DatabaseConnectionManager:
+    """Get or create a global connection manager instance."""
+    global connection_manager
+    if connection_manager is None:
+        connection_manager = DatabaseConnectionManager()
+        connection_manager.connect()
+    return connection_manager

@@ -1,4 +1,6 @@
 import { ReviewsResponse, ReviewFilters, ReviewUpdateRequest} from '@/types';
+import { v5ApiClient } from './v5-api-client';
+import { V5_ENTITY_TYPES } from './v5-api-config';
 
 class AdminClient {
   private baseUrl = '/api/admin';
@@ -72,22 +74,31 @@ class AdminClient {
 
   // Restaurants
   async getRestaurants(filters: any = {}): Promise<any> {
-    const params = new URLSearchParams();
-    
-    if (filters.status) {
-      params.append('status', filters.status);
-    }
-    if (filters.search) {
-      params.append('search', filters.search);
-    }
-    if (filters.page) {
-      params.append('page', filters.page.toString());
-    }
-    if (filters.limit) {
-      params.append('limit', filters.limit.toString());
-    }
+    try {
+      // Use V5 API client for admin restaurants
+      const response = await v5ApiClient.getAdminEntities(V5_ENTITY_TYPES.RESTAURANTS, filters);
+      return response.data;
+    } catch (error) {
+      console.error('V5 API error, falling back to legacy API:', error);
+      
+      // Fallback to legacy API
+      const params = new URLSearchParams();
+      
+      if (filters.status) {
+        params.append('status', filters.status);
+      }
+      if (filters.search) {
+        params.append('search', filters.search);
+      }
+      if (filters.page) {
+        params.append('page', filters.page.toString());
+      }
+      if (filters.limit) {
+        params.append('limit', filters.limit.toString());
+      }
 
-    return this.request(`/restaurants?${params.toString()}`);
+      return this.request(`/restaurants?${params.toString()}`);
+    }
   }
 
   async updateRestaurant(restaurantId: number, data: any): Promise<{ success: boolean }> {
@@ -105,19 +116,28 @@ class AdminClient {
 
   // Users
   async getUsers(filters: any = {}): Promise<any> {
-    const params = new URLSearchParams();
-    
-    if (filters.search) {
-      params.append('search', filters.search);
-    }
-    if (filters.page) {
-      params.append('page', filters.page.toString());
-    }
-    if (filters.limit) {
-      params.append('limit', filters.limit.toString());
-    }
+    try {
+      // Use V5 API client for admin users
+      const response = await v5ApiClient.getAdminUsers(filters);
+      return response.data;
+    } catch (error) {
+      console.error('V5 API error, falling back to legacy API:', error);
+      
+      // Fallback to legacy API
+      const params = new URLSearchParams();
+      
+      if (filters.search) {
+        params.append('search', filters.search);
+      }
+      if (filters.page) {
+        params.append('page', filters.page.toString());
+      }
+      if (filters.limit) {
+        params.append('limit', filters.limit.toString());
+      }
 
-    return this.request(`/users?${params.toString()}`);
+      return this.request(`/users?${params.toString()}`);
+    }
   }
 
   async updateUser(userId: string, data: any): Promise<{ success: boolean }> {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import DataTable, { Column } from '../../../components/admin/DataTable';
+import DataTable, { Column } from '@/components/admin/DataTable';
 import { User, Calendar, Filter } from 'lucide-react';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';

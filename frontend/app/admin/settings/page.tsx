@@ -13,7 +13,7 @@ import {
   Crown
 } from 'lucide-react';
 import { AdminUser } from '@/lib/admin/types';
-import { useToast, ToastContainer } from '../../../components/ui/Toast';
+import { useToast, ToastContainer } from '@/components/ui/Toast';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 
 interface SystemStats {

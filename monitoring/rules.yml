@@ -1,0 +1,39 @@
+groups:
+- name: api-slos
+  rules:
+  - alert: APIHighErrorRate
+    expr: |
+      sum(rate(probe_http_status_code{job=~"blackbox_.*", status_code!~"2.."}[5m])) 
+        by (instance)
+      / 
+      sum(rate(probe_http_status_code{job=~"blackbox_.*"}[5m])) 
+        by (instance)
+      > 0.02
+    for: 10m
+    labels: { severity: "page" }
+    annotations:
+      summary: "High error rate on {{ $labels.instance }}"
+      description: "5m non-2xx > 2% for 10m."
+
+  - alert: APILatencyP95High
+    expr: histogram_quantile(0.95, sum(rate(probe_duration_seconds_bucket[5m])) by (le, instance)) > 1.2
+    for: 10m
+    labels: { severity: "ticket" }
+    annotations:
+      summary: "p95 latency > 1.2s ({{ $labels.instance }})"
+
+- name: infra
+  rules:
+  - alert: ContainerRestarting
+    expr: rate(container_last_seen[5m]) == 0 # crude: no samples
+    for: 5m
+    labels: { severity: "ticket" }
+    annotations:
+      summary: "Container not reporting ({{ $labels.container_label_com_docker_compose_service }})"
+
+  - alert: HostDiskFilling
+    expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) < 0.10
+    for: 10m
+    labels: { severity: "page" }
+    annotations:
+      summary: "Disk < 10% free"

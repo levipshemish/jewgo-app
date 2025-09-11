@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import ReviewDatabaseClient from '../../../../components/admin/ReviewDatabaseClient';
+import ReviewDatabaseClient from '@/components/admin/ReviewDatabaseClient';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
 import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';

@@ -58,11 +58,21 @@ export const API_ENDPOINTS = {
   RESET_PASSWORD: '/api/auth/reset-password',
   RESET_PASSWORD_CONFIRM: '/api/auth/reset-password/confirm',
   
-  // Backend API endpoints (these will be proxied to Render backend)
+  // Legacy Backend API endpoints (these will be proxied to Render backend)
   RESTAURANTS: '/api/restaurants',
   RESTAURANT_DETAILS: (id: string) => `/api/restaurants/${id}`,
   REVIEWS: '/api/reviews',
   STATISTICS: '/api/statistics',
+  
+  // V5 API endpoints (unified endpoints)
+  V5_ENTITIES: '/v5/entities',
+  V5_ENTITY_DETAILS: (id: string) => `/v5/entities/${id}`,
+  V5_SEARCH: '/v5/search',
+  V5_ADMIN_USERS: '/v5/admin/users',
+  V5_ADMIN_ENTITIES: (entityType: string) => `/v5/admin/entities/${entityType}`,
+  V5_ADMIN_ANALYTICS: '/v5/admin/analytics',
+  V5_MONITORING_HEALTH: '/v5/monitoring/health',
+  V5_MONITORING_METRICS: '/v5/monitoring/metrics',
 }
 
 // Helper function to make API calls

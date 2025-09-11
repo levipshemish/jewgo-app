@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import KosherPlacesDatabaseClient from '../../../../components/admin/KosherPlacesDatabaseClient';
+import KosherPlacesDatabaseClient from '@/components/admin/KosherPlacesDatabaseClient';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
 import { DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';

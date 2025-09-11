@@ -1,0 +1,535 @@
+#!/usr/bin/env python3
+"""
+V5 Entity API routes using BlueprintFactoryV5.
+
+Provides unified CRUD operations for all entity types (restaurants, synagogues, mikvahs, stores)
+with consistent patterns, authentication, caching, and monitoring.
+"""
+
+from flask import request, jsonify, g
+from typing import Dict, Any, Optional
+
+from utils.blueprint_factory_v5 import BlueprintFactoryV5
+from database.repositories.entity_repository_v5 import EntityRepositoryV5
+from database.services.restaurant_service_v5 import RestaurantServiceV5
+from database.services.synagogue_service_v5 import SynagogueServiceV5
+from database.services.mikvah_service_v5 import MikvahServiceV5
+from database.services.store_service_v5 import StoreServiceV5
+from middleware.auth_v5 import require_permission_v5, optional_auth_v5
+from utils.cursor_v5 import CursorV5Manager, decode_cursor_v5, create_next_cursor_v5
+from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
+from cache.etag_cache import get_etag_cache
+from utils.logging_config import get_logger
+from utils.feature_flags_v5 import feature_flags_v5
+
+logger = get_logger(__name__)
+
+# Initialize services
+from backend.database.connection_manager import DatabaseConnectionManager
+entity_repository = EntityRepositoryV5(DatabaseConnectionManager())
+
+# Initialize cache manager
+try:
+    from backend.cache.redis_manager_v5 import RedisManagerV5
+    cache_manager = RedisManagerV5()
+except ImportError:
+    cache_manager = None
+    logger.warning("Redis manager v5 not available, using None for cache")
+
+# Initialize event publisher (simple implementation for now)
+class SimpleEventPublisher:
+    def publish(self, event):
+        logger.debug(f"Event published: {event}")
+
+event_publisher = SimpleEventPublisher()
+
+# Initialize services with proper dependencies
+restaurant_service = RestaurantServiceV5(entity_repository, cache_manager, event_publisher)
+synagogue_service = SynagogueServiceV5(entity_repository, cache_manager, event_publisher)
+mikvah_service = MikvahServiceV5(entity_repository, cache_manager, event_publisher)
+store_service = StoreServiceV5(entity_repository, cache_manager, event_publisher)
+
+# Service mapping
+ENTITY_SERVICES = {
+    'restaurants': restaurant_service,
+    'synagogues': synagogue_service,
+    'mikvahs': mikvah_service,
+    'stores': store_service,
+}
+
+# Initialize ETag manager
+etag_manager = ETagV5Manager()
+
+# Create blueprint using factory
+entity_bp = BlueprintFactoryV5.create_blueprint(
+    'entity_v5', __name__, '/api/v5'
+)
+
+
+@entity_bp.route('/<entity_type>', methods=['GET'])
+@optional_auth_v5
+def get_entities(entity_type: str):
+    """Get entities with pagination and filtering."""
+    try:
+        # Check feature flag
+        user_id = getattr(g, 'user_id', None)
+        user_roles = [role.get('role') for role in getattr(g, 'user_roles', []) if role.get('role')]
+        
+        if not feature_flags_v5.is_enabled('entity_api_v5', user_id=user_id, user_roles=user_roles):
+            return jsonify({
+                'success': False,
+                'error': 'Entity API v5 is not enabled for your account'
+            }), 503
+        
+        # Validate entity type
+        if entity_type not in ENTITY_SERVICES:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
+            }), 400
+
+        # Parse query parameters
+        cursor = request.args.get('cursor')
+        limit = min(int(request.args.get('limit', 20)), 100)
+        sort = request.args.get('sort', 'created_at_desc')
+        
+        # Parse filters
+        filters = {}
+        for key in ['search', 'status', 'category', 'kosher_cert', 'rating_min']:
+            value = request.args.get(key)
+            if value:
+                filters[key] = value
+
+        # Parse location filters
+        lat = request.args.get('latitude')
+        lng = request.args.get('longitude')
+        radius = request.args.get('radius', '10')
+        if lat and lng:
+            try:
+                filters['latitude'] = float(lat)
+                filters['longitude'] = float(lng)
+                filters['radius'] = float(radius)
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid location parameters'
+                }), 400
+
+        # Generate ETag for caching
+        etag = generate_collection_etag_v5(
+            entity_type=entity_type,
+            filters=filters,
+            sort_key=sort,
+            page_size=limit,
+            cursor_token=cursor
+        )
+        
+        # Check if-none-match header
+        if_none_match = request.headers.get('If-None-Match')
+        if if_none_match and if_none_match == etag:
+            return '', 304
+
+        # Parse cursor
+        parsed_cursor = None
+        if cursor:
+            try:
+                parsed_cursor = decode_cursor_v5(cursor)
+            except Exception as e:
+                logger.warning(f"Invalid cursor: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid cursor'
+                }), 400
+
+        # Fetch entities from repository
+        entities, next_cursor, prev_cursor = entity_repository.get_entities_with_cursor(
+            entity_type=entity_type,
+            filters=filters,
+            cursor=parsed_cursor,
+            limit=limit,
+            sort_key=sort
+        )
+
+        # Format response to match frontend PaginatedResponse<T> contract
+        response_data = {
+            'data': entities,  # Entities directly in data array
+            'pagination': {
+                'cursor': cursor,
+                'next_cursor': next_cursor,
+                'prev_cursor': prev_cursor,
+                'limit': limit,
+                'has_more': next_cursor is not None,
+                'total_count': len(entities)  # Note: this is just current page count
+            },
+            'metadata': {
+                'filters_applied': filters,
+                'entity_type': entity_type,
+                'sort_key': sort,
+                'timestamp': etag_manager._get_current_timestamp()
+            }
+        }
+
+        # Create response with ETag
+        response = jsonify(response_data)
+        response.headers['ETag'] = etag
+        response.headers['Cache-Control'] = 'public, max-age=300'
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Error fetching {entity_type}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+
+@entity_bp.route('/<entity_type>/<int:entity_id>', methods=['GET'])
+@optional_auth_v5
+def get_entity_by_id(entity_type: str, entity_id: int):
+    """Get single entity by ID."""
+    try:
+        # Check feature flag
+        user_id = getattr(g, 'user_id', None)
+        user_roles = [role.get('role') for role in getattr(g, 'user_roles', []) if role.get('role')]
+        
+        if not feature_flags_v5.is_enabled('entity_api_v5', user_id=user_id, user_roles=user_roles):
+            return jsonify({
+                'success': False,
+                'error': 'Entity API v5 is not enabled for your account'
+            }), 503
+        
+        # Validate entity type
+        if entity_type not in ENTITY_SERVICES:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
+            }), 400
+
+        # Generate ETag for caching
+        cache_key = f"{entity_type}:{entity_id}"
+        etag = etag_manager.generate_etag(cache_key, {'type': 'entity', 'id': entity_id})
+        
+        # Check if-none-match header
+        if etag_manager.check_etag_match(request.headers.get('If-None-Match'), etag):
+            return '', 304
+
+        # Get entity from repository
+        entity = entity_repository.get_entity_by_id(entity_type, entity_id)
+        
+        if not entity:
+            return jsonify({
+                'success': False,
+                'error': f'{entity_type[:-1].title()} not found'
+            }), 404
+
+        # Format response to match frontend ApiResponse<T> contract
+        response_data = entity  # Return entity directly
+
+        # Create response with ETag
+        response = jsonify(response_data)
+        response.headers['ETag'] = etag
+        response.headers['Cache-Control'] = 'public, max-age=600'
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Error fetching {entity_type} {entity_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+
+@entity_bp.route('/<entity_type>', methods=['POST'])
+@require_permission_v5('create_entities')
+def create_entity(entity_type: str):
+    """Create new entity."""
+    try:
+        # Validate entity type
+        if entity_type not in ENTITY_SERVICES:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
+            }), 400
+
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body required'
+            }), 400
+
+        # Add metadata
+        data['created_by'] = getattr(g, 'user_id', None)
+        data['status'] = data.get('status', 'pending')
+
+        # Create entity using repository
+        entity = entity_repository.create_entity(entity_type, data)
+
+        if not entity:
+            return jsonify({
+                'success': False,
+                'error': 'Creation failed'
+            }), 400
+
+        # Invalidate related caches
+        etag_cache = get_etag_cache()
+        etag_cache.invalidate_entity_type(entity_type)
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'entity': entity,
+                'entity_type': entity_type,
+                'message': f'{entity_type[:-1].title()} created successfully'
+            },
+            'timestamp': etag_manager._get_current_timestamp()
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error creating {entity_type}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+
+@entity_bp.route('/<entity_type>/<int:entity_id>', methods=['PUT'])
+@require_permission_v5('update_entities')
+def update_entity(entity_type: str, entity_id: int):
+    """Update existing entity."""
+    try:
+        # Validate entity type
+        if entity_type not in ENTITY_SERVICES:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
+            }), 400
+
+        # Check if entity exists
+        existing_entity = entity_repository.get_entity_by_id(entity_type, entity_id)
+        if not existing_entity:
+            return jsonify({
+                'success': False,
+                'error': f'{entity_type[:-1].title()} not found'
+            }), 404
+
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body required'
+            }), 400
+
+        # Add metadata
+        data['updated_by'] = getattr(g, 'user_id', None)
+
+        # Update entity using repository
+        entity = entity_repository.update_entity(entity_type, entity_id, data)
+
+        if not entity:
+            return jsonify({
+                'success': False,
+                'error': 'Update failed'
+            }), 400
+
+        # Invalidate related caches
+        etag_cache = get_etag_cache()
+        etag_cache.invalidate_entity_type(entity_type)
+        etag_cache.invalidate_entity(entity_type, entity_id)
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'entity': entity,
+                'entity_type': entity_type,
+                'entity_id': entity_id,
+                'message': f'{entity_type[:-1].title()} updated successfully'
+            },
+            'timestamp': etag_manager._get_current_timestamp()
+        })
+
+    except Exception as e:
+        logger.error(f"Error updating {entity_type} {entity_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+
+@entity_bp.route('/<entity_type>/<int:entity_id>', methods=['DELETE'])
+@require_permission_v5('delete_entities')
+def delete_entity(entity_type: str, entity_id: int):
+    """Delete entity (soft delete)."""
+    try:
+        # Validate entity type
+        if entity_type not in ENTITY_SERVICES:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
+            }), 400
+
+        # Check if entity exists
+        existing_entity = entity_repository.get_entity_by_id(entity_type, entity_id)
+        if not existing_entity:
+            return jsonify({
+                'success': False,
+                'error': f'{entity_type[:-1].title()} not found'
+            }), 404
+
+        # Soft delete using repository
+        success = entity_repository.delete_entity(entity_type, entity_id, soft_delete=True)
+
+        if not success:
+            return jsonify({
+                'success': False,
+                'error': 'Deletion failed'
+            }), 400
+
+        # Invalidate related caches
+        etag_cache = get_etag_cache()
+        etag_cache.invalidate_entity_type(entity_type)
+        etag_cache.invalidate_entity(entity_type, entity_id)
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'entity_type': entity_type,
+                'entity_id': entity_id,
+                'message': f'{entity_type[:-1].title()} deleted successfully'
+            },
+            'timestamp': etag_manager._get_current_timestamp()
+        })
+
+    except Exception as e:
+        logger.error(f"Error deleting {entity_type} {entity_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+
+@entity_bp.route('/<entity_type>/batch', methods=['POST'])
+@require_permission_v5('batch_operations')
+def batch_operations(entity_type: str):
+    """Perform batch operations on entities."""
+    try:
+        # Validate entity type
+        if entity_type not in ENTITY_SERVICES:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
+            }), 400
+
+        # Get request data
+        data = request.get_json()
+        if not data or 'operations' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Operations array required'
+            }), 400
+
+        operations = data['operations']
+        if len(operations) > 100:  # Limit batch size
+            return jsonify({
+                'success': False,
+                'error': 'Maximum 100 operations per batch'
+            }), 400
+
+        results = []
+
+        for i, operation in enumerate(operations):
+            try:
+                op_type = operation.get('type')
+                op_data = operation.get('data', {})
+                entity_id = operation.get('entity_id')
+
+                if op_type == 'create':
+                    op_data['created_by'] = getattr(g, 'user_id', None)
+                    entity = entity_repository.create_entity(entity_type, op_data)
+                    result = {'success': entity is not None, 'data': entity}
+                elif op_type == 'update' and entity_id:
+                    op_data['updated_by'] = getattr(g, 'user_id', None)
+                    entity = entity_repository.update_entity(entity_type, entity_id, op_data)
+                    result = {'success': entity is not None, 'data': entity}
+                elif op_type == 'delete' and entity_id:
+                    success = entity_repository.delete_entity(entity_type, entity_id, soft_delete=True)
+                    result = {'success': success}
+                else:
+                    result = {'success': False, 'error': 'Invalid operation'}
+
+                results.append({
+                    'index': i,
+                    'operation': operation,
+                    'result': result
+                })
+
+            except Exception as e:
+                results.append({
+                    'index': i,
+                    'operation': operation,
+                    'result': {'success': False, 'error': str(e)}
+                })
+
+        # Invalidate caches after batch operations
+        etag_cache = get_etag_cache()
+        etag_cache.invalidate_entity_type(entity_type)
+
+        # Calculate success/failure counts
+        successful = len([r for r in results if r['result'].get('success')])
+        failed = len(results) - successful
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'entity_type': entity_type,
+                'results': results,
+                'summary': {
+                    'total': len(operations),
+                    'successful': successful,
+                    'failed': failed
+                }
+            },
+            'timestamp': etag_manager._get_current_timestamp()
+        })
+
+    except Exception as e:
+        logger.error(f"Error in batch operations for {entity_type}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+
+# Health check endpoint
+@entity_bp.route('/health', methods=['GET'])
+def health_check():
+    """Health check for entity API."""
+    try:
+        # Test repository connection
+        health_status = entity_repository.health_check()
+        
+        return jsonify({
+            'success': True,
+            'service': 'entity_api_v5',
+            'status': 'healthy',
+            'repository_status': health_status,
+            'supported_entities': list(ENTITY_SERVICES.keys()),
+            'timestamp': etag_manager._get_current_timestamp()
+        })
+    except Exception as e:
+        logger.error(f"Entity API health check failed: {e}")
+        return jsonify({
+            'success': False,
+            'service': 'entity_api_v5',
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': etag_manager._get_current_timestamp()
+        }), 503
+
+
+# Export blueprint for app factory
+__all__ = ['entity_bp']

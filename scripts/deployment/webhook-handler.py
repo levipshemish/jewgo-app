@@ -97,7 +97,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         try:
             # Execute the deployment script directly
             result = subprocess.run(
-                ['/bin/sh', '/app/deploy.sh'],
+                ['/bin/sh', '/home/ubuntu/jewgo-app/deploy.sh'],
                 capture_output=True,
                 text=True,
                 timeout=600  # 10 minute timeout

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import DataTable, { Column } from '../../../../components/admin/DataTable';
+import DataTable, { Column } from '@/components/admin/DataTable';
 import { Building2, MapPin, Phone, Mail, Globe, Eye, Star } from 'lucide-react';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleBackendError, fetchWithTimeout, getFallbackResponse } from '../../../../lib/utils/backend-error-handler';
+import { handleBackendError, fetchWithTimeout, getFallbackResponse } from '@/lib/utils/backend-error-handler';
 
 export async function GET(request: NextRequest) {
   try {

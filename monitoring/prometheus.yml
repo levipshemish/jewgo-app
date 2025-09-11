@@ -1,76 +1,41 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
-  external_labels:
-    cluster: 'jewgo-production'
-    environment: 'production'
+
+rule_files:
+  - "rules.yml"
 
 scrape_configs:
-  # Prometheus itself
   - job_name: 'prometheus'
-    static_configs:
-      - targets: ['127.0.0.1:9090']
+    static_configs: [{ targets: ['prometheus:9090'] }]
 
-  # Node Exporter for system metrics
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['127.0.0.1:9100']
-    scrape_interval: 15s
+  - job_name: 'cadvisor'
+    static_configs: [{ targets: ['cadvisor:8080'] }]
 
-  # Grafana
-  - job_name: 'grafana'
-    static_configs:
-      - targets: ['127.0.0.1:3001']
-    scrape_interval: 30s
-    metrics_path: '/metrics'
+  - job_name: 'node_exporter'
+    static_configs: [{ targets: ['localhost:9100'] }]
 
-  # Postgres Exporter for database metrics
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['127.0.0.1:9187']
-    scrape_interval: 30s
-
-  # Redis Exporter for cache metrics
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['127.0.0.1:9121']
-    scrape_interval: 30s
-
-  # Nginx Exporter for web server metrics
-  - job_name: 'nginx'
-    static_configs:
-      - targets: ['127.0.0.1:9113']
-    scrape_interval: 30s
-
-  # JewGo Backend Health Check
-  - job_name: 'jewgo-backend-health'
-    static_configs:
-      - targets: ['172.20.0.1:5000']
-    metrics_path: '/health'
-    scrape_interval: 30s
-    scrape_timeout: 10s
-
-  # Blackbox Exporter for health checks
-  - job_name: 'blackbox'
+  # Probe public/private API routes (GET)
+  - job_name: 'blackbox_http'
     metrics_path: /probe
     params:
       module: [http_2xx]
     static_configs:
       - targets:
-        - http://172.20.0.1:5000/health # JewGo Backend health endpoint
-        - http://127.0.0.1:3001/api/health # Grafana health endpoint
-        - http://127.0.0.1:9090/-/healthy # Prometheus health endpoint
+         - https://api.jewgo.app/healthz
+         - https://api.jewgo.app/readyz
+         - https://api.jewgo.app/webhook/status
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox:9115
       - source_labels: [__param_target]
         target_label: instance
-      - target_label: __address__
-        replacement: 127.0.0.1:9115 # Blackbox exporter itself
-    scrape_interval: 15s
 
-  # AlertManager
-  - job_name: 'alertmanager'
+  # Scrape backend metrics endpoint
+  - job_name: 'jewgo_backend_metrics'
     static_configs:
-      - targets: ['127.0.0.1:9093']
-    scrape_interval: 15s
+      - targets: ['jewgo_backend:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s

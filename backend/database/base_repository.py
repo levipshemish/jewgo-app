@@ -1,9 +1,18 @@
+import time
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 from utils.logging_config import get_logger
 from .connection_manager import DatabaseConnectionManager
 from .models import Base
 
 logger = get_logger(__name__)
+
+# Import v5 metrics collection
+try:
+    from utils.metrics_collector_v5 import MetricsCollector
+    METRICS_AVAILABLE = True
+except ImportError:
+    MetricsCollector = None
+    METRICS_AVAILABLE = False
 # !/usr/bin/env python3
 """Base repository class with generic CRUD operations.
 This module provides a base repository class that implements common
@@ -29,14 +38,20 @@ class BaseRepository(Generic[T]):
         self.logger = logger.bind(
             repository=self.__class__.__name__, model=model_class.__name__
         )
+        
+        # v5: Initialize metrics collector
+        self._metrics_collector = MetricsCollector() if METRICS_AVAILABLE else None
 
     def create(self, data: Dict[str, Any]) -> Optional[T]:
-        """Create a new record.
+        """Create a new record with v5 metrics.
         Args:
             data: Dictionary containing record data
         Returns:
             Created model instance or None if failed
         """
+        start_time = time.time()
+        operation_success = False
+        
         try:
             with self.connection_manager.session_scope() as session:
                 instance = self.model_class(**data)
@@ -44,7 +59,21 @@ class BaseRepository(Generic[T]):
                 session.flush()  # Get the ID without committing
                 session.refresh(instance)
                 record_id = getattr(instance, "id", None)
-                self.logger.info("Created record", id=record_id)
+                
+                operation_success = True
+                duration_ms = (time.time() - start_time) * 1000
+                
+                self.logger.info("Created record", id=record_id, duration_ms=duration_ms)
+                
+                # v5: Record metrics
+                if self._metrics_collector:
+                    self._metrics_collector.record_database_operation(
+                        operation="create",
+                        table=self.model_class.__tablename__,
+                        success=True,
+                        duration_ms=duration_ms
+                    )
+                
                 # Return a dict with the ID and basic info instead of the instance
                 return {
                     "id": record_id,
@@ -52,6 +81,18 @@ class BaseRepository(Generic[T]):
                     "created": True,
                 }
         except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            
+            # v5: Record failed operation metrics
+            if self._metrics_collector:
+                self._metrics_collector.record_database_operation(
+                    operation="create",
+                    table=self.model_class.__tablename__,
+                    success=False,
+                    duration_ms=duration_ms,
+                    error=str(e)
+                )
+            
             self.logger.exception("Failed to create record", error=str(e), data=data)
             return None
 

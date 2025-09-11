@@ -10,6 +10,8 @@ import {
   MarketplaceListing,
   MarketplaceStats
 } from '@/lib/types/marketplace';
+import { v5ApiClient } from './v5-api-client';
+import { V5_ENTITY_TYPES } from './v5-api-config';
 
 // Ensure we're using the correct backend URL
 const BACKEND_URL = (() => {
@@ -225,10 +227,42 @@ export async function searchMarketplaceListings(
   query: string,
   params: Omit<MarketplaceSearchParams, 'search'> = {}
 ): Promise<MarketplaceSearchResponse> {
-  return fetchMarketplaceListings({
-    ...params,
-    search: query,
-  });
+  try {
+    // Use V5 API client for marketplace search
+    const response = await v5ApiClient.search({
+      query,
+      entityType: V5_ENTITY_TYPES.STORES, // Marketplace listings are treated as stores
+      filters: params,
+      limit: params.limit || 50,
+      page: (params as any).page || 1,
+    });
+
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to search marketplace listings');
+    }
+
+    // Transform V5 response to marketplace format
+    const listings = response.data?.listings || response.data || [];
+    const total = response.data?.total || response.pagination?.total || listings.length;
+
+    return {
+      success: true,
+      data: {
+        listings,
+        total,
+        limit: params.limit || 50,
+        offset: ((params as any).page || 1 - 1) * (params.limit || 50),
+      },
+    };
+  } catch (error) {
+    console.error('V5 API search error, falling back to legacy API:', error);
+    
+    // Fallback to legacy API
+    return fetchMarketplaceListings({
+      ...params,
+      search: query,
+    });
+  }
 }
 
 /**

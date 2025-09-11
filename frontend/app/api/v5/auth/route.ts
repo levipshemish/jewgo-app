@@ -10,9 +10,53 @@ import { NextRequest, NextResponse } from 'next/server';
 import { apiClient } from '@/lib/api/index-v5';
 import { validateAuthFromRequest } from '@/lib/api/utils-v5';
 
+// Feature flag check for v5 auth API
+async function checkFeatureFlag(request: NextRequest): Promise<boolean> {
+  try {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    
+    // Get user info for feature flag check
+    const authResult = await validateAuthFromRequest(request);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (authResult.success && authResult.token) {
+      headers['Authorization'] = `Bearer ${authResult.token}`;
+    }
+    
+    // Check if auth_api_v5 feature flag is enabled
+    const response = await fetch(`${backendUrl}/api/v5/feature-flags/auth_api_v5`, {
+      method: 'GET',
+      headers
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.enabled === true;
+    }
+    
+    // If feature flag check fails, default to enabled for backward compatibility
+    return true;
+  } catch (error) {
+    console.error('Feature flag check failed:', error);
+    // Default to enabled for backward compatibility
+    return true;
+  }
+}
+
 // POST /api/v5/auth - Handle login and register
 export async function POST(request: NextRequest) {
   try {
+    // Check feature flag
+    const isFeatureEnabled = await checkFeatureFlag(request);
+    if (!isFeatureEnabled) {
+      return NextResponse.json(
+        { error: 'Auth API v5 is not enabled for your account' },
+        { status: 503 }
+      );
+    }
+    
     const { action, ...data } = await request.json();
 
     switch (action) {
