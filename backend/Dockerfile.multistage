@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for optimal build performance
+# Multi-stage Dockerfile for optimal backend build performance
 # Stage 1: Build dependencies
 FROM python:3.11-slim as builder
 
@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install build dependencies
+# Install only build dependencies needed for Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
@@ -29,24 +29,16 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/root/.local/bin:${PATH}"
 
-# Install runtime dependencies only
+# Install only essential runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Runtime tools
     curl \
-    # Fonts
-    fonts-liberation \
-    fonts-unifont \
     # Clean up
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
 # Copy Python packages from builder stage
 COPY --from=builder /root/.local /root/.local
-
-# Install Playwright browsers
-RUN if command -v playwright >/dev/null 2>&1; then \
-        playwright install chromium --with-deps; \
-    fi
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser
