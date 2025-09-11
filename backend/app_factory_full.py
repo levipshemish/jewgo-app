@@ -262,15 +262,27 @@ def create_app(config_class=None):
             logger.info("Flask-Caching initialized with Redis")
         except Exception as e:
             logger.warning(f"Failed to initialize Flask-Caching with Redis: {e}")
-            # Fallback to simple cache
+            # Fallback to simple cache - remove ALL Redis-specific config
             app.config["CACHE_TYPE"] = "simple"
-            # Remove Redis-specific config for simple cache
-            app.config.pop("CACHE_REDIS_URL", None)
+            redis_cache_keys = [
+                "CACHE_REDIS_URL", "CACHE_OPTIONS", "CACHE_SOCKET_CONNECT_TIMEOUT_MS",
+                "CACHE_SOCKET_TIMEOUT_MS", "CACHE_HEALTH_CHECK_INTERVAL", 
+                "CACHE_MAX_CONNECTIONS", "CACHE_MAX_RETRIES", "CACHE_RETRY_DELAY"
+            ]
+            for key in redis_cache_keys:
+                app.config.pop(key, None)
             cache = Cache(app)
             logger.info("Flask-Caching initialized with simple cache fallback")
     else:
-        # Use simple cache
+        # Use simple cache - remove ALL Redis-specific config
         app.config["CACHE_TYPE"] = "simple"
+        redis_cache_keys = [
+            "CACHE_REDIS_URL", "CACHE_OPTIONS", "CACHE_SOCKET_CONNECT_TIMEOUT_MS",
+            "CACHE_SOCKET_TIMEOUT_MS", "CACHE_HEALTH_CHECK_INTERVAL", 
+            "CACHE_MAX_CONNECTIONS", "CACHE_MAX_RETRIES", "CACHE_RETRY_DELAY"
+        ]
+        for key in redis_cache_keys:
+            app.config.pop(key, None)
         cache = Cache(app)
         logger.info("Flask-Caching initialized with simple cache")
     

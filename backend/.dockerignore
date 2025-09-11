@@ -35,6 +35,8 @@ ENV/
 **/.venv/
 **/.venv/**
 **/venv/**
+node_modules/
+**/node_modules/
 
 # Testing
 .pytest_cache/
@@ -46,6 +48,9 @@ htmlcov/
 coverage.xml
 *.cover
 .hypothesis/
+tests/
+test_*.py
+*_test.py
 
 # Cache directories
 .ruff_cache/
@@ -72,16 +77,13 @@ Thumbs.db
 # Logs
 *.log
 logs/
+uploads/
 
 # Documentation
 docs/
 *.md
 README*
 
-# Test files
-test_*.py
-*_test.py
-tests/
 
 # Scripts (keep only essential ones)
 scripts/
