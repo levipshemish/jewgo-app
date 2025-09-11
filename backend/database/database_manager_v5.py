@@ -25,7 +25,8 @@ logger = get_logger(__name__)
 # Import v5 components
 try:
     # from utils.metrics_collector_v5 import MetricsCollector  # Module not found
-    METRICS_AVAILABLE = True
+    MetricsCollector = None  # Define as None since module not found
+    METRICS_AVAILABLE = False
 except ImportError:
     MetricsCollector = None
     METRICS_AVAILABLE = False
