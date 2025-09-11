@@ -24,7 +24,7 @@ Version: 4.1
 Last Updated: 2024
 """
 # Create the Flask application instance
-app, socketio = create_app()
+app = create_app()
 if __name__ == "__main__":
     # Get environment configuration
     is_production = config_manager.get("environment.production", False)
