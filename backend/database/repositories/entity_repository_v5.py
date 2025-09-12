@@ -195,10 +195,10 @@ class EntityRepositoryV5(BaseRepository):
                     logger.error(f"Query execution failed: {e}")
                     entities = []
                 
-                # Process results
+                # Process results - fetch one extra to check if there are more
                 has_next = len(entities) > limit
                 if has_next:
-                    entities = entities[:limit]
+                    entities = entities[:limit]  # Keep only the requested limit
                 
                 # Convert to dictionaries
                 result_entities = []
@@ -223,10 +223,7 @@ class EntityRepositoryV5(BaseRepository):
                     # If distance sorting is requested but no location provided, fall back to created_at
                     result_entities.sort(key=lambda x: x.get('created_at', ''), reverse=True)
                 
-                # TEMPORARY: Disable distance sorting to test if that's the issue
-                if sort_key == 'distance_asc':
-                    logger.info(f"TEMPORARILY DISABLED distance sorting - keeping original order")
-                    # Don't sort at all for now
+                # Distance sorting is now properly implemented
                 
                 # Debug: Log the number of entities after sorting
                 logger.info(f"After sorting: {len(result_entities)} entities for {entity_type} with sort_key={sort_key}")
