@@ -50,6 +50,7 @@ export default function EateryGrid({
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const isRetryingRef = useRef(false)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const requestInProgressRef = useRef(false)
 
   // Transform restaurant data for UnifiedCard - memoized to prevent unnecessary recalculations
   const transformRestaurant = useCallback((restaurant: LightRestaurant, userLoc: typeof userLocation) => {
@@ -106,6 +107,14 @@ export default function EateryGrid({
 
   // Real API function with cursor-based pagination
   const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, _timeoutMs: number = 8000, page?: number) => {
+    // Prevent duplicate requests
+    if (requestInProgressRef.current) {
+      console.warn('Request already in progress, skipping duplicate call')
+      return { restaurants: [], hasMore: false, nextCursor: null, totalCount: 0 }
+    }
+    
+    requestInProgressRef.current = true
+    
     try {
       // Use the restaurants API module which handles v5 endpoints
       const searchParams = new URLSearchParams(params || '')
@@ -199,6 +208,8 @@ export default function EateryGrid({
       }
       console.error('Error fetching restaurants:', error)
       throw error
+    } finally {
+      requestInProgressRef.current = false
     }
   }, [])
 
@@ -275,7 +286,7 @@ export default function EateryGrid({
 
   // Load more items using appropriate pagination method
   const loadMoreItems = useCallback(async () => {
-    if (loading || !hasMore) {
+    if (loading || !hasMore || requestInProgressRef.current) {
       return;
     }
 
@@ -410,7 +421,7 @@ export default function EateryGrid({
       isRetryingRef.current = false
       
       const loadInitialItems = async () => {
-        if (isRetryingRef.current) return
+        if (isRetryingRef.current || requestInProgressRef.current) return
         
         setLoading(true)
         let currentRetryCount = 0
