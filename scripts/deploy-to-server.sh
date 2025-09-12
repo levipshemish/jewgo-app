@@ -342,8 +342,7 @@ test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?limit=1" "Reviews API end
 print_status "Testing additional important endpoints..."
 
 
-# Test monitoring status
-test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/status" "Monitoring status endpoint"
+# Note: Monitoring status endpoint requires authentication - skipping test
 
 # Test metrics dashboard
 test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/dashboard" "Metrics dashboard endpoint"
@@ -463,14 +462,14 @@ print_status "   - /api/v5/monitoring/health/redis (redis cache health)"
 print_status "   - /api/v5/monitoring/health/system (system metrics)"
 print_status ""
 print_status "✅ Additional Services:"
-print_status "   - /api/v5/monitoring/status (monitoring status)"
+print_status "   - /api/v5/monitoring/status (requires authentication - skipped)"
 print_status "   - /api/v5/metrics/dashboard (metrics dashboard)"
 print_status "   - /api/v5/search/suggestions (search suggestions)"
 print_status "   - /api/v5/search/popular (popular searches)"
 print_status ""
 print_status "=== NEXT STEPS ==="
 print_status "1. Monitor application logs: docker logs -f jewgo_backend"
-print_status "2. Check system metrics: curl http://$SERVER_HOST:5000/api/v5/monitoring/status"
+print_status "2. Check system metrics: curl -H 'Authorization: Bearer <token>' http://$SERVER_HOST:5000/api/v5/monitoring/status"
 print_status "3. Test frontend connectivity to backend"
 print_status "4. Verify all services are working as expected"
 print_status ""
