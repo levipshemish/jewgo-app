@@ -34,7 +34,7 @@ class ETagV5Manager:
     # Entity types and their watermark strategies
     ENTITY_WATERMARK_STRATEGIES = {
         'restaurants': {
-            'table': 'listings',
+            'table': 'restaurants',
             'timestamp_column': 'updated_at',
             'include_reviews': True,
             'include_hours': True,
