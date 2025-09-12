@@ -151,11 +151,9 @@ def parse_filters(request_args: Dict[str, Any]) -> Dict[str, Any]:
     # Location filters
     if request_args.get('latitude') and request_args.get('longitude'):
         try:
-            filters['location'] = {
-                'latitude': float(request_args.get('latitude')),
-                'longitude': float(request_args.get('longitude')),
-                'radius': float(request_args.get('radius', 10))  # Default 10km radius
-            }
+            filters['latitude'] = float(request_args.get('latitude'))
+            filters['longitude'] = float(request_args.get('longitude'))
+            filters['radius'] = float(request_args.get('radius', 10))  # Default 10km radius
         except (ValueError, TypeError):
             pass  # Invalid location data, skip
     
