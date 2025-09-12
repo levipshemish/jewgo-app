@@ -50,10 +50,10 @@ ssh $SERVER_USER@$SERVER_HOST "cat > $SERVER_PATH/.env << 'EOF'
 # Production Environment Configuration for Server Deployment
 
 # --- Database Configuration ---
-POSTGRES_DB=app_db
+POSTGRES_DB=jewgo_db
 POSTGRES_USER=app_user
 POSTGRES_PASSWORD=Jewgo123
-DATABASE_URL=postgresql://app_user:Jewgo123@129.80.190.110:5432/app_db
+DATABASE_URL=postgresql://app_user:Jewgo123@129.80.190.110:5432/jewgo_db
 
 # --- Redis Configuration ---
 REDIS_PASSWORD=
