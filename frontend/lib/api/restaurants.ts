@@ -66,7 +66,7 @@ export async function fetchRestaurants({
       throw new Error(response.error || 'Failed to fetch restaurants');
     }
 
-    // Handle V5 API response format
+    // Handle V5 API response format - V5 API returns data array directly
     const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
     const total = response.data?.total || response.pagination?.total || restaurants.length;
     const safeLimit = limit > 0 ? limit : 1;
@@ -82,8 +82,8 @@ export async function fetchRestaurants({
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);
     
-    // Fallback to legacy API
-    const u = new URL("/api/restaurants", API_BASE || window.location.origin);
+    // Fallback to V5 API directly
+    const u = new URL("/api/v5/restaurants", API_BASE || window.location.origin);
     
     // Build search params
     const searchParams = new URLSearchParams();
@@ -164,7 +164,7 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
       throw new Error(response.error || 'Failed to search restaurants');
     }
 
-    // Handle V5 API response format
+    // Handle V5 API response format - V5 API returns data array directly
     const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
     const total = response.data?.total || response.pagination?.total || restaurants.length;
 
@@ -179,8 +179,8 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
   } catch (error) {
     console.error('V5 API search error, falling back to legacy API:', error);
     
-    // Fallback to legacy API
-    const u = new URL("/api/restaurants/search", API_BASE || window.location.origin);
+    // Fallback to V5 API directly
+    const u = new URL("/api/v5/search/restaurants", API_BASE || window.location.origin);
     u.search = new URLSearchParams({ 
       q: query, 
       limit: String(limit) 
@@ -229,8 +229,8 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);
     
-    // Fallback to legacy API
-    const u = new URL(`/api/restaurants/${id}`, API_BASE || window.location.origin);
+    // Fallback to V5 API directly
+    const u = new URL(`/api/v5/restaurants/${id}`, API_BASE || window.location.origin);
 
     const res = await fetch(u.toString(), {
       cache: "no-store",

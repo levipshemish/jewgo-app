@@ -335,24 +335,9 @@ export class LegacyApiClient {
   }
 
   /**
-   * Get restaurants (legacy endpoint)
+   * Get restaurants (legacy endpoint) - REMOVED DUPLICATE METHOD
+   * Using the main getRestaurants method from V5ApiClient instead
    */
-  async getRestaurants(params: any = {}): Promise<V5ApiResponse> {
-    if (this.useV5) {
-      return this.v5Client.getRestaurants(params);
-    }
-    
-    // Fallback to legacy endpoint
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
-      }
-    });
-    
-    const endpoint = `/api/restaurants?${searchParams.toString()}`;
-    return this.v5Client.makeRequest(endpoint);
-  }
 
   /**
    * Get synagogues (legacy endpoint)

@@ -367,8 +367,7 @@ const nextConfig = {
       { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*` },
       { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*` },
       { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*` },
-      // Note: Do not rewrite '/api/restaurants/*' so that Next API routes
-      // like '/api/restaurants' and '/api/restaurants/filter-options' work locally
+      // Note: Frontend now calls V5 API directly, no rewrites needed for legacy endpoints
     ];
   },
 };
