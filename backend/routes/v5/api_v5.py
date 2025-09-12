@@ -177,7 +177,7 @@ def parse_pagination(request_args: Dict[str, Any]) -> Dict[str, Any]:
     if request_args.get('limit'):
         try:
             limit = int(request_args.get('limit'))
-            pagination['limit'] = min(max(limit, 1), 500)  # Between 1 and 500
+            pagination['limit'] = min(max(limit, 1), 50)  # Between 1 and 50
         except (ValueError, TypeError):
             pagination['limit'] = 20  # Default limit
     

@@ -254,7 +254,7 @@ def get_reviews():
         status = request.args.get('status', 'approved')
         rating = request.args.get('rating')
         cursor = request.args.get('cursor')
-        limit = min(int(request.args.get('limit', 20)), 500)
+        limit = min(int(request.args.get('limit', 20)), 50)
         
         # Build filters
         filters = {}

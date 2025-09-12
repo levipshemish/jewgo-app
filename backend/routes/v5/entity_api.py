@@ -94,7 +94,7 @@ def get_entities(entity_type: str):
 
         # Parse query parameters
         cursor = request.args.get('cursor')
-        limit = min(int(request.args.get('limit', 20)), 500)
+        limit = min(int(request.args.get('limit', 20)), 50)
         sort = request.args.get('sort', 'created_at_desc')
         
         # Parse filters

@@ -52,7 +52,7 @@ etag_manager = None
 # Search configuration
 SEARCH_CONFIG = {
     'default_limit': 20,
-    'max_limit': 500,
+    'max_limit': 50,
     'supported_entities': ['restaurants', 'synagogues', 'mikvahs', 'stores'],
     'search_weights': {
         'name': 3.0,
