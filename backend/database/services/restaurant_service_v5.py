@@ -170,6 +170,7 @@ class RestaurantServiceV5:
         Returns:
             Tuple of (restaurants, next_cursor, prev_cursor)
         """
+        print(f"DEBUG SERVICE: get_restaurants called with page={page}, sort_key={sort_key}")
         try:
             # Check cache first if enabled
             cache_key = None
