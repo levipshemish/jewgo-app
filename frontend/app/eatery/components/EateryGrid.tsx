@@ -418,13 +418,8 @@ export default function EateryGrid({
         const attemptFetch = async (): Promise<void> => {
           try {
             if (useRealData && currentRetryCount < 3) {
-              // Check if we're using distance sorting for initial load
-              const searchParams = new URLSearchParams(buildSearchParams())
-              const isDistanceSorting = searchParams.get('sort') === 'distance_asc'
-              
-              
-              // Try real API first with appropriate pagination
-              const response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, isDistanceSorting ? 1 : undefined)
+              // Use page-based pagination for initial load (page 1)
+              const response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, 1)
               setRestaurants(response.restaurants.map((r: any): LightRestaurant => ({
                 id: r.id,
                 name: r.name,

@@ -46,15 +46,7 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
     const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
     const googleReviewsData = parseGoogleReviews(googleReviewsJson);
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('calculateRatingFromGoogleReviews: Parsed data:', {
-        dataType: typeof googleReviewsData,
-        isArray: Array.isArray(googleReviewsData),
-        hasReviews: !!(googleReviewsData.reviews && Array.isArray(googleReviewsData.reviews)),
-        directArray: Array.isArray(googleReviewsData) ? googleReviewsData.length : 0,
-        reviewsArray: googleReviewsData.reviews ? googleReviewsData.reviews.length : 0
-      });
-    }
+    // Removed excessive logging
     
     // Handle different data structures - match the logic from individual eatery page
     const reviewsArray = !googleReviewsData
@@ -65,28 +57,19 @@ export function calculateRatingFromGoogleReviews(googleReviewsJson: string): num
             ? googleReviewsData.reviews
             : []);
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('calculateRatingFromGoogleReviews: Final reviews array:', {
-        reviewCount: reviewsArray.length,
-        reviews: reviewsArray.map((r: any) => ({ rating: r.rating, author: r.author }))
-      });
-    }
+    // Removed excessive logging
     
     if (reviewsArray.length > 0) {
       const validRatings = reviewsArray
         .map((review: any) => review.rating)
         .filter((rating: any) => typeof rating === 'number' && rating > 0);
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('calculateRatingFromGoogleReviews: Valid ratings:', validRatings);
-      }
+      // Removed excessive logging
       
       if (validRatings.length > 0) {
         const averageRating = validRatings.reduce((sum: number, rating: number) => sum + rating, 0) / validRatings.length;
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log('calculateRatingFromGoogleReviews: Average rating:', averageRating);
-        }
+        // Removed excessive logging
         
         return averageRating;
       }
