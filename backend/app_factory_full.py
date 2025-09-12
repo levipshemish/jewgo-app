@@ -511,6 +511,16 @@ def create_app(config_class=None):
         except Exception as e:
             logger.warning(f"Could not register v5 monitoring API blueprint: {e}")
         
+        # Register health check blueprint
+        try:
+            from routes.health_proper import health_proper_bp
+            app.register_blueprint(health_proper_bp)
+            logger.info("Health check blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import health check blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register health check blueprint: {e}")
+        
         # Register v5 feature flags API (always enabled for frontend access)
         try:
             from routes.v5.feature_flags_api import feature_flags_bp
@@ -575,16 +585,6 @@ def create_app(config_class=None):
             logger.info("V5 feature flags API blueprint registered (fallback)")
         except ImportError:
             pass
-    
-    # Register health check blueprint
-    try:
-        from routes.health_proper import health_proper_bp
-        app.register_blueprint(health_proper_bp)
-        logger.info("Health check blueprint registered successfully")
-    except ImportError as e:
-        logger.warning(f"Could not import health check blueprint: {e}")
-    except Exception as e:
-        logger.warning(f"Could not register health check blueprint: {e}")
     
     # Register error handlers
     @app.errorhandler(404)
