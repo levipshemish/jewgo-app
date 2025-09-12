@@ -213,6 +213,7 @@ def get_entities(entity_type: str):
         
         # Get service for entity type
         service = get_entity_service(entity_type)
+        print(f"DEBUG API: service={service}, service_type={type(service)}")
         
         # Get entities
         result = service.get_entities(
