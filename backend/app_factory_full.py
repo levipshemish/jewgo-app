@@ -333,6 +333,16 @@ def create_app(config_class=None):
     # Make dependencies available to routes
     app.config["dependencies"] = deps
     
+    # Register health check blueprint early (before other complex services)
+    try:
+        from routes.health_proper import health_proper_bp
+        app.register_blueprint(health_proper_bp)
+        logger.info("Health check blueprint registered successfully")
+    except ImportError as e:
+        logger.warning(f"Could not import health check blueprint: {e}")
+    except Exception as e:
+        logger.warning(f"Could not register health check blueprint: {e}")
+    
     # Monitoring blueprint registration is handled later after service init
     
     # Register PostgreSQL authentication system
@@ -510,16 +520,6 @@ def create_app(config_class=None):
             logger.warning(f"Could not import v5 monitoring API blueprint: {e}")
         except Exception as e:
             logger.warning(f"Could not register v5 monitoring API blueprint: {e}")
-        
-        # Register health check blueprint
-        try:
-            from routes.health_proper import health_proper_bp
-            app.register_blueprint(health_proper_bp)
-            logger.info("Health check blueprint registered successfully")
-        except ImportError as e:
-            logger.warning(f"Could not import health check blueprint: {e}")
-        except Exception as e:
-            logger.warning(f"Could not register health check blueprint: {e}")
         
         # Register v5 feature flags API (always enabled for frontend access)
         try:
