@@ -40,11 +40,11 @@ class ETagV5Manager:
             'include_hours': True,
         },
         'synagogues': {
-            'table': 'listings',
+            'table': 'synagogues',
             'timestamp_column': 'updated_at',
             'include_reviews': True,
             'include_hours': True,
-            'category_filter': '1cda20e7-518d-44ae-a871-4b25b6620174'  # Synagogue category ID
+            'category_filter': None
         },
         'mikvahs': {
             'table': 'mikvah',

@@ -42,16 +42,16 @@ class EntityRepositoryV5(BaseRepository):
             'category_filter': None
         },
         'synagogues': {
-            'model_name': 'Listing',
-            'table_name': 'listings',
+            'model_name': 'Synagogue',
+            'table_name': 'synagogues',
             'primary_key': 'id',
             'default_sort': 'created_at',
-            'searchable_fields': ['title', 'description', 'address'],
-            'filterable_fields': ['is_active', 'category_id', 'is_verified'],
-            'relations': ['business_hours', 'reviews', 'restaurant_images'],
+            'searchable_fields': ['name', 'description', 'address'],
+            'filterable_fields': ['status', 'denomination', 'accessibility'],
+            'relations': ['hours', 'reviews'],
             'geospatial': True,
             'supports_reviews': True,
-            'category_filter': '1cda20e7-518d-44ae-a871-4b25b6620174'  # Synagogue category ID
+            'category_filter': None
         },
         'mikvahs': {
             'model_name': 'Mikvah',
@@ -102,7 +102,7 @@ class EntityRepositoryV5(BaseRepository):
     def _load_models(self):
         """Load and cache SQLAlchemy model classes."""
         try:
-            from database.models import Restaurant, Synagogue, Mikvah, Store, Listing
+            from database.models import Restaurant, Synagogue, Mikvah, Store
             
             self._model_cache = {
                 'restaurants': Restaurant,  # Use Restaurant model for restaurants
