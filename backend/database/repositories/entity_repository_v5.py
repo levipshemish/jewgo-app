@@ -955,6 +955,10 @@ class EntityRepositoryV5(BaseRepository):
             # Debug logging
             logger.debug(f"Distance calculation: user=({user_lat}, {user_lng}), entity=({entity_lat}, {entity_lng})")
             
+            # Special debug for Mizrachi restaurants
+            if hasattr(entity, 'name') and 'mizrachi' in entity.name.lower():
+                logger.warning(f"Mizrachi restaurant found: {entity.name} at coordinates ({entity_lat}, {entity_lng})")
+            
             # Simple distance calculation (Haversine formula would be more accurate)
             import math
             
@@ -969,6 +973,11 @@ class EntityRepositoryV5(BaseRepository):
             distance_miles = 3958.756 * c  # Earth's radius in miles
             
             logger.debug(f"Calculated distance: {distance_miles:.2f} miles")
+            
+            # Special debug for Mizrachi restaurants
+            if hasattr(entity, 'name') and 'mizrachi' in entity.name.lower():
+                logger.warning(f"Mizrachi restaurant distance calculation: {entity.name} = {distance_miles:.2f} miles")
+            
             return round(distance_miles, 2)
             
         except Exception as e:

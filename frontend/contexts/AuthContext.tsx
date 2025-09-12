@@ -18,18 +18,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated on mount
-    checkAuth();
-  }, []);
+    // Only check auth once on mount to prevent rate limiting
+    if (!authChecked) {
+      checkAuth();
+      setAuthChecked(true);
+    }
+  }, [authChecked]);
 
   const checkAuth = async () => {
     try {
       // Probe backend profile; 200 => authenticated, 401 => not
       const currentUser = await postgresAuth.getProfile();
       setUser(currentUser);
-    } catch (_error) {
+    } catch (error) {
+      // Handle rate limiting gracefully
+      if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+        console.warn('Auth rate limit exceeded, treating as unauthenticated');
+      }
       // Treat any failure as unauthenticated for client UX
       setUser(null);
     } finally {

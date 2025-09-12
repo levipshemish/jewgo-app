@@ -62,6 +62,11 @@ export default function EateryGrid({
       // Use backend-calculated distance (already in miles)
       console.log(`Using backend distance for ${restaurant.name}: ${distance} miles`)
       
+      // Special debug for Mizrachi restaurants
+      if (restaurant.name && restaurant.name.toLowerCase().includes('mizrachi')) {
+        console.warn(`Mizrachi restaurant distance: ${restaurant.name} = ${distance} miles`)
+      }
+      
       // Format miles directly
       if (distance < 0.1) {
         distanceText = `${Math.round(distance * 5280)}ft`; // Convert to feet

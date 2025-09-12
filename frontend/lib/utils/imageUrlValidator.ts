@@ -14,6 +14,12 @@ const INVALID_DOMAINS = [
   '127.0.0.1'
 ];
 
+// Domains that often have expired or restricted URLs
+const EXPIRED_DOMAINS = [
+  'lh3.googleusercontent.com', // Google Places photos often expire
+  'maps.googleapis.com' // Google Places API URLs expire
+];
+
 /**
  * Get a safe image URL with fallback handling
  * @param imageUrl - The original image URL
@@ -58,14 +64,11 @@ export function getSafeImageUrl(imageUrl?: string): string {
     return normalizedUrl;
   }
 
-  // For Google Photos/Places URLs, validate and return as-is (they're already optimized)
-  if (imageUrl.includes('googleusercontent.com')) {
-    // Check if it's a valid Google Photos URL format
-    if (imageUrl.includes('place-photos') || imageUrl.includes('photo')) {
-      return imageUrl;
-    }
-    // For other Google URLs, return as-is
-    return imageUrl;
+  // Check for expired or restricted domains
+  const isExpiredDomain = EXPIRED_DOMAINS.some(domain => imageUrl.includes(domain));
+  if (isExpiredDomain) {
+    // Return fallback for expired Google Places URLs
+    return '/images/default-restaurant.webp';
   }
 
   // For Unsplash URLs, return as-is (they're already optimized)

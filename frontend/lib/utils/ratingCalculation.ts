@@ -121,53 +121,18 @@ export function getBestAvailableRating(restaurant: {
   google_reviews?: string | null;
   [key: string]: any; // Allow for additional fields
 }): number | null {
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('getBestAvailableRating called with:', {
-      name: restaurant.name,
-      id: restaurant.id,
-      google_rating: restaurant.google_rating,
-      rating: restaurant.rating,
-      star_rating: restaurant.star_rating,
-      quality_rating: restaurant.quality_rating,
-      hasGoogleReviews: !!restaurant.google_reviews,
-      googleReviewsLength: restaurant.google_reviews ? restaurant.google_reviews.length : 0
-    });
-  }
-
   // Use google_rating as primary source for consistency between grid and detail pages
   let rating = restaurant.google_rating ?? restaurant.rating ?? restaurant.star_rating ?? restaurant.quality_rating;
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log('getBestAvailableRating: Rating fields check:', {
-      name: restaurant.name,
-      id: restaurant.id,
-      google_rating: restaurant.google_rating,
-      rating: restaurant.rating,
-      star_rating: restaurant.star_rating,
-      quality_rating: restaurant.quality_rating,
-      selectedRating: rating,
-      hasGoogleReviews: !!restaurant.google_reviews
-    });
-  }
   
   // Only calculate from Google reviews if no rating fields are available
   if ((rating === null || rating === undefined) && restaurant.google_reviews) {
     rating = calculateRatingFromGoogleReviews(restaurant.google_reviews);
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('getBestAvailableRating: Calculated rating from google_reviews as fallback:', rating);
-    }
   }
   
   // Convert to number if it's a string
   if (rating && typeof rating === 'string') {
     const numRating = parseFloat(rating);
     rating = isNaN(numRating) ? null : numRating;
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Final rating:', rating);
   }
 
   return rating as number | null;
