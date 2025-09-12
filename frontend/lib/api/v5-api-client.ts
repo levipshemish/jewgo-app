@@ -130,12 +130,15 @@ export class V5ApiClient {
         const data = await response.json();
         console.log('V5 API Client response data:', data);
         
-        // Backend returns {data: [], next_cursor: null, prev_cursor: null}
+        // Backend returns {data: [], next_cursor: null, prev_cursor: null, total_count: 207}
         // Extract the actual data array and return in expected frontend format
         return {
           success: true,
           data: data.data || data, // Use data.data if it exists, otherwise use data directly
-          message: 'Request successful'
+          message: 'Request successful',
+          next_cursor: data.next_cursor,
+          prev_cursor: data.prev_cursor,
+          total_count: data.total_count
         };
 
       } catch (error) {

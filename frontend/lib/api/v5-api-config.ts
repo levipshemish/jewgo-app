@@ -54,6 +54,9 @@ export interface V5ApiResponse<T = any> {
   data: T;
   message?: string;
   error?: string;
+  next_cursor?: string | null;
+  prev_cursor?: string | null;
+  total_count?: number | null;
   pagination?: {
     page: number;
     limit: number;
