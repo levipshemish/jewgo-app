@@ -89,16 +89,29 @@ export class V5ApiClient {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new V5ApiError(
+          const error = new V5ApiError(
             errorData.error || `HTTP ${response.status}: ${response.statusText}`,
             response.status,
             errorData.code,
             response
           );
+          return {
+            success: false,
+            data: null as any,
+            error: error.message,
+            message: 'Request failed'
+          };
         }
 
         const data = await response.json();
-        return data;
+        
+        // Backend returns {data: [], next_cursor: null, prev_cursor: null}
+        // Extract the actual data array and return in expected frontend format
+        return {
+          success: true,
+          data: data.data || data, // Use data.data if it exists, otherwise use data directly
+          message: 'Request successful'
+        };
 
       } catch (error) {
         lastError = error as Error;
@@ -109,7 +122,14 @@ export class V5ApiClient {
       }
     }
 
-    throw lastError || new V5ApiError('Request failed after all retry attempts');
+    // Return error in expected format
+    const error = lastError || new V5ApiError('Request failed after all retry attempts');
+    return {
+      success: false,
+      data: null as any,
+      error: error.message,
+      message: 'Request failed'
+    };
   }
 
   /**

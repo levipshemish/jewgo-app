@@ -23,8 +23,8 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
   const strengthText = getPasswordStrengthText(strength);
 
   // Calculate progress percentage
-  const getProgressPercentage = (strength: 'weak' | 'medium' | 'strong'): number => {
-    switch (strength) {
+  const getProgressPercentage = (strengthValue: 'weak' | 'medium' | 'strong'): number => {
+    switch (strengthValue) {
       case 'weak': return 33;
       case 'medium': return 66;
       case 'strong': return 100;
@@ -35,8 +35,8 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
   const progressPercentage = getProgressPercentage(strength);
 
   // Get progress bar color
-  const getProgressBarColor = (strength: 'weak' | 'medium' | 'strong'): string => {
-    switch (strength) {
+  const getProgressBarColor = (strengthValue: 'weak' | 'medium' | 'strong'): string => {
+    switch (strengthValue) {
       case 'weak': return 'bg-red-500';
       case 'medium': return 'bg-yellow-500';
       case 'strong': return 'bg-green-500';

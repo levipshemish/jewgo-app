@@ -432,8 +432,8 @@ export function useReviews(
         return { success: true };
       }
       return { success: false, error: 'Failed to create review' };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to create review' };
+    } catch (errorItem: any) {
+      return { success: false, error: errorItem.message || 'Failed to create review' };
     }
   }, [entityType, entityId, fetchReviews]);
 

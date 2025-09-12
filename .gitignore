@@ -159,3 +159,7 @@ backend/venv_py311/
 **/lcov-report/
 coverage.xml
 backend/.venv311/
+
+# SSH Keys
+ssh-key-*.key
+*.key

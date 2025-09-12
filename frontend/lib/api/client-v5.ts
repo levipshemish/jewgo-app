@@ -50,7 +50,7 @@ export class ApiClientV5 {
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
     const requestId = ++this.requestId;
-    const startTime = Date.now();
+    const _startTime = Date.now();
     
     try {
       // Build request configuration
@@ -706,7 +706,7 @@ export class ApiClientV5 {
    */
   setTokens(accessToken: string, refreshToken?: string): void {
     const tokens: TokenPair = {
-      accessToken: accessToken,
+      accessToken,
       refreshToken: refreshToken || '',
       expiresAt: Date.now() + 3600000 // Default 1 hour
     };

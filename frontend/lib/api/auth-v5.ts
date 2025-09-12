@@ -179,7 +179,7 @@ export class AuthTokenManager {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -211,7 +211,7 @@ export class AuthTokenManager {
           this.refreshToken = tokens.refreshToken;
           this.expiresAt = tokens.expiresAt;
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore storage errors
       }
     }
@@ -272,7 +272,7 @@ export class AuthTokenManager {
       } else {
         return { valid: false, error: 'Token verification failed' };
       }
-    } catch (error) {
+    } catch (_error) {
       return { valid: false, error: 'Token verification error' };
     }
   }

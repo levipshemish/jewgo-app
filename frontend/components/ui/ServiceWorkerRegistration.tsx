@@ -143,7 +143,7 @@ export default function ServiceWorkerRegistration() {
       eventListeners.forEach(({ target, event, handler }) => {
         try {
           target.removeEventListener(event, handler);
-        } catch (error) {
+        } catch (_error) {
           // Silently handle errors during cleanup
         }
       });

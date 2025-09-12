@@ -167,7 +167,7 @@ export function useMemoryLeakDetection(
       }
     }
 
-    const leakInfo: MemoryLeakInfo = {
+    const leakInfoData: MemoryLeakInfo = {
       isLeaking,
       leakSeverity,
       memoryTrend: trend,
@@ -178,7 +178,7 @@ export function useMemoryLeakDetection(
       timestamp: now,
     };
 
-    return leakInfo;
+    return leakInfoData;
   }, [getMemorySnapshot, calculateMemoryTrend, opts.trendWindowMs, opts.growthThresholdMB, opts.criticalThresholdMB]);
 
   const checkForMemoryLeaks = useCallback(() => {

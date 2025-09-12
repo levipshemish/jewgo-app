@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Loader2, Users, AlertCircle } from 'lucide-react';
 import { DraftFilters } from '@/lib/filters/filters.types';
 import { validateFilters, normalizeFilters } from '@/lib/utils/filterValidation';
-import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
+// import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 
 interface FilterPreviewProps {
@@ -63,10 +63,10 @@ export function FilterPreview({
 
     try {
       // Use the restaurants API module
-      const filters: Record<string, any> = {};
+      const filterParams: Record<string, any> = {};
       
       // Normalize filters to use standard field names
-      const normalizedFilters = normalizeFilters(filters);
+      const normalizedFilters = normalizeFilters(filterParams);
       
       // Build query parameters
       const params = new URLSearchParams();
@@ -98,7 +98,7 @@ export function FilterPreview({
       }
       for (const [key, value] of params.entries()) {
         if (key !== 'lat' && key !== 'lng') {
-          filters[key] = value;
+          filterParams[key] = value;
         }
       }
       
@@ -110,7 +110,7 @@ export function FilterPreview({
       const response = await fetchRestaurants({
         page: 1,
         limit: 50,
-        filters,
+        filters: filterParams,
         location
       });
       
@@ -152,7 +152,7 @@ export function FilterPreview({
         hasValidationErrors: false
       });
     }
-  }, [filters, userLocation, validation.errors.length, hasActiveFilters]);
+  }, [userLocation, validation.errors.length, hasActiveFilters]);
 
   // Debounced effect
   useEffect(() => {

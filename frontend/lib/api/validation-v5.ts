@@ -20,7 +20,7 @@ export const EntitySchemas = {
   store: { type: 'object', required: ['id', 'name'] }
 };
 
-export function validateApiResponse<T>(data: any, schema?: any): ValidationResult {
+export function validateApiResponse(data: any, _schema?: any): ValidationResult {
   const errors: ValidationError[] = [];
   
   if (!data || typeof data !== 'object') {

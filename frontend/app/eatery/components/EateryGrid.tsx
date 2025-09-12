@@ -5,7 +5,7 @@ import { Loader2, Search, WifiOff, AlertTriangle, RefreshCw } from "lucide-react
 import { calculateDistance, formatDistance } from "@/lib/utils/distance"
 import { AppliedFilters } from "@/lib/filters/filters.types"
 import type { LightRestaurant } from "../types"
-import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
+// import { deduplicatedFetch } from "@/lib/utils/request-deduplication"
 import { getBestAvailableRating, formatRating } from "@/lib/utils/ratingCalculation"
 import EateryGridSkeleton from "./EateryGridSkeleton"
 import { fetchRestaurants as apiFetchRestaurants } from "@/lib/api/restaurants"
@@ -82,7 +82,7 @@ export default function EateryGrid({
   }, [restaurants, userLocation, transformRestaurant])
 
   // Real API function with cursor-based pagination
-  const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, timeoutMs: number = 8000) => {
+  const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, _timeoutMs: number = 8000) => {
     try {
       // Use the restaurants API module which handles v5 endpoints
       const searchParams = new URLSearchParams(params || '')

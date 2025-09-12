@@ -219,7 +219,7 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
     }
 
     // Handle V5 API response format
-    const restaurant = response.data?.restaurant || response.data;
+    const restaurant = response.data;
     if (restaurant) {
       const sanitized = sanitizeRestaurantData([restaurant]);
       return sanitized[0] as Restaurant;

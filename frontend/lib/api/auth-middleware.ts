@@ -349,11 +349,11 @@ function checkAuthorization(
 
   // Required permissions check
   if (options.requiredPermissions && options.requiredPermissions.length > 0) {
-    const hasAllPermissions = options.requiredPermissions.every(permission =>
+    const userHasAllPermissions = options.requiredPermissions.every(permission =>
       user.permissions.includes(permission)
     );
     
-    if (!hasAllPermissions) {
+    if (!userHasAllPermissions) {
       const missingPermissions = options.requiredPermissions.filter(
         permission => !user.permissions.includes(permission)
       );
@@ -382,9 +382,9 @@ function checkAuthorization(
  * Record authentication metrics
  */
 function recordAuthMetrics(
-  outcome: 'success' | 'authorization_failed' | 'error',
-  duration: number,
-  userId?: number
+  _outcome: 'success' | 'authorization_failed' | 'error',
+  _duration: number,
+  _userId?: number
 ): void {
   try {
     metricsCollector.recordUsage(

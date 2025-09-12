@@ -265,7 +265,7 @@ async function handleLogout(request: NextRequest) {
       message: 'Logout successful'
     }, { headers: responseHeaders });
 
-  } catch (error: any) {
+  } catch (_error: any) {
     // Still clear cookies even if backend logout fails
     const responseHeaders = new Headers();
     responseHeaders.append('Set-Cookie', 
@@ -284,7 +284,7 @@ async function handleLogout(request: NextRequest) {
 
 async function handleRefresh(data: { refresh_token?: string }) {
   try {
-    let refreshToken = data.refresh_token;
+    const refreshToken = data.refresh_token;
     
     if (!refreshToken) {
       return NextResponse.json(

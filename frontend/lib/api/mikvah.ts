@@ -285,7 +285,7 @@ export async function fetchMikvahByIds(ids: number[]): Promise<Mikvah[]> {
       ids.map(id => getMikvah(id))
     );
     
-    return mikvah.filter((mikvah): mikvah is Mikvah => mikvah !== null);
+    return mikvah.filter((mikvahItem): mikvahItem is Mikvah => mikvahItem !== null);
   } catch (error) {
     console.error('Error fetching mikvah by IDs:', error);
     return [];

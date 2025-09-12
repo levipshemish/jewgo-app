@@ -2,11 +2,18 @@
 
 A platform for discovering and reviewing kosher restaurants, synagogues, and Jewish community resources. This repository contains the Next.js frontend and a Flask backend used in production at https://api.jewgo.app.
 
-Last Updated: 2025-09-10  
+Last Updated: 2025-01-27  
 Status: Production Ready ✅
-<!-- Webhook test: Docker cleanup integration - Round 2 -->
+<!-- Codebase cleaned and organized -->
 
-## Recent highlights (Sep 2025)
+## Recent highlights (Jan 2025)
+
+- **Codebase cleanup and organization**: Removed unused backup files, duplicate Dockerfiles, and deprecated code
+- **Backend optimization**: Consolidated database managers, removed unused health endpoints, cleaned up connection managers
+- **Frontend cleanup**: Removed unused development pages, duplicate utility files, and unnecessary dependencies
+- **Documentation updates**: Updated project structure documentation to reflect cleaned codebase
+
+## Previous highlights (Sep 2025)
 
 - PostGIS integration for spatial queries (restaurants table now has a geometry column, spatial indexes, and automatic triggers).
 - Restaurant API fixes: location-based filtering, distance sorting, and correct cursor-based pagination.
