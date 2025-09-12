@@ -191,3 +191,14 @@ scripts/essential/apply_postgis_indexes.sh
 scripts/deployment/deploy-improvements.sh
 scripts/utilities/quick_setup_new_server.sh
 scripts/essential/run_migrations.sh
+
+# Documentation files with hardcoded sensitive data
+docs/SERVER_DEPLOYMENT_GUIDE.md
+docs/SERVER_QUICK_REFERENCE.md
+docs/server/NEW_SERVER_SETUP_GUIDE.md
+
+# Docker Compose files with hardcoded credentials
+docker-compose.yml
+config/docker/docker-compose.backend-only.yml
+config/docker/docker-compose.local.yml
+config/docker/docker-compose.optimized.yml

@@ -1,0 +1,301 @@
+#!/bin/bash
+
+# Server Environment Setup Script for Jewgo App
+# This script sets up the production environment file on the server (run once)
+# TEMPLATE VERSION - Replace all placeholder values with actual values
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Server configuration
+SERVER_HOST="YOUR_SERVER_IP_HERE"
+SERVER_USER="YOUR_SERVER_USER_HERE"
+SERVER_PATH="/path/to/your/app"
+SSH_KEY="./your-ssh-key.key"
+
+print_status "Setting up production environment on server..."
+
+# Check if SSH key exists
+if [ ! -f "$SSH_KEY" ]; then
+    print_error "SSH key not found at: $SSH_KEY"
+    exit 1
+fi
+
+# Set proper permissions for SSH key
+chmod 600 "$SSH_KEY"
+
+# Check if we can connect to the server
+print_status "Testing server connection..."
+if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o BatchMode=yes $SERVER_USER@$SERVER_HOST "echo 'Connection successful'" 2>/dev/null; then
+    print_error "Cannot connect to server. Please check your SSH key and server configuration."
+    exit 1
+fi
+
+print_success "Server connection established"
+
+# Check if .env already exists
+print_status "Checking if .env file already exists..."
+if ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "[ -f $SERVER_PATH/.env ]"; then
+    print_warning ".env file already exists on server!"
+    read -p "Do you want to overwrite it? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_status "Environment setup cancelled."
+        exit 0
+    fi
+fi
+
+# Create environment file on server
+print_status "Creating production environment file on server..."
+ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "cat > $SERVER_PATH/.env << 'EOF'
+# Production Environment Configuration for Jewgo App
+# This file should be configured once and not overwritten during deployments
+
+# --- Database Configuration ---
+POSTGRES_DB=your_database_name
+POSTGRES_USER=your_database_user
+POSTGRES_PASSWORD=your_secure_database_password
+DATABASE_URL=postgresql://your_database_user:your_secure_database_password@your_database_host:5432/your_database_name
+DATABASE_POOL_SIZE=10
+DATABASE_MAX_OVERFLOW=20
+DATABASE_POOL_TIMEOUT=30
+
+# --- Redis Configuration ---
+REDIS_PASSWORD=your_redis_password
+REDIS_URL=redis://default:your_redis_password@your_redis_host:10768
+REDIS_HOST=your_redis_host
+REDIS_PORT=10768
+REDIS_DB=0
+REDIS_USERNAME=default
+REDIS_SSL=false
+
+# --- Application Configuration ---
+NODE_ENV=production
+FLASK_ENV=production
+ENVIRONMENT=production
+SECRET_KEY=your_secure_secret_key_here
+JWT_SECRET_KEY=your_secure_jwt_secret_key_here
+FLASK_SECRET_KEY=your_secure_flask_secret_key_here
+
+# --- API Configuration ---
+API_HOST=0.0.0.0
+API_PORT=5000
+API_WORKERS=4
+API_TIMEOUT=30
+API_RATE_LIMIT=100
+API_RATE_LIMIT_WINDOW=3600
+API_MAX_PAGE_SIZE=100
+API_DEFAULT_PAGE_SIZE=20
+
+# --- CORS Configuration ---
+CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://api.yourdomain.com,http://localhost:3000,http://127.0.0.1:3000
+
+# --- Google Maps API ---
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
+GOOGLE_GEOCODING_API_KEY=your_google_geocoding_api_key_here
+GOOGLE_KNOWLEDGE_GRAPH_API_KEY=your_google_knowledge_graph_api_key_here
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=your_google_maps_map_id_here
+
+# --- Frontend Configuration ---
+NEXT_PUBLIC_BACKEND_URL=https://api.yourdomain.com
+BACKEND_URL=https://api.yourdomain.com
+NEXT_PUBLIC_GA_MEASUREMENT_ID=your_ga_measurement_id_here
+NEXT_PUBLIC_GA_ENABLED=true
+NEXT_PUBLIC_ANALYTICS_ENABLED=true
+NEXT_PUBLIC_DEBUG_PLACES_BADGE=true
+
+# --- Email Configuration ---
+EMAIL_ENABLED=true
+EMAIL_PROVIDER=smtp
+SMTP_HOST=your_smtp_host
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USERNAME=your_smtp_username
+SMTP_USER=your_smtp_username
+SMTP_PASSWORD=your_smtp_password
+SMTP_PASS=your_smtp_password
+SMTP_FROM_EMAIL=your_from_email
+SMTP_FROM=your_from_email
+SMTP_FROM_NAME=Your App Name
+FROM_EMAIL=your_from_email
+ADMIN_EMAIL=admin@yourdomain.com
+NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com
+
+# --- GitHub Webhook Configuration ---
+GITHUB_WEBHOOK_SECRET=your_github_webhook_secret_here
+WEBHOOK_SECRET=your_github_webhook_secret_here
+AUTO_DEPLOY=false
+DEPLOY_SCRIPT=./scripts/deploy.sh
+ROLLBACK_SCRIPT=./scripts/rollback.sh
+HEALTH_CHECK_URL=/api/v5/monitoring/health
+WEBHOOK_IP_WHITELIST=
+
+# --- Monitoring and Error Tracking ---
+SENTRY_DSN=your_sentry_dsn_here
+SENTRY_RELEASE=\${SENTRY_RELEASE}
+
+# --- Cloudinary Configuration ---
+CLOUDINARY_URL=cloudinary://your_cloudinary_url_here
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+
+# --- AWS S3 Backup Configuration ---
+AWS_ACCESS_KEY_ID=\${AWS_ACCESS_KEY_ID}
+AWS_SECRET_ACCESS_KEY=\${AWS_SECRET_ACCESS_KEY}
+AWS_REGION=us-east-1
+S3_BACKUP_BUCKET=your_backup_bucket_name
+
+# --- Cache Configuration ---
+CACHE_TYPE=redis
+CACHE_REDIS_URL=redis://default:your_redis_password@your_redis_host:10768
+CACHE_DEFAULT_TIMEOUT=600
+CACHE_KEY_PREFIX=your_app_name:
+CACHE_THRESHOLD=1000
+CACHE_SOCKET_CONNECT_TIMEOUT_MS=2000
+CACHE_SOCKET_TIMEOUT_MS=2000
+CACHE_HEALTH_CHECK_INTERVAL=30
+CACHE_MAX_CONNECTIONS=20
+CACHE_MAX_RETRIES=2
+CACHE_RETRY_DELAY=0.1
+
+# --- Session Configuration ---
+SESSION_TYPE=redis
+SESSION_KEY_PREFIX=your_app_name_session:
+SESSION_TIMEOUT=3600
+COOKIE_DOMAIN=\${COOKIE_DOMAIN}
+COOKIE_SAMESITE=Lax
+REFRESH_TTL_SECONDS=3888000
+
+# --- Feature Flags ---
+API_V4_ENABLED=true
+API_V4_REVIEWS=false
+MARKETPLACE_ENABLED=true
+SEARCH_ENABLED=true
+
+# --- Logging Configuration ---
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_FILE_PATH=\${LOG_FILE_PATH}
+
+# --- Development/Testing ---
+DEBUG=false
+TESTING=false
+DEPLOYMENT_MODE=production
+
+# --- V5 API Configuration ---
+CURSOR_HMAC_SECRET_V5=your_cursor_hmac_secret_here
+CURSOR_HMAC_SECRET=your_cursor_hmac_secret_here
+
+# --- Authentication Configuration ---
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+Client_ID=your_google_client_id_here
+Client_secrets=your_google_client_secret_here
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here
+Google_Signing_Secret=your_google_signing_secret_here
+
+# --- reCAPTCHA Configuration ---
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
+RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here
+
+# --- Admin Configuration ---
+ADMIN_TOKEN=your_admin_token_here
+ADMIN_API_URL=https://your_admin_api_url
+ADMIN_EMAILS=admin@yourdomain.com,superadmin@yourdomain.com
+ADMIN_DOMAINS=yourdomain.com
+ADMIN_ALLOWED_IPS=192.168.1.1,10.0.0.1
+ADMIN_MFA_REQUIRED=true
+ADMIN_SESSION_TIMEOUT_MINUTES=30
+
+# --- HMAC Keys for Cookie Signing ---
+MERGE_COOKIE_HMAC_KEY_CURRENT=your_hmac_key_current_here
+MERGE_COOKIE_HMAC_KEY_PREVIOUS=your_hmac_key_previous_here
+
+# --- Cleanup Cron Secret ---
+CLEANUP_CRON_SECRET=your_cleanup_cron_secret_here
+
+# --- Account Linking Feature Flag ---
+ACCOUNT_LINKING_ENABLED=true
+
+# --- Apple Authentication ---
+APPLE_CLIENT_ID=com.yourdomain.app.auth
+APPLE_CLIENT_SECRET=your_apple_client_secret_here
+APPLE_TEAM_ID=your_apple_team_id_here
+APPLE_KEY_ID=your_apple_key_id_here
+
+# --- JWKS Configuration ---
+ENABLE_JWKS_PREWARM=false
+ENABLE_JWKS_SCHEDULER=true
+
+# --- External Services ---
+VERCEL_TOKEN=your_vercel_token_here
+VERCEL_PROJECT_ID=your_vercel_project_id_here
+Team_ID=your_team_id_here
+RENDER_API_KEY=your_render_api_key_here
+RENDER_SERVICE_ID=your_render_service_id_here
+RENDER_SERVICE_URL=\${RENDER_SERVICE_URL}
+
+# --- Code Coverage ---
+CODECOV_TOKEN=your_codecov_token_here
+
+# --- Port Configuration ---
+PORT=8082
+
+# --- Application Metadata ---
+APP_VERSION=5.0.0
+HOSTNAME=\${HOSTNAME}
+DEPLOYMENT_ID=\${DEPLOYMENT_ID}
+BUILD_DATE=\${BUILD_DATE}
+GIT_COMMIT=\${GIT_COMMIT}
+GIT_BRANCH=\${GIT_BRANCH}
+
+# --- External Services ---
+VERCEL_DEPLOYMENT_URL=\${VERCEL_DEPLOYMENT_URL}
+RENDER_SERVICE_URL=\${RENDER_SERVICE_URL}
+EOF"
+
+print_success "Environment file created on server"
+
+# Set proper permissions on .env file
+print_status "Setting secure permissions on .env file..."
+ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "chmod 600 $SERVER_PATH/.env"
+
+print_success "Environment setup completed!"
+print_warning ""
+print_warning "⚠️  IMPORTANT: This is a template file. You must:"
+print_warning "1. Copy this file to setup-server-env.sh"
+print_warning "2. Replace all placeholder values with your actual values"
+print_warning "3. Never commit the actual setup-server-env.sh file to git"
+print_warning ""
+print_success "✅ Template created successfully!"
+print_status "Next steps:"
+print_status "1. cp scripts/setup-server-env.sh.template scripts/setup-server-env.sh"
+print_status "2. Edit scripts/setup-server-env.sh with your actual values"
+print_status "3. Run: ./scripts/setup-server-env.sh"
