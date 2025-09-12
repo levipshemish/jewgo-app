@@ -573,6 +573,18 @@ def create_app(config_class=None):
         except Exception as e:
             logger.warning(f"Could not register v5 monitoring API blueprint: {e}")
         
+        # Register v5 metrics API
+        try:
+            from routes.v5.metrics_v5 import metrics_v5, init_services as init_metrics_services
+            # Initialize metrics services
+            init_metrics_services(redis_manager_v5, feature_flags_v5)
+            app.register_blueprint(metrics_v5)
+            logger.info("V5 metrics API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 metrics API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 metrics API blueprint: {e}")
+        
         # Register v5 feature flags API (always enabled for frontend access)
         try:
             from routes.v5.feature_flags_api import feature_flags_bp
