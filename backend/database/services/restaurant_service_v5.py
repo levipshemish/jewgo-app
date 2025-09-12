@@ -265,8 +265,7 @@ class RestaurantServiceV5:
             updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
             view_count_after = updated_restaurant.get('view_count', 0) if updated_restaurant else view_count_before
             
-            # Invalidate cache for this restaurant
-            self._invalidate_restaurant_cache(restaurant_id)
+            # Note: Cache invalidation would be handled by the repository layer
             
             return {
                 'view_count': view_count_after,
