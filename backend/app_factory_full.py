@@ -535,18 +535,6 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 admin API blueprint: {e}")
         
-        # Register v5 webhook API
-        if feature_flags_v5.is_enabled('webhook_api_v5', default=True):
-            try:
-                from routes.v5.webhook_api import webhook_bp, init_services as init_webhook_services
-                # Initialize webhook services
-                init_webhook_services(redis_manager_v5, feature_flags_v5)
-                app.register_blueprint(webhook_bp)
-                logger.info("V5 webhook API blueprint registered successfully")
-            except ImportError as e:
-                logger.warning(f"Could not import v5 webhook API blueprint: {e}")
-            except Exception as e:
-                logger.warning(f"Could not register v5 webhook API blueprint: {e}")
 
         # Register v5 reviews API
         if feature_flags_v5.is_enabled('reviews_api_v5', default=True):
@@ -629,12 +617,6 @@ def create_app(config_class=None):
         except ImportError:
             pass
             
-        try:
-            from routes.v5.webhook_api import webhook_bp
-            app.register_blueprint(webhook_bp)
-            logger.info("V5 webhook API blueprint registered (fallback)")
-        except ImportError:
-            pass
             
         try:
             from routes.v5.reviews_v5 import reviews_v5

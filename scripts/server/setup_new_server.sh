@@ -225,7 +225,7 @@ run_remote "cd /home/ubuntu && python3 temp_import_data.py"
 
 echo ""
 echo "🔧 Step 11: Setting up monitoring stack..."
-run_remote "cd /home/ubuntu/jewgo-app && docker-compose -f docker-compose.webhook.yml up -d"
+run_remote "cd /home/ubuntu/jewgo-app && docker-compose up -d"
 
 echo ""
 echo "🔧 Step 12: Setting up SSL certificates..."
@@ -248,7 +248,7 @@ run_remote "sudo ufw --force enable"
 
 echo ""
 echo "🔧 Step 15: Final health check..."
-run_remote "cd /home/ubuntu/jewgo-app && docker-compose -f docker-compose.webhook.yml ps"
+run_remote "cd /home/ubuntu/jewgo-app && docker-compose ps"
 
 echo ""
 echo "🎉 New server setup completed!"

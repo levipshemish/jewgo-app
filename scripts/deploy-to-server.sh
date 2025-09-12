@@ -304,8 +304,6 @@ test_endpoint "http://$SERVER_HOST:5000/readyz" "Public readyz endpoint"
 # Test Auth API health
 test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/health" "Auth API health endpoint"
 
-# Test Webhook API health
-test_endpoint "http://$SERVER_HOST:5000/api/v5/webhooks/health" "Webhook API health endpoint"
 
 # Test Metrics API health
 test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/health" "Metrics API health endpoint"
@@ -343,8 +341,6 @@ test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?limit=1" "Reviews API end
 # Test additional important endpoints
 print_status "Testing additional important endpoints..."
 
-# Test webhook status
-test_endpoint "http://$SERVER_HOST:5000/api/v5/webhooks/status" "Webhook status endpoint"
 
 # Test monitoring status
 test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/status" "Monitoring status endpoint"
@@ -450,7 +446,6 @@ print_status "✅ Health Endpoints:"
 print_status "   - /healthz (main health check - public)"
 print_status "   - /readyz (readiness check - public)"
 print_status "   - /api/v5/auth/health (auth service)"
-print_status "   - /api/v5/webhooks/health (webhook service)"
 print_status "   - /api/v5/metrics/health (metrics service)"
 print_status "   - /api/v5/monitoring/health (comprehensive - requires auth)"
 print_status ""
@@ -468,7 +463,6 @@ print_status "   - /api/v5/monitoring/health/redis (redis cache health)"
 print_status "   - /api/v5/monitoring/health/system (system metrics)"
 print_status ""
 print_status "✅ Additional Services:"
-print_status "   - /api/v5/webhooks/status (webhook status)"
 print_status "   - /api/v5/monitoring/status (monitoring status)"
 print_status "   - /api/v5/metrics/dashboard (metrics dashboard)"
 print_status "   - /api/v5/search/suggestions (search suggestions)"

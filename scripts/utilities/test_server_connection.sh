@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test server connection and upload webhook fix files
+# Test server connection and upload files
 set -e
 
 SERVER_IP="141.148.50.111"
@@ -35,23 +35,4 @@ else
     echo "⚠️ Backend is not accessible (may be restarting)"
 fi
 
-echo "📤 Uploading webhook fix files..."
-
-# Upload webhook fix files
-echo "📁 Uploading Dockerfile.webhook..."
-rsync -avz backend/Dockerfile.webhook $SERVER_USER@$SERVER_IP:/home/ubuntu/backend/
-
-echo "📁 Uploading docker-compose.webhook.yml..."
-rsync -avz docker-compose.webhook.yml $SERVER_USER@$SERVER_IP:/home/ubuntu/
-
-echo "📁 Uploading fix script..."
-rsync -avz fix_webhook_deployment.sh $SERVER_USER@$SERVER_IP:/home/ubuntu/
-
-echo "📁 Uploading documentation..."
-rsync -avz WEBHOOK_DEPLOYMENT_FIX.md $SERVER_USER@$SERVER_IP:/home/ubuntu/
-
-echo "🔧 Making fix script executable..."
-ssh $SERVER_USER@$SERVER_IP "chmod +x /home/ubuntu/fix_webhook_deployment.sh"
-
-echo "🎉 All files uploaded successfully!"
-echo "🚀 Ready to run: ssh $SERVER_USER@$SERVER_IP 'cd /home/ubuntu && ./fix_webhook_deployment.sh'"
+echo "✅ Server connection test completed!"

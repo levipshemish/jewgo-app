@@ -909,26 +909,37 @@ class EntityRepositoryV5(BaseRepository):
             entity_lng = None
             
             if hasattr(entity, 'latitude') and hasattr(entity, 'longitude'):
-                # Traditional latitude/longitude columns
+                # Traditional latitude/longitude columns (restaurants table)
                 entity_lat = float(entity.latitude or 0)
                 entity_lng = float(entity.longitude or 0)
+                logger.debug(f"Using lat/lng columns: entity_lat={entity_lat}, entity_lng={entity_lng}")
             elif hasattr(entity, 'location') and entity.location:
                 # PostGIS location column - extract coordinates
                 # The location field stores PostGIS point as text like "POINT(-80.1918 25.7617)"
                 try:
                     import re
+                    location_str = str(entity.location)
+                    logger.debug(f"PostGIS location string: {location_str}")
+                    
                     # Extract coordinates from PostGIS point string
-                    point_match = re.search(r'POINT\(([-\d.]+)\s+([-\d.]+)\)', str(entity.location))
+                    point_match = re.search(r'POINT\(([-\d.]+)\s+([-\d.]+)\)', location_str)
                     if point_match:
                         entity_lng = float(point_match.group(1))
                         entity_lat = float(point_match.group(2))
+                        logger.debug(f"Extracted from PostGIS: entity_lat={entity_lat}, entity_lng={entity_lng}")
                     else:
+                        logger.warning(f"Could not parse PostGIS location: {location_str}")
                         return None
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Error parsing PostGIS location: {e}")
                     return None
             
-            if entity_lat is None or entity_lng is None:
+            if entity_lat is None or entity_lng is None or entity_lat == 0 or entity_lng == 0:
+                logger.warning(f"Missing or invalid coordinates: entity_lat={entity_lat}, entity_lng={entity_lng}")
                 return None
+            
+            # Debug logging
+            logger.debug(f"Distance calculation: user=({user_lat}, {user_lng}), entity=({entity_lat}, {entity_lng})")
             
             # Simple distance calculation (Haversine formula would be more accurate)
             import math
@@ -943,6 +954,7 @@ class EntityRepositoryV5(BaseRepository):
             c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
             distance_miles = 3958.756 * c  # Earth's radius in miles
             
+            logger.debug(f"Calculated distance: {distance_miles:.2f} miles")
             return round(distance_miles, 2)
             
         except Exception as e:

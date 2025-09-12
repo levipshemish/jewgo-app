@@ -145,14 +145,6 @@ FROM_EMAIL=your_from_email
 ADMIN_EMAIL=admin@yourdomain.com
 NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com
 
-# --- GitHub Webhook Configuration ---
-GITHUB_WEBHOOK_SECRET=your_github_webhook_secret_here
-WEBHOOK_SECRET=your_github_webhook_secret_here
-AUTO_DEPLOY=false
-DEPLOY_SCRIPT=./scripts/deploy.sh
-ROLLBACK_SCRIPT=./scripts/rollback.sh
-HEALTH_CHECK_URL=/api/v5/monitoring/health
-WEBHOOK_IP_WHITELIST=
 
 # --- Monitoring and Error Tracking ---
 SENTRY_DSN=your_sentry_dsn_here

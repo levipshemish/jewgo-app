@@ -42,6 +42,7 @@ export default function EateryGrid({
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState<number | null>(null)
   const [backendError, setBackendError] = useState(false)
   const [errorType, setErrorType] = useState<'network' | 'timeout' | 'server' | 'not_found' | 'unknown' | null>(null)
@@ -52,11 +53,25 @@ export default function EateryGrid({
 
   // Transform restaurant data for UnifiedCard - memoized to prevent unnecessary recalculations
   const transformRestaurant = useCallback((restaurant: LightRestaurant, userLoc: typeof userLocation) => {
-    // Calculate distance if user location is available
+    // Use backend-calculated distance if available, otherwise calculate locally
+    let distance = restaurant.distance || 0
     let distanceText = ''
     
-    if (userLoc && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
-      const distance = calculateDistance(
+    if (distance > 0) {
+      // Use backend-calculated distance (already in miles)
+      // Format miles directly
+      if (distance < 0.1) {
+        distanceText = `${Math.round(distance * 5280)}ft`; // Convert to feet
+      } else if (distance < 1) {
+        distanceText = `${Math.round(distance * 10) / 10}mi`; // Show as 0.1, 0.2, etc.
+      } else if (distance < 10) {
+        distanceText = `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
+      } else {
+        distanceText = `${Math.round(distance)}mi`; // Show as 12mi, 25mi, etc.
+      }
+    } else if (userLoc && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
+      // Fallback to local calculation if backend didn't provide distance
+      distance = calculateDistance(
         userLoc.latitude,
         userLoc.longitude,
         restaurant.latitude,
@@ -69,9 +84,7 @@ export default function EateryGrid({
 
     return {
       ...restaurant,
-      distance: userLoc && restaurant.latitude !== undefined && restaurant.longitude !== undefined 
-        ? calculateDistance(userLoc.latitude, userLoc.longitude, restaurant.latitude, restaurant.longitude)
-        : 0,
+      distance: distance,
       // Store formatted distance separately for display
       formattedDistance: finalDistance
     }
@@ -83,7 +96,7 @@ export default function EateryGrid({
   }, [restaurants, userLocation, transformRestaurant])
 
   // Real API function with cursor-based pagination
-  const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, _timeoutMs: number = 8000) => {
+  const fetchRestaurants = useCallback(async (limit: number, cursor?: string, params?: string, _timeoutMs: number = 8000, page?: number) => {
     try {
       // Use the restaurants API module which handles v5 endpoints
       const searchParams = new URLSearchParams(params || '')
@@ -100,13 +113,16 @@ export default function EateryGrid({
         }
       }
       
-      // Use the restaurants API module with cursor-based pagination
+      // Check if we're using distance sorting (which requires page-based pagination)
+      const isDistanceSorting = searchParams.get('sort') === 'distance_asc'
+      
+      // Use the restaurants API module with appropriate pagination
       const response = await apiFetchRestaurants({
-        page: 1, // For now, we'll handle pagination differently
+        page: isDistanceSorting ? (page || 1) : 1, // Use page for distance sorting
         limit,
         filters,
         location,
-        cursor // Pass the cursor for pagination
+        cursor: isDistanceSorting ? undefined : cursor // Use cursor for non-distance sorting
       })
       
       if (!response.success) {
@@ -116,16 +132,35 @@ export default function EateryGrid({
       // Handle the response format from the restaurants API
       const responseRestaurants = response.restaurants || []
       
-      // Use the actual API response for pagination
-      const hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
-      const newNextCursor = response.next_cursor
+      // Handle pagination based on sorting type
+      let hasMoreData = false
+      let newNextCursor = null
+      let nextPage = null
       
-      console.log('fetchRestaurants v5 response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', newNextCursor)
+      if (isDistanceSorting) {
+        // For distance sorting, use page-based pagination
+        hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
+        if (hasMoreData && response.next_cursor) {
+          // Extract page number from cursor like "page_2"
+          const pageMatch = response.next_cursor.match(/page_(\d+)/)
+          if (pageMatch) {
+            nextPage = parseInt(pageMatch[1], 10)
+          }
+        }
+        newNextCursor = response.next_cursor // Keep the page-based cursor for reference
+      } else {
+        // For other sorting, use cursor-based pagination
+        hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
+        newNextCursor = response.next_cursor
+      }
+      
+      console.log('fetchRestaurants v5 response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', newNextCursor, 'isDistanceSorting:', isDistanceSorting, 'nextPage:', nextPage)
       
       return {
         restaurants: responseRestaurants,
         hasMore: hasMoreData,
         nextCursor: newNextCursor,
+        nextPage: nextPage,
         limit: response.limit || limit,
         totalCount: response.total_count || null
       }
@@ -227,7 +262,7 @@ export default function EateryGrid({
     return params.toString()
   }, [searchQuery, category, activeFilters, userLocation])
 
-  // Load more items using cursor-based pagination
+  // Load more items using appropriate pagination method
   const loadMoreItems = useCallback(async () => {
     if (loading || !hasMore) {
       return;
@@ -237,8 +272,25 @@ export default function EateryGrid({
 
     try {
       if (useRealData && !backendError) {
-        // Try real API first with cursor-based pagination
-        const response = await fetchRestaurants(50, nextCursor || undefined, buildSearchParams());
+        // Check if we're using distance sorting (page-based) or cursor-based pagination
+        const searchParams = new URLSearchParams(buildSearchParams())
+        const isDistanceSorting = searchParams.get('sort') === 'distance_asc'
+        
+        console.log('loadMoreItems - sort:', searchParams.get('sort'), 'isDistanceSorting:', isDistanceSorting, 'nextCursor:', nextCursor)
+        
+        let response;
+        if (isDistanceSorting) {
+          // Use page-based pagination for distance sorting
+          const nextPage = currentPage + 1
+          console.log('Using page-based pagination, nextPage:', nextPage)
+          response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, nextPage);
+          setCurrentPage(nextPage);
+        } else {
+          // Use cursor-based pagination for other sorting
+          console.log('Using cursor-based pagination, cursor:', nextCursor)
+          response = await fetchRestaurants(50, nextCursor || undefined, buildSearchParams());
+        }
+        
         setRestaurants((prev) => {
           // Deduplicate by id to prevent duplicate restaurants
           const existingIds = new Set(prev.map((r: LightRestaurant) => r.id));
@@ -329,7 +381,7 @@ export default function EateryGrid({
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, useRealData, backendError, fetchRestaurants, buildSearchParams, restaurants.length, nextCursor]);
+  }, [loading, hasMore, useRealData, backendError, fetchRestaurants, buildSearchParams, restaurants.length, nextCursor, currentPage]);
 
   // Unified effect for all data loading - prevents duplicate API calls
   useEffect(() => {
@@ -342,6 +394,7 @@ export default function EateryGrid({
       setRestaurants([])
       setHasMore(true)
       setNextCursor(null)
+      setCurrentPage(1)
       setTotalCount(null)
       setBackendError(false)
       setErrorType(null)
@@ -358,8 +411,14 @@ export default function EateryGrid({
         const attemptFetch = async (): Promise<void> => {
           try {
             if (useRealData && currentRetryCount < 3) {
-              // Try real API first with cursor-based pagination
-              const response = await fetchRestaurants(50, undefined, buildSearchParams())
+              // Check if we're using distance sorting for initial load
+              const searchParams = new URLSearchParams(buildSearchParams())
+              const isDistanceSorting = searchParams.get('sort') === 'distance_asc'
+              
+              console.log('Initial load - sort:', searchParams.get('sort'), 'isDistanceSorting:', isDistanceSorting)
+              
+              // Try real API first with appropriate pagination
+              const response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, isDistanceSorting ? 1 : undefined)
               setRestaurants(response.restaurants.map((r: any): LightRestaurant => ({
                 id: r.id,
                 name: r.name,
@@ -378,8 +437,16 @@ export default function EateryGrid({
                 longitude: r.longitude,
                 distance: typeof r.distance === 'string' ? parseFloat(r.distance) : r.distance
               })))
+              console.log('Initial load response:', {
+                hasMore: response.hasMore,
+                nextCursor: response.nextCursor,
+                totalCount: response.totalCount,
+                restaurantCount: response.restaurants.length
+              })
+              
               setHasMore(response.hasMore)
               setNextCursor(response.nextCursor || null)
+              setCurrentPage(1) // Reset to page 1 for initial load
               if (response.totalCount !== null) {
                 setTotalCount(response.totalCount);
               }

@@ -201,14 +201,6 @@ class FeatureFlagsV5:
                 "user_segments": ["admin", "super_admin", "moderator"]
             },
             
-            "webhook_api_v5": {
-                "type": FeatureFlagType.ROLLOUT,
-                "stage": FeatureFlagStageV5.TESTING,
-                "default": True,
-                "description": "Unified webhook handling",
-                "rollout_percentage": 50.0,
-                "depends_on": ["v5_api_enabled"]
-            },
             
             # Legacy Compatibility
             "v4_fallback": {

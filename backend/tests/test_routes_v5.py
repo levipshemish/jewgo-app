@@ -20,7 +20,6 @@ from routes.v5.admin_api import admin_v5
 from routes.v5.metrics_v5 import metrics_v5
 from routes.v5.reviews_v5 import reviews_v5
 from routes.v5.monitoring_api import monitoring_v5
-from routes.v5.webhook_api import webhook_v5
 
 
 class TestEntityAPI:
@@ -251,33 +250,6 @@ class TestMonitoringAPI:
             assert response.status_code in [200, 401, 403]
 
 
-class TestWebhookAPI:
-    """Test webhook API v5."""
-    
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.app = Flask(__name__)
-        self.app.config['TESTING'] = True
-        self.app.register_blueprint(webhook_v5)
-        
-    def test_github_webhook_missing_signature(self):
-        """Test GitHub webhook with missing signature."""
-        with self.app.test_client() as client:
-            response = client.post('/api/v5/webhooks/github', 
-                                 json={'test': 'data'})
-            
-            assert response.status_code == 400
-            data = json.loads(response.data)
-            assert 'error' in data
-            
-    def test_webhook_test_endpoint(self):
-        """Test webhook test endpoint."""
-        with self.app.test_client() as client:
-            response = client.post('/api/v5/webhooks/test', 
-                                 json={'type': 'basic'})
-            
-            # This would need proper authentication mocking
-            assert response.status_code in [200, 401, 403]
 
 
 class TestReviewsAPI:

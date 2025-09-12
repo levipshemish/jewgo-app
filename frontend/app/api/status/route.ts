@@ -160,13 +160,6 @@ async function getContainerStatus(): Promise<ContainerStatus[]> {
       recentErrors: []
     },
     {
-      name: 'jewgo_webhook',
-      status: 'running',
-      uptime: '30 minutes',
-      healthCheck: 'healthy',
-      recentErrors: []
-    },
-    {
       name: 'jewgo_postgres',
       status: 'running',
       uptime: '2 hours',

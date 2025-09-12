@@ -8,7 +8,7 @@ SERVICE_NAME=${1:-"backend"}
 if [ -z "$1" ]; then
     echo "Usage: $0 <service_name>"
     echo "Example: $0 backend"
-    echo "Available services: backend, redis, nginx, postgres, webhook"
+    echo "Available services: backend, redis, nginx, postgres"
     exit 1
 fi
 

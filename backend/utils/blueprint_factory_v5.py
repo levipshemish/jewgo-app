@@ -69,12 +69,6 @@ class BlueprintFactoryV5:
             'min_role_level': 10,  # Admin level minimum
             'special_access': True,
         },
-        'webhook_api': {
-            'rate_limit_tier': 'webhook',
-            'auth_required': False,  # Webhooks use signature verification
-            'enable_signature_verification': True,
-            'enable_replay_protection': True,
-        }
     }
     
     @classmethod
@@ -292,14 +286,6 @@ class BlueprintFactoryV5:
                             'correlation_id': getattr(g, 'correlation_id', None)
                         }), 403
                 
-                # Signature verification for webhooks (exclude health route)
-                if config.get('enable_signature_verification', False) and request.endpoint not in [f"{blueprint.name}.health_check", f"{blueprint.name}.webhook_health_check"]:
-                    if not cls._verify_webhook_signature():
-                        return jsonify({
-                            'error': 'Invalid signature',
-                            'code': 'INVALID_SIGNATURE',
-                            'correlation_id': getattr(g, 'correlation_id', None)
-                        }), 401
                 
             except Exception as e:
                 logger.error(f"Blueprint before request error: {e}")
@@ -465,39 +451,6 @@ class BlueprintFactoryV5:
         # Additional checks can be added here (IP whitelist, etc.)
         return True
     
-    @classmethod
-    def _verify_webhook_signature(cls) -> bool:
-        """Verify webhook signature for security."""
-        import hmac
-        import hashlib
-        
-        signature = request.headers.get('X-Signature-256') or request.headers.get('X-Hub-Signature-256')
-        if not signature:
-            return False
-        
-        webhook_secret = os.getenv('WEBHOOK_SECRET')
-        if not webhook_secret:
-            logger.warning("Webhook signature verification enabled but no secret configured")
-            return False
-        
-        try:
-            # Remove 'sha256=' prefix if present
-            if signature.startswith('sha256='):
-                signature = signature[7:]
-            
-            # Calculate expected signature
-            expected_signature = hmac.new(
-                webhook_secret.encode('utf-8'),
-                request.data,
-                hashlib.sha256
-            ).hexdigest()
-            
-            # Compare signatures securely
-            return hmac.compare_digest(signature, expected_signature)
-            
-        except Exception as e:
-            logger.error(f"Webhook signature verification error: {e}")
-            return False
     
     @classmethod
     def _log_audit_event(cls, response):
@@ -606,10 +559,3 @@ def create_monitoring_blueprint(import_name: str) -> Blueprint:
     )
 
 
-def create_webhook_blueprint(import_name: str) -> Blueprint:
-    """Create a webhook API blueprint."""
-    return BlueprintFactoryV5.create_blueprint(
-        'webhook_api',
-        import_name,
-        "/api/v5/webhooks"
-    )

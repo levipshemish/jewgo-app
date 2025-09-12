@@ -84,7 +84,7 @@ class V5Rollback:
         
         v5_features_to_disable = [
             'entity_api_v5', 'auth_api_v5', 'search_api_v5', 'admin_api_v5',
-            'reviews_api_v5', 'webhook_api_v5', 'monitoring_api_v5', 'feature_flags_api_v5'
+            'reviews_api_v5', 'monitoring_api_v5', 'feature_flags_api_v5'
         ]
         
         if not dry_run:
