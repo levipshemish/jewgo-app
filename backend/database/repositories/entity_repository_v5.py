@@ -684,7 +684,8 @@ class EntityRepositoryV5(BaseRepository):
             
             # Create distance expression using PostGIS - handle location column properly
             # The location column stores PostGIS point as text, so we need to parse it correctly
-            distance_expr = text(f"ST_Distance(ST_GeogFromText(location), ST_SetSRID(ST_Point({lng}, {lat}), 4326)::geography)")
+            # Use a simpler approach that should work with the location column format
+            distance_expr = text(f"ST_Distance(ST_GeogFromText(location), ST_GeogFromText('POINT({lng} {lat})'))")
             secondary_field = getattr(model_class, strategy['secondary'])
             
             query = query.order_by(asc(distance_expr), asc(secondary_field))
