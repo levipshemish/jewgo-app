@@ -193,6 +193,7 @@ class RestaurantServiceV5:
             processed_filters = self._process_filters(filters)
             
             # Get restaurants from repository
+            print(f"DEBUG SERVICE: About to call repository.get_entities_with_cursor with page={page}, sort_key={sort_key}")
             restaurants, next_cursor, prev_cursor = self.repository.get_entities_with_cursor(
                 entity_type='restaurants',
                 cursor=cursor,
@@ -203,6 +204,7 @@ class RestaurantServiceV5:
                 include_relations=include_relations,
                 user_context=user_context
             )
+            print(f"DEBUG SERVICE: Repository returned {len(restaurants)} restaurants, next_cursor={next_cursor}, prev_cursor={prev_cursor}")
             
             # Enhance restaurant data
             enhanced_restaurants = []
