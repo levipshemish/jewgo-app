@@ -134,6 +134,27 @@ def create_app(config_class=None):
     # Create Flask app
     app = Flask(__name__)
     
+    # Register simple health check routes immediately (before any other configuration)
+    @app.route('/healthz', methods=['GET'])
+    def healthz():
+        """Simple health check - just verify the process is up."""
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'service': 'jewgo-backend',
+            'version': '1.0.0'
+        }), 200
+    
+    @app.route('/readyz', methods=['GET'])
+    def readyz():
+        """Simple readiness check."""
+        return jsonify({
+            'status': 'ready',
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+    
+    logger.info("Simple health check routes registered successfully")
+    
     # Load configuration
     if config_class is None:
         try:
@@ -332,27 +353,6 @@ def create_app(config_class=None):
     
     # Make dependencies available to routes
     app.config["dependencies"] = deps
-    
-    # Register simple health check routes directly (before other complex services)
-    @app.route('/healthz', methods=['GET'])
-    def healthz():
-        """Simple health check - just verify the process is up."""
-        return jsonify({
-            'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat(),
-            'service': 'jewgo-backend',
-            'version': '1.0.0'
-        }), 200
-    
-    @app.route('/readyz', methods=['GET'])
-    def readyz():
-        """Simple readiness check."""
-        return jsonify({
-            'status': 'ready',
-            'timestamp': datetime.utcnow().isoformat()
-        }), 200
-    
-    logger.info("Simple health check routes registered successfully")
     
     # Monitoring blueprint registration is handled later after service init
     
