@@ -398,14 +398,14 @@ class ETagV5Manager:
                     # Handle different table structures
                     if table in ['restaurants', 'synagogues']:
                         hours_table = 'business_hours'
-                        status_filter = 't.is_active = true'
+                        status_filter = "t.status = 'active'"
                         # Add category filter if specified
                         category_filter = strategy.get('category_filter')
                         if category_filter:
                             status_filter += f" AND t.category_id = '{category_filter}'"
                     else:
                         hours_table = f'{table}_hours'
-                        status_filter = "t.status <> 'deleted'"
+                        status_filter = "t.status = 'active'"
                     
                     query = f"""
                     WITH base AS (

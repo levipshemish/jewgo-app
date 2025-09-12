@@ -1047,11 +1047,8 @@ class EntityRepositoryV5(BaseRepository):
         sql_parts = [f"SELECT * FROM {table_name}"]
         where_conditions = [f"({' OR '.join(search_conditions)})"]
         
-        # Add status filter (use is_active for restaurants/synagogues, status for others)
-        if table_name in ['restaurants', 'synagogues']:
-            where_conditions.append("is_active = true")
-        else:
-            where_conditions.append("status = 'active'")
+        # Add status filter (all tables use status column)
+        where_conditions.append("status = 'active'")
         
         # Add geospatial filter if provided
         if filters and 'latitude' in filters and 'longitude' in filters:
