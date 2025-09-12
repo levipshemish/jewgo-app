@@ -1306,6 +1306,45 @@ class EntityRepositoryV5(BaseRepository):
             return ""
 
 
+    def increment_view_count(self, restaurant_id: int) -> bool:
+        """
+        Increment the view count for a restaurant.
+        
+        Args:
+            restaurant_id: Restaurant ID to increment view count for
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            from database.models import Restaurant
+            
+            with self.connection_manager.session_scope() as session:
+                # Get the restaurant
+                restaurant = session.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+                if not restaurant:
+                    logger.warning(f"Restaurant {restaurant_id} not found for view count increment")
+                    return False
+                
+                # Increment view count
+                if restaurant.view_count is None:
+                    restaurant.view_count = 1
+                else:
+                    restaurant.view_count += 1
+                
+                # Update the updated_at timestamp
+                from datetime import datetime, timezone
+                restaurant.updated_at = datetime.now(timezone.utc)
+                
+                session.commit()
+                logger.info(f"Incremented view count for restaurant {restaurant_id} to {restaurant.view_count}")
+                return True
+                
+        except Exception as e:
+            logger.exception(f"Failed to increment view count for restaurant {restaurant_id}", error=str(e))
+            return False
+
+
 # Convenience functions for common operations
 def get_entity_repository_v5(connection_manager: Optional[DatabaseConnectionManager] = None) -> EntityRepositoryV5:
     """Get entity repository v5 instance."""

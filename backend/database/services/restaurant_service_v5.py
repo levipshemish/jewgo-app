@@ -238,6 +238,46 @@ class RestaurantServiceV5:
         """
         return self.get_restaurant_by_id(entity_id)
 
+    def track_view(self, restaurant_id: int) -> Dict[str, Any]:
+        """
+        Track a restaurant page view by incrementing the view count.
+        
+        Args:
+            restaurant_id: Restaurant ID to track view for
+            
+        Returns:
+            Dictionary with view tracking results
+        """
+        try:
+            # Get current view count
+            current_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            if not current_restaurant:
+                raise ValueError(f"Restaurant {restaurant_id} not found")
+            
+            view_count_before = current_restaurant.get('view_count', 0)
+            
+            # Increment view count in database
+            success = self.repository.increment_view_count(restaurant_id)
+            if not success:
+                raise ValueError(f"Failed to increment view count for restaurant {restaurant_id}")
+            
+            # Get updated view count
+            updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            view_count_after = updated_restaurant.get('view_count', 0) if updated_restaurant else view_count_before
+            
+            # Invalidate cache for this restaurant
+            self._invalidate_restaurant_cache(restaurant_id)
+            
+            return {
+                'view_count': view_count_after,
+                'view_count_before': view_count_before,
+                'increment': view_count_after - view_count_before
+            }
+            
+        except Exception as e:
+            logger.exception("Failed to track restaurant view", restaurant_id=restaurant_id, error=str(e))
+            raise
+
     def get_restaurant_by_id(
         self,
         restaurant_id: int,

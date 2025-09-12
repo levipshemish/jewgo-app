@@ -526,6 +526,37 @@ def forbidden(error):
     return jsonify({'error': 'Insufficient permissions'}), 403
 
 
+@api_v5.route('/restaurants/<int:restaurant_id>/view', methods=['POST'])
+def track_restaurant_view(restaurant_id: int):
+    """Track a restaurant page view."""
+    try:
+        # Get restaurant service
+        service = get_entity_service('restaurants')
+        
+        # Check if restaurant exists
+        restaurant = service.get_entity(restaurant_id)
+        if not restaurant:
+            return jsonify({'error': 'Restaurant not found'}), 404
+        
+        # Track the view
+        result = service.track_view(restaurant_id)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'restaurant_id': restaurant_id,
+                'restaurant_name': restaurant.get('name', 'Unknown'),
+                'view_count': result['view_count'],
+                'view_count_before': result['view_count_before'],
+                'increment': result['increment']
+            }
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to track restaurant view", restaurant_id=restaurant_id, error=str(e))
+        return jsonify({'error': 'Failed to track view'}), 500
+
+
 @api_v5.errorhandler(404)
 def not_found(error):
     """Handle not found errors."""

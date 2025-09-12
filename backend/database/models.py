@@ -101,6 +101,7 @@ class Restaurant(Base):
     # 📊 Google Reviews & Rating
     google_rating = Column(Float)  # Google rating (1-5)
     google_review_count = Column(Integer)  # Number of Google reviews
+    view_count = Column(Integer, default=0)  # Number of page views
     
     # 👤 Owner/Contact Information
     user_email = Column(String(255))  # User who submitted/owns this listing
