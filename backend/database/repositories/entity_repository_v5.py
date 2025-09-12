@@ -600,10 +600,10 @@ class EntityRepositoryV5(BaseRepository):
             if hasattr(model_class, 'status') and 'status' not in filters:
                 query = query.filter(model_class.status != 'deleted')
             elif hasattr(model_class, 'is_active') and 'is_active' not in filters:
-                # For listings table, filter by is_active = True
+                # For restaurants/synagogues tables, filter by is_active = True
                 query = query.filter(model_class.is_active == True)
             
-            # Category filter for entity types that use listings table
+            # Category filter for entity types that support categories
             category_filter = mapping.get('category_filter')
             if category_filter and hasattr(model_class, 'category_id'):
                 query = query.filter(model_class.category_id == category_filter)
@@ -1038,8 +1038,8 @@ class EntityRepositoryV5(BaseRepository):
         sql_parts = [f"SELECT * FROM {table_name}"]
         where_conditions = [f"({' OR '.join(search_conditions)})"]
         
-        # Add status filter (use is_active for listings, status for others)
-        if table_name == 'listings':
+        # Add status filter (use is_active for restaurants/synagogues, status for others)
+        if table_name in ['restaurants', 'synagogues']:
             where_conditions.append("is_active = true")
         else:
             where_conditions.append("status = 'active'")
@@ -1086,8 +1086,8 @@ class EntityRepositoryV5(BaseRepository):
             # Order by distance
             lat = filters['latitude']
             lng = filters['longitude']
-            if table_name == 'listings':
-                # Use PostGIS location column for listings table
+            if table_name in ['restaurants', 'synagogues']:
+                # Use PostGIS location column for restaurants/synagogues tables
                 sql_parts.append(f"""
                     ORDER BY 
                         ST_Distance(

@@ -395,8 +395,8 @@ class ETagV5Manager:
                 # Build a proper CTE-based query for unambiguous results
                 if strategy.get('include_reviews') and strategy.get('include_hours'):
                     # Complex query with reviews and hours
-                    # Handle special case for listings table
-                    if table == 'listings':
+                    # Handle different table structures
+                    if table in ['restaurants', 'synagogues']:
                         hours_table = 'business_hours'
                         status_filter = 't.is_active = true'
                         # Add category filter if specified
@@ -430,8 +430,8 @@ class ETagV5Manager:
                     params = {'entity_type': table[:-1]}  # Remove 's' from table name
                 elif strategy.get('include_reviews'):
                     # Query with reviews only
-                    # Handle special case for listings table
-                    if table == 'listings':
+                    # Handle different table structures
+                    if table in ['restaurants', 'synagogues']:
                         status_filter = 't.is_active = true'
                         # Add category filter if specified
                         category_filter = strategy.get('category_filter')
@@ -459,8 +459,8 @@ class ETagV5Manager:
                     params = {'entity_type': table[:-1]}
                 elif strategy.get('include_hours'):
                     # Query with hours only
-                    # Handle special case for listings table
-                    if table == 'listings':
+                    # Handle different table structures
+                    if table in ['restaurants', 'synagogues']:
                         hours_table = 'business_hours'
                         status_filter = 't.is_active = true'
                         # Add category filter if specified
@@ -489,8 +489,8 @@ class ETagV5Manager:
                     params = {}
                 else:
                     # Simple query for base table only
-                    # Handle special case for listings table
-                    if table == 'listings':
+                    # Handle different table structures
+                    if table in ['restaurants', 'synagogues']:
                         status_filter = 'is_active = true'
                         # Add category filter if specified
                         category_filter = strategy.get('category_filter')
