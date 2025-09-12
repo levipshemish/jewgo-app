@@ -187,7 +187,12 @@ class EntityRepositoryV5(BaseRepository):
                 query = self._apply_sorting(query, model_class, sort_key, filters)
                 
                 # Execute query
-                entities = query.limit(limit + 1).all()  # Get one extra to check for next page
+                try:
+                    entities = query.limit(limit + 1).all()  # Get one extra to check for next page
+                    logger.info(f"Query executed successfully: {len(entities)} entities returned")
+                except Exception as e:
+                    logger.error(f"Query execution failed: {e}")
+                    entities = []
                 
                 # Process results
                 has_next = len(entities) > limit
