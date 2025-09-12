@@ -242,7 +242,8 @@ export async function searchMarketplaceListings(
     }
 
     // Transform V5 response to marketplace format
-    const listings = response.data?.listings || response.data || [];
+    // Handle V5 API response format - V5 API returns data array directly
+    const listings = response.data || [];
     const total = response.data?.total || response.pagination?.total || listings.length;
 
     return {

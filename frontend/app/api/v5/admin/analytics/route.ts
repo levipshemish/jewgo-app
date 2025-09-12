@@ -45,3 +45,26 @@ export async function GET(request: NextRequest) {
     return simpleErrorHandler(error);
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    // For analytics events, we don't require authentication
+    const body = await request.json();
+    
+    // Call backend API to log analytics event
+    const response = await apiClient.post('/api/v5/admin/analytics', body, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.success) {
+      return NextResponse.json(response, { status: response.status || 500 });
+    }
+
+    return NextResponse.json(response.data);
+
+  } catch (error) {
+    return simpleErrorHandler(error);
+  }
+}

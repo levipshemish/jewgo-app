@@ -73,7 +73,8 @@ export async function fetchStores({
     }
 
     // Handle V5 API response format
-    const stores = response.data?.stores || response.data || [];
+    // Handle V5 API response format - V5 API returns data array directly
+    const stores = response.data || [];
     const total = response.data?.total || response.pagination?.total || stores.length;
     const safeLimit = limit > 0 ? limit : 1;
 
@@ -170,7 +171,8 @@ export async function searchStores(query: string, limit: number = 100): Promise<
     }
 
     // Handle V5 API response format
-    const stores = response.data?.stores || response.data || [];
+    // Handle V5 API response format - V5 API returns data array directly
+    const stores = response.data || [];
     const total = response.data?.total || response.pagination?.total || stores.length;
 
     return {
@@ -227,7 +229,8 @@ export async function getStore(id: number): Promise<Store | null> {
     }
 
     // Handle V5 API response format
-    const store = response.data?.store || response.data;
+    // Handle V5 API response format - V5 API returns data directly
+    const store = response.data;
     return store || null;
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);

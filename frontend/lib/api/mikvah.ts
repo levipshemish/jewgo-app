@@ -73,7 +73,8 @@ export async function fetchMikvah({
     }
 
     // Handle V5 API response format
-    const mikvah = response.data?.mikvah || response.data || [];
+    // Handle V5 API response format - V5 API returns data array directly
+    const mikvah = response.data || [];
     const total = response.data?.total || response.pagination?.total || mikvah.length;
     const safeLimit = limit > 0 ? limit : 1;
 
@@ -170,7 +171,8 @@ export async function searchMikvah(query: string, limit: number = 100): Promise<
     }
 
     // Handle V5 API response format
-    const mikvah = response.data?.mikvah || response.data || [];
+    // Handle V5 API response format - V5 API returns data array directly
+    const mikvah = response.data || [];
     const total = response.data?.total || response.pagination?.total || mikvah.length;
 
     return {
@@ -227,7 +229,8 @@ export async function getMikvah(id: number): Promise<Mikvah | null> {
     }
 
     // Handle V5 API response format
-    const mikvah = response.data?.mikvah || response.data;
+    // Handle V5 API response format - V5 API returns data directly
+    const mikvah = response.data;
     return mikvah || null;
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);

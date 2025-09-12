@@ -73,7 +73,8 @@ export async function fetchSynagogues({
     }
 
     // Handle V5 API response format
-    const synagogues = response.data?.synagogues || response.data || [];
+    // Handle V5 API response format - V5 API returns data array directly
+    const synagogues = response.data || [];
     const total = response.data?.total || response.pagination?.total || synagogues.length;
     const safeLimit = limit > 0 ? limit : 1;
 
@@ -170,7 +171,8 @@ export async function searchSynagogues(query: string, limit: number = 100): Prom
     }
 
     // Handle V5 API response format
-    const synagogues = response.data?.synagogues || response.data || [];
+    // Handle V5 API response format - V5 API returns data array directly
+    const synagogues = response.data || [];
     const total = response.data?.total || response.pagination?.total || synagogues.length;
 
     return {
@@ -227,7 +229,8 @@ export async function getSynagogue(id: number): Promise<Synagogue | null> {
     }
 
     // Handle V5 API response format
-    const synagogue = response.data?.synagogue || response.data;
+    // Handle V5 API response format - V5 API returns data directly
+    const synagogue = response.data;
     return synagogue || null;
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);
