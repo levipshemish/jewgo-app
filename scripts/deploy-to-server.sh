@@ -322,11 +322,11 @@ test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants?limit=1" "Restaurants
 # Test synagogues endpoint (works - returns 200)
 test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues?limit=1" "Synagogues API endpoint"
 
-# Test mikvahs endpoint (returns 500 - server error)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=1" "Mikvahs API endpoint" 500
+# Test mikvahs endpoint (works - returns 200)
+test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=1" "Mikvahs API endpoint"
 
-# Test stores endpoint (returns 500 - server error)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1" "Stores API endpoint" 500
+# Test stores endpoint (works - returns 200)
+test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1" "Stores API endpoint"
 
 # Test search endpoint (returns 308 - redirect)
 test_endpoint "http://$SERVER_HOST:5000/api/v5/search?q=test&limit=1" "Search API endpoint" 308
@@ -458,8 +458,8 @@ print_status ""
 print_status "✅ Core API Endpoints:"
 print_status "   - /api/v5/restaurants (restaurants data - working)"
 print_status "   - /api/v5/synagogues (synagogues data - working)"
-print_status "   - /api/v5/mikvahs (mikvahs data - server error)"
-print_status "   - /api/v5/stores (stores data - server error)"
+print_status "   - /api/v5/mikvahs (mikvahs data - working)"
+print_status "   - /api/v5/stores (stores data - working)"
 print_status "   - /api/v5/search (search functionality - redirect)"
 print_status "   - /api/v5/reviews (reviews data - redirect)"
 print_status ""
