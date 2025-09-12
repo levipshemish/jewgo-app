@@ -177,6 +177,7 @@ class RestaurantServiceV5:
             if use_cache:
                 cache_key = self._generate_cache_key('restaurants_list', {
                     'cursor': cursor,
+                    'page': page,
                     'limit': limit,
                     'sort_key': sort_key,
                     'filters': filters,
