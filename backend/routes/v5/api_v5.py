@@ -216,6 +216,7 @@ def get_entities(entity_type: str):
         print(f"DEBUG API: service={service}, service_type={type(service)}")
         
         # Get entities
+        print(f"DEBUG API: About to call service.get_entities with page={pagination.get('page')}")
         result = service.get_entities(
             filters=filters,
             cursor=pagination.get('cursor'),
@@ -223,6 +224,7 @@ def get_entities(entity_type: str):
             limit=pagination.get('limit', 20),
             sort=pagination.get('sort', 'created_at_desc')
         )
+        print(f"DEBUG API: service.get_entities returned result with keys: {list(result.keys()) if isinstance(result, dict) else 'not a dict'}")
         
         # Add total count for pagination info
         if not pagination.get('cursor'):  # Only get total count on first page
