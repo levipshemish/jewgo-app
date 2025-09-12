@@ -684,7 +684,7 @@ class EntityRepositoryV5(BaseRepository):
         strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
         
         # Handle distance sorting specially
-        if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
+        if sort_key == 'distance_asc':
             # For distance sorting, we'll sort by created_at first and then sort by distance in the application layer
             # This avoids complex PostGIS distance sorting issues
             primary_field = getattr(model_class, 'created_at')
