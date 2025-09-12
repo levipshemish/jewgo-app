@@ -141,6 +141,7 @@ class EntityRepositoryV5(BaseRepository):
         the appropriate page slice. This is necessary because distance sorting
         is done in the application layer after the database query.
         """
+        print(f"DEBUG DISTANCE PAGINATION: Called with page={page}, limit={limit}, entity_type={entity_type}")
         try:
             model_class = self.get_model_class(entity_type)
             if not model_class:
@@ -194,8 +195,14 @@ class EntityRepositoryV5(BaseRepository):
                 offset = (page - 1) * limit
                 end_offset = offset + limit
                 
+                print(f"DEBUG DISTANCE PAGINATION: total_count={total_count}, offset={offset}, end_offset={end_offset}")
+                
                 # Get the page slice
                 page_entities = result_entities[offset:end_offset]
+                
+                print(f"DEBUG DISTANCE PAGINATION: page_entities length={len(page_entities)}")
+                if page_entities:
+                    print(f"DEBUG DISTANCE PAGINATION: first entity name={page_entities[0].get('name', 'NO_NAME')}, distance={page_entities[0].get('distance', 'NO_DISTANCE')}")
                 
                 # Generate pagination info
                 has_next = end_offset < total_count
@@ -208,6 +215,8 @@ class EntityRepositoryV5(BaseRepository):
                     next_cursor = f"page_{page + 1}"
                 if has_prev:
                     prev_cursor = f"page_{page - 1}"
+                
+                print(f"DEBUG DISTANCE PAGINATION: has_next={has_next}, has_prev={has_prev}, next_cursor={next_cursor}, prev_cursor={prev_cursor}")
                 
                 logger.info(f"Distance pagination: Page {page}, offset {offset}-{end_offset}, returned {len(page_entities)} entities")
                 
