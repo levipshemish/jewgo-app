@@ -682,8 +682,9 @@ class EntityRepositoryV5(BaseRepository):
             lat = filters['latitude']
             lng = filters['longitude']
             
-            # Create distance expression using PostGIS
-            distance_expr = text(f"ST_Distance(location::geography, ST_SetSRID(ST_Point({lng}, {lat}), 4326)::geography)")
+            # Create distance expression using PostGIS - handle location column properly
+            # The location column stores PostGIS point as text, so we need to parse it correctly
+            distance_expr = text(f"ST_Distance(ST_GeogFromText(location), ST_SetSRID(ST_Point({lng}, {lat}), 4326)::geography)")
             secondary_field = getattr(model_class, strategy['secondary'])
             
             query = query.order_by(asc(distance_expr), asc(secondary_field))
