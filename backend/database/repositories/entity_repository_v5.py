@@ -593,15 +593,34 @@ class EntityRepositoryV5(BaseRepository):
         try:
             lat = float(filters['latitude'])
             lng = float(filters['longitude'])
-            radius_miles = float(filters.get('radius', 25))
+            radius_km = float(filters.get('radius', 10))  # Default 10km radius
             
             # Use PostGIS ST_DWithin for efficient spatial queries
             if hasattr(model_class, 'geom'):
+                # Use geom column (PostGIS geometry column)
                 query = query.filter(
                     func.ST_DWithin(
                         model_class.geom,
                         func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                        radius_miles * 1609.34  # Convert miles to meters
+                        radius_km * 1000  # Convert km to meters
+                    )
+                )
+            elif hasattr(model_class, 'location'):
+                # Use location column (PostGIS point stored as text)
+                query = query.filter(
+                    func.ST_DWithin(
+                        func.ST_GeomFromText(model_class.location, 4326),
+                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                        radius_km * 1000  # Convert km to meters
+                    )
+                )
+            elif hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                # Use traditional latitude/longitude columns
+                query = query.filter(
+                    func.ST_DWithin(
+                        func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
+                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                        radius_km * 1000  # Convert km to meters
                     )
                 )
             
@@ -888,16 +907,12 @@ class EntityRepositoryV5(BaseRepository):
                         lng = filters['longitude']
                         radius = filters.get('radius', 10)
                         
-                        if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
-                            # Use PostGIS ST_DWithin for efficient spatial queries
-                            from sqlalchemy import func, text
-                            query = query.filter(
-                                func.ST_DWithin(
-                                    func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
-                                    func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                                    radius * 1000  # Convert km to meters
-                                )
-                            )
+                        # Use the centralized geospatial filter method
+                        query = self._apply_geospatial_filter(query, model_class, {
+                            'latitude': lat,
+                            'longitude': lng,
+                            'radius': radius
+                        })
                     
                     # Apply status filter
                     if hasattr(model_class, 'is_active'):
