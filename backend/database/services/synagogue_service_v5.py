@@ -108,6 +108,7 @@ class SynagogueServiceV5:
         self,
         filters: Optional[Dict[str, Any]] = None,
         cursor: Optional[str] = None,
+        page: Optional[int] = None,
         limit: int = 20,
         sort: str = 'created_at_desc',
         include_relations: bool = False,
@@ -122,6 +123,7 @@ class SynagogueServiceV5:
         try:
             synagogues, next_cursor, prev_cursor = self.get_synagogues(
                 cursor=cursor,
+                page=page,
                 limit=limit,
                 sort_key=sort,
                 filters=filters,
@@ -201,6 +203,7 @@ class SynagogueServiceV5:
     def get_synagogues(
         self,
         cursor: Optional[str] = None,
+        page: Optional[int] = None,
         limit: int = 20,
         sort_key: str = 'created_at_desc',
         filters: Optional[Dict[str, Any]] = None,
@@ -248,6 +251,7 @@ class SynagogueServiceV5:
             synagogues, next_cursor, prev_cursor = self.repository.get_entities_with_cursor(
                 entity_type='synagogues',
                 cursor=cursor,
+                page=page,
                 limit=limit,
                 sort_key=sort_key,
                 filters=processed_filters,

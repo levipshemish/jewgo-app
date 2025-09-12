@@ -84,6 +84,7 @@ class StoreServiceV5:
         self,
         filters: Optional[Dict[str, Any]] = None,
         cursor: Optional[str] = None,
+        page: Optional[int] = None,
         limit: int = 20,
         sort: str = 'created_at_desc',
         include_relations: bool = False,
@@ -99,6 +100,7 @@ class StoreServiceV5:
             stores, next_cursor, prev_cursor = self.get_stores(
                 filters=filters,
                 cursor=cursor,
+                page=page,
                 limit=limit,
                 sort_key=sort
             )
@@ -203,7 +205,7 @@ class StoreServiceV5:
             return None
 
     def get_stores(self, filters: Optional[Dict[str, Any]] = None, cursor: Optional[str] = None,
-                   limit: int = 20, sort_key: str = 'name_asc') -> Dict[str, Any]:
+                   page: Optional[int] = None, limit: int = 20, sort_key: str = 'name_asc') -> Dict[str, Any]:
         """Get stores with filtering and pagination.
         
         Args:
@@ -221,6 +223,7 @@ class StoreServiceV5:
                 entity_type='stores',
                 filters=filters,
                 cursor=cursor,
+                page=page,
                 limit=limit,
                 sort_key=sort_key
             )

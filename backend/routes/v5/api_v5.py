@@ -174,6 +174,13 @@ def parse_pagination(request_args: Dict[str, Any]) -> Dict[str, Any]:
     if request_args.get('cursor'):
         pagination['cursor'] = request_args.get('cursor')
     
+    if request_args.get('page'):
+        try:
+            page = int(request_args.get('page'))
+            pagination['page'] = max(page, 1)  # Page must be at least 1
+        except (ValueError, TypeError):
+            pagination['page'] = 1  # Default page
+    
     if request_args.get('limit'):
         try:
             limit = int(request_args.get('limit'))
@@ -207,6 +214,7 @@ def get_entities(entity_type: str):
         result = service.get_entities(
             filters=filters,
             cursor=pagination.get('cursor'),
+            page=pagination.get('page'),
             limit=pagination.get('limit', 20),
             sort=pagination.get('sort', 'created_at_desc')
         )
