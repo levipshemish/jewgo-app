@@ -333,15 +333,26 @@ def create_app(config_class=None):
     # Make dependencies available to routes
     app.config["dependencies"] = deps
     
-    # Register simple health check blueprint early (before other complex services)
-    try:
-        from routes.health_simple import health_simple_bp
-        app.register_blueprint(health_simple_bp)
-        logger.info("Simple health check blueprint registered successfully")
-    except ImportError as e:
-        logger.warning(f"Could not import simple health check blueprint: {e}")
-    except Exception as e:
-        logger.warning(f"Could not register simple health check blueprint: {e}")
+    # Register simple health check routes directly (before other complex services)
+    @app.route('/healthz', methods=['GET'])
+    def healthz():
+        """Simple health check - just verify the process is up."""
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'service': 'jewgo-backend',
+            'version': '1.0.0'
+        }), 200
+    
+    @app.route('/readyz', methods=['GET'])
+    def readyz():
+        """Simple readiness check."""
+        return jsonify({
+            'status': 'ready',
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+    
+    logger.info("Simple health check routes registered successfully")
     
     # Monitoring blueprint registration is handled later after service init
     
