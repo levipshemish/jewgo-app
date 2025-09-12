@@ -60,25 +60,38 @@ export async function GET(request: NextRequest) {
       options.pagination = { cursor, limit, sort };
     }
 
-    // Call backend API through client
-    const response = await apiClient.getReviews(
-      entityType as EntityType,
-      entityIdNum,
-      options
-    );
+    // Call backend API directly with correct URL
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const queryParams = new URLSearchParams();
+    queryParams.append('entity_type', entityType);
+    queryParams.append('entity_id', entityIdNum.toString());
+    if (rating) queryParams.append('rating', rating.toString());
+    if (verifiedOnly) queryParams.append('verified', 'true');
+    if (cursor) queryParams.append('cursor', cursor);
+    if (limit) queryParams.append('limit', limit.toString());
+    if (sort) queryParams.append('sort', sort);
 
-    if (!response.success) {
+    const backendResponse = await fetch(`${backendUrl}/api/v5/reviews?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!backendResponse.ok) {
       return NextResponse.json(
-        { error: 'Failed to fetch reviews' },
-        { status: 500 }
+        { error: 'Failed to fetch reviews from backend' },
+        { status: backendResponse.status }
       );
     }
+
+    const backendData = await backendResponse.json();
 
     // Add cache headers
     const headers = new Headers();
     headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600'); // 5 min cache
 
-    return NextResponse.json(response.data, { headers });
+    return NextResponse.json(backendData, { headers });
 
   } catch (error) {
     console.error('Get reviews API error:', error);

@@ -29,7 +29,7 @@ export class ApiClientV5 {
 
   constructor(config: Partial<ApiClientConfig> = {}) {
     this.config = {
-      baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001',
+      baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app',
       timeout: 30000,
       retryAttempts: 3,
       retryDelay: 1000,
@@ -423,12 +423,17 @@ export class ApiClientV5 {
   ): Promise<ApiResponse<any>> {
     const queryParams = new URLSearchParams();
     
+    // Add required parameters
+    queryParams.append('entity_type', entityType);
+    queryParams.append('entity_id', entityId.toString());
+    
+    // Add optional parameters
     if (options.rating) queryParams.append('rating', options.rating.toString());
     if (options.verifiedOnly) queryParams.append('verified', 'true');
     if (options.pagination?.cursor) queryParams.append('cursor', options.pagination.cursor);
     if (options.pagination?.limit) queryParams.append('limit', options.pagination.limit.toString());
 
-    const endpoint = `/api/v5/reviews/${entityType}/${entityId}?${queryParams.toString()}`;
+    const endpoint = `/api/v5/reviews?${queryParams.toString()}`;
     
     return this.request(endpoint, {
       method: 'GET',

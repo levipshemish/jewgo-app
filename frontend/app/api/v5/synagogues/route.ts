@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('page')) pagination.page = parseInt(searchParams.get('page')!);
 
     // Call backend directly for now (API client has issues)
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
     const url = `${backendUrl}/api/v5/synagogues?${new URLSearchParams(Object.fromEntries(request.nextUrl.searchParams)).toString()}`;
     
     console.log('Frontend calling backend URL:', url);
