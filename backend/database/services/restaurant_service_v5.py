@@ -118,6 +118,7 @@ class RestaurantServiceV5:
         This method provides a unified interface for the entity API routes.
         """
         try:
+            print(f"DEBUG SERVICE: About to call get_restaurants with page={page}, sort={sort}")
             restaurants, next_cursor, prev_cursor = self.get_restaurants(
                 cursor=cursor,
                 page=page,
@@ -154,6 +155,7 @@ class RestaurantServiceV5:
         user_context: Optional[Dict[str, Any]] = None,
         use_cache: bool = True
     ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
+        print(f"DEBUG SERVICE: get_restaurants called with page={page}, sort_key={sort_key}")
         """
         Get restaurants with enhanced filtering and pagination.
         
