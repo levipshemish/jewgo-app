@@ -58,7 +58,7 @@ export async function fetchRestaurants({
   try {
     // Use V5 API client for restaurants
     const response = await v5ApiClient.getRestaurants({
-      page,
+      page: page || undefined, // Only pass page if it's provided
       limit,
       filters,
       location: location ? {

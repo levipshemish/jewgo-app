@@ -54,11 +54,14 @@ export default function EateryGrid({
   // Transform restaurant data for UnifiedCard - memoized to prevent unnecessary recalculations
   const transformRestaurant = useCallback((restaurant: LightRestaurant, userLoc: typeof userLocation) => {
     // Use backend-calculated distance if available, otherwise calculate locally
-    let distance = restaurant.distance || 0
+    let distance = restaurant.distance
     let distanceText = ''
     
-    if (distance > 0) {
+    // Check if backend provided a distance value (including 0)
+    if (distance !== undefined && distance !== null) {
       // Use backend-calculated distance (already in miles)
+      console.log(`Using backend distance for ${restaurant.name}: ${distance} miles`)
+      
       // Format miles directly
       if (distance < 0.1) {
         distanceText = `${Math.round(distance * 5280)}ft`; // Convert to feet
@@ -71,6 +74,7 @@ export default function EateryGrid({
       }
     } else if (userLoc && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
       // Fallback to local calculation if backend didn't provide distance
+      console.log(`Backend distance not available for ${restaurant.name}, calculating locally`)
       distance = calculateDistance(
         userLoc.latitude,
         userLoc.longitude,
@@ -78,6 +82,8 @@ export default function EateryGrid({
         restaurant.longitude
       )
       distanceText = formatDistance(distance)
+    } else {
+      distance = 0
     }
 
     const finalDistance = distanceText || (userLoc ? '' : restaurant.zip_code || '')

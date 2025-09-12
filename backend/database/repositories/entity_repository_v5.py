@@ -313,7 +313,12 @@ class EntityRepositoryV5(BaseRepository):
                     
                     # Add computed fields
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
-                        entity_dict['distance'] = self._calculate_distance(entity, filters)
+                        distance = self._calculate_distance(entity, filters)
+                        entity_dict['distance'] = distance
+                        if distance is not None:
+                            logger.debug(f"Added distance {distance:.2f} miles for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
+                        else:
+                            logger.debug(f"No distance calculated for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
                     
                     result_entities.append(entity_dict)
                 
@@ -936,6 +941,15 @@ class EntityRepositoryV5(BaseRepository):
             
             if entity_lat is None or entity_lng is None or entity_lat == 0 or entity_lng == 0:
                 logger.warning(f"Missing or invalid coordinates: entity_lat={entity_lat}, entity_lng={entity_lng}")
+                return None
+            
+            # Additional validation for reasonable coordinate ranges
+            if not (-90 <= entity_lat <= 90) or not (-180 <= entity_lng <= 180):
+                logger.warning(f"Coordinates out of valid range: entity_lat={entity_lat}, entity_lng={entity_lng}")
+                return None
+            
+            if not (-90 <= user_lat <= 90) or not (-180 <= user_lng <= 180):
+                logger.warning(f"User coordinates out of valid range: user_lat={user_lat}, user_lng={user_lng}")
                 return None
             
             # Debug logging
