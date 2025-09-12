@@ -37,13 +37,13 @@ class ETagV5Manager:
             'table': 'restaurants',
             'timestamp_column': 'updated_at',
             'include_reviews': True,
-            'include_hours': True,
+            'include_hours': False,  # Hours stored as JSON in main table
         },
         'synagogues': {
             'table': 'synagogues',
             'timestamp_column': 'updated_at',
             'include_reviews': True,
-            'include_hours': True,
+            'include_hours': False,  # Hours stored as JSON in main table
             'category_filter': None
         },
         'mikvahs': {

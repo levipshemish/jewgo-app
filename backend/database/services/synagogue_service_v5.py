@@ -166,6 +166,38 @@ class SynagogueServiceV5:
             logger.error(f"Error getting entity count: {e}")
             return 0
 
+    def _process_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Process and normalize filter parameters."""
+        if not filters:
+            return {}
+        
+        processed = {}
+        
+        # Copy basic filters
+        for key, value in filters.items():
+            if value is not None and value != '':
+                processed[key] = value
+        
+        # Process location filters
+        if processed.get('latitude') and processed.get('longitude'):
+            try:
+                processed['latitude'] = float(processed['latitude'])
+                processed['longitude'] = float(processed['longitude'])
+                
+                # Default radius if not provided
+                if not processed.get('radius'):
+                    processed['radius'] = 25  # 25 miles default
+                else:
+                    processed['radius'] = float(processed['radius'])
+                    
+            except (ValueError, TypeError):
+                # Remove invalid location filters
+                processed.pop('latitude', None)
+                processed.pop('longitude', None)
+                processed.pop('radius', None)
+        
+        return processed
+
     def get_synagogues(
         self,
         cursor: Optional[str] = None,
