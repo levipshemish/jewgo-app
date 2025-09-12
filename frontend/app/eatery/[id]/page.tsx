@@ -216,19 +216,19 @@ function EateryIdPageContent() {
       setReviewsLoading(true)
       
       // Use deduplicated fetch to prevent duplicate API calls
-      const data = await deduplicatedFetch(`/api/v5/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
+      const data = await deduplicatedFetch(`/api/v5/reviews?entity_type=restaurants&entity_id=${restaurantId}&limit=${limit}&cursor=${offset}`)
       
-      if (data.success && data.data && data.data.reviews) {
+      if (data && data.reviews) {
         if (offset === 0) {
           // First page - replace all reviews
-          setReviews(data.data.reviews)
+          setReviews(data.reviews)
         } else {
           // Subsequent pages - append to existing reviews
-          setReviews(prevReviews => [...prevReviews, ...data.data.reviews])
+          setReviews(prevReviews => [...prevReviews, ...data.reviews])
         }
         
         // Store pagination info
-        setReviewsPagination(data.data.pagination)
+        setReviewsPagination(data.pagination || {})
       } else {
         if (offset === 0) {
           setReviews([])

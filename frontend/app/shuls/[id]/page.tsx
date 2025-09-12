@@ -172,7 +172,7 @@ function ShulIdPageContent() {
       setReviewsLoading(true)
       
       // Use the frontend API route for reviews
-      const response = await fetch(`/api/v5/reviews?synagogueId=${synagogueId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
+      const response = await fetch(`/api/v5/reviews?entity_type=synagogues&entity_id=${synagogueId}&limit=${limit}&cursor=${offset}`)
       if (!response.ok) {
         if (offset === 0) {
           setReviews([])
@@ -182,17 +182,17 @@ function ShulIdPageContent() {
       
       const data = await response.json()
       
-      if (data.success && data.data && data.data.reviews) {
+      if (data && data.reviews) {
         if (offset === 0) {
           // First page - replace all reviews
-          setReviews(data.data.reviews)
+          setReviews(data.reviews)
         } else {
           // Subsequent pages - append to existing reviews
-          setReviews(prevReviews => [...prevReviews, ...data.data.reviews])
+          setReviews(prevReviews => [...prevReviews, ...data.reviews])
         }
         
         // Store pagination info
-        setReviewsPagination(data.data.pagination)
+        setReviewsPagination(data.pagination || {})
       } else {
         if (offset === 0) {
           setReviews([])
