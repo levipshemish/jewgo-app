@@ -771,12 +771,16 @@ class EntityRepositoryV5(BaseRepository):
                 entity_lng = float(entity.longitude or 0)
             elif hasattr(entity, 'location') and entity.location:
                 # PostGIS location column - extract coordinates
-                # The location field should be a PostGIS point
-                # We'll need to extract lat/lng from the location data
+                # The location field stores PostGIS point as text like "POINT(-80.1918 25.7617)"
                 try:
-                    # For now, we'll skip distance calculation for PostGIS entities
-                    # as the SQL query handles distance sorting directly
-                    return None
+                    import re
+                    # Extract coordinates from PostGIS point string
+                    point_match = re.search(r'POINT\(([-\d.]+)\s+([-\d.]+)\)', str(entity.location))
+                    if point_match:
+                        entity_lng = float(point_match.group(1))
+                        entity_lat = float(point_match.group(2))
+                    else:
+                        return None
                 except Exception:
                     return None
             
