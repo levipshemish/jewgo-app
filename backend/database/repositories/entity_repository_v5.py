@@ -246,7 +246,9 @@ class EntityRepositoryV5(BaseRepository):
         """
         try:
             # Special handling for distance sorting with page-based pagination
+            logger.info(f"DEBUG PAGINATION: sort_key={sort_key}, page={page}, entity_type={entity_type}")
             if sort_key == 'distance_asc' and page is not None:
+                logger.info(f"DEBUG PAGINATION: Using distance pagination for {entity_type}")
                 return self._get_entities_with_distance_pagination(
                     entity_type, page, limit, filters, include_relations, user_context
                 )
