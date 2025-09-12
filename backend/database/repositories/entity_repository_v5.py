@@ -254,8 +254,14 @@ class EntityRepositoryV5(BaseRepository):
             Tuple of (entities, next_cursor, prev_cursor)
         """
         try:
+            print(f"DEBUG CURSOR: sort_key={sort_key}, page={page}, entity_type={entity_type}")
+            print(f"DEBUG CURSOR: sort_key == 'distance_asc': {sort_key == 'distance_asc'}")
+            print(f"DEBUG CURSOR: page is not None: {page is not None}")
+            print(f"DEBUG CURSOR: Both conditions: {sort_key == 'distance_asc' and page is not None}")
+            
             # Special handling for distance sorting with page-based pagination
             if sort_key == 'distance_asc' and page is not None:
+                print(f"DEBUG CURSOR: Using distance pagination for {entity_type}")
                 return self._get_entities_with_distance_pagination(
                     entity_type, page, limit, filters, include_relations, user_context
                 )
