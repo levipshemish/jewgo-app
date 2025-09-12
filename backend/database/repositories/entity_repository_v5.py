@@ -223,10 +223,7 @@ class EntityRepositoryV5(BaseRepository):
                     # If distance sorting is requested but no location provided, fall back to created_at
                     result_entities.sort(key=lambda x: x.get('created_at', ''), reverse=True)
                 
-                # TEMPORARY: Disable distance sorting to test if that's the issue
-                if sort_key == 'distance_asc':
-                    logger.info(f"TEMPORARILY DISABLED distance sorting - keeping original order")
-                    # Don't sort at all for now
+                # Distance sorting is now properly implemented
                 
                 # Debug: Log the number of entities after sorting
                 logger.info(f"After sorting: {len(result_entities)} entities for {entity_type} with sort_key={sort_key}")
@@ -599,9 +596,8 @@ class EntityRepositoryV5(BaseRepository):
             # Status filter (exclude deleted by default)
             if hasattr(model_class, 'status') and 'status' not in filters:
                 query = query.filter(model_class.status != 'deleted')
-            elif hasattr(model_class, 'is_active') and 'is_active' not in filters:
-                # For restaurants/synagogues tables, filter by is_active = True
-                query = query.filter(model_class.is_active == True)
+            # Note: Restaurant model uses 'status' field, not 'is_active'
+            # The is_active check is removed as it doesn't apply to our Restaurant model
             
             # Category filter for entity types that support categories
             category_filter = mapping.get('category_filter')
@@ -626,8 +622,8 @@ class EntityRepositoryV5(BaseRepository):
                 # Use traditional latitude/longitude columns (most common case)
                 query = query.filter(
                     func.ST_DWithin(
-                        func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326)::geography,
-                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326)::geography,
+                        func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
+                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
                         radius_km * 1000  # Convert km to meters
                     )
                 )
