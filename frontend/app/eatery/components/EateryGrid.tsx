@@ -115,10 +115,9 @@ export default function EateryGrid({
       // Handle the response format from the restaurants API
       const responseRestaurants = response.restaurants || []
       
-      // For now, we'll simulate cursor-based pagination
-      // TODO: Implement proper cursor-based pagination with v5 API
-      const hasMoreData = responseRestaurants.length === limit
-      const newNextCursor = hasMoreData ? `page_${2}` : null
+      // Use the actual API response for pagination
+      const hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
+      const newNextCursor = response.next_cursor
       
       console.log('fetchRestaurants v5 response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', newNextCursor)
       
