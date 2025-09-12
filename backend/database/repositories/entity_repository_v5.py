@@ -105,7 +105,7 @@ class EntityRepositoryV5(BaseRepository):
             from database.models import Restaurant, Synagogue, Mikvah, Store, Listing
             
             self._model_cache = {
-                'restaurants': Listing,  # Use Listing model for restaurants
+                'restaurants': Restaurant,  # Use Restaurant model for restaurants
                 'synagogues': Synagogue,
                 'mikvahs': Mikvah,
                 'stores': Store
