@@ -131,16 +131,13 @@ export default function EateryGrid({
         }
       }
       
-      // Check if we're using distance sorting (which requires page-based pagination)
-      const isDistanceSorting = searchParams.get('sort') === 'distance_asc'
-      
-      // Use the restaurants API module with appropriate pagination
+      // Always use page-based pagination since backend returns page_N cursors for all sorting types
       const response = await apiFetchRestaurants({
-        page: isDistanceSorting ? (page || 1) : 1, // Use page for distance sorting
+        page: page || 1, // Always use page-based pagination
         limit,
         filters,
         location,
-        cursor: isDistanceSorting ? undefined : cursor // Use cursor for non-distance sorting
+        cursor: undefined // Never use cursor-based pagination
       })
       
       if (!response.success) {
@@ -155,25 +152,16 @@ export default function EateryGrid({
       let newNextCursor = null
       let nextPage = null
       
-      // Check if we're using page-based pagination (indicated by page_N cursor format)
-      const isPageBasedPagination = response.next_cursor && response.next_cursor.startsWith('page_')
-      
-      if (isPageBasedPagination) {
-        // For page-based pagination (distance sorting and now all sorting types)
-        hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
-        if (hasMoreData && response.next_cursor) {
-          // Extract page number from cursor like "page_2"
-          const pageMatch = response.next_cursor.match(/page_(\d+)/)
-          if (pageMatch) {
-            nextPage = parseInt(pageMatch[1], 10)
-          }
+      // Always expect page-based pagination since backend returns page_N cursors for all sorting types
+      hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
+      if (hasMoreData && response.next_cursor) {
+        // Extract page number from cursor like "page_2"
+        const pageMatch = response.next_cursor.match(/page_(\d+)/)
+        if (pageMatch) {
+          nextPage = parseInt(pageMatch[1], 10)
         }
-        newNextCursor = response.next_cursor // Keep the page-based cursor for reference
-      } else {
-        // For cursor-based pagination (legacy)
-        hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
-        newNextCursor = response.next_cursor
       }
+      newNextCursor = response.next_cursor // Keep the page-based cursor for reference
       
       
       return {
@@ -294,20 +282,10 @@ export default function EateryGrid({
 
     try {
       if (useRealData && !backendError) {
-        // Check if we're using page-based pagination (indicated by page_N cursor format)
-        const isPageBasedPagination = nextCursor && nextCursor.startsWith('page_')
-        
-        
-        let response;
-        if (isPageBasedPagination) {
-          // Use page-based pagination for all sorting types that return page_N cursors
-          const nextPage = currentPage + 1
-          response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, nextPage);
-          setCurrentPage(nextPage);
-        } else {
-          // Use cursor-based pagination for legacy cursor format
-          response = await fetchRestaurants(50, nextCursor || undefined, buildSearchParams());
-        }
+        // Always use page-based pagination since backend returns page_N cursors for all sorting types
+        const nextPage = currentPage + 1
+        const response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, nextPage);
+        setCurrentPage(nextPage);
         
         setRestaurants((prev) => {
           // Deduplicate by id to prevent duplicate restaurants
