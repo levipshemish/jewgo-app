@@ -152,7 +152,7 @@ export function FilterPreview({
         hasValidationErrors: false
       });
     }
-  }, [filters, userLocation, validation.errors.length, hasActiveFilters]);
+  }, [userLocation, validation.errors.length, hasActiveFilters]);
 
   // Debounced effect
   useEffect(() => {

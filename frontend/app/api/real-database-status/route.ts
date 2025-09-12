@@ -127,7 +127,7 @@ async function getDatabaseStatus(): Promise<DatabaseStatus> {
   }
 }
 
-async function getConnectionPoolStatus(host: string, port: string, database: string, username: string, password: string) {
+async function getConnectionPoolStatus(_host: string, _port: string, _database: string, _username: string, _password: string) {
   try {
     // This would require a database connection to get real pool stats
     // For now, return estimated values based on typical PostgreSQL settings
@@ -148,7 +148,7 @@ async function getConnectionPoolStatus(host: string, port: string, database: str
   }
 }
 
-async function getQueryPerformanceMetrics(host: string, port: string, database: string, username: string, password: string) {
+async function getQueryPerformanceMetrics(_host: string, _port: string, _database: string, _username: string, _password: string) {
   try {
     // This would require a database connection to get real query stats
     // For now, return estimated values

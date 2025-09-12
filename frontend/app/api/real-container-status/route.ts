@@ -67,9 +67,9 @@ async function getContainerDetailsFast(containerName: string): Promise<{
     let uptime = 'unknown'
     let health = 'unknown'
     let restart_count = 0
-    let memory_usage = 'unknown'
-    let cpu_usage = 'unknown'
-    let recent_errors: string[] = []
+    const memory_usage = 'unknown'
+    const cpu_usage = 'unknown'
+    const recent_errors: string[] = []
 
     // Get container health and restart count in one command
     try {
@@ -115,7 +115,7 @@ async function getContainerDetailsFast(containerName: string): Promise<{
   }
 }
 
-async function getContainerDetails(containerName: string): Promise<{
+async function _getContainerDetails(containerName: string): Promise<{
   uptime: string
   health: string
   recent_errors: string[]
