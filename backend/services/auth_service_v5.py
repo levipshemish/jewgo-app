@@ -26,10 +26,11 @@ class AuthServiceV5:
     def __init__(self, redis_manager=None, connection_manager=None, feature_flags=None):
         self.redis_manager = redis_manager or get_redis_manager_v5()
         self.connection_manager = connection_manager or get_connection_manager()
+        self.db_manager = connection_manager or get_connection_manager()
         self.feature_flags = feature_flags or FeatureFlagsV5()
         
         # Initialize existing auth utilities
-        self.postgres_auth = PostgresAuthManager()
+        self.postgres_auth = PostgresAuthManager(self.db_manager)
         self.token_manager = TokenManager()
         
         logger.info("AuthServiceV5 initialized")

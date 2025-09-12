@@ -339,8 +339,8 @@ export async function getUnifiedShtelData(params: Record<string, any> = {}): Pro
 export async function getUnifiedMikvahData(params: Record<string, any> = {}): Promise<UnifiedApiResponse> {
   const searchParams = new URLSearchParams();
   
-  // Add entity type for V5 API
-  searchParams.append('entityType', 'mikvah');
+  // Add entity type for V5 API (pluralized to match backend path)
+  searchParams.append('entityType', 'mikvahs');
   
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {

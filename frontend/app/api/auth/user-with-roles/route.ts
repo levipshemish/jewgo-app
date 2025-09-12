@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Use environment variable for backend URL
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.BACKEND_URL || '';
     
     // Validate BACKEND_URL in production
     if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {

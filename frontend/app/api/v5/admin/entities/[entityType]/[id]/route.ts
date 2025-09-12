@@ -19,7 +19,7 @@ export async function GET(
     const { entityType, id } = params;
 
     // Validate entity type
-    const validEntities = ['restaurants', 'synagogues', 'mikvah', 'stores'];
+    const validEntities = ['restaurants', 'synagogues', 'mikvahs', 'stores'];
     if (!validEntities.includes(entityType)) {
       return NextResponse.json({
         success: false,
@@ -70,7 +70,7 @@ export async function PUT(
     const body = await request.json();
 
     // Validate entity type
-    const validEntities = ['restaurants', 'synagogues', 'mikvah', 'stores'];
+    const validEntities = ['restaurants', 'synagogues', 'mikvahs', 'stores'];
     if (!validEntities.includes(entityType)) {
       return NextResponse.json({
         success: false,
@@ -120,7 +120,7 @@ export async function DELETE(
     const { entityType, id } = params;
 
     // Validate entity type
-    const validEntities = ['restaurants', 'synagogues', 'mikvah', 'stores'];
+    const validEntities = ['restaurants', 'synagogues', 'mikvahs', 'stores'];
     if (!validEntities.includes(entityType)) {
       return NextResponse.json({
         success: false,

@@ -49,7 +49,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     const startTime = performance.now();
     
     // Fetch from direct backend API (same as eatery page) with bounds parameter
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
     const response = await fetch(`${backendUrl}/api/restaurants?bounds=${encodeURIComponent(key)}&limit=100`);
     
     if (!response.ok) {

@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     // Send to backend API (public POST - no Authorization header)
     const startTime = Date.now();
-    let backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://api.jewgo.app';
+    let backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || '';
     
     // Ensure the backend URL has a protocol
     if (backendUrl && !backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
       params.append('offset', offset.toString());
 
       // Get backend URL
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || process.env['BACKEND_URL'] || 'https://api.jewgo.app';
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || process.env['BACKEND_URL'] || '';
 
       // Fetch feedback from backend with admin JWT
       const backendResponse = await fetch(

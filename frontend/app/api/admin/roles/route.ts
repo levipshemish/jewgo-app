@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     const validatedQuery = QuerySchema.parse(queryParams);
     
     // Build backend URL with query parameters
-    const backendUrl = new URL('/api/v4/admin/roles', process.env.BACKEND_URL || 'http://localhost:5000');
+    const backendUrl = new URL('/api/v4/admin/roles', process.env.BACKEND_URL || '');
     Object.entries(validatedQuery).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         backendUrl.searchParams.set(key, String(value));
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     
     // Determine backend endpoint based on action
     const endpoint = validatedBody.action === 'assign' ? 'assign' : 'revoke';
-    const backendUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/v4/admin/roles/${endpoint}`;
+    const backendUrl = `${process.env.BACKEND_URL || ''}/api/v4/admin/roles/${endpoint}`;
     
     try {
       // Forward request to backend

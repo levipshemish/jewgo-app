@@ -17,12 +17,12 @@ from database.services.restaurant_service_v5 import RestaurantServiceV5
 from database.services.synagogue_service_v5 import SynagogueServiceV5
 from database.services.mikvah_service_v5 import MikvahServiceV5
 from database.services.store_service_v5 import StoreServiceV5
-from middleware.auth_v5 import AuthMiddlewareV5
-from middleware.rate_limit_v5 import RateLimitMiddlewareV5
-from middleware.observability_v5 import ObservabilityMiddlewareV5
+from middleware.auth_v5 import AuthV5Middleware
+from middleware.rate_limit_v5 import RateLimitV5Middleware
+from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from utils.cursor_v5 import CursorV5
-from utils.etag_v5 import ETagV5
+from utils.cursor_v5 import CursorV5Manager
+from utils.etag_v5 import ETagV5Manager
 from cache.redis_manager_v5 import RedisManagerV5
 
 logger = get_logger(__name__)
@@ -33,7 +33,7 @@ search_v5 = BlueprintFactoryV5.create_blueprint(
     __name__,
     url_prefix='/api/v5/search',
     config_override={
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'enable_auth': False,  # Public search endpoints
         'enable_rate_limiting': True,
         'enable_idempotency': False,  # Search is idempotent by nature
@@ -82,8 +82,8 @@ def init_services(connection_manager, redis_manager_instance):
     
     entity_repository = EntityRepositoryV5(connection_manager)
     redis_manager = redis_manager_instance
-    cursor_manager = CursorV5()
-    etag_manager = ETagV5()
+    cursor_manager = CursorV5Manager()
+    etag_manager = ETagV5Manager()
     
     # Initialize entity services
     services = {

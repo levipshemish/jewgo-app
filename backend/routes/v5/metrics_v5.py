@@ -13,9 +13,9 @@ from datetime import datetime, timedelta
 from functools import wraps
 import time
 from utils.logging_config import get_logger
-from middleware.auth_v5 import AuthMiddlewareV5
-from middleware.rate_limit_v5 import RateLimitMiddlewareV5
-from middleware.observability_v5 import ObservabilityMiddlewareV5
+from middleware.auth_v5 import AuthV5Middleware
+from middleware.rate_limit_v5 import RateLimitV5Middleware
+from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from cache.redis_manager_v5 import RedisManagerV5
 from utils.feature_flags_v5 import FeatureFlagsV5
@@ -28,7 +28,7 @@ metrics_v5 = BlueprintFactoryV5.create_blueprint(
     __name__,
     url_prefix='/api/v5/metrics',
     config_override={
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'enable_auth': True,
         'enable_rate_limiting': True,
         'enable_idempotency': False,  # Metrics are inherently idempotent

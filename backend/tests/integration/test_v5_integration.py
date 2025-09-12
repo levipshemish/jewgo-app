@@ -121,8 +121,8 @@ class TestV5Integration:
         assert search_data['success'] is True
         assert 'data' in search_data
         
-        # Test search suggestions
-        response = self.client.get('/api/v5/search/suggestions?q=kos')
+        # Test search suggestions (endpoint: /api/v5/search/suggest)
+        response = self.client.get('/api/v5/search/suggest?q=kos')
         assert response.status_code == 200
         suggestions_data = response.get_json()
         assert suggestions_data['success'] is True

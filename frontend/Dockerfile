@@ -55,9 +55,9 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
-# Copy package files for production dependencies
-COPY frontend/package*.json ./
-COPY frontend/package-lock.json ./
+    # Copy package files for production dependencies
+    COPY frontend/package*.json ./
+    COPY frontend/package-lock.json ./
 
 # Copy Prisma schema before installing dependencies
 COPY frontend/prisma ./prisma/

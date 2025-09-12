@@ -19,7 +19,7 @@ const BACKEND_URL = (() => {
   if (envUrl && envUrl.trim().length > 0) {
     return envUrl.replace(/\/+$/, '');
   }
-  return process.env.BACKEND_URL || 'http://localhost:5000';
+  return process.env.BACKEND_URL || '';
 })();
 
 /**

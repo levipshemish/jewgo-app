@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
     
     const response = await fetch(`${backendUrl}/api/v5/feature-flags/`, {
       method: 'GET',
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
     
     const response = await fetch(`${backendUrl}/api/v5/feature-flags/check`, {
       method: 'POST',

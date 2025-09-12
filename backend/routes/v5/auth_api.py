@@ -104,13 +104,15 @@ def login():
         response = make_response(jsonify(response_data))
         cookie_max_age = int(tokens.get('expires_in', 3600))  # Default 1 hour
         
+        cookie_domain = os.getenv('COOKIE_DOMAIN')
         response.set_cookie(
             'access_token',
             tokens.get('access_token', ''),
             max_age=cookie_max_age,
             secure=True,
             httponly=True,
-            samesite='Strict'
+            samesite='None',
+            domain=cookie_domain,
         )
         
         response.set_cookie(
@@ -119,7 +121,8 @@ def login():
             max_age=30 * 24 * 60 * 60,  # 30 days
             secure=True,
             httponly=True,
-            samesite='Strict'
+            samesite='None',
+            domain=cookie_domain,
         )
 
         return response
@@ -208,13 +211,15 @@ def register():
 
         # Set secure cookies
         response = make_response(jsonify(response_data))
+        cookie_domain = os.getenv('COOKIE_DOMAIN')
         response.set_cookie(
             'access_token',
             tokens.get('access_token', ''),
             max_age=8 * 60 * 60,  # 8 hours
             secure=True,
             httponly=True,
-            samesite='Strict'
+            samesite='None',
+            domain=cookie_domain,
         )
         
         response.set_cookie(
@@ -223,7 +228,8 @@ def register():
             max_age=30 * 24 * 60 * 60,  # 30 days
             secure=True,
             httponly=True,
-            samesite='Strict'
+            samesite='None',
+            domain=cookie_domain,
         )
 
         return response, 201
@@ -261,8 +267,9 @@ def logout():
 
         # Clear cookies
         response = make_response(jsonify(response_data))
-        response.set_cookie('access_token', '', max_age=0)
-        response.set_cookie('refresh_token', '', max_age=0)
+        cookie_domain = os.getenv('COOKIE_DOMAIN')
+        response.set_cookie('access_token', '', max_age=0, domain=cookie_domain)
+        response.set_cookie('refresh_token', '', max_age=0, domain=cookie_domain)
 
         return response
 
@@ -308,13 +315,15 @@ def refresh_token():
 
         # Update access token cookie
         response = make_response(jsonify(response_data))
+        cookie_domain = os.getenv('COOKIE_DOMAIN')
         response.set_cookie(
             'access_token',
             new_tokens.get('access_token', ''),
             max_age=8 * 60 * 60,  # 8 hours
             secure=True,
             httponly=True,
-            samesite='Strict'
+            samesite='None',
+            domain=cookie_domain,
         )
 
         return response

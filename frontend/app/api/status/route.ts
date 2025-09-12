@@ -192,7 +192,7 @@ async function getContainerStatus(): Promise<ContainerStatus[]> {
 
 export async function GET(_request: NextRequest) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''
     
     // Define routes to check with their proper HTTP methods
     const routesToCheck = [

@@ -48,7 +48,7 @@ export const MikvahFilters: React.FC<MikvahFiltersProps> = ({
     const fetchFilterOptions = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/restaurants/filter-options');
+        const response = await fetch('/api/v5/restaurants/filter-options');
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data) {

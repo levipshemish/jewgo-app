@@ -13,7 +13,7 @@ import { validateAuthFromRequest } from '@/lib/api/utils-v5';
 // Feature flag check for v5 auth API
 async function checkFeatureFlag(request: NextRequest): Promise<boolean> {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
     
     // Get user info for feature flag check
     const authResult = await validateAuthFromRequest(request);

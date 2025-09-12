@@ -19,7 +19,8 @@ export const V5_API_ENDPOINTS = {
   
   // Unified Search API - cross-entity search
   SEARCH: '/api/v5/search',
-  SEARCH_SUGGESTIONS: '/api/v5/search/suggestions',
+  // Backend route is '/api/v5/search/suggest'
+  SEARCH_SUGGESTIONS: '/api/v5/search/suggest',
   
   // Admin API - consolidated admin endpoints
   ADMIN_USERS: '/api/v5/admin/users',
@@ -40,7 +41,8 @@ export const V5_API_ENDPOINTS = {
 export const V5_ENTITY_TYPES = {
   RESTAURANTS: 'restaurants',
   SYNAGOGUES: 'synagogues', 
-  MIKVAH: 'mikvah',
+  // Backend uses pluralized path: /api/v5/mikvahs
+  MIKVAH: 'mikvahs',
   STORES: 'stores',
 } as const;
 
@@ -156,7 +158,8 @@ export const V5_MIGRATION_MAP = {
   '/api/admin/users': V5_API_ENDPOINTS.ADMIN_USERS,
   '/api/admin/restaurants': V5_API_ENDPOINTS.ADMIN_ENTITIES('restaurants'),
   '/api/admin/synagogues': V5_API_ENDPOINTS.ADMIN_ENTITIES('synagogues'),
-  '/api/admin/mikvah': V5_API_ENDPOINTS.ADMIN_ENTITIES('mikvah'),
+  // Admin endpoints should also use pluralized entity key
+  '/api/admin/mikvah': V5_API_ENDPOINTS.ADMIN_ENTITIES('mikvahs'),
   '/api/admin/stores': V5_API_ENDPOINTS.ADMIN_ENTITIES('stores'),
   '/api/admin/analytics': V5_API_ENDPOINTS.ADMIN_ANALYTICS,
   '/api/admin/system': V5_API_ENDPOINTS.ADMIN_SYSTEM,

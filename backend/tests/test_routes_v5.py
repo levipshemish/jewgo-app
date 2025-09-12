@@ -191,7 +191,8 @@ class TestSearchAPI:
     def test_search_suggestions(self):
         """Test search suggestions."""
         with self.app.test_client() as client:
-            response = client.get('/api/v5/search/suggestions?q=rest')
+            # Updated endpoint path: /api/v5/search/suggest
+            response = client.get('/api/v5/search/suggest?q=rest')
             
             assert response.status_code == 200
             data = json.loads(response.data)

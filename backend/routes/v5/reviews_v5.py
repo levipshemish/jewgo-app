@@ -13,13 +13,13 @@ from datetime import datetime, timedelta
 from functools import wraps
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
-from middleware.auth_v5 import AuthMiddlewareV5
-from middleware.rate_limit_v5 import RateLimitMiddlewareV5
-from middleware.idempotency_v5 import IdempotencyMiddlewareV5
-from middleware.observability_v5 import ObservabilityMiddlewareV5
+from middleware.auth_v5 import AuthV5Middleware
+from middleware.rate_limit_v5 import RateLimitV5Middleware
+from middleware.idempotency_v5 import IdempotencyV5Middleware
+from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from utils.cursor_v5 import CursorV5
-from utils.etag_v5 import ETagV5
+from utils.cursor_v5 import CursorV5Manager
+from utils.etag_v5 import ETagV5Manager
 from cache.redis_manager_v5 import RedisManagerV5
 from utils.feature_flags_v5 import FeatureFlagsV5
 
@@ -31,7 +31,7 @@ reviews_v5 = BlueprintFactoryV5.create_blueprint(
     __name__,
     url_prefix='/api/v5/reviews',
     config_override={
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'enable_auth': True,
         'enable_rate_limiting': True,
         'enable_idempotency': True,
@@ -74,8 +74,8 @@ def init_services(connection_manager, redis_manager_instance, feature_flags_inst
     
     entity_repository = EntityRepositoryV5(connection_manager)
     redis_manager = redis_manager_instance
-    cursor_manager = CursorV5()
-    etag_manager = ETagV5()
+    cursor_manager = CursorV5Manager()
+    etag_manager = ETagV5Manager()
     feature_flags = feature_flags_instance
 
 

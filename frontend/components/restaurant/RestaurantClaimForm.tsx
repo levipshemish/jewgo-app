@@ -187,7 +187,7 @@ export default function RestaurantClaimForm({
         submitData.append(`additionalDocuments_${index}`, file);
       });
 
-      const response = await fetch('/api/restaurants/claim', {
+      const response = await fetch('/api/v5/restaurants/claim', {
         method: 'POST',
         body: submitData,
       });

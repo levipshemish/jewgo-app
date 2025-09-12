@@ -17,9 +17,9 @@ import re
 import secrets
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
-from middleware.auth_v5 import AuthMiddlewareV5
-from middleware.rate_limit_v5 import RateLimitMiddlewareV5
-from middleware.observability_v5 import ObservabilityMiddlewareV5
+from middleware.auth_v5 import AuthV5Middleware
+from middleware.rate_limit_v5 import RateLimitV5Middleware
+from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from cache.redis_manager_v5 import RedisManagerV5
 from utils.feature_flags_v5 import FeatureFlagsV5
@@ -32,7 +32,7 @@ auth_v5 = BlueprintFactoryV5.create_blueprint(
     __name__,
     url_prefix='/api/v5/auth',
     config_override={
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'enable_auth': False,  # Auth endpoints handle their own auth
         'enable_rate_limiting': True,
         'enable_idempotency': False,  # Auth operations aren't idempotent
@@ -80,7 +80,7 @@ def init_services(connection_manager, redis_manager_instance, feature_flags_inst
     entity_repository = EntityRepositoryV5(connection_manager)
     redis_manager = redis_manager_instance
     feature_flags = feature_flags_instance
-    auth_middleware = AuthMiddlewareV5()
+    auth_middleware = AuthV5Middleware()
 
 
 def validate_password(password: str) -> Dict[str, Any]:

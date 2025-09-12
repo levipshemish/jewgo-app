@@ -31,7 +31,7 @@ webhook_bp = BlueprintFactoryV5.create_blueprint(
     __name__,
     url_prefix='/api/v5/webhooks',
     config_override={
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'enable_health_check': False,  # Disable default health check, we'll add our own
         'auth_required': False,  # Webhooks use signature verification instead
         'enable_signature_verification': True,

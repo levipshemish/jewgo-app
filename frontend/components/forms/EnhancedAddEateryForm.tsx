@@ -126,7 +126,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
-        const response = await fetch('/api/restaurants/filter-options', {
+        const response = await fetch('/api/v5/restaurants/filter-options', {
           signal: controller.signal
         });
         
@@ -268,7 +268,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
 
 
 
-        const response = await fetch('/api/restaurants', {
+        const response = await fetch('/api/v5/restaurants', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

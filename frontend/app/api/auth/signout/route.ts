@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Redirect the browser to backend logout so HttpOnly cookies on that domain are cleared
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
     const url = new URL(request.url);
     const returnTo = url.searchParams.get('returnTo') || '/';
     const backendLogoutUrl = `${backendUrl}/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;

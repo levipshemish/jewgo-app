@@ -22,11 +22,7 @@ if (normalizedBackend && validateBackendUrl(normalizedBackend)) {
   BACKEND_URL = normalizedBackend;
 } else if (isProduction) {
   // Production fallbacks
-  const productionFallbacks = [
-    'https://api.jewgo.app',
-    'https://jewgo-api.herokuapp.com',
-    'https://jewgo-backend.vercel.app'
-  ];
+  const productionFallbacks = [];
   
   for (const fallback of productionFallbacks) {
     if (validateBackendUrl(fallback)) {
@@ -363,6 +359,7 @@ const nextConfig = {
 
     return [
       // Only rewrite non-Next.js API routes to backend
+      { source: '/api/v5/:path*', destination: `${BACKEND_URL}/api/v5/:path*` },
       { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*` },
       { source: '/api/health/:path*', destination: `${BACKEND_URL}/api/health/:path*` },
       // Admin endpoints are handled by Next.js frontend, not backend
@@ -377,4 +374,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

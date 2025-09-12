@@ -356,7 +356,8 @@ export class ApiClientV5 {
     if (entityType) queryParams.append('type', entityType);
     if (limit) queryParams.append('limit', limit.toString());
 
-    const endpoint = `/api/v5/search/suggestions?${queryParams.toString()}`;
+    // Backend route: /api/v5/search/suggest
+    const endpoint = `/api/v5/search/suggest?${queryParams.toString()}`;
     
     return this.request(endpoint, {
       method: 'GET',

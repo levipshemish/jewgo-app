@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const { metricName } = params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
     
     const response = await fetch(`${backendUrl}/api/v5/metrics/${metricName}`, {
       method: 'GET',

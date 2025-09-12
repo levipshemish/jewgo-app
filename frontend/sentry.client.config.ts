@@ -12,6 +12,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction && !isDocker) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || "https://48a8a5542011706348cddd01c6dc685a@o4509798929858560.ingest.us.sentry.io/4509798933004288",
+    release: process.env.NEXT_PUBLIC_SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_BUILD_ID,
+    environment: process.env.NEXT_PUBLIC_SENTRY_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV,
 
     // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
     tracesSampleRate: 1,
@@ -43,5 +45,7 @@ if (isProduction && !isDocker) {
   Sentry.init({
     dsn: "",
     enabled: false,
+    release: process.env.NEXT_PUBLIC_SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_BUILD_ID,
+    environment: process.env.NEXT_PUBLIC_SENTRY_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV,
   });
 }

@@ -295,6 +295,28 @@ class FeatureFlagsV5:
                 "description": "Circuit breaker for external services",
                 "rollout_percentage": 60.0,
                 "depends_on": ["v5_api_enabled"]
+            },
+            
+            # Main API v5
+            "main_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": True,
+                "description": "Main v5 API endpoints and functionality",
+                "rollout_percentage": 100.0,
+                "depends_on": ["v5_api_enabled"],
+                "environments": ["development", "staging", "production"]
+            },
+            
+            # Reviews API v5
+            "reviews_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": True,
+                "description": "V5 reviews API endpoints and functionality",
+                "rollout_percentage": 100.0,
+                "depends_on": ["v5_api_enabled", "main_api_v5"],
+                "environments": ["development", "staging", "production"]
             }
         }
     

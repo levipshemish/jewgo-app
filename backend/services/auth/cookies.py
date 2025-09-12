@@ -10,7 +10,10 @@ def _cookie_security() -> Tuple[bool, str, str | None]:
         ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
     secure = ENVIRONMENT == "production"
-    samesite = "Lax"
+    # Cross-site requests from jewgo.app -> api.jewgo.app need SameSite=None
+    # Default to None in production, Lax otherwise (can be overridden)
+    samesite = os.getenv("COOKIE_SAMESITE",
+                         "None" if ENVIRONMENT == "production" else "Lax")
     domain = os.getenv("COOKIE_DOMAIN")
     return secure, samesite, domain
 
@@ -58,4 +61,3 @@ def clear_auth(response) -> None:
             samesite=samesite,
             domain=domain,
         )
-

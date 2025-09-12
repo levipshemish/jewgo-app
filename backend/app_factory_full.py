@@ -12,7 +12,7 @@ import time
 import traceback
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, g
-from flask_cors import CORS
+# from flask_cors import CORS  # Disabled - Nginx handles CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
@@ -42,6 +42,11 @@ def _initialize_sentry() -> None:
     try:
         sentry_dsn = os.environ.get("SENTRY_DSN")
         if sentry_dsn and sentry_dsn.strip() and sentry_dsn.startswith(('http://', 'https://')):
+            # Derive release/version information for better traceability
+            release = os.environ.get("SENTRY_RELEASE") or \
+                      os.environ.get("GIT_SHA") or \
+                      os.environ.get("SOURCE_VERSION") or None
+
             sentry_sdk.init(
                 dsn=sentry_dsn,
                 integrations=[
@@ -49,7 +54,8 @@ def _initialize_sentry() -> None:
                     SqlalchemyIntegration(),
                 ],
                 traces_sample_rate=1.0,
-                environment=os.environ.get("FLASK_ENV", "development"),
+                environment=os.environ.get("ENVIRONMENT") or os.environ.get("FLASK_ENV", "development"),
+                release=release,
                 debug=os.environ.get("FLASK_ENV") == "development",
             )
             logger.info("Sentry initialized successfully", dsn=sentry_dsn[:20] + "...")
@@ -203,37 +209,72 @@ def create_app(config_class=None):
             "https://jewgo-app.netlify.app",
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            # External IP addresses for API access
+            "http://104.203.9.103:3000",
+            "http://104.203.9.103:5000",
+            "http://104.203.9.103:8000",
+            "http://104.203.9.103:8080",
         ]
+        
+        # Dynamically add server IP addresses for development/testing
+        try:
+            import socket
+            hostname = socket.gethostname()
+            local_ip = socket.gethostbyname(hostname)
+            
+            # Add common ports for the detected IP
+            for port in [3000, 5000, 8000, 8080]:
+                cors_origins.extend([
+                    f"http://{local_ip}:{port}",
+                    f"http://{hostname}:{port}",
+                ])
+            
+            # Also try to get all network interfaces
+            import subprocess
+            result = subprocess.run(['hostname', '-I'], capture_output=True, text=True)
+            if result.returncode == 0:
+                ip_addresses = result.stdout.strip().split()
+                for ip in ip_addresses:
+                    if ip and ip != '127.0.0.1':
+                        for port in [3000, 5000, 8000, 8080]:
+                            cors_origins.append(f"http://{ip}:{port}")
+                            
+            logger.info("Added server IP addresses to CORS origins", 
+                       hostname=hostname, local_ip=local_ip, 
+                       all_ips=result.stdout.strip() if result.returncode == 0 else "unknown")
+        except Exception as e:
+            logger.warning("Could not detect server IP addresses for CORS", error=str(e))
+            
         logger.info("Using default CORS origins", cors_origins=cors_origins)
         
     logger.info("Final CORS origins configuration", cors_origins=cors_origins)
     
-    # Configure CORS
-    CORS(
-        app,
-        origins=cors_origins,
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=[
-            "Content-Type",
-            "Authorization",
-            "Accept",
-            "Origin",
-            "X-Requested-With",
-            "X-Forwarded-For",
-            "X-Real-IP",
-            "Cache-Control",
-            "Pragma",
-        ],
-        expose_headers=[
-            "Content-Type",
-            "Content-Length",
-            "Cache-Control",
-            "Pragma",
-        ],
-        supports_credentials=True,
-        max_age=86400,  # Cache preflight for 24 hours
-        send_wildcard=False,  # Don't send wildcard, send specific origin
-    )
+    # Configure CORS - Disabled since nginx handles CORS
+    # CORS(
+    #     app,
+    #     origins=cors_origins,
+    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    #     allow_headers=[
+    #         "Content-Type",
+    #         "Authorization",
+    #         "Accept",
+    #         "Origin",
+    #         "X-Requested-With",
+    #         "X-Forwarded-For",
+    #         "X-Real-IP",
+    #         "Cache-Control",
+    #         "Pragma",
+    #     ],
+    #     expose_headers=[
+    #         "Content-Type",
+    #         "Content-Length",
+    #         "Cache-Control",
+    #         "Pragma",
+    #     ],
+    #     supports_credentials=True,
+    #     max_age=86400,  # Cache preflight for 24 hours
+    #     send_wildcard=False,  # Don't send wildcard, send specific origin
+    # )
     
     # Attach minimal redaction filter to prevent sensitive values in logs
     try:

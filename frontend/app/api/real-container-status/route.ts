@@ -20,7 +20,7 @@ interface ContainerInfo {
 async function getContainerStatus(): Promise<ContainerInfo[]> {
   try {
     // Get container status from the server
-    const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
+    const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''
     const response = await fetch(`${serverUrl}/api/v5/monitoring/containers`, {
       method: 'GET',
       headers: {

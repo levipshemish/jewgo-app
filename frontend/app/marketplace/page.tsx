@@ -55,7 +55,8 @@ async function fetchMarketplaceListings(limit: number = 50, offset: number = 0, 
 
     // Use v5 API endpoint
     const { unifiedApiCall } = await import('@/lib/utils/unified-api');
-    const result = await unifiedApiCall(`/api/v5/entities?entityType=stores&${params.toString()}`, {
+    // Align v5 param name to 'types' when using search; for entities endpoint, prefer explicit path
+    const result = await unifiedApiCall(`/api/v5/stores?${params.toString()}`, {
       ttl: 30 * 1000, // 30 seconds cache (marketplace changes frequently)
       deduplicate: true,
       retry: true,

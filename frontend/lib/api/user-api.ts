@@ -9,7 +9,7 @@
 import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 // Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
 
 /**
  * Get the current user's JWT token for API authentication

@@ -37,7 +37,7 @@ export default function SessionsPage() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/auth/sessions`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/auth/sessions`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -68,7 +68,7 @@ export default function SessionsPage() {
       setRevoking(sessionId);
       setError(null);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/auth/sessions/${sessionId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/auth/sessions/${sessionId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -93,7 +93,7 @@ export default function SessionsPage() {
     try {
       setError(null);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/auth/sessions/revoke-all`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/auth/sessions/revoke-all`, {
         method: 'POST',
         credentials: 'include',
       });

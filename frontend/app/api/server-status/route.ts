@@ -66,7 +66,7 @@ interface ServerStatus {
 }
 
 export async function GET(request: NextRequest) {
-  const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
+  const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   const startTime = Date.now()
   
   try {

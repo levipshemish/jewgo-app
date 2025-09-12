@@ -24,16 +24,16 @@ export const getFrontendAppUrl = (): string => {
 export function getBackendUrl(): string {
   if (typeof window === 'undefined') {
     // Server-side: use environment variable or default to production API
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    return process.env.NEXT_PUBLIC_BACKEND_URL || '';
   }
   
   // Client-side: use environment variable or default to production API
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+  return process.env.NEXT_PUBLIC_BACKEND_URL || '';
 }
 
 export function getBackendUrlForServer(): string {
   // Server-side only: use environment variable or default to production API
-  return process.env.BACKEND_URL || 'https://api.jewgo.app';
+  return process.env.BACKEND_URL || '';
 }
 
 /**
@@ -44,7 +44,7 @@ export const getAlternativeBackendUrl = (): string => {
     return getBackendUrl();
   }
   
-  return process.env.BACKEND_URL || 'https://api.jewgo.app';
+  return process.env.BACKEND_URL || '';
 };
 
 /**

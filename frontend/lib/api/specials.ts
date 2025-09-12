@@ -3,8 +3,8 @@ import { RestaurantSpecial } from '@/lib/types/restaurant';
 const API_BASE_URL = process.env['NEXT_PUBLIC_BACKEND_URL'] 
   ? process.env['NEXT_PUBLIC_BACKEND_URL']
   : process.env.NODE_ENV === 'production'
-  ? process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
-  : process.env.BACKEND_URL || 'http://localhost:5000';
+  ? process.env.NEXT_PUBLIC_BACKEND_URL
+  : process.env.BACKEND_URL;
 
 interface Special {
   id: number;

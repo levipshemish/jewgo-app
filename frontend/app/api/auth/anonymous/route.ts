@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
   await request.json().catch(() => ({} as any));
 
   // Redirect with 307 to backend guest login to preserve POST and headers
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
   const redirect = NextResponse.redirect(`${backendUrl}/api/auth/guest`, 307);
   Object.entries(baseHeaders).forEach(([k, v]) => redirect.headers.set(k, v));
   return redirect;

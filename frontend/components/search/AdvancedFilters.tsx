@@ -33,7 +33,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        const response = await fetch('/api/restaurants/filter-options');
+        const response = await fetch('/api/v5/restaurants/filter-options');
         const data = await response.json();
         
         if (data.success && data.data) {

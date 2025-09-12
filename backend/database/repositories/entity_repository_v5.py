@@ -30,16 +30,16 @@ class EntityRepositoryV5(BaseRepository):
     # Entity type mappings
     ENTITY_MAPPINGS = {
         'restaurants': {
-            'model_name': 'Listing',
-            'table_name': 'listings',
+            'model_name': 'Restaurant',
+            'table_name': 'restaurants',
             'primary_key': 'id',
             'default_sort': 'created_at',
-            'searchable_fields': ['title', 'description', 'address'],
-            'filterable_fields': ['is_active', 'category_id', 'is_verified'],
-            'relations': ['business_hours', 'reviews', 'restaurant_images'],
+            'searchable_fields': ['name', 'short_description', 'address'],
+            'filterable_fields': ['status', 'kosher_category', 'is_cholov_yisroel'],
+            'relations': ['restaurant_images', 'reviews'],
             'geospatial': True,
             'supports_reviews': True,
-            'category_filter': 'restaurants'
+            'category_filter': None
         },
         'synagogues': {
             'model_name': 'Listing',

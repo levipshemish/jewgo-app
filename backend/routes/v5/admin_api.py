@@ -34,7 +34,7 @@ admin_bp = BlueprintFactoryV5.create_blueprint(
     __name__,
     url_prefix='/api/v5/admin',
     config_override={
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'auth_required': True,
         'min_role_level': 10,
         'audit_logging': True,

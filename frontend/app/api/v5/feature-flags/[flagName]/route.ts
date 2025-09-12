@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const { flagName } = params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
     
     const response = await fetch(`${backendUrl}/api/v5/feature-flags/${flagName}`, {
       method: 'GET',
@@ -54,7 +54,7 @@ export async function PUT(
 
     const { flagName } = params;
     const body = await request.json();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
     
     const response = await fetch(`${backendUrl}/api/v5/feature-flags/${flagName}`, {
       method: 'PUT',

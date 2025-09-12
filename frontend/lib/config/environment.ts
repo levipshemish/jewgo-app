@@ -68,7 +68,7 @@ export const IS_PRODUCTION = NODE_ENV === 'production';
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
 
 // Backend configuration
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || (IS_PRODUCTION ? undefined : 'https://api.jewgo.app');
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || (IS_PRODUCTION ? undefined : undefined);
 
 /**
  * Validate required environment variables

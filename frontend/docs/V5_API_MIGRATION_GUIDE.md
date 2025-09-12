@@ -20,10 +20,11 @@ fetch('/api/stores')
 **After (V5):**
 ```typescript
 // Single unified endpoint with entity type parameter
-fetch('/v5/entities?entityType=restaurants')
-fetch('/v5/entities?entityType=synagogues')
-fetch('/v5/entities?entityType=mikvah')
-fetch('/v5/entities?entityType=stores')
+// Prefer explicit entity endpoints
+fetch('/api/v5/restaurants')
+fetch('/api/v5/synagogues')
+fetch('/api/v5/mikvahs')
+fetch('/api/v5/stores')
 ```
 
 ### 2. Unified Search
@@ -37,9 +38,9 @@ fetch('/api/synagogues/search?q=orthodox')
 
 **After (V5):**
 ```typescript
-// Single search endpoint with entity type filter
-fetch('/v5/search?query=pizza&entityType=restaurants')
-fetch('/v5/search?query=orthodox&entityType=synagogues')
+// Single search endpoint with entity type filter (backend expects q and types)
+fetch('/v5/search?q=pizza&types=restaurants')
+fetch('/v5/search?q=orthodox&types=synagogues')
 ```
 
 ### 3. Unified Admin Endpoints
@@ -282,10 +283,10 @@ try {
 
 ```bash
 # Test entity endpoints
-curl "https://api.jewgo.app/v5/entities?entityType=restaurants"
+curl "https://api.jewgo.app/api/v5/restaurants"
 
 # Test search endpoints
-curl "https://api.jewgo.app/v5/search?query=pizza&entityType=restaurants"
+curl "https://api.jewgo.app/v5/search?q=pizza&types=restaurants"
 
 # Test admin endpoints
 curl "https://api.jewgo.app/v5/admin/entities/restaurants"

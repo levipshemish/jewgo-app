@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'PostgreSQL auth not configured', user: null }, { status: 500 });
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
 
     // Prefer Authorization header; cookie-mode cookies for backend domain are not readable here
     const authHeader = request.headers.get('authorization');

@@ -24,7 +24,7 @@ class BlueprintFactoryV5:
     
     # Default configuration for all blueprints
     DEFAULT_CONFIG = {
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'cors_origins': None,  # Will use environment variable
         'enable_auth': True,
         'enable_rate_limiting': True,

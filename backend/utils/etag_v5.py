@@ -305,6 +305,29 @@ class ETagV5Manager:
         except Exception as e:
             logger.error("Failed to add ETag headers", error=str(e))
     
+    def invalidate_etag(self, entity_type: str, entity_id: Optional[int] = None):
+        """
+        Invalidate ETag cache for an entity type or specific entity.
+        
+        Args:
+            entity_type: Type of entity to invalidate
+            entity_id: Optional specific entity ID to invalidate
+        """
+        try:
+            if entity_id:
+                # Invalidate specific entity cache
+                cache_key = f"etag_v5:entity:{entity_type}:{entity_id}"
+                self._delete_from_cache(cache_key)
+                logger.debug("Invalidated entity ETag cache", entity_type=entity_type, entity_id=entity_id)
+            else:
+                # Invalidate collection cache for entity type
+                cache_key = f"etag_v5:watermark:{entity_type}"
+                self._delete_from_cache(cache_key)
+                logger.debug("Invalidated collection ETag cache", entity_type=entity_type)
+                
+        except Exception as e:
+            logger.error("Failed to invalidate ETag cache", error=str(e), entity_type=entity_type, entity_id=entity_id)
+    
     def _get_entity_watermark(self, entity_type: str) -> str:
         """Get watermark timestamp for entity type."""
         try:
@@ -668,6 +691,17 @@ class ETagV5Manager:
             redis_client = redis_manager.get_client()
             if redis_client:
                 redis_client.setex(key, ttl, value)
+        except Exception:
+            pass
+    
+    def _delete_from_cache(self, key: str):
+        """Delete value from cache (Redis)."""
+        try:
+            from cache.redis_manager_v5 import get_redis_manager_v5
+            redis_manager = get_redis_manager_v5()
+            redis_client = redis_manager.get_client()
+            if redis_client:
+                redis_client.delete(key)
         except Exception:
             pass
 

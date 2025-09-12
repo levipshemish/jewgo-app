@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Redirect with 307 to backend upgrade-email endpoint to upgrade guest → email
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
     const redirect = NextResponse.redirect(`${backendUrl}/api/auth/upgrade-email`, 307);
     return redirect;
 

@@ -25,7 +25,7 @@ function ResendVerificationForm() {
 
     try {
       // Make API call to resend verification email
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/auth/resend-verification`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/api/auth/resend-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

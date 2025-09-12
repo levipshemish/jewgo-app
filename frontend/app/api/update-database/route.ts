@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Get backend URL from environment
-    const backendUrl = process.env["BACKEND_URL"] || 'http://localhost:5000';
+    const backendUrl = process.env["BACKEND_URL"]; 
     
     // Forward the request to the backend
     const backendResponse = await fetch(

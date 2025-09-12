@@ -40,7 +40,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
       setLoading(true);
       setError(null);
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };

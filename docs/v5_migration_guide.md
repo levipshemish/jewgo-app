@@ -149,7 +149,7 @@ POST   /api/v5/auth/refresh
 
 # Search
 GET    /api/v5/search
-GET    /api/v5/search/suggestions
+GET    /api/v5/search/suggest
 
 # Admin
 GET    /api/v5/admin/health
@@ -233,7 +233,7 @@ python backend/tests/performance/test_v5_performance.py
 3. **Search Functionality**
    ```bash
    # Test search
-   curl -X GET "https://api.jewgo.app/api/v5/search?q=kosher&entity_type=restaurants"
+   curl -X GET "https://api.jewgo.app/api/v5/search?q=kosher&types=restaurants"
    ```
 
 ## Monitoring

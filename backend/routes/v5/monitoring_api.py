@@ -31,7 +31,7 @@ monitoring_v5 = BlueprintFactoryV5.create_blueprint(
     __name__,
     url_prefix='/api/v5/monitoring',
     config_override={
-        'enable_cors': True,
+        'enable_cors': False,  # Disabled - Nginx handles CORS
         'auth_required': True,
         'enable_rate_limiting': True,
         'enable_idempotency': False,  # Monitoring data is real-time

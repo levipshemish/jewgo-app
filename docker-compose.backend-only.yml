@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jewgo_backend
+    environment:
+      # Database - Use remote database
+      DATABASE_URL: postgresql://app_user:Jewgo123@129.80.190.110:5432/jewgo_db
+      PGHOST: 129.80.190.110
+      PGPORT: 5432
+      PGDATABASE: jewgo_db
+      PGUSER: app_user
+      PGPASSWORD: Jewgo123
+      
+      # Redis - Use existing Redis on localhost
+      REDIS_URL: redis://localhost:6379
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 
+      REDIS_DB: 0
+      
+      # Application - Production settings
+      NODE_ENV: production
+      FLASK_ENV: production
+      SECRET_KEY: prod-secret-key-change-in-production-2025
+      JWT_SECRET_KEY: prod-jwt-secret-key-change-in-production-2025
+      
+      # CORS - Production
+      CORS_ORIGINS: https://jewgo.app,https://www.jewgo.app,https://api.jewgo.app,https://jewgo-app.vercel.app
+      
+      # Google Maps
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+      
+      # Email
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      FROM_EMAIL: ${FROM_EMAIL}
+      
+      # GitHub Webhook
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+      
+      # Sentry Configuration
+      SENTRY_DSN: ${SENTRY_DSN}
+      
+      # AWS S3 Backup Configuration
+      AWS_REGION: us-east-1
+      S3_BACKUP_BUCKET: jewgo-backups1
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    network_mode: host
