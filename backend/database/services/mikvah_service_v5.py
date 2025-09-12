@@ -74,10 +74,7 @@ class MikvahServiceV5:
                 filters=filters,
                 cursor=cursor,
                 limit=limit,
-                sort_key=sort,
-                include_relations=include_relations,
-                user_context=user_context,
-                use_cache=use_cache
+                sort_key=sort
             )
             
             return {
@@ -111,6 +108,28 @@ class MikvahServiceV5:
                     'entity_type': 'mikvahs'
                 }
             }
+
+    def get_entity_count(
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        user_context: Optional[Dict[str, Any]] = None
+    ) -> int:
+        """Get total count of entities matching filters."""
+        try:
+            # Process and validate filters
+            processed_filters = self._process_filters(filters)
+            
+            # Get count from repository
+            count = self.entity_repository.get_entity_count(
+                entity_type='mikvahs',
+                filters=processed_filters
+            )
+            
+            return count
+            
+        except Exception as e:
+            logger.error(f"Error getting entity count: {e}")
+            return 0
 
     def get_mikvah(self, mikvah_id: int, enrich: bool = True) -> Optional[Dict[str, Any]]:
         """Get mikvah by ID with optional enrichment.
