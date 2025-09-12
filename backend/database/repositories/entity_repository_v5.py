@@ -596,7 +596,16 @@ class EntityRepositoryV5(BaseRepository):
             radius_km = float(filters.get('radius', 10))  # Default 10km radius
             
             # Use PostGIS ST_DWithin for efficient spatial queries
-            if hasattr(model_class, 'geom'):
+            if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                # Use traditional latitude/longitude columns (most common case)
+                query = query.filter(
+                    func.ST_DWithin(
+                        func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326)::geography,
+                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326)::geography,
+                        radius_km * 1000  # Convert km to meters
+                    )
+                )
+            elif hasattr(model_class, 'geom'):
                 # Use geom column (PostGIS geometry column)
                 query = query.filter(
                     func.ST_DWithin(
@@ -612,15 +621,6 @@ class EntityRepositoryV5(BaseRepository):
                     func.ST_DWithin(
                         func.ST_GeogFromText(model_class.location),
                         func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326)::geography,
-                        radius_km * 1000  # Convert km to meters
-                    )
-                )
-            elif hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
-                # Use traditional latitude/longitude columns
-                query = query.filter(
-                    func.ST_DWithin(
-                        func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
-                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
                         radius_km * 1000  # Convert km to meters
                     )
                 )
