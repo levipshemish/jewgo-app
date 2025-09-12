@@ -607,11 +607,6 @@ def create_app(config_class=None):
         logger.error(f"Internal server error: {error}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
     
-    # Add dedicated healthz endpoint for container healthcheck
-    @app.route('/healthz', methods=['GET'])
-    def healthz():
-        return jsonify({"ok": True}), 200
-    
     # Log startup performance
     startup_time = time.time() - startup_start_time
     logger.info(f"V5 application factory initialization completed successfully in {startup_time:.2f} seconds")
