@@ -55,6 +55,29 @@ export class V5ApiClient {
   }
 
   /**
+   * Clean up duplicate query parameters in URL
+   */
+  private cleanDuplicateParams(url: string): string {
+    try {
+      const [baseUrl, queryString] = url.split('?');
+      if (!queryString) return url;
+      
+      const params = new URLSearchParams(queryString);
+      const cleanedParams = new URLSearchParams();
+      
+      // Use set() to automatically deduplicate parameters
+      for (const [key, value] of params.entries()) {
+        cleanedParams.set(key, value);
+      }
+      
+      return `${baseUrl}?${cleanedParams.toString()}`;
+    } catch (error) {
+      console.warn('Failed to clean duplicate params:', error);
+      return url;
+    }
+  }
+
+  /**
    * Make a request to the V5 API with retry logic
    */
   public async makeRequest<T>(
@@ -68,7 +91,7 @@ export class V5ApiClient {
       ...fetchOptions
     } = { ...this.defaultOptions, ...options };
 
-    const url = `${this.baseUrl}${endpoint}`;
+    const url = this.cleanDuplicateParams(`${this.baseUrl}${endpoint}`);
     console.log('V5 API Client making request to:', url);
     let lastError: Error | null = null;
 
@@ -146,29 +169,34 @@ export class V5ApiClient {
     
     if (params.location) {
       // Align with backend: latitude/longitude
-      searchParams.append('latitude', params.location.lat.toString());
-      searchParams.append('longitude', params.location.lng.toString());
+      searchParams.set('latitude', params.location.lat.toString());
+      searchParams.set('longitude', params.location.lng.toString());
       if (params.location.radius) {
-        searchParams.append('radius', params.location.radius.toString());
+        searchParams.set('radius', params.location.radius.toString());
       }
     }
     
     if (params.filters) {
       Object.entries(params.filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          // Backend expects flat filter keys
-          searchParams.append(key, value.toString());
+          // Backend expects flat filter keys - use set to prevent duplicates
+          searchParams.set(key, value.toString());
         }
       });
-      if (!params.sort && (params.filters as any).sort) {
-        searchParams.append('sort', String((params.filters as any).sort));
-      }
     }
     
-    if (params.page) searchParams.append('page', params.page.toString());
-    if (params.limit) searchParams.append('limit', params.limit.toString());
-    if (params.sort) searchParams.append('sort', params.sort);
-    if (params.order) searchParams.append('order', params.order);
+    // Handle pagination parameters
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    
+    // Handle sort parameter - prioritize params.sort over filters.sort
+    if (params.sort) {
+      searchParams.set('sort', params.sort);
+    } else if (params.filters && (params.filters as any).sort) {
+      searchParams.set('sort', String((params.filters as any).sort));
+    }
+    
+    if (params.order) searchParams.set('order', params.order);
 
     const endpoint = `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`;
     return this.makeRequest(endpoint);
@@ -188,37 +216,41 @@ export class V5ApiClient {
   async search(params: V5SearchParams): Promise<V5ApiResponse> {
     const searchParams = new URLSearchParams();
     // Align with backend: q, types, latitude/longitude
-    if (params.query) searchParams.append('q', params.query);
+    if (params.query) searchParams.set('q', params.query);
     
     if (params.entityType) {
       const types = Array.isArray(params.entityType) ? params.entityType : [params.entityType];
-      searchParams.append('types', types.join(','));
+      searchParams.set('types', types.join(','));
     }
     
     if (params.location) {
-      searchParams.append('latitude', params.location.lat.toString());
-      searchParams.append('longitude', params.location.lng.toString());
+      searchParams.set('latitude', params.location.lat.toString());
+      searchParams.set('longitude', params.location.lng.toString());
       if (params.location.radius) {
-        searchParams.append('radius', params.location.radius.toString());
+        searchParams.set('radius', params.location.radius.toString());
       }
     }
     
     if (params.filters) {
       Object.entries(params.filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          searchParams.append(`filters[${key}]`, value.toString());
+          searchParams.set(`filters[${key}]`, value.toString());
         }
       });
-      // Ensure backend-compatible 'sort' param when provided under filters
-      if (!params.sort && (params.filters as any).sort) {
-        searchParams.append('sort', String((params.filters as any).sort));
-      }
     }
     
-    if (params.page) searchParams.append('page', params.page.toString());
-    if (params.limit) searchParams.append('limit', params.limit.toString());
-    if (params.sort) searchParams.append('sort', params.sort);
-    if (params.order) searchParams.append('order', params.order);
+    // Handle pagination parameters
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    
+    // Handle sort parameter - prioritize params.sort over filters.sort
+    if (params.sort) {
+      searchParams.set('sort', params.sort);
+    } else if (params.filters && (params.filters as any).sort) {
+      searchParams.set('sort', String((params.filters as any).sort));
+    }
+    
+    if (params.order) searchParams.set('order', params.order);
 
     const endpoint = `${V5_API_ENDPOINTS.SEARCH}?${searchParams.toString()}`;
     return this.makeRequest(endpoint);
@@ -230,8 +262,8 @@ export class V5ApiClient {
   async getSearchSuggestions(query: string, entityType?: V5EntityType): Promise<V5ApiResponse> {
     const searchParams = new URLSearchParams();
     // Align with backend: q and type
-    searchParams.append('q', query);
-    if (entityType) searchParams.append('type', entityType);
+    searchParams.set('q', query);
+    if (entityType) searchParams.set('type', entityType);
     
     const endpoint = `${V5_API_ENDPOINTS.SEARCH_SUGGESTIONS}?${searchParams.toString()}`;
     return this.makeRequest(endpoint);
@@ -244,7 +276,7 @@ export class V5ApiClient {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
+        searchParams.set(key, value.toString());
       }
     });
     
@@ -260,7 +292,7 @@ export class V5ApiClient {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
+        searchParams.set(key, value.toString());
       }
     });
     
@@ -276,7 +308,7 @@ export class V5ApiClient {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
+        searchParams.set(key, value.toString());
       }
     });
     
@@ -353,7 +385,7 @@ export class LegacyApiClient {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
+        searchParams.set(key, value.toString());
       }
     });
     
@@ -373,7 +405,7 @@ export class LegacyApiClient {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
+        searchParams.set(key, value.toString());
       }
     });
     
@@ -393,7 +425,7 @@ export class LegacyApiClient {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
+        searchParams.set(key, value.toString());
       }
     });
     
@@ -413,7 +445,7 @@ export class LegacyApiClient {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        searchParams.append(key, value.toString());
+        searchParams.set(key, value.toString());
       }
     });
     
