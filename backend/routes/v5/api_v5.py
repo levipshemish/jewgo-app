@@ -207,6 +207,10 @@ def get_entities(entity_type: str):
         filters = parse_filters(request.args)
         pagination = parse_pagination(request.args)
         
+        # Debug logging
+        print(f"DEBUG API: request.args={dict(request.args)}")
+        print(f"DEBUG API: pagination={pagination}")
+        
         # Get service for entity type
         service = get_entity_service(entity_type)
         

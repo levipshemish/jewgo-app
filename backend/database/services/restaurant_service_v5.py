@@ -117,6 +117,7 @@ class RestaurantServiceV5:
         This method provides a unified interface for the entity API routes.
         """
         try:
+            logger.info(f"DEBUG SERVICE: get_entities called with page={page}, sort={sort}")
             restaurants, next_cursor, prev_cursor = self.get_restaurants(
                 cursor=cursor,
                 page=page,
