@@ -660,8 +660,13 @@ class EntityRepositoryV5(BaseRepository):
                 primary_value, record_id = cursor_position
                 strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
                 
-                primary_field = getattr(model_class, strategy['field'])
-                direction = strategy['direction']
+                # For distance sorting, use created_at field for cursor pagination since distance is calculated in app layer
+                if sort_key == 'distance_asc':
+                    primary_field = getattr(model_class, 'created_at')
+                    direction = 'DESC'  # We sort by created_at DESC for distance sorting
+                else:
+                    primary_field = getattr(model_class, strategy['field'])
+                    direction = strategy['direction']
                 
                 if direction == 'DESC':
                     # For descending, we want records before the cursor
@@ -697,6 +702,7 @@ class EntityRepositoryV5(BaseRepository):
             primary_field = getattr(model_class, 'created_at')
             secondary_field = getattr(model_class, 'id')
             query = query.order_by(desc(primary_field), desc(secondary_field))
+            logger.info(f"Applied distance sorting fallback to created_at")
         else:
             # Regular field sorting
             primary_field = getattr(model_class, strategy['field'])
