@@ -330,7 +330,7 @@ export class LegacyApiClient {
       }
     });
     
-    const endpoint = `/api/restaurants?${searchParams.toString()}`;
+    const endpoint = `/api/v5/restaurants?${searchParams.toString()}`;
     return this.v5Client.makeRequest(endpoint);
   }
 
