@@ -66,8 +66,8 @@ export async function fetchRestaurants({
       throw new Error(response.error || 'Failed to fetch restaurants');
     }
 
-    // Handle V5 API response format
-    const restaurants = sanitizeRestaurantData(response.data?.restaurants || response.data || []) as Restaurant[];
+    // Handle V5 API response format - V5 API returns data array directly
+    const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
     const total = response.data?.total || response.pagination?.total || restaurants.length;
     const safeLimit = limit > 0 ? limit : 1;
 
@@ -164,8 +164,8 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
       throw new Error(response.error || 'Failed to search restaurants');
     }
 
-    // Handle V5 API response format
-    const restaurants = sanitizeRestaurantData(response.data?.restaurants || response.data || []) as Restaurant[];
+    // Handle V5 API response format - V5 API returns data array directly
+    const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
     const total = response.data?.total || response.pagination?.total || restaurants.length;
 
     return {
