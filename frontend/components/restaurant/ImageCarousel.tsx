@@ -16,7 +16,7 @@ interface ImageCarouselProps {
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ 
-  images = [], restaurantName, kosherCategory, className = '' 
+  images = [], restaurantName, kosherCategory, className = '', onIndexChange 
 }) => {
   const [imageLoading, setImageLoading] = useState<boolean[]>([]);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -110,6 +110,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     totalSlides: stableImages.length,
     debounceMs: 50
   });
+
+  // Call onIndexChange when currentIndex changes
+  useEffect(() => {
+    if (onIndexChange) {
+      onIndexChange(currentIndex);
+    }
+  }, [currentIndex, onIndexChange]);
 
   const handleImageError = (index: number) => {
     console.log(`Image ${index} failed to load:`, stableImages[index]);
@@ -233,14 +240,14 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
         {/* Dots Indicator - Bottom Center Overlay */}
         {stableImages.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-50 pointer-events-auto">
             {stableImages.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 ${
+                className={`w-3 h-3 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 ${
                   index === currentIndex 
-                    ? 'bg-white shadow-sm' 
+                    ? 'bg-white shadow-lg' 
                     : 'bg-white bg-opacity-50 hover:bg-opacity-70'
                 }`}
                 aria-label={`Go to image ${index + 1}`}

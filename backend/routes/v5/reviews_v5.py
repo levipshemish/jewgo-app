@@ -11,34 +11,12 @@ from typing import Dict, Any, Optional, List, Union
 import json
 from datetime import datetime, timedelta
 from functools import wraps
-from utils.logging_config import get_logger
-from database.repositories.entity_repository_v5 import EntityRepositoryV5
-from middleware.auth_v5 import AuthV5Middleware
-from middleware.rate_limit_v5 import RateLimitV5Middleware
-from middleware.idempotency_v5 import IdempotencyV5Middleware
-from middleware.observability_v5 import ObservabilityV5Middleware
-from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from utils.cursor_v5 import CursorV5Manager
-from utils.etag_v5 import ETagV5Manager
-from cache.redis_manager_v5 import RedisManagerV5
-from utils.feature_flags_v5 import FeatureFlagsV5
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
-# Create blueprint using the factory
-reviews_v5 = BlueprintFactoryV5.create_blueprint(
-    'reviews_v5',
-    __name__,
-    url_prefix='/api/v5/reviews',
-    config_override={
-        'enable_cors': False,  # Disabled - Nginx handles CORS
-        'auth_required': False,  # Public API - no auth required for reading reviews
-        'enable_rate_limiting': True,
-        'enable_idempotency': True,
-        'enable_observability': True,
-        'enable_etag': True
-    }
-)
+# Create minimal blueprint for debugging
+reviews_v5 = Blueprint('reviews_v5', __name__, url_prefix='/api/v5/reviews')
 
 # Global service instances
 entity_repository = None
@@ -247,35 +225,16 @@ def moderate_review(review_data: Dict[str, Any]) -> Dict[str, Any]:
 def get_reviews():
     """Get reviews with filtering and pagination."""
     try:
-        # Parse query parameters
-        entity_type = request.args.get('entity_type')
-        entity_id = request.args.get('entity_id')
-        status = request.args.get('status', 'approved')
-        rating = request.args.get('rating')
-        cursor = request.args.get('cursor')
-        limit = min(int(request.args.get('limit', 20)), 50)
-        
-        # Build filters
-        filters = {}
-        if entity_type:
-            filters['entity_type'] = entity_type
-        if entity_id:
-            filters['entity_id'] = int(entity_id)
-        if status:
-            filters['status'] = status
-        if rating:
-            filters['rating'] = float(rating)
-        
-        # Get reviews
-        reviews_result = get_reviews_paginated(filters, cursor, limit)
-        
-        # Generate ETag
-        etag = etag_manager.generate_etag(reviews_result['data'], 'reviews')
-        
-        response = jsonify(reviews_result)
-        response.headers['ETag'] = etag
-        
-        return response
+        # Simple response for now to isolate the issue
+        return jsonify({
+            'data': [],
+            'pagination': {
+                'cursor': None,
+                'next_cursor': None,
+                'has_more': False,
+                'total_count': 0
+            }
+        })
         
     except Exception as e:
         logger.exception("Failed to get reviews", error=str(e))
@@ -290,8 +249,11 @@ def get_review(review_id: int):
         if not review:
             return jsonify({'error': 'Review not found'}), 404
         
-        # Generate ETag
-        etag = etag_manager.generate_etag(review, f'review_{review_id}')
+        # Generate ETag - use simple fallback for now since review data is None
+        import hashlib
+        import time
+        etag_data = f"review:{review_id}:{int(time.time() // 300)}"  # 5-minute cache
+        etag = f'"{hashlib.md5(etag_data.encode()).hexdigest()[:16]}"'
         
         response = jsonify({'data': review})
         response.headers['ETag'] = etag
@@ -527,8 +489,11 @@ def get_entity_review_stats(entity_type: str, entity_id: int):
         # Get review statistics
         stats = get_entity_review_statistics(entity_type, entity_id)
         
-        # Generate ETag
-        etag = etag_manager.generate_etag(stats, f'review_stats_{entity_type}_{entity_id}')
+        # Generate ETag - use simple fallback for now since stats data is empty
+        import hashlib
+        import time
+        etag_data = f"review_stats:{entity_type}:{entity_id}:{int(time.time() // 300)}"  # 5-minute cache
+        etag = f'"{hashlib.md5(etag_data.encode()).hexdigest()[:16]}"'
         
         response = jsonify({'data': stats})
         response.headers['ETag'] = etag

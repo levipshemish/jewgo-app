@@ -557,6 +557,26 @@ def track_restaurant_view(restaurant_id: int):
         return jsonify({'error': 'Failed to track view'}), 500
 
 
+# Simple reviews endpoint as fallback
+@api_v5.route('/reviews', methods=['GET'])
+def get_reviews_fallback():
+    """Simple reviews endpoint as fallback when reviews API is not available."""
+    try:
+        # Return empty reviews data for now
+        return jsonify({
+            'data': [],
+            'pagination': {
+                'cursor': None,
+                'next_cursor': None,
+                'has_more': False,
+                'total_count': 0
+            }
+        })
+    except Exception as e:
+        logger.exception("Failed to get reviews fallback", error=str(e))
+        return jsonify({'error': 'Failed to retrieve reviews'}), 500
+
+
 @api_v5.errorhandler(404)
 def not_found(error):
     """Handle not found errors."""

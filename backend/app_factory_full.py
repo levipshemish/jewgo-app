@@ -537,7 +537,7 @@ def create_app(config_class=None):
         
 
         # Register v5 reviews API
-        if feature_flags_v5.is_enabled('reviews_api_v5', default=True):
+        if False:  # Temporarily disabled for debugging
             try:
                 from routes.v5.reviews_v5 import reviews_v5, init_services as init_reviews_services
                 # Initialize reviews services

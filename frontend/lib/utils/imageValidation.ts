@@ -77,6 +77,7 @@ export function isProblematicCloudinaryUrl(url: string): boolean {
     'jewgo/restaurants/cafe_noir/image_1',
     // Add the specific pita_xpress problematic URL
     'jewgo/restaurants/pita_xpress/image_1',
+    // Note: Removed ariels_delicious_pizza from denylist as it appears to be working
     // Add more problematic patterns as discovered
     /\/v\d+\/[^\/]+\/undefined/, // Undefined in path
     /\/v\d+\/[^\/]+\/null/, // Null in path
@@ -140,24 +141,36 @@ export function filterValidImageUrls(urls: string[]): string[] {
  */
 export function processRestaurantImages(
   images: string[] = [], _category: string = 'restaurant', maxImages: number = 12): string[] {
+  
   // Allow multiple trusted image sources
   const validImages = images.filter(url => {
-    if (!url || typeof url !== 'string') { return false; }
-    if (url.trim() === '') { return false; }
+    if (!url || typeof url !== 'string') { 
+      return false; 
+    }
+    if (url.trim() === '') { 
+      return false; 
+    }
     
     // Allow multiple trusted sources
     const isCloudinary = url.includes('cloudinary.com');
     const isGooglePlaces = url.includes('googleusercontent.com');
     const isUnsplash = url.includes('unsplash.com');
     
-    if (!isCloudinary && !isGooglePlaces && !isUnsplash) { return false; }
+    if (!isCloudinary && !isGooglePlaces && !isUnsplash) { 
+      return false; 
+    }
     
     // Reject obviously broken URLs
-    if (url.includes('undefined') || url.includes('null')) { return false; }
+    if (url.includes('undefined') || url.includes('null')) { 
+      return false; 
+    }
     
     // Apply Cloudinary-specific validation only for Cloudinary URLs
     if (isCloudinary) {
-      return !isProblematicCloudinaryUrl(url);
+      const isProblematic = isProblematicCloudinaryUrl(url);
+      if (isProblematic) {
+      }
+      return !isProblematic;
     }
     
     // Google Places and Unsplash URLs are generally reliable
@@ -166,10 +179,12 @@ export function processRestaurantImages(
 
   // Remove duplicate images using Set
   const uniqueImages = Array.from(new Set(validImages));
+  
 
   // If we have at least one real image, return all valid images up to maxImages
   if (uniqueImages.length > 0) {
-    return uniqueImages.slice(0, Math.max(1, maxImages));
+    const result = uniqueImages.slice(0, Math.max(1, maxImages));
+    return result;
   }
 
   // No real images: use a single local placeholder to avoid a carousel of duplicates

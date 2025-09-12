@@ -369,10 +369,24 @@ function EateryIdPageContent() {
               return ['/images/default-restaurant.webp'];
             }
             
-            // Remove duplicate images using Set
-            const uniqueImages = Array.from(new Set(allImages));
+            // Filter out placeholder images before deduplication
+            const realImages = allImages.filter(img => 
+              img && 
+              typeof img === 'string' && 
+              !img.includes('/images/default-restaurant.webp') &&
+              !img.includes('placeholder') &&
+              !img.includes('default')
+            );
             
-            // Return deduplicated image URLs
+            // If no real images after filtering, use fallback
+            if (realImages.length === 0) {
+              return ['/images/default-restaurant.webp'];
+            }
+            
+            // Remove duplicate images using Set
+            const uniqueImages = Array.from(new Set(realImages));
+            
+            // Return deduplicated real image URLs
             return uniqueImages;
           })(),
           hours: (() => {
