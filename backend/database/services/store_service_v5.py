@@ -159,6 +159,18 @@ class StoreServiceV5:
             logger.error(f"Error getting entity count: {e}")
             return 0
 
+    def get_entity(self, entity_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get entity by ID - wrapper for get_store for API compatibility.
+        
+        Args:
+            entity_id: Entity ID (store ID)
+            
+        Returns:
+            Store dictionary or None if not found
+        """
+        return self.get_store(entity_id)
+
     def get_store(self, store_id: int, enrich: bool = True) -> Optional[Dict[str, Any]]:
         """Get store by ID with optional enrichment.
         

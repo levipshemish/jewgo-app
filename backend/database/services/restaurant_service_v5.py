@@ -226,6 +226,18 @@ class RestaurantServiceV5:
             logger.error(f"Error getting restaurants: {e}")
             return [], None, None
     
+    def get_entity(self, entity_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get entity by ID - wrapper for get_restaurant_by_id for API compatibility.
+        
+        Args:
+            entity_id: Entity ID (restaurant ID)
+            
+        Returns:
+            Restaurant dictionary or None if not found
+        """
+        return self.get_restaurant_by_id(entity_id)
+
     def get_restaurant_by_id(
         self,
         restaurant_id: int,

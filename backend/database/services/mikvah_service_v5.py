@@ -133,6 +133,18 @@ class MikvahServiceV5:
             logger.error(f"Error getting entity count: {e}")
             return 0
 
+    def get_entity(self, entity_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get entity by ID - wrapper for get_mikvah for API compatibility.
+        
+        Args:
+            entity_id: Entity ID (mikvah ID)
+            
+        Returns:
+            Mikvah dictionary or None if not found
+        """
+        return self.get_mikvah(entity_id)
+
     def get_mikvah(self, mikvah_id: int, enrich: bool = True) -> Optional[Dict[str, Any]]:
         """Get mikvah by ID with optional enrichment.
         

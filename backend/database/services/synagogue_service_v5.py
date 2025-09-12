@@ -283,6 +283,18 @@ class SynagogueServiceV5:
             logger.error(f"Error getting synagogues: {e}")
             return [], None, None
     
+    def get_entity(self, entity_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get entity by ID - wrapper for get_synagogue_by_id for API compatibility.
+        
+        Args:
+            entity_id: Entity ID (synagogue ID)
+            
+        Returns:
+            Synagogue dictionary or None if not found
+        """
+        return self.get_synagogue_by_id(entity_id)
+
     def get_synagogue_by_id(
         self,
         synagogue_id: int,
