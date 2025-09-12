@@ -335,8 +335,8 @@ def create_app(config_class=None):
     
     # Register simple health check blueprint early (before other complex services)
     try:
-        from routes.simple_health import simple_health_bp
-        app.register_blueprint(simple_health_bp)
+        from routes.health_simple import health_simple_bp
+        app.register_blueprint(health_simple_bp)
         logger.info("Simple health check blueprint registered successfully")
     except ImportError as e:
         logger.warning(f"Could not import simple health check blueprint: {e}")
