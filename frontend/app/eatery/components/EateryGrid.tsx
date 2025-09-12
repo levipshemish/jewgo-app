@@ -148,8 +148,11 @@ export default function EateryGrid({
       let newNextCursor = null
       let nextPage = null
       
-      if (isDistanceSorting) {
-        // For distance sorting, use page-based pagination
+      // Check if we're using page-based pagination (indicated by page_N cursor format)
+      const isPageBasedPagination = response.next_cursor && response.next_cursor.startsWith('page_')
+      
+      if (isPageBasedPagination) {
+        // For page-based pagination (distance sorting and now all sorting types)
         hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
         if (hasMoreData && response.next_cursor) {
           // Extract page number from cursor like "page_2"
@@ -160,7 +163,7 @@ export default function EateryGrid({
         }
         newNextCursor = response.next_cursor // Keep the page-based cursor for reference
       } else {
-        // For other sorting, use cursor-based pagination
+        // For cursor-based pagination (legacy)
         hasMoreData = response.next_cursor !== null && responseRestaurants.length > 0
         newNextCursor = response.next_cursor
       }
