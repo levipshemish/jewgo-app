@@ -286,21 +286,20 @@ export default function EateryGrid({
 
     try {
       if (useRealData && !backendError) {
-        // Check if we're using distance sorting (page-based) or cursor-based pagination
-        const searchParams = new URLSearchParams(buildSearchParams())
-        const isDistanceSorting = searchParams.get('sort') === 'distance_asc'
+        // Check if we're using page-based pagination (indicated by page_N cursor format)
+        const isPageBasedPagination = nextCursor && nextCursor.startsWith('page_')
         
-        console.log('loadMoreItems - sort:', searchParams.get('sort'), 'isDistanceSorting:', isDistanceSorting, 'nextCursor:', nextCursor)
+        console.log('loadMoreItems - nextCursor:', nextCursor, 'isPageBasedPagination:', isPageBasedPagination)
         
         let response;
-        if (isDistanceSorting) {
-          // Use page-based pagination for distance sorting
+        if (isPageBasedPagination) {
+          // Use page-based pagination for all sorting types that return page_N cursors
           const nextPage = currentPage + 1
           console.log('Using page-based pagination, nextPage:', nextPage)
           response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, nextPage);
           setCurrentPage(nextPage);
         } else {
-          // Use cursor-based pagination for other sorting
+          // Use cursor-based pagination for legacy cursor format
           console.log('Using cursor-based pagination, cursor:', nextCursor)
           response = await fetchRestaurants(50, nextCursor || undefined, buildSearchParams());
         }
