@@ -316,6 +316,13 @@ export default function EateryGrid({
             }));
           return [...prev, ...newRestaurants];
         });
+        console.log('loadMoreItems response:', {
+          hasMore: response.hasMore,
+          nextCursor: response.nextCursor,
+          totalCount: response.totalCount,
+          restaurantCount: response.restaurants.length
+        })
+        
         setHasMore(response.hasMore);
         setNextCursor(response.nextCursor || null);
         if (response.totalCount !== null) {
