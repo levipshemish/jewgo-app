@@ -12,7 +12,7 @@
 - Backend checks: `cd backend && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && pytest -q && ruff check . && black --check . && mypy .`.
 
 ## Configuration
-- Frontend API target: set `NEXT_PUBLIC_BACKEND_URL=https://api.jewgo.app` in `frontend/.env.local` (defaults already point here in many API routes).
+- Frontend API target: set `NEXT_PUBLIC_BACKEND_URL=https://api.jewgo.app` in `.env` (defaults already point here in many API routes).
 - Do not run Prisma migrations or local databases from this repo. Skip any `npm run build` or `prisma migrate` workflows.
 
 ## Coding Style & Naming Conventions
@@ -28,5 +28,9 @@
 - Pull requests: include a clear description, linked issues, screenshots for UI changes, test plan, and any config migrations. Ensure `npm run lint && npm test && npm run type-check` (frontend) and `pytest` + linters (backend) pass.
 
 ## Security & Configuration Tips
-- Never commit secrets. Use `.env` (root/backend) and `frontend/.env.local` (copy from `frontend/env.example`). Client-side vars must start with `NEXT_PUBLIC_`.
-- For Docker, set `DATABASE_URL`, `REDIS_*`, `CORS_ORIGINS`, and `SENTRY_DSN` as needed. Frontend env validation: `cd frontend && npm run validate-env`.
+- Never commit secrets.
+
+the backend Server is hosted on a server external to this repository.
+The backend Database is hosted on a server external to this repository.
+The Frontend is hosted on Vercel and dev local for testing.
+

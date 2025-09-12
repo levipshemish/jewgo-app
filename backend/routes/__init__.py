@@ -5,9 +5,7 @@ Author: JewGo Development Team
 Version: 1.0
 """
 
-# Import only the proper health routes
-from . import health_proper
+# Routes module for JewGo Backend
+# All route blueprints are in the v5 subdirectory
 
-__all__ = [
-    "health_proper",
-]
+__all__ = []
