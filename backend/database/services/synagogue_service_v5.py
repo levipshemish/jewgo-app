@@ -155,7 +155,7 @@ class SynagogueServiceV5:
             processed_filters = self._process_filters(filters)
             
             # Get count from repository
-            count = self.entity_repository.get_entity_count(
+            count = self.repository.get_entity_count(
                 entity_type='synagogues',
                 filters=processed_filters
             )
