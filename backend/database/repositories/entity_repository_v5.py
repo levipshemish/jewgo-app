@@ -237,7 +237,10 @@ class EntityRepositoryV5(BaseRepository):
                 
                 logger.info(f"DEBUG CURSOR: result_entities count={len(result_entities)}, has_next={has_next}")
                 
-                if result_entities:
+                # Disable cursor pagination for distance sorting since it's done in application layer
+                if sort_key == 'distance_asc':
+                    logger.info(f"DEBUG CURSOR: Distance sorting detected - disabling cursor pagination")
+                elif result_entities:
                     if has_next:
                         logger.info(f"DEBUG CURSOR: Generating next_cursor for last entity")
                         next_cursor = self._generate_cursor(
