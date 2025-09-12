@@ -65,7 +65,7 @@ interface ServerStatus {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   const startTime = Date.now()
   
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
         const data = await backendResponse.json()
         backendVersion = data.version || '1.0.0'
       }
-    } catch (error) {
+    } catch (_error) {
       backendResponseTime = Date.now() - backendStart
     }
 
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get container status
-    let containers = {
+    const containers = {
       total: 0,
       running: 0,
       stopped: 0,
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
           containers.stopped = containers.list.filter(c => c.status !== 'running').length
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Container status is optional
     }
 
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
             responseTime,
             lastChecked: new Date().toISOString()
           }
-        } catch (error) {
+        } catch (_error) {
           const responseTime = Date.now() - routeStart
           return {
             path: route.path,

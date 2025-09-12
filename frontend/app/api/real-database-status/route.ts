@@ -169,7 +169,7 @@ async function getQueryPerformanceMetrics(_host: string, _port: string, _databas
   }
 }
 
-async function getDatabaseSizeInfo(host: string, port: string, database: string, username: string, password: string) {
+async function getDatabaseSizeInfo(_host: string, _port: string, _database: string, _username: string, _password: string) {
   try {
     // This would require a database connection to get real size info
     // For now, return estimated values
@@ -201,7 +201,7 @@ async function getDatabaseSizeInfo(host: string, port: string, database: string,
   }
 }
 
-async function getReplicationStatus(host: string, port: string, database: string, username: string, password: string) {
+async function getReplicationStatus(_host: string, _port: string, _database: string, _username: string, _password: string) {
   try {
     // This would require a database connection to check replication status
     // For now, return typical single-instance status

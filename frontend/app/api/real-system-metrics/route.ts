@@ -33,10 +33,8 @@ interface SystemMetrics {
 
 async function getSystemMetrics(): Promise<SystemMetrics> {
   const os = require('os')
-  const fs = require('fs').promises
   const { exec } = require('child_process')
   const { promisify } = require('util')
-  const execAsync = promisify(exec)
 
   try {
     // Get CPU information
@@ -63,7 +61,7 @@ async function getSystemMetrics(): Promise<SystemMetrics> {
       cpu: {
         usage: cpuUsage,
         cores: cpuCores,
-        loadAverage: loadAverage
+        loadAverage
       },
       memory: {
         total: totalMemory,
@@ -83,7 +81,7 @@ async function getSystemMetrics(): Promise<SystemMetrics> {
         packetsIn: networkInfo.packetsIn,
         packetsOut: networkInfo.packetsOut
       },
-      uptime: uptime,
+      uptime,
       timestamp: new Date().toISOString()
     }
   } catch (error) {
