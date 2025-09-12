@@ -62,10 +62,7 @@ export default function EateryGrid({
     if (distance !== undefined && distance !== null) {
       // Use backend-calculated distance (already in miles)
       
-      // Special debug for Mizrachi restaurants
-      if (restaurant.name && restaurant.name.toLowerCase().includes('mizrachi')) {
-        console.warn(`Mizrachi restaurant distance: ${restaurant.name} = ${distance} miles`)
-      }
+      // Distance formatting for all restaurants
       
       // Format miles directly
       if (distance < 0.1) {
@@ -682,7 +679,7 @@ export default function EateryGrid({
                 variant="default"
                 showStarInBadge={true}
                 onCardClick={() => handleCardClick(restaurant)}
-                priority={index === 0}
+                priority={index < 4}
                 className="w-full h-full"
               />
             </div>
