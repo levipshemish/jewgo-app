@@ -42,6 +42,7 @@ export default function EateryGrid({
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [totalCount, setTotalCount] = useState<number | null>(null)
   const [backendError, setBackendError] = useState(false)
   const [errorType, setErrorType] = useState<'network' | 'timeout' | 'server' | 'not_found' | 'unknown' | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>('')
@@ -125,7 +126,8 @@ export default function EateryGrid({
         restaurants: responseRestaurants,
         hasMore: hasMoreData,
         nextCursor: newNextCursor,
-        limit: response.limit || limit
+        limit: response.limit || limit,
+        totalCount: response.total_count || null
       }
 
     } catch (error) {
@@ -233,7 +235,7 @@ export default function EateryGrid({
     try {
       if (useRealData && !backendError) {
         // Try real API first with cursor-based pagination
-        const response = await fetchRestaurants(200, nextCursor || undefined, buildSearchParams());
+        const response = await fetchRestaurants(50, nextCursor || undefined, buildSearchParams());
         setRestaurants((prev) => {
           // Deduplicate by id to prevent duplicate restaurants
           const existingIds = new Set(prev.map((r: LightRestaurant) => r.id));
@@ -261,6 +263,9 @@ export default function EateryGrid({
         });
         setHasMore(response.hasMore);
         setNextCursor(response.nextCursor || null);
+        if (response.totalCount !== null) {
+          setTotalCount(response.totalCount);
+        }
       } else {
         // Use mock data (fallback or when backend is in error state)
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -334,6 +339,7 @@ export default function EateryGrid({
       setRestaurants([])
       setHasMore(true)
       setNextCursor(null)
+      setTotalCount(null)
       setBackendError(false)
       setErrorType(null)
       setErrorMessage('')
@@ -350,7 +356,7 @@ export default function EateryGrid({
           try {
             if (useRealData && currentRetryCount < 3) {
               // Try real API first with cursor-based pagination
-              const response = await fetchRestaurants(200, undefined, buildSearchParams())
+              const response = await fetchRestaurants(50, undefined, buildSearchParams())
               setRestaurants(response.restaurants.map((r: any): LightRestaurant => ({
                 id: r.id,
                 name: r.name,
@@ -371,6 +377,9 @@ export default function EateryGrid({
               })))
               setHasMore(response.hasMore)
               setNextCursor(response.nextCursor || null)
+              if (response.totalCount !== null) {
+                setTotalCount(response.totalCount);
+              }
               isRetryingRef.current = false
             } else {
               // Use mock data (fallback or when useRealData is false or max retries reached)
@@ -662,7 +671,18 @@ export default function EateryGrid({
       {/* End of Results */}
       {!hasMore && sortedRestaurants.length > 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          Showing all {sortedRestaurants.length} restaurants
+          {totalCount ? (
+            <div>
+              <p className="text-lg font-medium text-gray-900">
+                All {totalCount} restaurants loaded
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Showing {sortedRestaurants.length} restaurants
+              </p>
+            </div>
+          ) : (
+            <p>Showing all {sortedRestaurants.length} restaurants</p>
+          )}
         </div>
       )}
     </div>

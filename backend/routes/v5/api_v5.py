@@ -211,6 +211,11 @@ def get_entities(entity_type: str):
             sort=pagination.get('sort', 'created_at_desc')
         )
         
+        # Add total count for pagination info
+        if not pagination.get('cursor'):  # Only get total count on first page
+            total_count = service.get_entity_count(filters)
+            result['total_count'] = total_count
+        
         # Generate ETag for caching
         etag = etag_manager.generate_collection_etag(
             entity_type=entity_type,

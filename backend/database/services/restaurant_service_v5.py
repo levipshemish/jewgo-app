@@ -78,6 +78,28 @@ class RestaurantServiceV5:
         except Exception as e:
             logger.error(f"Failed to initialize Google Places client: {e}")
     
+    def get_entity_count(
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        user_context: Optional[Dict[str, Any]] = None
+    ) -> int:
+        """Get total count of entities matching filters."""
+        try:
+            # Process and validate filters
+            processed_filters = self._process_filters(filters)
+            
+            # Get count from repository
+            count = self.repository.get_entity_count(
+                entity_type='restaurants',
+                filters=processed_filters
+            )
+            
+            return count
+            
+        except Exception as e:
+            logger.error(f"Error getting entity count: {e}")
+            return 0
+
     def get_entities(
         self,
         filters: Optional[Dict[str, Any]] = None,
