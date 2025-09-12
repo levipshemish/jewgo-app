@@ -174,8 +174,8 @@ class EntityRepositoryV5(BaseRepository):
                 # Apply filters
                 query = self._apply_filters(query, model_class, filters, mapping)
                 
-                # Apply geospatial filtering if needed
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                # Apply geospatial filtering if needed (skip for distance sorting as we handle it in app layer)
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude') and sort_key != 'distance_asc':
                     query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 # Apply cursor pagination
