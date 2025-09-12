@@ -29,7 +29,8 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
     setSuccess(null);
     
     try {
-      const response = await fetch('/api/auth/prepare-merge', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+      const response = await fetch(`${backendUrl}/api/auth/prepare-merge`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +73,8 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/prepare-merge', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+      const response = await fetch(`${backendUrl}/api/auth/prepare-merge`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

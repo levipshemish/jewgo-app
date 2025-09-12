@@ -261,7 +261,8 @@ export class AuthTokenManager {
    */
   async verifyToken(token: string): Promise<{ valid: boolean; error?: string }> {
     try {
-      const response = await fetch('/api/v5/auth/verify', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+      const response = await fetch(`${backendUrl}/api/v5/auth/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
