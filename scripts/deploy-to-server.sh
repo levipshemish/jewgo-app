@@ -298,8 +298,8 @@ print_status "Testing V5 API endpoints..."
 test_endpoint "http://$SERVER_HOST:5000/healthz" "Public healthz endpoint"
 test_endpoint "http://$SERVER_HOST:5000/readyz" "Public readyz endpoint"
 
-# Test Entity API health
-test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/health" "Entity API health endpoint"
+# Note: Entity API health endpoint doesn't exist
+# test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/health" "Entity API health endpoint"
 
 # Test Auth API health
 test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/health" "Auth API health endpoint"
@@ -449,7 +449,6 @@ print_status "=== TESTED ENDPOINTS ==="
 print_status "✅ Health Endpoints:"
 print_status "   - /healthz (main health check - public)"
 print_status "   - /readyz (readiness check - public)"
-print_status "   - /api/v5/entity/health (entity service)"
 print_status "   - /api/v5/auth/health (auth service)"
 print_status "   - /api/v5/webhooks/health (webhook service)"
 print_status "   - /api/v5/metrics/health (metrics service)"

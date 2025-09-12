@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for optimal backend build performance
 # Stage 1: Build dependencies
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --user -r requirements.txt
 
 # Stage 2: Runtime image
-FROM python:3.11-slim as runtime
+FROM python:3.11-slim AS runtime
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
