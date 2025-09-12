@@ -100,12 +100,13 @@ export default function EateryGrid({
         }
       }
       
-      // Use the restaurants API module
+      // Use the restaurants API module with cursor-based pagination
       const response = await apiFetchRestaurants({
         page: 1, // For now, we'll handle pagination differently
         limit,
         filters,
-        location
+        location,
+        cursor // Pass the cursor for pagination
       })
       
       if (!response.success) {

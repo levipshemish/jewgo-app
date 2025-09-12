@@ -45,12 +45,14 @@ export async function fetchRestaurants({
   limit = 50,
   filters = {},
   location,
+  cursor,
   signal,
 }: { 
   page?: number; 
   limit?: number;
   filters?: Record<string, any>;
   location?: { latitude: number; longitude: number };
+  cursor?: string;
   signal?: AbortSignal;
 }): Promise<RestaurantsResponse> {
   try {
@@ -63,6 +65,7 @@ export async function fetchRestaurants({
         lat: location.latitude,
         lng: location.longitude,
       } : undefined,
+      cursor,
     });
 
     if (!response.success) {

@@ -191,6 +191,7 @@ export class V5ApiClient {
     // Handle pagination parameters
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.cursor) searchParams.set('cursor', params.cursor);
     
     // Handle sort parameter - prioritize params.sort over filters.sort
     if (params.sort) {

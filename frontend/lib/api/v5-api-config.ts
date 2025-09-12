@@ -99,6 +99,7 @@ export interface V5EntityParams {
   limit?: number;
   sort?: string;
   order?: 'asc' | 'desc';
+  cursor?: string;
 }
 
 // V5 API Client Configuration
