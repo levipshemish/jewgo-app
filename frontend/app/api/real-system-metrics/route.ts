@@ -33,8 +33,8 @@ interface SystemMetrics {
 
 async function getSystemMetrics(): Promise<SystemMetrics> {
   const os = require('os')
-  const { exec } = require('child_process')
-  const { promisify } = require('util')
+  const { exec: _exec } = require('child_process')
+  const { promisify: _promisify } = require('util')
 
   try {
     // Get CPU information

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
+// import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
 import { IS_MEMORY_CAP_ITEMS, IS_MEMORY_COMPACTION_THRESHOLD, IS_MEMORY_MONITORING_INTERVAL_MS } from '@/lib/config/infiniteScroll.constants';
@@ -15,7 +15,7 @@ interface FilterOptions {
   states: string[];
 }
 
-interface CombinedApiResponse {
+interface _CombinedApiResponse {
   success: boolean;
   data: {
     restaurants: Restaurant[];
@@ -216,7 +216,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
   ): Promise<{ received: number; hasMore?: boolean }> => {
     try {
       // Initialize filters early
-      const filters: Record<string, any> = {};
+      const filterParams: Record<string, any> = {};
       
       // CRITICAL FIX: Add safety check to prevent infinite API calls
       if (page > 100) { // Arbitrary safety limit
@@ -225,7 +225,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       }
       
       // Build the key early to guard duplicate triggers
-      const params = buildQueryParams(page, query, filters, itemsPerPage);
+      const params = buildQueryParams(page, query, filterParams, itemsPerPage);
       const key = params.toString();
       const now = Date.now();
       
@@ -273,9 +273,10 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       } : undefined;
       
       // Build filters from search params
+      const searchFilterParams: Record<string, any> = filters || {};
       for (const [paramKey, value] of searchParams.entries()) {
         if (paramKey !== 'lat' && paramKey !== 'lng') {
-          filters[paramKey] = value;
+          searchFilterParams[paramKey] = value;
         }
       }
       
@@ -283,7 +284,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       const response = await fetchRestaurants({
         page: 1,
         limit: 200, // Use a reasonable limit for unified data
-        filters,
+        filters: searchFilterParams,
         location
       });
       let receivedCount = 0;

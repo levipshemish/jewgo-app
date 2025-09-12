@@ -62,7 +62,7 @@ export class RetryManager {
    */
   async execute<T>(
     fn: () => Promise<T>,
-    context?: Partial<RetryContext>
+    _context?: Partial<RetryContext>
   ): Promise<T> {
     let lastError: Error | undefined;
     let attempt = 0;

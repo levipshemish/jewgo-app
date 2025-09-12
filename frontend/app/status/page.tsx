@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Server, Database, HardDrive, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { RefreshCw, Server, HardDrive, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react'
 
 interface ServerStatus {
   timestamp: string
@@ -104,8 +104,8 @@ export default function StatusPage() {
     return () => clearInterval(interval)
   }, [])
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+  const getStatusIcon = (statusValue: string) => {
+    switch (statusValue) {
       case 'healthy':
       case 'connected':
       case 'working':
@@ -121,8 +121,8 @@ export default function StatusPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const getStatusBadge = (statusValue: string) => {
+    switch (statusValue) {
       case 'healthy':
       case 'connected':
       case 'working':
@@ -383,18 +383,18 @@ export default function StatusPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {status.errors.recent.map((error, index) => (
+                  {status.errors.recent.map((errorItem, index) => (
                     <div key={index} className="p-2 border border-red-200 rounded bg-red-50">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-red-800">
-                          {error.level.toUpperCase()}
+                          {errorItem.level.toUpperCase()}
                         </span>
                         <span className="text-xs text-red-600">
-                          {new Date(error.timestamp).toLocaleTimeString()}
+                          {new Date(errorItem.timestamp).toLocaleTimeString()}
                         </span>
                       </div>
-                      <p className="text-sm text-red-700 mt-1">{error.message}</p>
-                      <p className="text-xs text-red-600 mt-1">Source: {error.source}</p>
+                      <p className="text-sm text-red-700 mt-1">{errorItem.message}</p>
+                      <p className="text-xs text-red-600 mt-1">Source: {errorItem.source}</p>
                     </div>
                   ))}
                 </div>

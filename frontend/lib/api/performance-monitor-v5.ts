@@ -28,12 +28,12 @@ export class PerformanceMonitor {
   }
 
   recordApiCall(
-    endpoint: string,
-    method: string,
+    _endpoint: string,
+    _method: string,
     duration: number,
-    status?: number,
-    responseSize?: number,
-    metadata?: Record<string, string>
+    _status?: number,
+    _responseSize?: number,
+    _metadata?: Record<string, string>
   ): void {
     this.recordRequest(duration);
   }

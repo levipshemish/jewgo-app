@@ -579,10 +579,10 @@ export class ErrorHandler {
    */
   private recordErrorMetrics(
     error: Error,
-    statusCode: number,
-    category: ErrorCategory,
-    severity: ErrorSeverity,
-    processingTime: number
+    _statusCode: number,
+    _category: ErrorCategory,
+    _severity: ErrorSeverity,
+    _processingTime: number
   ): void {
     try {
       metricsCollector.recordError(

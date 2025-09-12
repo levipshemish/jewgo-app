@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useMemoryLeakDetection, formatMemorySize } from '@/lib/hooks/useMemoryLeakDetection';
+import { useMemoryLeakDetection } from '@/lib/hooks/useMemoryLeakDetection';
 
 interface MemoryLeakDashboardProps {
   className?: string;
@@ -17,7 +17,7 @@ export default function MemoryLeakDashboard({ className = '' }: MemoryLeakDashbo
     leakInfo,
     isSupported,
     forceCleanup,
-    getLeakReport,
+    getLeakReport: _getLeakReport,
     clearHistory,
   } = useMemoryLeakDetection({
     checkIntervalMs: 10000, // Check every 10 seconds
@@ -63,7 +63,7 @@ export default function MemoryLeakDashboard({ className = '' }: MemoryLeakDashbo
           fetchConnectionPoolMetrics(),
           fetchConnectionPoolAlerts(),
         ]);
-      } catch (err) {
+      } catch (_err) {
         setError('Failed to load memory leak data');
       } finally {
         setLoading(false);

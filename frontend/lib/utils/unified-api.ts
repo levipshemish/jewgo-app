@@ -68,7 +68,18 @@ function generateCacheKey(url: string, options?: UnifiedApiOptions): string {
   }
   
   const method = 'GET'; // We only support GET for now
-  const params = new URL(url).searchParams.toString();
+  
+  // Handle both absolute and relative URLs
+  let urlObj: URL;
+  try {
+    // Try to create URL object directly
+    urlObj = new URL(url);
+  } catch {
+    // If it fails, assume it's a relative URL and create a dummy base
+    urlObj = new URL(url, 'http://localhost:3000');
+  }
+  
+  const params = urlObj.searchParams.toString();
   return `${method}:${url.split('?')[0]}:${params}`;
 }
 

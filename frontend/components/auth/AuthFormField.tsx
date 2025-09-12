@@ -37,7 +37,7 @@ export const AuthFormField: React.FC<AuthFormFieldProps> = ({
   const [isFocused, setIsFocused] = useState(false);
 
   const inputType = type === 'password' && showPassword ? 'text' : type;
-  const hasValue = value.length > 0;
+  const _hasValue = value.length > 0;
   const hasError = !!error;
 
   return (

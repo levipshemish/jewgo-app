@@ -291,14 +291,14 @@ export async function GET(_request: NextRequest) {
     }
     
     // Get API routes information
-    let apiRoutes = null
-    let apiRoutesSource = 'none'
+    let _apiRoutes = null
+    let _apiRoutesSource = 'none'
     try {
       const apiRoutesResponse = await fetch(`${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/api/real-api-routes`)
       if (apiRoutesResponse.ok) {
         const apiRoutesData = await apiRoutesResponse.json()
-        apiRoutes = apiRoutesData.data
-        apiRoutesSource = apiRoutesData.source
+        _apiRoutes = apiRoutesData.data
+        _apiRoutesSource = apiRoutesData.source
       }
     } catch (error) {
       console.error('Failed to fetch API routes:', error)

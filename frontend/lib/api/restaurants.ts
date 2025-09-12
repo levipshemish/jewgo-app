@@ -67,7 +67,7 @@ export async function fetchRestaurants({
     }
 
     // Handle V5 API response format
-    const restaurants = sanitizeRestaurantData(response.data?.restaurants || response.data || []) as Restaurant[];
+    const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
     const total = response.data?.total || response.pagination?.total || restaurants.length;
     const safeLimit = limit > 0 ? limit : 1;
 
@@ -165,7 +165,7 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
     }
 
     // Handle V5 API response format
-    const restaurants = sanitizeRestaurantData(response.data?.restaurants || response.data || []) as Restaurant[];
+    const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
     const total = response.data?.total || response.pagination?.total || restaurants.length;
 
     return {
@@ -219,7 +219,7 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
     }
 
     // Handle V5 API response format
-    const restaurant = response.data?.restaurant || response.data;
+    const restaurant = response.data;
     if (restaurant) {
       const sanitized = sanitizeRestaurantData([restaurant]);
       return sanitized[0] as Restaurant;

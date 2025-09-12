@@ -221,7 +221,7 @@ export class MetricsCollector {
   /**
    * Record an error
    */
-  recordError(url: string, method: string, error: string): void {
+  recordError(url: string, method: string, _error: string): void {
     const key = this.getMetricsKey(url, method);
     const metrics = this.metrics.get(key) || this.createEmptyMetrics();
     metrics.errorCount++;
@@ -253,7 +253,7 @@ export class MetricsCollector {
   /**
    * Get summary metrics for a time range
    */
-  getSummary(timeRange?: { start?: number; end?: number }): {
+  getSummary(_timeRange?: { start?: number; end?: number }): {
     metrics: Record<string, ApiMetrics>;
     requestHistory: RequestMetrics[];
     summary: {

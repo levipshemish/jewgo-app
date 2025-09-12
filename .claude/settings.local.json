@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/Users/mendell/.claude/**)",
+      "Read(/Users/mendell/.claude/**)",
+      "Read(/Users/mendell/.claude/**)",
+      "Bash(find:*)",
+      "Bash(npm run type-check:*)",
+      "Read(/Users/mendell/.claude/**)",
+      "Read(/Users/mendell/.claude/**)",
+      "Read(/Users/mendell/.claude/**)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run lint)",
+      "Read(/Users/mendell/.claude/**)",
+      "Read(/Users/mendell/.claude/**)",
+      "Read(/Users/mendell/.claude/**)",
+      "Read(/Users/mendell/.claude/**)",
+      "Bash(cd:*)",
+      "Bash(python:*)",
+      "Bash(gh pr view:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx next lint:*)",
+      "Bash(npx eslint:*)",
+      "Bash(time curl:*)",
+      "Read(/Users/mendell/**)",
+      "Bash(node:*)",
+      "Bash(redis-cli:*)",
+      "Read(/Users/mendell/**)",
+      "Read(//Users/mendell/**)",
+      "Bash(chmod:*)",
+      "Bash(pip install:*)",
+      "Bash(source:*)",
+      "Bash(grep:*)",
+      "Bash(test:*)"
+    ]
+  },
+  "outputStyle": "Explanatory"
+}

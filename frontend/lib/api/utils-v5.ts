@@ -76,20 +76,6 @@ export function isValidEntityType(entityType: string): entityType is EntityType 
 /**
  * Parse location parameters from request
  */
-export function parseLocationFromParams(request: NextRequest): {
-  latitude?: number;
-  longitude?: number;
-  radius?: number;
-  isValid: boolean;
-};
-
-export function parseLocationFromParams(searchParams: URLSearchParams): {
-  latitude?: number;
-  longitude?: number;
-  radius?: number;
-  isValid: boolean;
-};
-
 export function parseLocationFromParams(requestOrParams: NextRequest | URLSearchParams): {
   latitude?: number;
   longitude?: number;
@@ -292,7 +278,7 @@ export async function validateRequestBodyFromRequest(request: NextRequest): Prom
       isValid: true,
       data: body
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       isValid: false,
       error: 'Invalid JSON in request body'
