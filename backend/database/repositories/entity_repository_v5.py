@@ -141,7 +141,6 @@ class EntityRepositoryV5(BaseRepository):
         the appropriate page slice. This is necessary because distance sorting
         is done in the application layer after the database query.
         """
-        print(f"DEBUG DISTANCE PAGINATION: Called with page={page}, limit={limit}, entity_type={entity_type}")
         try:
             model_class = self.get_model_class(entity_type)
             if not model_class:
@@ -195,14 +194,10 @@ class EntityRepositoryV5(BaseRepository):
                 offset = (page - 1) * limit
                 end_offset = offset + limit
                 
-                print(f"DEBUG DISTANCE PAGINATION: total_count={total_count}, offset={offset}, end_offset={end_offset}")
                 
                 # Get the page slice
                 page_entities = result_entities[offset:end_offset]
                 
-                print(f"DEBUG DISTANCE PAGINATION: page_entities length={len(page_entities)}")
-                if page_entities:
-                    print(f"DEBUG DISTANCE PAGINATION: first entity name={page_entities[0].get('name', 'NO_NAME')}, distance={page_entities[0].get('distance', 'NO_DISTANCE')}")
                 
                 # Generate pagination info
                 has_next = end_offset < total_count
@@ -216,7 +211,6 @@ class EntityRepositoryV5(BaseRepository):
                 if has_prev:
                     prev_cursor = f"page_{page - 1}"
                 
-                print(f"DEBUG DISTANCE PAGINATION: has_next={has_next}, has_prev={has_prev}, next_cursor={next_cursor}, prev_cursor={prev_cursor}")
                 
                 logger.info(f"Distance pagination: Page {page}, offset {offset}-{end_offset}, returned {len(page_entities)} entities")
                 
@@ -254,14 +248,9 @@ class EntityRepositoryV5(BaseRepository):
             Tuple of (entities, next_cursor, prev_cursor)
         """
         try:
-            print(f"DEBUG CURSOR: sort_key={sort_key}, page={page}, entity_type={entity_type}")
-            print(f"DEBUG CURSOR: sort_key == 'distance_asc': {sort_key == 'distance_asc'}")
-            print(f"DEBUG CURSOR: page is not None: {page is not None}")
-            print(f"DEBUG CURSOR: Both conditions: {sort_key == 'distance_asc' and page is not None}")
             
             # Special handling for distance sorting with page-based pagination
             if sort_key == 'distance_asc' and page is not None:
-                print(f"DEBUG CURSOR: Using distance pagination for {entity_type}")
                 return self._get_entities_with_distance_pagination(
                     entity_type, page, limit, filters, include_relations, user_context
                 )
