@@ -207,7 +207,11 @@ class EntityRepositoryV5(BaseRepository):
                 
                 # Apply distance sorting in application layer if needed
                 if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
+                    # Only sort by distance if we have location data
                     result_entities.sort(key=lambda x: x.get('distance', float('inf')))
+                elif sort_key == 'distance_asc':
+                    # If distance sorting is requested but no location provided, fall back to created_at
+                    result_entities.sort(key=lambda x: x.get('created_at', ''), reverse=True)
                 
                 # Generate cursors
                 next_cursor = None
