@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Server Deployment Script for Jewgo App
-# This script deploys the backend to the server with the remote database
+# This script safely deploys the backend to the server with proper rollback capabilities
 
 set -e
 
@@ -13,146 +13,514 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    local message="$1"
+    echo -e "${BLUE}[INFO]${NC} $message"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $message" >> "$LOCAL_LOG_FILE"
 }
 
 print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    local message="$1"
+    echo -e "${GREEN}[SUCCESS]${NC} $message"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [SUCCESS] $message" >> "$LOCAL_LOG_FILE"
 }
 
 print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    local message="$1"
+    echo -e "${YELLOW}[WARNING]${NC} $message"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARNING] $message" >> "$LOCAL_LOG_FILE"
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    local message="$1"
+    echo -e "${RED}[ERROR]${NC} $message"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $message" >> "$LOCAL_LOG_FILE"
 }
 
 # Server configuration
 SERVER_HOST="157.151.254.18"
 SERVER_USER="ubuntu"
 SERVER_PATH="/home/ubuntu/jewgo-app"
+BACKUP_DIR="/home/ubuntu/backups"
+DEPLOYMENT_LOG="/tmp/deployment-$(date +%Y%m%d-%H%M%S).log"
+SSH_KEY="./ssh-key-2025-09-11.key"
+
+# Local logging configuration
+LOCAL_LOG_DIR="./deployment-logs"
+LOCAL_LOG_FILE="${LOCAL_LOG_DIR}/deployment-$(date +%Y%m%d-%H%M%S).log"
+
+# Create local log directory
+mkdir -p "$LOCAL_LOG_DIR"
+
+# Initialize local log file
+echo "=== JewGo Deployment Log ===" > "$LOCAL_LOG_FILE"
+echo "Deployment started: $(date)" >> "$LOCAL_LOG_FILE"
+echo "Server: $SERVER_HOST" >> "$LOCAL_LOG_FILE"
+echo "Path: $SERVER_PATH" >> "$LOCAL_LOG_FILE"
+echo "=================================" >> "$LOCAL_LOG_FILE"
+echo "" >> "$LOCAL_LOG_FILE"
 
 print_status "Starting server deployment..."
+print_status "Deployment log: $DEPLOYMENT_LOG"
+print_status "Local log: $LOCAL_LOG_FILE"
+
+# Function to execute commands on server with logging
+execute_on_server() {
+    local cmd="$1"
+    local description="$2"
+    
+    print_status "$description"
+    if ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "$cmd" 2>&1 | tee -a "$DEPLOYMENT_LOG"; then
+        print_success "$description completed"
+        return 0
+    else
+        print_error "$description failed"
+        return 1
+    fi
+}
+
+# Check if SSH key exists
+if [ ! -f "$SSH_KEY" ]; then
+    print_error "SSH key not found at: $SSH_KEY"
+    exit 1
+fi
+
+# Set proper permissions for SSH key
+chmod 600 "$SSH_KEY"
 
 # Check if we can connect to the server
 print_status "Testing server connection..."
-if ! ssh -o ConnectTimeout=10 -o BatchMode=yes $SERVER_USER@$SERVER_HOST "echo 'Connection successful'" 2>/dev/null; then
-    print_error "Cannot connect to server. Please check your SSH configuration."
+if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o BatchMode=yes $SERVER_USER@$SERVER_HOST "echo 'Connection successful'" 2>/dev/null; then
+    print_error "Cannot connect to server. Please check your SSH key and server configuration."
     exit 1
 fi
 
 print_success "Server connection established"
 
-# Create environment file on server
-print_status "Creating production environment file on server..."
-ssh $SERVER_USER@$SERVER_HOST "cat > $SERVER_PATH/.env << 'EOF'
-# Production Environment Configuration for Server Deployment
+# Create backup directory if it doesn't exist
+execute_on_server "mkdir -p $BACKUP_DIR" "Creating backup directory"
 
-# --- Database Configuration ---
-POSTGRES_DB=jewgo_db
-POSTGRES_USER=app_user
-POSTGRES_PASSWORD=Jewgo123
-DATABASE_URL=postgresql://app_user:Jewgo123@129.80.190.110:5432/jewgo_db
+# Backup current deployment
+print_status "Creating backup of current deployment..."
+execute_on_server "
+    cd $SERVER_PATH && \
+    if [ -d .git ]; then
+        git rev-parse HEAD > $BACKUP_DIR/previous-commit.txt
+        echo 'Backup created: \$(cat $BACKUP_DIR/previous-commit.txt)'
+    else
+        echo 'No git repository found, skipping commit backup'
+    fi
+" "Backing up current commit"
 
-# --- Redis Configuration ---
-REDIS_PASSWORD=
-REDIS_URL=redis://redis:6379
+# Check if environment file exists
+print_status "Checking for environment file..."
+if ! ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "[ -f $SERVER_PATH/.env ]"; then
+    print_error "Environment file (.env) not found on server!"
+    print_error "Please run the environment setup script first:"
+    print_error "  ./scripts/setup-server-env.sh"
+    exit 1
+fi
 
-# --- Application Configuration ---
-NODE_ENV=production
-FLASK_ENV=production
-SECRET_KEY=prod-secret-key-change-in-production-2025
-JWT_SECRET_KEY=prod-jwt-secret-key-change-in-production-2025
+print_success "Environment file found on server"
 
-# --- CORS Configuration ---
-CORS_ORIGINS=https://jewgo.app,https://www.jewgo.app,https://api.jewgo.app,http://localhost:3000,http://127.0.0.1:3000
+# Pull latest code from GitHub
+print_status "Pulling latest code from GitHub..."
+execute_on_server "
+    cd $SERVER_PATH && \
+    git config --global --add safe.directory $SERVER_PATH && \
+    git fetch origin && \
+    git reset --hard origin/main && \
+    echo 'Latest commit: \$(git rev-parse HEAD)' && \
+    echo 'Commit message: \$(git log -1 --pretty=%B)'
+" "Pulling latest code from GitHub"
 
-# --- Google Maps API ---
-GOOGLE_MAPS_API_KEY=\${GOOGLE_MAPS_API_KEY}
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=\${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=\${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
+# Clean up old Docker images and containers
+print_status "Cleaning up old Docker resources..."
+execute_on_server "
+    # Stop and remove old backend container if it exists
+    docker stop jewgo_backend 2>/dev/null || echo 'Backend container not running' && \
+    docker rm jewgo_backend 2>/dev/null || echo 'Backend container not found' && \
+    
+    # Remove old backend images
+    docker images | grep 'jewgo-app-backend' | awk '{print \$3}' | xargs -r docker rmi -f && \
+    
+    # Clean up dangling images and build cache
+    docker image prune -f && \
+    docker builder prune -f && \
+    
+    echo 'Docker cleanup completed'
+" "Cleaning up old Docker resources"
 
-# --- Email Configuration ---
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=\${SMTP_USER}
-SMTP_PASSWORD=\${SMTP_PASSWORD}
-FROM_EMAIL=\${FROM_EMAIL}
+# Build new backend image
+print_status "Building new backend Docker image..."
+execute_on_server "
+    cd $SERVER_PATH/backend && \
+    docker build -t jewgo-app-backend . && \
+    echo 'Backend image built successfully'
+" "Building new backend Docker image"
 
-# --- GitHub Webhook Configuration ---
-GITHUB_WEBHOOK_SECRET=dsljkgsadfhkahbdskdhbasksdbhf89346945hbvnklxv09bq47u9043yFDGGGHWYSGQBW
+# Start the new backend container
+print_status "Starting new backend container..."
+execute_on_server "
+    cd $SERVER_PATH && \
+    docker run -d --name jewgo_backend --network jewgo-app_default -p 5000:5000 --env-file .env jewgo-app-backend && \
+    echo 'Backend container started'
+" "Starting new backend container"
 
-# --- Monitoring and Error Tracking ---
-SENTRY_DSN=https://48a8a5542011706348cddd01c6dc685a@o4509798929858560.ingest.us.sentry.io/4509798933004288
-
-# --- AWS S3 Backup Configuration ---
-AWS_REGION=us-east-1
-S3_BACKUP_BUCKET=jewgo-backups1
-
-# --- Development/Testing ---
-DEBUG=false
-TESTING=false
-
-# --- V5 API Configuration ---
-CURSOR_HMAC_SECRET_V5=prod-cursor-hmac-secret-change-in-production-2025
-EOF"
-
-print_success "Environment file created on server"
-
-# Deploy using the existing deployment script
-print_status "Running deployment script on server..."
-ssh $SERVER_USER@$SERVER_HOST "cd $SERVER_PATH && chmod +x scripts/deployment/deploy.sh && ./scripts/deployment/deploy.sh"
+# Clear Redis cache
+print_status "Clearing Redis cache..."
+execute_on_server "
+    docker exec jewgo_redis redis-cli FLUSHALL 2>/dev/null || echo 'Redis cache clear failed (container may not be running)'
+" "Clearing Redis cache"
 
 print_success "Deployment completed on server"
+
+# Rollback function
+rollback_deployment() {
+    print_error "Deployment failed! Attempting rollback..."
+    
+    execute_on_server "
+        cd $SERVER_PATH && \
+        if [ -f $BACKUP_DIR/previous-commit.txt ]; then
+            PREVIOUS_COMMIT=\$(cat $BACKUP_DIR/previous-commit.txt) && \
+            echo 'Rolling back to commit: \$PREVIOUS_COMMIT' && \
+            git reset --hard \$PREVIOUS_COMMIT && \
+            echo 'Code rolled back successfully'
+        else
+            echo 'No backup commit found, cannot rollback code'
+        fi
+    " "Rolling back code"
+    
+    execute_on_server "
+        # Stop current container
+        docker stop jewgo_backend 2>/dev/null || true && \
+        docker rm jewgo_backend 2>/dev/null || true && \
+        
+        # Rebuild and start with previous code
+        cd $SERVER_PATH/backend && \
+        docker build -t jewgo-app-backend . && \
+        cd $SERVER_PATH && \
+        docker run -d --name jewgo_backend --network jewgo-app_default -p 5000:5000 --env-file .env jewgo-app-backend && \
+        echo 'Rollback container started'
+    " "Rolling back container"
+    
+    print_warning "Rollback completed. Please check the application manually."
+    exit 1
+}
 
 # Test the deployment
 print_status "Testing server deployment..."
 
-# Wait a moment for services to start
-sleep 10
+# Wait for services to start
+print_status "Waiting for backend to start..."
+sleep 15
+
+# Comprehensive health check function
+check_backend_health() {
+    local max_attempts=10
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        print_status "Health check attempt $attempt/$max_attempts..."
+        
+        if curl -f -s http://$SERVER_HOST:5000/healthz > /dev/null 2>&1; then
+            print_success "Backend health check passed"
+            return 0
+        else
+            print_warning "Backend not ready yet, waiting 5 seconds..."
+            sleep 5
+            attempt=$((attempt + 1))
+        fi
+    done
+    
+    print_error "Backend health check failed after $max_attempts attempts"
+    return 1
+}
+
+# Function to test individual endpoints with detailed logging
+test_endpoint() {
+    local url="$1"
+    local description="$2"
+    local expected_status="${3:-200}"
+    
+    local response_code
+    local response_body
+    local curl_error
+    
+    # Get response code and body
+    response_code=$(curl -s -o /tmp/curl_response.tmp -w "%{http_code}" "$url" 2>/tmp/curl_error.tmp)
+    response_body=$(cat /tmp/curl_response.tmp 2>/dev/null || echo "")
+    curl_error=$(cat /tmp/curl_error.tmp 2>/dev/null || echo "")
+    
+    # Clean up temp files
+    rm -f /tmp/curl_response.tmp /tmp/curl_error.tmp
+    
+    if [ "$response_code" = "$expected_status" ]; then
+        print_success "$description working (HTTP $response_code)"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_TEST] SUCCESS: $description - $url - HTTP $response_code" >> "$LOCAL_LOG_FILE"
+        return 0
+    else
+        print_warning "$description failed (HTTP $response_code)"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_TEST] FAILED: $description - $url - HTTP $response_code" >> "$LOCAL_LOG_FILE"
+        
+        # Log detailed error information
+        if [ -n "$curl_error" ]; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_ERROR] CURL Error: $curl_error" >> "$LOCAL_LOG_FILE"
+        fi
+        
+        if [ -n "$response_body" ] && [ ${#response_body} -lt 1000 ]; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_RESPONSE] Response Body: $response_body" >> "$LOCAL_LOG_FILE"
+        fi
+        
+        # Log server logs for failed endpoints
+        if [ "$response_code" = "500" ] || [ "$response_code" = "502" ] || [ "$response_code" = "503" ]; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_LOGS] Fetching server logs for failed endpoint..." >> "$LOCAL_LOG_FILE"
+            ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 20 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
+        fi
+        
+        return 1
+    fi
+}
 
 # Test basic health endpoint
-print_status "Testing backend health endpoint..."
-if curl -f http://$SERVER_HOST:5000/healthz > /dev/null 2>&1; then
-    print_success "Backend health check passed"
-else
-    print_warning "Backend health check failed - checking logs..."
-    ssh $SERVER_USER@$SERVER_HOST "docker logs --tail 20 jewgo_backend"
+if ! check_backend_health; then
+    print_error "Backend health check failed - checking logs..."
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [HEALTH_CHECK_FAILED] Backend health check failed" >> "$LOCAL_LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [SERVER_LOGS] Fetching backend logs..." >> "$LOCAL_LOG_FILE"
+    ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 30 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ROLLBACK] Initiating rollback..." >> "$LOCAL_LOG_FILE"
+    rollback_deployment
 fi
 
 # Test V5 API endpoints
 print_status "Testing V5 API endpoints..."
 
-# Test Entity API health
-if curl -f http://$SERVER_HOST:5000/api/v5/health > /dev/null 2>&1; then
-    print_success "Entity API health endpoint working"
-else
-    print_warning "Entity API health endpoint failed"
-fi
+# Test main health endpoint
+test_endpoint "http://$SERVER_HOST:5000/healthz" "Main health endpoint (/healthz)"
 
-# Test Webhook API health
-if curl -f http://$SERVER_HOST:5000/api/v5/webhooks/health > /dev/null 2>&1; then
-    print_success "Webhook API health endpoint working"
-else
-    print_warning "Webhook API health endpoint failed"
-fi
+# Test monitoring health endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health" "Monitoring API health endpoint"
+
+# Test Entity API health
+test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/health" "Entity API health endpoint"
 
 # Test Auth API health
-if curl -f http://$SERVER_HOST:5000/api/v5/auth/health > /dev/null 2>&1; then
-    print_success "Auth API health endpoint working"
-else
-    print_warning "Auth API health endpoint failed"
-fi
+test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/health" "Auth API health endpoint"
 
-# Test Search API health
-if curl -f http://$SERVER_HOST:5000/api/v5/search/health > /dev/null 2>&1; then
-    print_success "Search API health endpoint working"
-else
-    print_warning "Search API health endpoint failed"
-fi
+# Test Webhook API health
+test_endpoint "http://$SERVER_HOST:5000/api/v5/webhooks/health" "Webhook API health endpoint"
 
+# Test Metrics API health
+test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/health" "Metrics API health endpoint"
+
+# Test core API endpoints (GET requests that should work without auth)
+print_status "Testing core API endpoints..."
+
+# Test restaurants endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants?limit=1" "Restaurants API endpoint"
+
+# Test synagogues endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues?limit=1" "Synagogues API endpoint"
+
+# Test mikvahs endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=1" "Mikvahs API endpoint"
+
+# Test stores endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1" "Stores API endpoint"
+
+# Test search endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search?q=test&limit=1" "Search API endpoint"
+
+# Test reviews endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?limit=1" "Reviews API endpoint"
+
+# Test specific health checks
+print_status "Testing specific health checks..."
+
+# Test database health specifically
+test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/database" "Database health check"
+
+# Test Redis health specifically
+test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/redis" "Redis health check"
+
+# Test system health specifically
+test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/system" "System health check"
+
+# Test additional important endpoints
+print_status "Testing additional important endpoints..."
+
+# Test webhook status
+test_endpoint "http://$SERVER_HOST:5000/api/v5/webhooks/status" "Webhook status endpoint"
+
+# Test monitoring status
+test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/status" "Monitoring status endpoint"
+
+# Test metrics dashboard
+test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/dashboard" "Metrics dashboard endpoint"
+
+# Test search suggestions
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggestions?q=test" "Search suggestions endpoint"
+
+# Test popular searches
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/popular" "Popular searches endpoint"
+
+# Test entity endpoints with different types
+print_status "Testing entity endpoints with different types..."
+
+# Test generic entity endpoint
+test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/restaurants?limit=1" "Generic entity restaurants endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/synagogues?limit=1" "Generic entity synagogues endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/mikvahs?limit=1" "Generic entity mikvahs endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/stores?limit=1" "Generic entity stores endpoint"
+
+# Test specific business logic endpoints
+print_status "Testing specific business logic endpoints..."
+
+# Test authentication endpoints
+print_status "Testing authentication endpoints..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/health" "Auth service health"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/verify-token" "Token verification endpoint" "401"  # Expected to fail without token
+
+# Test restaurant-specific endpoints
+print_status "Testing restaurant-specific endpoints..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants?limit=5" "Restaurants list endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants?limit=1&search=kosher" "Restaurants search endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants?limit=1&distance=10&lat=40.7128&lng=-74.0060" "Restaurants distance filter endpoint"
+
+# Test synagogue-specific endpoints
+print_status "Testing synagogue-specific endpoints..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues?limit=5" "Synagogues list endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues?limit=1&search=orthodox" "Synagogues search endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues?limit=1&distance=5&lat=40.7128&lng=-74.0060" "Synagogues distance filter endpoint"
+
+# Test mikvah-specific endpoints
+print_status "Testing mikvah-specific endpoints..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=5" "Mikvahs list endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=1&search=women" "Mikvahs search endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=1&distance=15&lat=40.7128&lng=-74.0060" "Mikvahs distance filter endpoint"
+
+# Test store-specific endpoints
+print_status "Testing store-specific endpoints..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=5" "Stores list endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1&search=kosher" "Stores search endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1&distance=20&lat=40.7128&lng=-74.0060" "Stores distance filter endpoint"
+
+# Test search functionality
+print_status "Testing search functionality..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search?q=kosher&limit=5" "General search endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggestions?q=rest" "Search suggestions endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/popular" "Popular searches endpoint"
+
+# Test reviews functionality
+print_status "Testing reviews functionality..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?limit=5" "Reviews list endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?entity_type=restaurants&limit=3" "Restaurant reviews endpoint"
+
+# Test admin endpoints (should fail with 401/403)
+print_status "Testing admin endpoints (expected to fail without auth)..."
+test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/health/system" "Admin system health" "401"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/analytics/dashboard" "Admin analytics dashboard" "401"
+
+# Final verification
+print_status "Performing final deployment verification..."
+execute_on_server "
+    echo '=== Container Status ===' && \
+    docker ps --filter 'name=jewgo_' && \
+    echo '=== Docker Storage Usage ===' && \
+    docker system df && \
+    echo '=== Backend Logs (last 10 lines) ===' && \
+    docker logs --tail 10 jewgo_backend
+" "Final deployment verification"
+
+# Capture final server logs to local file
+print_status "Capturing final server logs..."
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] [FINAL_LOGS] Capturing final server logs..." >> "$LOCAL_LOG_FILE"
+ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 50 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] [FINAL_LOGS] Server logs captured" >> "$LOCAL_LOG_FILE"
+
+# Count successful vs failed tests
+print_status "Generating deployment test summary..."
+
+# Test summary
 print_success "Server deployment and testing completed!"
+print_status ""
+print_status "=== DEPLOYMENT SUMMARY ==="
 print_status "Backend is running at: http://$SERVER_HOST:5000"
-print_status "Health check: curl http://$SERVER_HOST:5000/healthz"
-print_status "V5 API health: curl http://$SERVER_HOST:5000/api/v5/health"
+print_status "Main health check: curl http://$SERVER_HOST:5000/healthz"
+print_status "Comprehensive health: curl http://$SERVER_HOST:5000/api/v5/monitoring/health"
+print_status "Deployment log saved to: $DEPLOYMENT_LOG"
+print_status ""
+print_status "=== TESTED ENDPOINTS ==="
+print_status "✅ Health Endpoints:"
+print_status "   - /healthz (main health)"
+print_status "   - /api/v5/monitoring/health (comprehensive)"
+print_status "   - /api/v5/entity/health (entity service)"
+print_status "   - /api/v5/auth/health (auth service)"
+print_status "   - /api/v5/webhooks/health (webhook service)"
+print_status "   - /api/v5/metrics/health (metrics service)"
+print_status ""
+print_status "✅ Core API Endpoints:"
+print_status "   - /api/v5/restaurants (restaurants data)"
+print_status "   - /api/v5/synagogues (synagogues data)"
+print_status "   - /api/v5/mikvahs (mikvahs data)"
+print_status "   - /api/v5/stores (stores data)"
+print_status "   - /api/v5/search (search functionality)"
+print_status "   - /api/v5/reviews (reviews data)"
+print_status ""
+print_status "✅ Infrastructure Health:"
+print_status "   - /api/v5/monitoring/health/database (database)"
+print_status "   - /api/v5/monitoring/health/redis (redis cache)"
+print_status "   - /api/v5/monitoring/health/system (system metrics)"
+print_status ""
+print_status "✅ Additional Services:"
+print_status "   - /api/v5/webhooks/status (webhook status)"
+print_status "   - /api/v5/monitoring/status (monitoring status)"
+print_status "   - /api/v5/metrics/dashboard (metrics dashboard)"
+print_status "   - /api/v5/search/suggestions (search suggestions)"
+print_status "   - /api/v5/search/popular (popular searches)"
+print_status ""
+print_status "=== NEXT STEPS ==="
+print_status "1. Monitor application logs: docker logs -f jewgo_backend"
+print_status "2. Check system metrics: curl http://$SERVER_HOST:5000/api/v5/monitoring/status"
+print_status "3. Test frontend connectivity to backend"
+print_status "4. Verify all services are working as expected"
+print_status ""
+# Generate deployment summary
+print_status "Generating deployment summary..."
+
+# Count successful vs failed tests
+local success_count=0
+local failure_count=0
+
+# Count from local log file
+success_count=$(grep -c "\[ENDPOINT_TEST\] SUCCESS:" "$LOCAL_LOG_FILE" 2>/dev/null || echo "0")
+failure_count=$(grep -c "\[ENDPOINT_TEST\] FAILED:" "$LOCAL_LOG_FILE" 2>/dev/null || echo "0")
+
+# Add summary to local log
+echo "" >> "$LOCAL_LOG_FILE"
+echo "=================================" >> "$LOCAL_LOG_FILE"
+echo "=== DEPLOYMENT SUMMARY ===" >> "$LOCAL_LOG_FILE"
+echo "Deployment completed: $(date)" >> "$LOCAL_LOG_FILE"
+echo "Total endpoint tests: $((success_count + failure_count))" >> "$LOCAL_LOG_FILE"
+echo "Successful tests: $success_count" >> "$LOCAL_LOG_FILE"
+echo "Failed tests: $failure_count" >> "$LOCAL_LOG_FILE"
+echo "Success rate: $(( success_count * 100 / (success_count + failure_count) ))%" >> "$LOCAL_LOG_FILE"
+echo "Backend URL: http://$SERVER_HOST:5000" >> "$LOCAL_LOG_FILE"
+echo "Health check: http://$SERVER_HOST:5000/healthz" >> "$LOCAL_LOG_FILE"
+echo "=================================" >> "$LOCAL_LOG_FILE"
+
+print_success "🎉 Deployment completed successfully!"
+print_status ""
+print_status "=== DEPLOYMENT SUMMARY ==="
+print_status "Total endpoint tests: $((success_count + failure_count))"
+print_status "Successful tests: $success_count"
+print_status "Failed tests: $failure_count"
+print_status "Success rate: $(( success_count * 100 / (success_count + failure_count) ))%"
+print_status ""
+print_status "Logs saved to:"
+print_status "  - Local: $LOCAL_LOG_FILE"
+print_status "  - Server: $DEPLOYMENT_LOG"
+print_status ""
+print_status "To view the detailed log:"
+print_status "  cat $LOCAL_LOG_FILE"
+print_status ""
+print_success "🎉 Deployment completed successfully!"

@@ -223,7 +223,10 @@ class EntityRepositoryV5(BaseRepository):
                     # If distance sorting is requested but no location provided, fall back to created_at
                     result_entities.sort(key=lambda x: x.get('created_at', ''), reverse=True)
                 
-                # Distance sorting is now properly implemented
+                # TEMPORARY: Disable distance sorting to test if that's the issue
+                if sort_key == 'distance_asc':
+                    logger.info(f"TEMPORARILY DISABLED distance sorting - keeping original order")
+                    # Don't sort at all for now
                 
                 # Debug: Log the number of entities after sorting
                 logger.info(f"After sorting: {len(result_entities)} entities for {entity_type} with sort_key={sort_key}")
@@ -596,8 +599,9 @@ class EntityRepositoryV5(BaseRepository):
             # Status filter (exclude deleted by default)
             if hasattr(model_class, 'status') and 'status' not in filters:
                 query = query.filter(model_class.status != 'deleted')
-            # Note: Restaurant model uses 'status' field, not 'is_active'
-            # The is_active check is removed as it doesn't apply to our Restaurant model
+            elif hasattr(model_class, 'is_active') and 'is_active' not in filters:
+                # For restaurants/synagogues tables, filter by is_active = True
+                query = query.filter(model_class.is_active == True)
             
             # Category filter for entity types that support categories
             category_filter = mapping.get('category_filter')
@@ -642,7 +646,7 @@ class EntityRepositoryV5(BaseRepository):
                 query = query.filter(
                     func.ST_DWithin(
                         func.ST_GeogFromText(model_class.location),
-                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326)::geography,
+                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
                         radius_km * 1000  # Convert km to meters
                     )
                 )
@@ -948,10 +952,10 @@ class EntityRepositoryV5(BaseRepository):
                         })
                     
                     # Apply status filter
-                    if hasattr(model_class, 'status'):
-                        query = query.filter(model_class.status == 'active')
-                    elif hasattr(model_class, 'is_active'):
+                    if hasattr(model_class, 'is_active'):
                         query = query.filter(model_class.is_active == True)
+                    elif hasattr(model_class, 'status'):
+                        query = query.filter(model_class.status == 'active')
                     
                     # Execute query
                     results = query.all()
@@ -1034,8 +1038,11 @@ class EntityRepositoryV5(BaseRepository):
         sql_parts = [f"SELECT * FROM {table_name}"]
         where_conditions = [f"({' OR '.join(search_conditions)})"]
         
-        # Add status filter (all tables use status field)
-        where_conditions.append("status = 'active'")
+        # Add status filter (use is_active for restaurants/synagogues, status for others)
+        if table_name in ['restaurants', 'synagogues']:
+            where_conditions.append("is_active = true")
+        else:
+            where_conditions.append("status = 'active'")
         
         # Add geospatial filter if provided
         if filters and 'latitude' in filters and 'longitude' in filters:

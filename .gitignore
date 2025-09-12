@@ -163,3 +163,31 @@ backend/.venv311/
 # SSH Keys
 ssh-key-*.key
 *.key
+
+# Environment setup scripts with sensitive data
+scripts/setup-server-env.sh
+scripts/deployment/setup-server-env.sh
+**/setup-server-env.sh
+
+# Environment templates with real values
+env.production.template
+**/env.production.template
+
+# Deployment logs (may contain sensitive info)
+deployment-logs/
+**/deployment-logs/
+*.deployment.log
+
+# Any other scripts that might contain env vars
+**/setup-env*.sh
+**/deploy-env*.sh
+
+# Scripts with hardcoded sensitive environment variables
+scripts/restore-database.sh
+scripts/server-setup-new.sh
+scripts/deployment/deploy-route-refactoring.sh
+scripts/server/setup_new_server.sh
+scripts/essential/apply_postgis_indexes.sh
+scripts/deployment/deploy-improvements.sh
+scripts/utilities/quick_setup_new_server.sh
+scripts/essential/run_migrations.sh

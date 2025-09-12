@@ -1,8 +1,12 @@
-from flask import Flask
+from flask import Flask, jsonify
+from flask_cors import CORS
 import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+
+# Enable CORS for all routes
+CORS(app)
 
 print('Initializing real database services...')
 try:
@@ -95,6 +99,70 @@ except Exception as e:
     print(f'ERROR: Failed to register main API blueprint: {e}')
     import traceback
     traceback.print_exc()
+
+# Add a simple test endpoint
+@app.route('/test')
+def test():
+    return jsonify({'status': 'ok', 'message': 'Backend is running'})
+
+@app.route('/api/listings')
+def simple_listings():
+    # Mock data that matches the frontend's Listing interface
+    return jsonify({
+        'success': True,
+        'data': [
+            {
+                'id': 1,
+                'title': 'Test Mikvah',
+                'name': 'Test Mikvah',
+                'description': 'A beautiful mikvah in the heart of the community',
+                'category': 'mikvah',
+                'category_name': 'mikvah',
+                'category_emoji': '🕍',
+                'latitude': 40.7128,
+                'longitude': -74.0060,
+                'zip_code': '10001',
+                'rating': '4.5',
+                'address': '123 Main St, New York, NY 10001',
+                'phone': '(555) 123-4567',
+                'website': 'https://example.com',
+                'business_hours': {
+                    'monday': {'open': '09:00', 'close': '17:00'},
+                    'tuesday': {'open': '09:00', 'close': '17:00'},
+                    'wednesday': {'open': '09:00', 'close': '17:00'},
+                    'thursday': {'open': '09:00', 'close': '17:00'},
+                    'friday': {'open': '09:00', 'close': '15:00'},
+                    'saturday': {'closed': True},
+                    'sunday': {'open': '10:00', 'close': '16:00'}
+                }
+            },
+            {
+                'id': 2,
+                'title': 'Test Restaurant',
+                'name': 'Test Restaurant',
+                'description': 'Delicious kosher cuisine for the whole family',
+                'category': 'eatery',
+                'category_name': 'eatery',
+                'category_emoji': '🍽️',
+                'latitude': 40.7589,
+                'longitude': -73.9851,
+                'zip_code': '10019',
+                'rating': '4.2',
+                'address': '456 Broadway, New York, NY 10019',
+                'phone': '(555) 987-6543',
+                'website': 'https://restaurant.com',
+                'business_hours': {
+                    'monday': {'open': '11:00', 'close': '22:00'},
+                    'tuesday': {'open': '11:00', 'close': '22:00'},
+                    'wednesday': {'open': '11:00', 'close': '22:00'},
+                    'thursday': {'open': '11:00', 'close': '22:00'},
+                    'friday': {'open': '11:00', 'close': '15:00'},
+                    'saturday': {'closed': True},
+                    'sunday': {'open': '12:00', 'close': '21:00'}
+                }
+            }
+        ]
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
