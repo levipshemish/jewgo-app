@@ -60,7 +60,6 @@ export default function EateryGrid({
     // Check if backend provided a distance value (including 0)
     if (distance !== undefined && distance !== null) {
       // Use backend-calculated distance (already in miles)
-      console.log(`Using backend distance for ${restaurant.name}: ${distance} miles`)
       
       // Special debug for Mizrachi restaurants
       if (restaurant.name && restaurant.name.toLowerCase().includes('mizrachi')) {
@@ -79,7 +78,6 @@ export default function EateryGrid({
       }
     } else if (userLoc && restaurant.latitude !== undefined && restaurant.longitude !== undefined) {
       // Fallback to local calculation if backend didn't provide distance
-      console.log(`Backend distance not available for ${restaurant.name}, calculating locally`)
       distance = calculateDistance(
         userLoc.latitude,
         userLoc.longitude,
@@ -168,7 +166,6 @@ export default function EateryGrid({
         newNextCursor = response.next_cursor
       }
       
-      console.log('fetchRestaurants v5 response - restaurants:', responseRestaurants.length, 'hasMore:', hasMoreData, 'nextCursor:', newNextCursor, 'isDistanceSorting:', isDistanceSorting, 'nextPage:', nextPage)
       
       return {
         restaurants: responseRestaurants,
@@ -289,18 +286,15 @@ export default function EateryGrid({
         // Check if we're using page-based pagination (indicated by page_N cursor format)
         const isPageBasedPagination = nextCursor && nextCursor.startsWith('page_')
         
-        console.log('loadMoreItems - nextCursor:', nextCursor, 'isPageBasedPagination:', isPageBasedPagination)
         
         let response;
         if (isPageBasedPagination) {
           // Use page-based pagination for all sorting types that return page_N cursors
           const nextPage = currentPage + 1
-          console.log('Using page-based pagination, nextPage:', nextPage)
           response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, nextPage);
           setCurrentPage(nextPage);
         } else {
           // Use cursor-based pagination for legacy cursor format
-          console.log('Using cursor-based pagination, cursor:', nextCursor)
           response = await fetchRestaurants(50, nextCursor || undefined, buildSearchParams());
         }
         
@@ -329,12 +323,6 @@ export default function EateryGrid({
             }));
           return [...prev, ...newRestaurants];
         });
-        console.log('loadMoreItems response:', {
-          hasMore: response.hasMore,
-          nextCursor: response.nextCursor,
-          totalCount: response.totalCount,
-          restaurantCount: response.restaurants.length
-        })
         
         setHasMore(response.hasMore);
         setNextCursor(response.nextCursor || null);
@@ -383,7 +371,6 @@ export default function EateryGrid({
       }
       
       // Switch to mock data permanently after error
-      console.log('Backend unreachable, switching to mock data');
       setBackendError(true);
       
       // Fall back to mock data
@@ -435,7 +422,6 @@ export default function EateryGrid({
               const searchParams = new URLSearchParams(buildSearchParams())
               const isDistanceSorting = searchParams.get('sort') === 'distance_asc'
               
-              console.log('Initial load - sort:', searchParams.get('sort'), 'isDistanceSorting:', isDistanceSorting)
               
               // Try real API first with appropriate pagination
               const response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, isDistanceSorting ? 1 : undefined)
@@ -457,12 +443,6 @@ export default function EateryGrid({
                 longitude: r.longitude,
                 distance: typeof r.distance === 'string' ? parseFloat(r.distance) : r.distance
               })))
-              console.log('Initial load response:', {
-                hasMore: response.hasMore,
-                nextCursor: response.nextCursor,
-                totalCount: response.totalCount,
-                restaurantCount: response.restaurants.length
-              })
               
               setHasMore(response.hasMore)
               setNextCursor(response.nextCursor || null)
@@ -479,7 +459,6 @@ export default function EateryGrid({
               setHasMore(true)
               
               if (currentRetryCount >= 3) {
-                console.log('Backend unreachable after 3 attempts, switching to mock data')
                 setBackendError(true)
               }
             }
@@ -518,7 +497,6 @@ export default function EateryGrid({
             
             if (isTimeoutError && currentRetryCount >= 2) {
               // Fail faster for timeout errors - only retry once
-              console.log('Timeout error detected, switching to mock data after 2 attempts')
               setBackendError(true)
               
               const mockItems = generateMockRestaurants(24)
@@ -536,7 +514,6 @@ export default function EateryGrid({
               return
             } else {
               // Max retries reached, fall back to mock data
-              console.log('Backend unreachable after 3 attempts, switching to mock data')
               setBackendError(true)
               
               const mockItems = generateMockRestaurants(24)
@@ -602,14 +579,7 @@ export default function EateryGrid({
     
     // Debug logging to see what's happening with ratings
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Rating for ${restaurant.name} (ID: ${restaurant.id}):`, {
-        google_rating: restaurant.google_rating,
-        hasGoogleReviews: !!(restaurant as any).google_reviews,
-        googleReviewsLength: (restaurant as any).google_reviews ? (restaurant as any).google_reviews.length : 0,
-        calculatedRating: rating,
-        formattedRating,
-        willShowBadge: !!formattedRating
-      });
+      // Removed excessive logging
     }
     
     return formattedRating;
