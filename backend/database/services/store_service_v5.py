@@ -80,6 +80,64 @@ class StoreServiceV5:
             }
         }
 
+    def get_entities(
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        cursor: Optional[str] = None,
+        limit: int = 20,
+        sort: str = 'created_at_desc',
+        include_relations: bool = False,
+        user_context: Optional[Dict[str, Any]] = None,
+        use_cache: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Get entities (stores) with API-compatible interface.
+        
+        This method provides a unified interface for the entity API routes.
+        """
+        try:
+            stores, next_cursor, prev_cursor = self.get_stores(
+                filters=filters,
+                cursor=cursor,
+                limit=limit,
+                sort_key=sort,
+                include_relations=include_relations,
+                user_context=user_context,
+                use_cache=use_cache
+            )
+            
+            return {
+                'success': True,
+                'data': stores,
+                'pagination': {
+                    'next_cursor': next_cursor,
+                    'prev_cursor': prev_cursor,
+                    'limit': limit,
+                    'has_more': next_cursor is not None
+                },
+                'meta': {
+                    'total_count': len(stores),
+                    'entity_type': 'stores'
+                }
+            }
+        except Exception as e:
+            logger.error(f"Failed to get stores: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'error': str(e),
+                'data': [],
+                'pagination': {
+                    'next_cursor': None,
+                    'prev_cursor': None,
+                    'limit': limit,
+                    'has_more': False
+                },
+                'meta': {
+                    'total_count': 0,
+                    'entity_type': 'stores'
+                }
+            }
+
     def get_store(self, store_id: int, enrich: bool = True) -> Optional[Dict[str, Any]]:
         """Get store by ID with optional enrichment.
         
