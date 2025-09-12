@@ -432,7 +432,7 @@ class ETagV5Manager:
                     # Query with reviews only
                     # Handle different table structures
                     if table in ['restaurants', 'synagogues']:
-                        status_filter = 't.status = 'active''
+                        status_filter = "t.status = 'active'"
                         # Add category filter if specified
                         category_filter = strategy.get('category_filter')
                         if category_filter:
@@ -462,7 +462,7 @@ class ETagV5Manager:
                     # Handle different table structures
                     if table in ['restaurants', 'synagogues']:
                         hours_table = 'business_hours'
-                        status_filter = 't.status = 'active''
+                        status_filter = "t.status = 'active'"
                         # Add category filter if specified
                         category_filter = strategy.get('category_filter')
                         if category_filter:
@@ -491,7 +491,7 @@ class ETagV5Manager:
                     # Simple query for base table only
                     # Handle different table structures
                     if table in ['restaurants', 'synagogues']:
-                        status_filter = 'status = 'active''
+                        status_filter = "status = 'active'"
                         # Add category filter if specified
                         category_filter = strategy.get('category_filter')
                         if category_filter:
