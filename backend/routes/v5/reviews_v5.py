@@ -244,7 +244,6 @@ def moderate_review(review_data: Dict[str, Any]) -> Dict[str, Any]:
 
 # Review endpoints
 @reviews_v5.route('/', methods=['GET'])
-@require_review_permission('read')
 def get_reviews():
     """Get reviews with filtering and pagination."""
     try:
@@ -284,7 +283,6 @@ def get_reviews():
 
 
 @reviews_v5.route('/<int:review_id>', methods=['GET'])
-@require_review_permission('read')
 def get_review(review_id: int):
     """Get a specific review by ID."""
     try:
@@ -520,7 +518,6 @@ def moderate_review_endpoint(review_id: int):
 
 
 @reviews_v5.route('/<entity_type>/<int:entity_id>/stats', methods=['GET'])
-@require_review_permission('read')
 def get_entity_review_stats(entity_type: str, entity_id: int):
     """Get review statistics for an entity."""
     try:
