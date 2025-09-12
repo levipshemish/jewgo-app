@@ -111,6 +111,7 @@ class RestaurantServiceV5:
         user_context: Optional[Dict[str, Any]] = None,
         use_cache: bool = True
     ) -> Dict[str, Any]:
+        print(f"DEBUG SERVICE: get_entities called with page={page}, sort={sort}, limit={limit}")
         """
         Get entities (restaurants) with API-compatible interface.
         
