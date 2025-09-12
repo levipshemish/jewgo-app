@@ -15,19 +15,6 @@ interface RouteStatus {
   failureCount?: number
 }
 
-interface WebhookStatus {
-  configured: boolean
-  lastActivity?: string
-  recentDeliveries: number
-  lastDelivery?: {
-    id: string
-    event: string
-    timestamp: string
-    status: 'success' | 'failed'
-  }
-  recentErrors?: string[]
-  failureCount?: number
-}
 
 interface ContainerStatus {
   name: string
@@ -47,7 +34,6 @@ interface SystemStatus {
     uptime?: string
   }
   routes: RouteStatus[]
-  webhook: WebhookStatus
   containers: ContainerStatus[]
   database: {
     status: 'connected' | 'disconnected'
@@ -141,55 +127,6 @@ async function checkRoute(url: string, name: string, method: string = 'GET'): Pr
   }
 }
 
-async function getWebhookStatus(): Promise<WebhookStatus> {
-  try {
-    // Try the new webhook status endpoint first
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'}/webhook/status`)
-    
-    if (response.ok) {
-      const data = await response.json()
-      return {
-        configured: data.data?.webhook_configured || data.webhook_configured || false,
-        lastActivity: new Date().toISOString(),
-        recentDeliveries: data.data?.recent_deliveries || data.recent_deliveries || 0,
-        recentErrors: data.data?.recent_errors || data.recent_errors || [],
-        failureCount: data.data?.failure_count || data.failure_count || 0
-      }
-    } else {
-      // If the new endpoint fails, try the old one
-      const oldResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'}/webhook/deploy`, {
-        method: 'GET'
-      })
-      
-      if (oldResponse.ok) {
-        return {
-          configured: true,
-          lastActivity: new Date().toISOString(),
-          recentDeliveries: 0,
-          recentErrors: [],
-          failureCount: 0
-        }
-      } else {
-        return {
-          configured: false,
-          recentDeliveries: 0,
-          recentErrors: [
-            `New endpoint: HTTP ${response.status}: ${response.statusText}`,
-            `Old endpoint: HTTP ${oldResponse.status}: ${oldResponse.statusText}`
-          ],
-          failureCount: 1
-        }
-      }
-    }
-  } catch (error) {
-    return {
-      configured: false,
-      recentDeliveries: 0,
-      recentErrors: [error instanceof Error ? error.message : 'Unknown error'],
-      failureCount: 1
-    }
-  }
-}
 
 async function getContainerStatus(): Promise<ContainerStatus[]> {
   try {
@@ -263,7 +200,6 @@ export async function GET(_request: NextRequest) {
       { url: `${backendUrl}/api/restaurants?limit=1`, name: 'Restaurants API', method: 'GET' },
       { url: `${backendUrl}/api/restaurants/1577`, name: 'Restaurant Detail API', method: 'GET' },
       { url: `${backendUrl}/api/restaurants/1577/view`, name: 'View Tracking API', method: 'POST' },
-      { url: `${backendUrl}/webhook/status`, name: 'Webhook Status', method: 'GET' },
     ]
     
     // Check all routes in parallel
@@ -271,8 +207,6 @@ export async function GET(_request: NextRequest) {
       routesToCheck.map(route => checkRoute(route.url, route.name, route.method))
     )
     
-    // Get webhook status
-    const webhookStatus = await getWebhookStatus()
     
     // Get container status with timeout
     let containerStatus: ContainerStatus[] = []
@@ -377,7 +311,6 @@ export async function GET(_request: NextRequest) {
         uptime: '2 hours', // This would need to be tracked
       },
       routes: routeStatuses,
-      webhook: webhookStatus,
       containers: containerStatus,
       database: {
         status: databaseStatus?.health?.status === 'healthy' ? 'connected' : 

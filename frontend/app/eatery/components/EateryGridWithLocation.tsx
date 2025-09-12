@@ -79,7 +79,7 @@ export default function EateryGridWithLocation({
   // Fetch restaurants from API
   const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
-      const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
+      const apiUrl = new URL('/api/v5/restaurants', window.location.origin);
       apiUrl.searchParams.set('limit', limit.toString());
       apiUrl.searchParams.set('offset', offset.toString());
       apiUrl.searchParams.set('include_reviews', 'true'); // Include Google reviews for consistent rating calculation

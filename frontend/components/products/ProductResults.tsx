@@ -29,8 +29,8 @@ const fetcher = async (url: string, filters: AppliedFilters) => {
     }
   });
   
-  // Use unified API endpoint
-  const unifiedUrl = `/api/restaurants/unified?${params.toString()}`;
+  // Use v5 API endpoint
+  const unifiedUrl = `/api/v5/restaurants?${params.toString()}`;
   
   const { unifiedApiCall } = await import('@/lib/utils/unified-api');
   const result = await unifiedApiCall(unifiedUrl, {

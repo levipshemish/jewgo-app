@@ -271,6 +271,40 @@ class GoogleReview(Base):
         onupdate=utc_now,
         nullable=False,
     )
+
+class Listing(Base):
+    """Listing model for the listings table.
+    This model represents the listings table that contains all business listings
+    including restaurants, synagogues, and other entities.
+    """
+    __tablename__ = "listings"
+    
+    id = Column(String, primary_key=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    category_id = Column(String, nullable=True)
+    owner_id = Column(String, nullable=True)
+    location = Column(String, nullable=True)  # PostGIS location data
+    address = Column(Text, nullable=True)
+    city = Column(String, nullable=True)
+    state = Column(String, nullable=True)
+    zip_code = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    website = Column(String, nullable=True)
+    rating = Column(Float, nullable=True)
+    review_count = Column(Integer, nullable=True)
+    is_verified = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+    images = Column(ARRAY(String), nullable=True)
+    long_description = Column(Text, nullable=True)
+    facebook_url = Column(String, nullable=True)
+    instagram_url = Column(String, nullable=True)
+    tiktok_url = Column(String, nullable=True)
+    whatsapp_url = Column(String, nullable=True)
+
 class RestaurantImage(Base):
     """Restaurant Image model for multiple images per restaurant.
     This model represents the restaurant_images table that stores

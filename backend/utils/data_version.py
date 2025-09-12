@@ -260,3 +260,51 @@ def get_mikvah_data_version() -> str:
 def get_store_data_version() -> str:
     """Get data version for stores."""
     return get_current_data_version('stores')
+
+
+def normalize_filters(filters: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize filters for consistent ETag generation."""
+    try:
+        if not filters:
+            return {}
+        
+        normalized = {}
+        
+        # Sort keys for consistent ordering
+        for key in sorted(filters.keys()):
+            value = filters[key]
+            
+            # Normalize common filter types
+            if key in ['latitude', 'longitude']:
+                # Round coordinates to consistent precision
+                if isinstance(value, (int, float)):
+                    normalized[key] = round(float(value), 6)
+                else:
+                    normalized[key] = value
+            elif key == 'radius':
+                # Normalize radius
+                if isinstance(value, (int, float)):
+                    normalized[key] = round(float(value), 1)
+                else:
+                    normalized[key] = value
+            elif key == 'limit':
+                # Normalize limit
+                if isinstance(value, (int, str)):
+                    normalized[key] = int(value)
+                else:
+                    normalized[key] = value
+            elif key == 'sort':
+                # Normalize sort key
+                if isinstance(value, str):
+                    normalized[key] = value.lower().strip()
+                else:
+                    normalized[key] = value
+            else:
+                # Keep other filters as-is
+                normalized[key] = value
+        
+        return normalized
+        
+    except Exception as e:
+        logger.error(f"Error normalizing filters: {e}")
+        return filters or {}

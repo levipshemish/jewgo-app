@@ -256,7 +256,13 @@ class BlueprintFactoryV5:
                     idempotency_middleware = IdempotencyV5Middleware()
                     idempotency_result = idempotency_middleware.check_idempotency(request)
                     if idempotency_result['is_duplicate']:
-                        return jsonify(idempotency_result['response']), idempotency_result['status_code']
+                        # Use the proper replay method to return a Flask Response object
+                        cached_response = {
+                            'data': idempotency_result['response'],
+                            'status_code': idempotency_result['status_code'],
+                            'headers': {}
+                        }
+                        return idempotency_middleware._replay_response(cached_response)
                 
                 # Authentication check if required
                 if config.get('auth_required', False):
@@ -350,12 +356,23 @@ class BlueprintFactoryV5:
                             entity_type = None
 
                         if entity_type:
+                            # Parse actual filters from request to avoid incorrect cache hits
+                            filters = {}
+                            for key, value in request.args.items():
+                                if value and key not in ['cursor', 'limit']:  # Exclude pagination params
+                                    filters[key] = value
+                            
+                            # Parse pagination parameters
+                            cursor_token = request.args.get('cursor')
+                            page_size = request.args.get('limit')
+                            sort_key = request.args.get('sort', 'created_at_desc')
+                            
                             etag = generate_collection_etag_v5(
                                 entity_type=entity_type,
-                                filters={},
-                                sort_key='created_at_desc',
-                                page_size=None,
-                                cursor_token=None,
+                                filters=filters,
+                                sort_key=sort_key,
+                                page_size=page_size,
+                                cursor_token=cursor_token,
                                 user_context={'user_id': getattr(g, 'user_id', None)}
                             )
                             response.headers['ETag'] = etag

@@ -78,6 +78,46 @@ class RestaurantServiceV5:
         except Exception as e:
             logger.error(f"Failed to initialize Google Places client: {e}")
     
+    def get_entities(
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        cursor: Optional[str] = None,
+        limit: int = 20,
+        sort: str = 'created_at_desc',
+        include_relations: bool = False,
+        user_context: Optional[Dict[str, Any]] = None,
+        use_cache: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Get entities (restaurants) with API-compatible interface.
+        
+        This method provides a unified interface for the entity API routes.
+        """
+        try:
+            restaurants, next_cursor, prev_cursor = self.get_restaurants(
+                cursor=cursor,
+                limit=limit,
+                sort_key=sort,
+                filters=filters,
+                include_relations=include_relations,
+                user_context=user_context,
+                use_cache=use_cache
+            )
+            
+            return {
+                'data': restaurants,
+                'next_cursor': next_cursor,
+                'prev_cursor': prev_cursor
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting entities: {e}")
+            return {
+                'data': [],
+                'next_cursor': None,
+                'prev_cursor': None
+            }
+
     def get_restaurants(
         self,
         cursor: Optional[str] = None,

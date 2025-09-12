@@ -30,26 +30,28 @@ class EntityRepositoryV5(BaseRepository):
     # Entity type mappings
     ENTITY_MAPPINGS = {
         'restaurants': {
-            'model_name': 'Restaurant',
-            'table_name': 'restaurants',
+            'model_name': 'Listing',
+            'table_name': 'listings',
             'primary_key': 'id',
             'default_sort': 'created_at',
-            'searchable_fields': ['name', 'description', 'address'],
-            'filterable_fields': ['status', 'kosher_category', 'business_type'],
-            'relations': ['hours', 'reviews', 'images'],
+            'searchable_fields': ['title', 'description', 'address'],
+            'filterable_fields': ['is_active', 'category_id', 'is_verified'],
+            'relations': ['business_hours', 'reviews', 'restaurant_images'],
             'geospatial': True,
-            'supports_reviews': True
+            'supports_reviews': True,
+            'category_filter': 'restaurants'
         },
         'synagogues': {
-            'model_name': 'Synagogue',
-            'table_name': 'synagogues',
+            'model_name': 'Listing',
+            'table_name': 'listings',
             'primary_key': 'id',
             'default_sort': 'created_at',
-            'searchable_fields': ['name', 'description', 'address'],
-            'filterable_fields': ['status', 'denomination', 'services_type'],
-            'relations': ['hours', 'services'],
+            'searchable_fields': ['title', 'description', 'address'],
+            'filterable_fields': ['is_active', 'category_id', 'is_verified'],
+            'relations': ['business_hours', 'reviews', 'restaurant_images'],
             'geospatial': True,
-            'supports_reviews': False
+            'supports_reviews': True,
+            'category_filter': '1cda20e7-518d-44ae-a871-4b25b6620174'  # Synagogue category ID
         },
         'mikvahs': {
             'model_name': 'Mikvah',
@@ -81,8 +83,8 @@ class EntityRepositoryV5(BaseRepository):
         'created_at_asc': {'field': 'created_at', 'direction': 'ASC', 'secondary': 'id'},
         'updated_at_desc': {'field': 'updated_at', 'direction': 'DESC', 'secondary': 'id'},
         'updated_at_asc': {'field': 'updated_at', 'direction': 'ASC', 'secondary': 'id'},
-        'name_asc': {'field': 'name', 'direction': 'ASC', 'secondary': 'id'},
-        'name_desc': {'field': 'name', 'direction': 'DESC', 'secondary': 'id'},
+        'name_asc': {'field': 'title', 'direction': 'ASC', 'secondary': 'id'},
+        'name_desc': {'field': 'title', 'direction': 'DESC', 'secondary': 'id'},
         'distance_asc': {'field': 'distance', 'direction': 'ASC', 'secondary': 'id'},
         'rating_desc': {'field': 'rating', 'direction': 'DESC', 'secondary': 'id'}
     }
@@ -100,10 +102,10 @@ class EntityRepositoryV5(BaseRepository):
     def _load_models(self):
         """Load and cache SQLAlchemy model classes."""
         try:
-            from database.models import Restaurant, Synagogue, Mikvah, Store
+            from database.models import Restaurant, Synagogue, Mikvah, Store, Listing
             
             self._model_cache = {
-                'restaurants': Restaurant,
+                'restaurants': Listing,  # Use Listing model for restaurants
                 'synagogues': Synagogue,
                 'mikvahs': Mikvah,
                 'stores': Store
@@ -182,7 +184,7 @@ class EntityRepositoryV5(BaseRepository):
                 )
                 
                 # Apply sorting
-                query = self._apply_sorting(query, model_class, sort_key)
+                query = self._apply_sorting(query, model_class, sort_key, filters)
                 
                 # Execute query
                 entities = query.limit(limit + 1).all()  # Get one extra to check for next page
@@ -571,6 +573,14 @@ class EntityRepositoryV5(BaseRepository):
             # Status filter (exclude deleted by default)
             if hasattr(model_class, 'status') and 'status' not in filters:
                 query = query.filter(model_class.status != 'deleted')
+            elif hasattr(model_class, 'is_active') and 'is_active' not in filters:
+                # For listings table, filter by is_active = True
+                query = query.filter(model_class.is_active == True)
+            
+            # Category filter for entity types that use listings table
+            category_filter = mapping.get('category_filter')
+            if category_filter and hasattr(model_class, 'category_id'):
+                query = query.filter(model_class.category_id == category_filter)
             
             return query
             
@@ -641,17 +651,31 @@ class EntityRepositoryV5(BaseRepository):
         
         return query, cursor_position
     
-    def _apply_sorting(self, query, model_class, sort_key: str):
+    def _apply_sorting(self, query, model_class, sort_key: str, filters: Optional[Dict[str, Any]] = None):
         """Apply sorting to query."""
         strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
         
-        primary_field = getattr(model_class, strategy['field'])
-        secondary_field = getattr(model_class, strategy['secondary'])
-        
-        if strategy['direction'] == 'DESC':
-            query = query.order_by(desc(primary_field), desc(secondary_field))
+        # Handle distance sorting specially
+        if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
+            # Use PostGIS ST_Distance for distance sorting
+            from sqlalchemy import text
+            lat = filters['latitude']
+            lng = filters['longitude']
+            
+            # Create distance expression using PostGIS
+            distance_expr = text(f"ST_Distance(location::geography, ST_SetSRID(ST_Point({lng}, {lat}), 4326)::geography)")
+            secondary_field = getattr(model_class, strategy['secondary'])
+            
+            query = query.order_by(asc(distance_expr), asc(secondary_field))
         else:
-            query = query.order_by(asc(primary_field), asc(secondary_field))
+            # Regular field sorting
+            primary_field = getattr(model_class, strategy['field'])
+            secondary_field = getattr(model_class, strategy['secondary'])
+            
+            if strategy['direction'] == 'DESC':
+                query = query.order_by(desc(primary_field), desc(secondary_field))
+            else:
+                query = query.order_by(asc(primary_field), asc(secondary_field))
         
         return query
     
@@ -715,13 +739,30 @@ class EntityRepositoryV5(BaseRepository):
     def _calculate_distance(self, entity, filters: Dict[str, Any]) -> Optional[float]:
         """Calculate distance from user location to entity."""
         try:
-            if not hasattr(entity, 'latitude') or not hasattr(entity, 'longitude'):
-                return None
-            
             user_lat = float(filters.get('latitude', 0))
             user_lng = float(filters.get('longitude', 0))
-            entity_lat = float(entity.latitude or 0)
-            entity_lng = float(entity.longitude or 0)
+            
+            # Handle different entity types
+            entity_lat = None
+            entity_lng = None
+            
+            if hasattr(entity, 'latitude') and hasattr(entity, 'longitude'):
+                # Traditional latitude/longitude columns
+                entity_lat = float(entity.latitude or 0)
+                entity_lng = float(entity.longitude or 0)
+            elif hasattr(entity, 'location') and entity.location:
+                # PostGIS location column - extract coordinates
+                # The location field should be a PostGIS point
+                # We'll need to extract lat/lng from the location data
+                try:
+                    # For now, we'll skip distance calculation for PostGIS entities
+                    # as the SQL query handles distance sorting directly
+                    return None
+                except Exception:
+                    return None
+            
+            if entity_lat is None or entity_lng is None:
+                return None
             
             # Simple distance calculation (Haversine formula would be more accurate)
             import math
@@ -859,7 +900,9 @@ class EntityRepositoryV5(BaseRepository):
                             )
                     
                     # Apply status filter
-                    if hasattr(model_class, 'status'):
+                    if hasattr(model_class, 'is_active'):
+                        query = query.filter(model_class.is_active == True)
+                    elif hasattr(model_class, 'status'):
                         query = query.filter(model_class.status == 'active')
                     
                     # Execute query
@@ -894,7 +937,7 @@ class EntityRepositoryV5(BaseRepository):
                 prev_cursor = None
                 
                 if end_idx < len(all_results):
-                    next_cursor = self._generate_cursor({
+                    next_cursor = self._generate_simple_cursor({
                         'offset': end_idx,
                         'query': search_query,
                         'entity_types': entity_types
@@ -902,7 +945,7 @@ class EntityRepositoryV5(BaseRepository):
                 
                 if start_idx > 0:
                     prev_start = max(0, start_idx - limit)
-                    prev_cursor = self._generate_cursor({
+                    prev_cursor = self._generate_simple_cursor({
                         'offset': prev_start,
                         'query': search_query,
                         'entity_types': entity_types
@@ -934,16 +977,20 @@ class EntityRepositoryV5(BaseRepository):
             search_conditions.append(f"to_tsvector('english', {field}) @@ plainto_tsquery('english', %s)")
             search_params.append(query)
         
-        # Add name similarity search
-        search_conditions.append(f"similarity(name, %s) > 0.3")
+        # Add name similarity search (use first searchable field as name field)
+        name_field = searchable_fields[0] if searchable_fields else 'name'
+        search_conditions.append(f"similarity({name_field}, %s) > 0.3")
         search_params.append(query)
         
         # Build base query
         sql_parts = [f"SELECT * FROM {table_name}"]
         where_conditions = [f"({' OR '.join(search_conditions)})"]
         
-        # Add status filter
-        where_conditions.append("status = 'active'")
+        # Add status filter (use is_active for listings, status for others)
+        if table_name == 'listings':
+            where_conditions.append("is_active = true")
+        else:
+            where_conditions.append("status = 'active'")
         
         # Add geospatial filter if provided
         if filters and 'latitude' in filters and 'longitude' in filters:
@@ -987,13 +1034,24 @@ class EntityRepositoryV5(BaseRepository):
             # Order by distance
             lat = filters['latitude']
             lng = filters['longitude']
-            sql_parts.append(f"""
-                ORDER BY 
-                    ST_Distance(
-                        ST_Point(longitude, latitude)::geography,
-                        ST_Point(%s, %s)::geography
-                    ) ASC
-            """)
+            if table_name == 'listings':
+                # Use PostGIS location column for listings table
+                sql_parts.append(f"""
+                    ORDER BY 
+                        ST_Distance(
+                            location::geography,
+                            ST_Point(%s, %s)::geography
+                        ) ASC
+                """)
+            else:
+                # Use separate longitude/latitude columns for other tables
+                sql_parts.append(f"""
+                    ORDER BY 
+                        ST_Distance(
+                            ST_Point(longitude, latitude)::geography,
+                            ST_Point(%s, %s)::geography
+                        ) ASC
+                """)
             search_params.extend([lng, lat])
         else:
             # Default ordering
@@ -1061,7 +1119,7 @@ class EntityRepositoryV5(BaseRepository):
         except:
             return {}
 
-    def _generate_cursor(self, data: Dict[str, Any]) -> str:
+    def _generate_simple_cursor(self, data: Dict[str, Any]) -> str:
         """Generate pagination cursor."""
         try:
             import base64

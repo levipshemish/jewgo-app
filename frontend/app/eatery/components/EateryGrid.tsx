@@ -215,6 +215,8 @@ export default function EateryGrid({
     if (userLocation) {
       params.set('lat', userLocation.latitude.toString())
       params.set('lng', userLocation.longitude.toString())
+      // Automatically sort by distance when location is available
+      params.set('sort', 'distance_asc')
     }
     
     return params.toString()

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleBackendError, fetchWithTimeout, getFallbackResponse } from '@/lib/utils/backend-error-handler';
 
 export async function GET(request: NextRequest) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
-    const url = `${backendUrl}/api/auth/profile`;
+    const url = `${backendUrl}/api/v5/auth/profile`;
 
     // Forward cookies and auth headers if present (best-effort)
     const headers: Record<string, string> = {
@@ -15,12 +14,11 @@ export async function GET(request: NextRequest) {
     const auth = request.headers.get('authorization');
     if (auth) headers['authorization'] = auth;
 
-    const res = await fetchWithTimeout(url, {
+    const res = await fetch(url, {
       method: 'GET',
       headers,
-      // Avoid caching in dev for fresh auth state
       cache: 'no-store',
-    }, 5000); // 5 second timeout for auth requests
+    });
 
     const body = await res.text();
     const response = new NextResponse(body, {
@@ -32,13 +30,9 @@ export async function GET(request: NextRequest) {
     });
     return response;
   } catch (e: any) {
-    // Use the centralized error handler
-    const errorResponse = handleBackendError(e, {
-      fallbackData: getFallbackResponse('profile'),
-      customMessage: 'Authentication service temporarily unavailable'
-    });
-    
-    return NextResponse.json(errorResponse, { status: 200 });
+    return NextResponse.json({ 
+      error: 'Authentication service temporarily unavailable',
+      message: e.message 
+    }, { status: 200 });
   }
 }
-

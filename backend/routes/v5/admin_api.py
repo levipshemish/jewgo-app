@@ -84,10 +84,12 @@ def init_services(connection_manager, redis_manager_instance, feature_flags_inst
     redis_manager = redis_manager_instance
     feature_flags = feature_flags_instance
     
-    # Initialize specialized services
+    # Initialize specialized services with correct parameters
+    # RestaurantServiceV5 and SynagogueServiceV5 expect event_publisher, not feature_flags
+    # MikvahServiceV5 and StoreServiceV5 expect feature_flags
     services = {
-        'restaurants': RestaurantServiceV5(entity_repository, redis_manager_instance, feature_flags_instance),
-        'synagogues': SynagogueServiceV5(entity_repository, redis_manager_instance, feature_flags_instance),
+        'restaurants': RestaurantServiceV5(entity_repository, redis_manager_instance, None),  # Pass None for event_publisher
+        'synagogues': SynagogueServiceV5(entity_repository, redis_manager_instance, None),    # Pass None for event_publisher
         'mikvahs': MikvahServiceV5(entity_repository, redis_manager_instance, feature_flags_instance),
         'stores': StoreServiceV5(entity_repository, redis_manager_instance, feature_flags_instance)
     }
@@ -101,19 +103,20 @@ def require_admin_permission(required_permissions: List[str]):
             if not hasattr(g, 'user_roles') or not g.user_roles:
                 return jsonify({'error': 'Admin authentication required'}), 401
             
-            user_roles = set(g.user_roles)
+            # Extract role names from role objects
+            user_role_names = set([r if isinstance(r, str) else r.get('role') for r in (g.user_roles or []) if r])
             admin_roles = set(ADMIN_PERMISSIONS.keys())
             
-            if not user_roles.intersection(admin_roles):
+            if not user_role_names & admin_roles and not getattr(g, 'is_admin', False):
                 return jsonify({'error': 'Admin access required'}), 403
             
             # Check if user has super_admin (all permissions)
-            if 'super_admin' in user_roles:
+            if 'super_admin' in user_role_names:
                 return f(*args, **kwargs)
             
             # Check specific permissions
             user_permissions = set()
-            for role in user_roles:
+            for role in user_role_names:
                 if role in ADMIN_PERMISSIONS:
                     user_permissions.update(ADMIN_PERMISSIONS[role])
             

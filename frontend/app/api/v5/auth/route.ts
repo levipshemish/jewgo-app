@@ -36,7 +36,15 @@ async function checkFeatureFlag(request: NextRequest): Promise<boolean> {
       return data.enabled === true;
     }
     
-    // If feature flag check fails, default to enabled for backward compatibility
+    // Handle specific error cases
+    if (response.status === 404) {
+      // Feature flags API not found - assume enabled for backward compatibility
+      console.warn('Feature flags API not found (404), assuming auth_api_v5 is enabled');
+      return true;
+    }
+    
+    // For other non-OK responses (500, 503, etc.), default to enabled for backward compatibility
+    console.warn(`Feature flags API returned ${response.status}, assuming auth_api_v5 is enabled`);
     return true;
   } catch (error) {
     console.error('Feature flag check failed:', error);

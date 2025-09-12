@@ -34,16 +34,17 @@ class ETagV5Manager:
     # Entity types and their watermark strategies
     ENTITY_WATERMARK_STRATEGIES = {
         'restaurants': {
-            'table': 'restaurants',
+            'table': 'listings',
             'timestamp_column': 'updated_at',
             'include_reviews': True,
             'include_hours': True,
         },
         'synagogues': {
-            'table': 'synagogues',
+            'table': 'listings',
             'timestamp_column': 'updated_at',
-            'include_reviews': False,
+            'include_reviews': True,
             'include_hours': True,
+            'category_filter': '1cda20e7-518d-44ae-a871-4b25b6620174'  # Synagogue category ID
         },
         'mikvahs': {
             'table': 'mikvah',
@@ -371,14 +372,26 @@ class ETagV5Manager:
                 # Build a proper CTE-based query for unambiguous results
                 if strategy.get('include_reviews') and strategy.get('include_hours'):
                     # Complex query with reviews and hours
+                    # Handle special case for listings table
+                    if table == 'listings':
+                        hours_table = 'business_hours'
+                        status_filter = 't.is_active = true'
+                        # Add category filter if specified
+                        category_filter = strategy.get('category_filter')
+                        if category_filter:
+                            status_filter += f" AND t.category_id = '{category_filter}'"
+                    else:
+                        hours_table = f'{table}_hours'
+                        status_filter = "t.status <> 'deleted'"
+                    
                     query = f"""
                     WITH base AS (
                         SELECT MAX(t.{timestamp_col}) AS max_ts
                         FROM {table} t
-                        WHERE t.status <> 'deleted'
+                        WHERE {status_filter}
                     ), hours AS (
                         SELECT MAX(h.updated_at) AS max_ts
-                        FROM {table}_hours h
+                        FROM {hours_table} h
                     ), reviews AS (
                         SELECT MAX(r.updated_at) AS max_ts
                         FROM reviews r
@@ -394,11 +407,21 @@ class ETagV5Manager:
                     params = {'entity_type': table[:-1]}  # Remove 's' from table name
                 elif strategy.get('include_reviews'):
                     # Query with reviews only
+                    # Handle special case for listings table
+                    if table == 'listings':
+                        status_filter = 't.is_active = true'
+                        # Add category filter if specified
+                        category_filter = strategy.get('category_filter')
+                        if category_filter:
+                            status_filter += f" AND t.category_id = '{category_filter}'"
+                    else:
+                        status_filter = "t.status <> 'deleted'"
+                    
                     query = f"""
                     WITH base AS (
                         SELECT MAX(t.{timestamp_col}) AS max_ts
                         FROM {table} t
-                        WHERE t.status <> 'deleted'
+                        WHERE {status_filter}
                     ), reviews AS (
                         SELECT MAX(r.updated_at) AS max_ts
                         FROM reviews r
@@ -413,14 +436,26 @@ class ETagV5Manager:
                     params = {'entity_type': table[:-1]}
                 elif strategy.get('include_hours'):
                     # Query with hours only
+                    # Handle special case for listings table
+                    if table == 'listings':
+                        hours_table = 'business_hours'
+                        status_filter = 't.is_active = true'
+                        # Add category filter if specified
+                        category_filter = strategy.get('category_filter')
+                        if category_filter:
+                            status_filter += f" AND t.category_id = '{category_filter}'"
+                    else:
+                        hours_table = f'{table}_hours'
+                        status_filter = "t.status <> 'deleted'"
+                    
                     query = f"""
                     WITH base AS (
                         SELECT MAX(t.{timestamp_col}) AS max_ts
                         FROM {table} t
-                        WHERE t.status <> 'deleted'
+                        WHERE {status_filter}
                     ), hours AS (
                         SELECT MAX(h.updated_at) AS max_ts
-                        FROM {table}_hours h
+                        FROM {hours_table} h
                     )
                     SELECT EXTRACT(EPOCH FROM GREATEST(
                         COALESCE(base.max_ts, 'epoch'::timestamp),
@@ -431,10 +466,20 @@ class ETagV5Manager:
                     params = {}
                 else:
                     # Simple query for base table only
+                    # Handle special case for listings table
+                    if table == 'listings':
+                        status_filter = 'is_active = true'
+                        # Add category filter if specified
+                        category_filter = strategy.get('category_filter')
+                        if category_filter:
+                            status_filter += f" AND category_id = '{category_filter}'"
+                    else:
+                        status_filter = "status <> 'deleted'"
+                    
                     query = f"""
                     SELECT EXTRACT(EPOCH FROM MAX({timestamp_col}))::bigint AS watermark
                     FROM {table}
-                    WHERE status <> 'deleted'
+                    WHERE {status_filter}
                     """
                     params = {}
                 

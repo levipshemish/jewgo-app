@@ -80,6 +80,7 @@ export interface PaginationOptions {
   cursor?: string;
   limit?: number;
   sort?: string;
+  page?: number;
 }
 
 export interface MetricsSummary {

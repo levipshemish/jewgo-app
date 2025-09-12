@@ -12,10 +12,10 @@ export const V5_API_BASE_URL = getApiBaseUrl();
 
 // V5 API Endpoints
 export const V5_API_ENDPOINTS = {
-  // Unified Entity API - consolidates restaurants, synagogues, mikvah, stores
-  ENTITIES: '/api/v5/entities',
-  ENTITY_DETAILS: (id: string) => `/api/v5/entities/${id}`,
-  ENTITY_SEARCH: '/api/v5/entities/search',
+  // Entity-specific API endpoints
+  ENTITIES: (entityType: string) => `/api/v5/${entityType}`,
+  ENTITY_DETAILS: (entityType: string, id: string) => `/api/v5/${entityType}/${id}`,
+  ENTITY_SEARCH: '/api/v5/search',
   
   // Unified Search API - cross-entity search
   SEARCH: '/api/v5/search',
@@ -34,9 +34,6 @@ export const V5_API_ENDPOINTS = {
   METRICS: '/api/v5/monitoring/metrics',
   SYSTEM_STATUS: '/api/v5/monitoring/system-status',
   
-  // Webhook API - unified webhook handling
-  WEBHOOKS: '/api/v5/webhooks',
-  WEBHOOK_DETAILS: (id: string) => `/api/v5/webhooks/${id}`,
 } as const;
 
 // Entity Types for V5 API
@@ -175,9 +172,19 @@ export const V5_API_ENABLED = process.env.NEXT_PUBLIC_V5_API_ENABLED === 'true' 
                               process.env.NODE_ENV === 'production';
 
 // Helper function to get the appropriate endpoint (v5 or legacy)
-export function getApiEndpoint(legacyEndpoint: string): string {
+export function getApiEndpoint(legacyEndpoint: string, entityType?: string): string {
   if (V5_API_ENABLED && V5_MIGRATION_MAP[legacyEndpoint as keyof typeof V5_MIGRATION_MAP]) {
-    return V5_MIGRATION_MAP[legacyEndpoint as keyof typeof V5_MIGRATION_MAP];
+    const endpoint = V5_MIGRATION_MAP[legacyEndpoint as keyof typeof V5_MIGRATION_MAP];
+    
+    // If the endpoint is a function (like ENTITIES), call it with entityType
+    if (typeof endpoint === 'function' && entityType) {
+      return endpoint(entityType);
+    }
+    
+    // If it's a string, return it directly
+    if (typeof endpoint === 'string') {
+      return endpoint;
+    }
   }
   return legacyEndpoint;
 }

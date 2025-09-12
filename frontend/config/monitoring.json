@@ -35,10 +35,6 @@
     },
     "slack": {
       "enabled": false,
-      "webhook": ""
-    },
-    "webhook": {
-      "enabled": false,
       "url": ""
     }
   }

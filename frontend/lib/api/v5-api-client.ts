@@ -116,11 +116,11 @@ export class V5ApiClient {
    * Get entities (restaurants, synagogues, mikvah, stores)
    */
   async getEntities(params: V5EntityParams = {}): Promise<V5ApiResponse> {
-    const searchParams = new URLSearchParams();
-    
-    if (params.entityType) {
-      searchParams.append('entityType', params.entityType);
+    if (!params.entityType) {
+      throw new V5ApiError('entityType is required');
     }
+    
+    const searchParams = new URLSearchParams();
     
     if (params.location) {
       searchParams.append('lat', params.location.lat.toString());
@@ -143,20 +143,15 @@ export class V5ApiClient {
     if (params.sort) searchParams.append('sort', params.sort);
     if (params.order) searchParams.append('order', params.order);
 
-    const endpoint = `${V5_API_ENDPOINTS.ENTITIES}?${searchParams.toString()}`;
+    const endpoint = `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`;
     return this.makeRequest(endpoint);
   }
 
   /**
    * Get a specific entity by ID
    */
-  async getEntity(id: string, entityType?: V5EntityType): Promise<V5ApiResponse> {
-    const searchParams = new URLSearchParams();
-    if (entityType) {
-      searchParams.append('entityType', entityType);
-    }
-    
-    const endpoint = `${V5_API_ENDPOINTS.ENTITY_DETAILS(id)}?${searchParams.toString()}`;
+  async getEntity(id: string, entityType: V5EntityType): Promise<V5ApiResponse> {
+    const endpoint = V5_API_ENDPOINTS.ENTITY_DETAILS(entityType, id);
     return this.makeRequest(endpoint);
   }
 

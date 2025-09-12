@@ -179,7 +179,6 @@ export async function GET(request: NextRequest) {
       { path: '/api/restaurants', method: 'GET' },
       { path: '/api/restaurants/1577', method: 'GET' },
       { path: '/api/restaurants/1577/view', method: 'POST' },
-      { path: '/webhook/status', method: 'GET' },
       { path: '/api/container-status', method: 'GET' }
     ]
 

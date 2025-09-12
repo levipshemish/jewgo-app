@@ -394,8 +394,8 @@ export default function UnifiedLiveMapClient() {
       
       fetchAbortController.current = new AbortController();
       
-      // Route via unified API for consistency and caching
-      const apiUrl = new URL('/api/restaurants/unified', window.location.origin);
+      // Route via v5 API for consistency and caching
+      const apiUrl = new URL('/api/v5/restaurants', window.location.origin);
       apiUrl.searchParams.set('limit', '200'); // Reduced limit to prevent memory issues
       
       // Add viewport bounds if provided

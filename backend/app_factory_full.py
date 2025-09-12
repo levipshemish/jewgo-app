@@ -235,6 +235,7 @@ def create_app(config_class=None):
         logger.warning("Failed to attach log redaction filter", error=str(e))
     
     # Configure rate limiting with Redis storage
+    # Exclude v5 routes to avoid double rate limiting with RateLimitV5Middleware
     redis_url = os.environ.get("REDIS_URL", "memory://")
     limiter = Limiter(
         app=app,
@@ -243,7 +244,7 @@ def create_app(config_class=None):
             "100 per minute",     # Reduced from 1000 for security
             "1000 per hour",      # Reduced from 10000 for security
         ],  # Secure production limits
-        storage_uri=redis_url,
+        storage_uri=redis_url
     )
     
     # Expose limiter to route modules via bridge
@@ -424,6 +425,19 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 entity API blueprint: {e}")
         
+        # Register v5 main API (restaurants, synagogues, mikvah, stores endpoints)
+        if feature_flags_v5.is_enabled('main_api_v5', default=True):
+            try:
+                from routes.v5.api_v5 import api_v5, init_services as init_api_services
+                # Initialize API services
+                init_api_services(connection_manager_v5, redis_manager_v5)
+                app.register_blueprint(api_v5)
+                logger.info("V5 main API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 main API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 main API blueprint: {e}")
+        
         # Register v5 auth API
         if feature_flags_v5.is_enabled('auth_api_v5', default=True):
             try:
@@ -471,6 +485,19 @@ def create_app(config_class=None):
                 logger.warning(f"Could not import v5 webhook API blueprint: {e}")
             except Exception as e:
                 logger.warning(f"Could not register v5 webhook API blueprint: {e}")
+
+        # Register v5 reviews API
+        if feature_flags_v5.is_enabled('reviews_api_v5', default=True):
+            try:
+                from routes.v5.reviews_v5 import reviews_v5, init_services as init_reviews_services
+                # Initialize reviews services
+                init_reviews_services(connection_manager_v5, redis_manager_v5, feature_flags_v5)
+                app.register_blueprint(reviews_v5)
+                logger.info("V5 reviews API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 reviews API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 reviews API blueprint: {e}")
         
         # Register v5 monitoring API
         try:
@@ -532,6 +559,13 @@ def create_app(config_class=None):
             from routes.v5.webhook_api import webhook_bp
             app.register_blueprint(webhook_bp)
             logger.info("V5 webhook API blueprint registered (fallback)")
+        except ImportError:
+            pass
+            
+        try:
+            from routes.v5.reviews_v5 import reviews_v5
+            app.register_blueprint(reviews_v5)
+            logger.info("V5 reviews API blueprint registered (fallback)")
         except ImportError:
             pass
             

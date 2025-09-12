@@ -110,22 +110,27 @@ export default function Grid({
   // Real API function with cursor-based pagination
   const fetchItems = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
     try {
-      // Build API URL with parameters based on data type - use unified endpoints
+      // Build API URL with parameters based on data type - use v5 endpoints
       let endpoint: string;
       switch (dataType) {
         case 'shuls':
-          endpoint = '/api/synagogues/unified';
+          endpoint = '/api/v5/synagogues';
           break;
         case 'marketplace':
-          endpoint = '/api/marketplace/unified';
+          endpoint = '/api/v5/entities';
           break;
         default:
-          endpoint = '/api/restaurants/unified';
+          endpoint = '/api/v5/restaurants';
       }
       
       const apiUrl = new URL(endpoint, window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
       apiUrl.searchParams.set('offset', offset.toString())
+
+      // Add entityType for marketplace (stores)
+      if (dataType === 'marketplace') {
+        apiUrl.searchParams.set('entityType', 'stores');
+      }
 
       if (params) {
         const searchParams = new URLSearchParams(params)

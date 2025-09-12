@@ -44,10 +44,12 @@ class SimpleEventPublisher:
 event_publisher = SimpleEventPublisher()
 
 # Initialize services with proper dependencies
-restaurant_service = RestaurantServiceV5(entity_repository, cache_manager, event_publisher)
-synagogue_service = SynagogueServiceV5(entity_repository, cache_manager, event_publisher)
-mikvah_service = MikvahServiceV5(entity_repository, cache_manager, event_publisher)
-store_service = StoreServiceV5(entity_repository, cache_manager, event_publisher)
+from utils.feature_flags_v5 import FeatureFlagsV5
+feature_flags = FeatureFlagsV5()
+restaurant_service = RestaurantServiceV5(entity_repository, cache_manager, event_publisher)  # OK
+synagogue_service = SynagogueServiceV5(entity_repository, cache_manager, event_publisher)    # OK
+mikvah_service = MikvahServiceV5(entity_repository, cache_manager, feature_flags)
+store_service = StoreServiceV5(entity_repository, cache_manager, feature_flags)
 
 # Service mapping
 ENTITY_SERVICES = {
@@ -102,9 +104,9 @@ def get_entities(entity_type: str):
             if value:
                 filters[key] = value
 
-        # Parse location filters
-        lat = request.args.get('latitude')
-        lng = request.args.get('longitude')
+        # Parse location filters (support both lat/lng and latitude/longitude)
+        lat = request.args.get('lat') or request.args.get('latitude')
+        lng = request.args.get('lng') or request.args.get('longitude')
         radius = request.args.get('radius', '10')
         if lat and lng:
             try:
@@ -131,14 +133,17 @@ def get_entities(entity_type: str):
         if if_none_match and if_none_match == etag:
             return '', 304
 
-        # Fetch entities from repository
-        entities, next_cursor, prev_cursor = entity_repository.get_entities_with_cursor(
-            entity_type=entity_type,
+        # Fetch entities using service mapping
+        service = ENTITY_SERVICES[entity_type]
+        result = service.get_entities(
             filters=filters,
             cursor=cursor,
             limit=limit,
-            sort_key=sort
+            sort=sort
         )
+        entities = result.get('data', [])
+        next_cursor = result.get('next_cursor')
+        prev_cursor = result.get('prev_cursor')
 
         # Format response to match frontend PaginatedResponse<T> contract
         response_data = {
@@ -204,8 +209,9 @@ def get_entity_by_id(entity_type: str, entity_id: int):
         if if_none_match and etag_manager.validate_etag(if_none_match, etag):
             return '', 304
 
-        # Get entity from repository
-        entity = entity_repository.get_entity_by_id(entity_type, entity_id)
+        # Get entity using service mapping
+        service = ENTITY_SERVICES[entity_type]
+        entity = service.get_entity(entity_id)
         
         if not entity:
             return jsonify({
@@ -255,8 +261,9 @@ def create_entity(entity_type: str):
         data['created_by'] = getattr(g, 'user_id', None)
         data['status'] = data.get('status', 'pending')
 
-        # Create entity using repository
-        entity = entity_repository.create_entity(entity_type, data)
+        # Create entity using service mapping
+        service = ENTITY_SERVICES[entity_type]
+        entity = service.create_entity(data)
 
         if not entity:
             return jsonify({
@@ -298,8 +305,9 @@ def update_entity(entity_type: str, entity_id: int):
                 'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
             }), 400
 
-        # Check if entity exists
-        existing_entity = entity_repository.get_entity_by_id(entity_type, entity_id)
+        # Check if entity exists and update using service mapping
+        service = ENTITY_SERVICES[entity_type]
+        existing_entity = service.get_entity(entity_id)
         if not existing_entity:
             return jsonify({
                 'success': False,
@@ -317,8 +325,8 @@ def update_entity(entity_type: str, entity_id: int):
         # Add metadata
         data['updated_by'] = getattr(g, 'user_id', None)
 
-        # Update entity using repository
-        entity = entity_repository.update_entity(entity_type, entity_id, data)
+        # Update entity using service
+        entity = service.update_entity(entity_id, data)
 
         if not entity:
             return jsonify({
@@ -362,16 +370,17 @@ def delete_entity(entity_type: str, entity_id: int):
                 'error': f'Invalid entity type. Supported: {list(ENTITY_SERVICES.keys())}'
             }), 400
 
-        # Check if entity exists
-        existing_entity = entity_repository.get_entity_by_id(entity_type, entity_id)
+        # Check if entity exists and delete using service mapping
+        service = ENTITY_SERVICES[entity_type]
+        existing_entity = service.get_entity(entity_id)
         if not existing_entity:
             return jsonify({
                 'success': False,
                 'error': f'{entity_type[:-1].title()} not found'
             }), 404
 
-        # Soft delete using repository
-        success = entity_repository.delete_entity(entity_type, entity_id, soft_delete=True)
+        # Soft delete using service
+        success = service.delete_entity(entity_id)
 
         if not success:
             return jsonify({
@@ -437,16 +446,17 @@ def batch_operations(entity_type: str):
                 op_data = operation.get('data', {})
                 entity_id = operation.get('entity_id')
 
+                service = ENTITY_SERVICES[entity_type]
                 if op_type == 'create':
                     op_data['created_by'] = getattr(g, 'user_id', None)
-                    entity = entity_repository.create_entity(entity_type, op_data)
+                    entity = service.create_entity(op_data)
                     result = {'success': entity is not None, 'data': entity}
                 elif op_type == 'update' and entity_id:
                     op_data['updated_by'] = getattr(g, 'user_id', None)
-                    entity = entity_repository.update_entity(entity_type, entity_id, op_data)
+                    entity = service.update_entity(entity_id, op_data)
                     result = {'success': entity is not None, 'data': entity}
                 elif op_type == 'delete' and entity_id:
-                    success = entity_repository.delete_entity(entity_type, entity_id, soft_delete=True)
+                    success = service.delete_entity(entity_id)
                     result = {'success': success}
                 else:
                     result = {'success': False, 'error': 'Invalid operation'}
@@ -499,8 +509,14 @@ def batch_operations(entity_type: str):
 def entity_health_check():
     """Health check for entity API."""
     try:
-        # Test repository connection
-        health_status = entity_repository.health_check()
+        # Test service connections
+        health_status = {'status': 'healthy', 'services': {}}
+        for entity_type, service in ENTITY_SERVICES.items():
+            try:
+                service_health = service.health_check() if hasattr(service, 'health_check') else {'status': 'unknown'}
+                health_status['services'][entity_type] = service_health
+            except Exception as e:
+                health_status['services'][entity_type] = {'status': 'error', 'error': str(e)}
         
         return jsonify({
             'success': True,

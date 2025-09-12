@@ -53,9 +53,9 @@ async function fetchMarketplaceListings(limit: number = 50, offset: number = 0, 
 
     // Note: Distance sorting is now handled client-side for reliability
 
-    // Use unified API endpoint
+    // Use v5 API endpoint
     const { unifiedApiCall } = await import('@/lib/utils/unified-api');
-    const result = await unifiedApiCall(`/api/marketplace/unified?${params.toString()}`, {
+    const result = await unifiedApiCall(`/api/v5/entities?entityType=stores&${params.toString()}`, {
       ttl: 30 * 1000, // 30 seconds cache (marketplace changes frequently)
       deduplicate: true,
       retry: true,

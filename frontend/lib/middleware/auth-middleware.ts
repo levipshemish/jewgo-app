@@ -106,7 +106,11 @@ function validateAuthToken(token: string): boolean {
     if (parts.length !== 3) return false;
     
     // Decode payload to check expiry
-    const payload = JSON.parse(atob(parts[1]));
+    const payload = JSON.parse(
+      typeof window !== 'undefined' 
+        ? atob(parts[1]) 
+        : Buffer.from(parts[1], 'base64').toString('utf8')
+    );
     const now = Math.floor(Date.now() / 1000);
     
     // Check if token is expired
@@ -128,7 +132,11 @@ function decodeToken(token: string): any {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
     
-    const payload = JSON.parse(atob(parts[1]));
+    const payload = JSON.parse(
+      typeof window !== 'undefined' 
+        ? atob(parts[1]) 
+        : Buffer.from(parts[1], 'base64').toString('utf8')
+    );
     return payload;
   } catch {
     return null;

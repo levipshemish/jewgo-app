@@ -8,13 +8,6 @@
 
 import { ApiResponse, PaginatedResponse, EntityType, ApiError, RequestOptions, EntityFilters, PaginationOptions } from './types-v5';
 import { AuthTokenManager, TokenPair, UserProfile } from './auth-v5';
-import { CacheManager } from './cache-v5';
-import { RetryManager } from './retry-v5';
-import { MetricsCollector } from './metrics-v5';
-import { validateApiResponse, EntitySchemas } from './validation-v5';
-import { circuitBreakerManager } from './circuit-breaker-v5';
-import { requestDeduplicator, createRequestKey } from './request-deduplicator-v5';
-import { performanceMonitor } from './performance-monitor-v5';
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -31,14 +24,12 @@ export interface ApiClientConfig {
 export class ApiClientV5 {
   private config: ApiClientConfig;
   private authManager: AuthTokenManager;
-  private cacheManager: CacheManager;
-  private retryManager: RetryManager;
-  private metricsCollector: MetricsCollector;
   private requestId: number = 0;
+  private cache: Map<string, { data: any; timestamp: number; ttl: number }> = new Map();
 
   constructor(config: Partial<ApiClientConfig> = {}) {
     this.config = {
-      baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000',
+      baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001',
       timeout: 30000,
       retryAttempts: 3,
       retryDelay: 1000,
@@ -49,13 +40,10 @@ export class ApiClientV5 {
     };
 
     this.authManager = AuthTokenManager.getInstance();
-    this.cacheManager = CacheManager.getInstance();
-    this.retryManager = RetryManager.getInstance();
-    this.metricsCollector = MetricsCollector.getInstance();
   }
 
   /**
-   * Make a raw HTTP request with full feature support
+   * Make a raw HTTP request with basic retry and caching
    */
   async request<T = any>(
     endpoint: string, 
@@ -68,115 +56,28 @@ export class ApiClientV5 {
       // Build request configuration
       const requestConfig = await this.buildRequestConfig(endpoint, options);
       
-      // Create request key for deduplication
-      const requestKey = createRequestKey(requestConfig.url, {
-        method: requestConfig.method,
-        headers: requestConfig.headers,
-        body: requestConfig.body
-      });
-
-      // Use request deduplication for GET requests
-      if (options.method === 'GET' || !options.method) {
-        const deduplicationResult = await requestDeduplicator(
-          requestKey,
-          async () => {
-            // Check cache first
-            const cachedResponse = await this.getCachedResponse<T>(requestConfig.url, requestConfig.headers);
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-
-            // Execute request with circuit breaker and retry logic
-            return circuitBreakerManager.execute(
-              async () => {
-                const retryResult = await RetryManager.execute(async () => {
-                  return this.executeRequest(requestConfig);
-                });
-
-                if (!retryResult.success) {
-                  throw new Error(retryResult.error || 'Request failed after retries');
-                }
-
-                return retryResult.data!;
-              }
-            );
-          }
-        );
-
-        // Parse and validate response
-        const apiResponse = deduplicationResult instanceof Response 
-          ? await this.parseResponse<T>(deduplicationResult, requestConfig)
-          : deduplicationResult as ApiResponse<T>;
-
-        // Cache successful responses
-        if (options.cache !== false) {
-          await this.cacheResponse(requestConfig.url, apiResponse, options.cacheTtl);
+      // Check cache first for GET requests
+      if ((options.method === 'GET' || !options.method) && options.cache !== false) {
+        const cachedResponse = this.getCachedResponse<T>(requestConfig.url);
+        if (cachedResponse) {
+          return cachedResponse;
         }
-
-        // Record performance metrics
-        const duration = Date.now() - startTime;
-        performanceMonitor.recordApiCall(
-          endpoint,
-          requestConfig.method || 'GET',
-          duration,
-          apiResponse.status,
-          JSON.stringify(apiResponse.data).length,
-          {
-            request_id: requestId.toString()
-          }
-        );
-
-        return apiResponse;
-      } else {
-        // For non-GET requests, use circuit breaker and retry without deduplication
-        const response = await circuitBreakerManager.execute(
-          async () => {
-            const retryResult = await RetryManager.execute(async () => {
-              return this.executeRequest(requestConfig);
-            });
-
-            if (!retryResult.success) {
-              throw new Error(retryResult.error || 'Request failed after retries');
-            }
-
-            return retryResult.data!;
-          }
-        );
-
-        // Parse and validate response
-        const apiResponse = await this.parseResponse<T>(response as Response, requestConfig);
-
-        // Record performance metrics
-        const duration = Date.now() - startTime;
-        performanceMonitor.recordApiCall(
-          endpoint,
-          requestConfig.method || 'GET',
-          duration,
-          apiResponse.status,
-          JSON.stringify(apiResponse.data).length,
-          {
-            request_id: requestId.toString()
-          }
-        );
-
-        return apiResponse;
       }
 
+      // Execute request with retry logic
+      const response = await this.executeRequestWithRetry(requestConfig);
+
+      // Parse response
+      const apiResponse = await this.parseResponse<T>(response, requestConfig);
+
+      // Cache successful responses
+      if ((options.method === 'GET' || !options.method) && options.cache !== false) {
+        this.cacheResponse(requestConfig.url, apiResponse, options.cacheTtl);
+      }
+
+      return apiResponse;
+
     } catch (error) {
-      // Record error metrics
-      const duration = Date.now() - startTime;
-      performanceMonitor.recordApiCall(
-        endpoint,
-        options.method || 'GET',
-        duration,
-        0, // Error status
-        0, // No response size
-        {
-          request_id: requestId.toString(),
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
-      
       // Transform and throw API error
       throw this.transformError(error, endpoint, requestId);
     }
@@ -211,7 +112,8 @@ export class ApiClientV5 {
     options: RequestOptions = {}
   ): Promise<PaginatedResponse<T>> {
     // Validate entity type
-    if (!Object.keys(EntitySchemas).includes(entityType)) {
+    const validEntityTypes = ['restaurants', 'synagogues', 'mikvahs', 'stores'];
+    if (!validEntityTypes.includes(entityType)) {
       throw new Error(`Invalid entity type: ${entityType}`);
     }
     const queryParams = new URLSearchParams();
@@ -568,7 +470,7 @@ export class ApiClientV5 {
   }
 
   async getPublicStats(): Promise<ApiResponse<any>> {
-    return this.request('/api/v5/metrics/public/stats', {
+    return this.request('/api/v5/metrics/dashboard', {
       method: 'GET',
       cacheTtl: 300000 // 5 minutes cache for public stats
     });
@@ -604,12 +506,9 @@ export class ApiClientV5 {
       headers['Idempotency-Key'] = options.idempotencyKey;
     }
 
-    // Add ETag support for GET requests
+    // Add ETag support for GET requests (simplified)
     if (this.config.enableEtag && (options.method === 'GET' || !options.method)) {
-      const cachedEtag = CacheManager.getEtag(url);
-      if (cachedEtag) {
-        headers['If-None-Match'] = cachedEtag;
-      }
+      // ETag support would be implemented here if needed
     }
 
     return {
@@ -650,7 +549,7 @@ export class ApiClientV5 {
   private async parseResponse<T>(response: Response, config: any): Promise<ApiResponse<T>> {
     // Handle 304 Not Modified
     if (response.status === 304) {
-      const cachedResponse = CacheManager.get<ApiResponse<T>>(config.url);
+      const cachedResponse = this.getCachedResponse<T>(config.url);
       if (cachedResponse) {
         return cachedResponse;
       }
@@ -693,33 +592,52 @@ export class ApiClientV5 {
     };
   }
 
-  private async getCachedResponse<T>(url: string, _headers: Record<string, string>): Promise<ApiResponse<T> | null> {
-    if (!this.config.enableEtag) {
-      const cached = CacheManager.get<ApiResponse<T>>(url);
-      return cached || null;
+  private getCachedResponse<T>(url: string): ApiResponse<T> | null {
+    const cached = this.cache.get(url);
+    if (!cached) return null;
+    
+    // Check if cache entry is expired
+    if (Date.now() - cached.timestamp > cached.ttl) {
+      this.cache.delete(url);
+      return null;
     }
-
-    // Check if we have a cached response with ETag
-    const cachedResponse = CacheManager.get<ApiResponse<T>>(url);
-    const cachedEtag = CacheManager.getEtag(url);
-
-    if (cachedResponse && cachedEtag) {
-      return cachedResponse;
-    }
-
-    return null;
+    
+    return cached.data;
   }
 
-  private async cacheResponse<T>(url: string, response: ApiResponse<T>, ttl?: number): Promise<void> {
+  private cacheResponse<T>(url: string, response: ApiResponse<T>, ttl?: number): void {
     const cacheTtl = ttl || this.config.cacheTtl;
-    
-    // Cache the response
-    CacheManager.set(url, response, undefined, cacheTtl);
+    this.cache.set(url, {
+      data: response,
+      timestamp: Date.now(),
+      ttl: cacheTtl
+    });
+  }
 
-    // Cache ETag if present
-    if (this.config.enableEtag && response.headers?.etag) {
-      CacheManager.setEtag(url, response.headers.etag, cacheTtl);
+  private async executeRequestWithRetry(config: {
+    url: string;
+    headers: Record<string, string>;
+    method: string;
+    body?: string;
+    signal?: AbortSignal;
+  }): Promise<Response> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= this.config.retryAttempts; attempt++) {
+      try {
+        return await this.executeRequest(config);
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt < this.config.retryAttempts) {
+          // Wait before retry with exponential backoff
+          const delay = this.config.retryDelay * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
     }
+    
+    throw lastError || new Error('Request failed after all retry attempts');
   }
 
   private transformError(error: any, endpoint: string, requestId: number): ApiError {
@@ -752,24 +670,8 @@ export class ApiClientV5 {
   ): void {
     if (!this.config.enableMetrics) return;
 
-    if (type === 'error') {
-      this.metricsCollector.recordError(
-        endpoint,
-        'GET',
-        error?.message || 'Unknown error'
-      );
-    } else if (type === 'performance') {
-      this.metricsCollector.recordPerformance(
-        endpoint,
-        'GET',
-        duration
-      );
-    } else {
-      this.metricsCollector.recordUsage(
-        endpoint,
-        'GET'
-      );
-    }
+    // Simple metrics logging (could be enhanced with actual metrics collection)
+    console.log(`[${type.toUpperCase()}] ${endpoint} - ${duration}ms${statusCode ? ` - ${statusCode}` : ''}${error ? ` - ${error.message}` : ''}`);
   }
 
   private generateRequestId(): string {
@@ -784,12 +686,17 @@ export class ApiClientV5 {
    * Utility methods for cache management
    */
   clearCache(): void {
-    CacheManager.clear();
+    this.cache.clear();
   }
 
   invalidateCache(pattern?: string): void {
     if (pattern) {
-      CacheManager.invalidate(pattern);
+      // Simple pattern matching for cache invalidation
+      for (const key of this.cache.keys()) {
+        if (key.includes(pattern)) {
+          this.cache.delete(key);
+        }
+      }
     }
   }
 
@@ -843,7 +750,7 @@ export class ApiClientV5 {
     options: RequestOptions = {}
   ): Promise<ApiResponse<any>> {
     const searchParams = new URLSearchParams(queryParams);
-    const endpoint = `/api/v5/admin/audit?${searchParams.toString()}`;
+    const endpoint = `/api/v5/admin/audit-log?${searchParams.toString()}`;
     
     return this.request(endpoint, {
       method: 'GET',
@@ -855,7 +762,7 @@ export class ApiClientV5 {
    * Get admin health status
    */
   async getAdminHealth(options: RequestOptions = {}): Promise<ApiResponse<any>> {
-    return this.request('/api/v5/admin/health', {
+    return this.request('/api/v5/monitoring/health', {
       method: 'GET',
       ...options
     });
@@ -881,7 +788,7 @@ export class ApiClientV5 {
    * Get admin system status
    */
   async getAdminSystem(options: RequestOptions = {}): Promise<ApiResponse<any>> {
-    return this.request('/api/v5/admin/system', {
+    return this.request('/api/v5/monitoring/status', {
       method: 'GET',
       ...options
     });
