@@ -217,9 +217,6 @@ export async function unifiedApiCall<T = any>(
 export async function getUnifiedRestaurantData(params: Record<string, any> = {}): Promise<UnifiedApiResponse> {
   const searchParams = new URLSearchParams();
   
-  // Add entity type for V5 API
-  searchParams.append('entityType', 'restaurants');
-  
   // Add all relevant parameters
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
@@ -232,7 +229,7 @@ export async function getUnifiedRestaurantData(params: Record<string, any> = {})
   });
 
   // Use V5 API endpoint
-  const url = `/v5/entities?${searchParams.toString()}`;
+  const url = `/api/v5/restaurants?${searchParams.toString()}`;
   
   return unifiedApiCall(url, {
     ttl: CACHE_CONFIG.DEFAULT_TTL,
@@ -247,9 +244,6 @@ export async function getUnifiedRestaurantData(params: Record<string, any> = {})
 export async function getUnifiedSynagogueData(params: Record<string, any> = {}): Promise<UnifiedApiResponse> {
   const searchParams = new URLSearchParams();
   
-  // Add entity type for V5 API
-  searchParams.append('entityType', 'synagogues');
-  
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       searchParams.append(key, value.toString());
@@ -257,7 +251,7 @@ export async function getUnifiedSynagogueData(params: Record<string, any> = {}):
   });
 
   // Use V5 API endpoint
-  const url = `/v5/entities?${searchParams.toString()}`;
+  const url = `/api/v5/synagogues?${searchParams.toString()}`;
   
   return unifiedApiCall(url, {
     ttl: CACHE_CONFIG.LONG_TTL, // Synagogues change less frequently
@@ -271,9 +265,6 @@ export async function getUnifiedSynagogueData(params: Record<string, any> = {}):
 export async function getUnifiedMarketplaceData(params: Record<string, any> = {}): Promise<UnifiedApiResponse> {
   const searchParams = new URLSearchParams();
   
-  // Add entity type for V5 API
-  searchParams.append('entityType', 'stores');
-  
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       searchParams.append(key, value.toString());
@@ -281,7 +272,7 @@ export async function getUnifiedMarketplaceData(params: Record<string, any> = {}
   });
 
   // Use V5 API endpoint
-  const url = `/v5/entities?${searchParams.toString()}`;
+  const url = `/api/v5/stores?${searchParams.toString()}`;
   
   return unifiedApiCall(url, {
     ttl: CACHE_CONFIG.SHORT_TTL, // Marketplace data changes frequently
@@ -305,7 +296,7 @@ export async function getUnifiedStoresData(params: Record<string, any> = {}): Pr
   });
 
   // Use V5 API endpoint
-  const url = `/v5/entities?${searchParams.toString()}`;
+  const url = `/api/v5/stores?${searchParams.toString()}`;
   
   return unifiedApiCall(url, {
     ttl: CACHE_CONFIG.DEFAULT_TTL,
@@ -339,9 +330,6 @@ export async function getUnifiedShtelData(params: Record<string, any> = {}): Pro
 export async function getUnifiedMikvahData(params: Record<string, any> = {}): Promise<UnifiedApiResponse> {
   const searchParams = new URLSearchParams();
   
-  // Add entity type for V5 API
-  searchParams.append('entityType', 'mikvah');
-  
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       searchParams.append(key, value.toString());
@@ -349,7 +337,7 @@ export async function getUnifiedMikvahData(params: Record<string, any> = {}): Pr
   });
 
   // Use V5 API endpoint
-  const url = `/v5/entities?${searchParams.toString()}`;
+  const url = `/api/v5/mikvahs?${searchParams.toString()}`;
   
   return unifiedApiCall(url, {
     ttl: CACHE_CONFIG.LONG_TTL, // Mikvah data changes infrequently
