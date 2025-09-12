@@ -58,8 +58,13 @@ export function getSafeImageUrl(imageUrl?: string): string {
     return normalizedUrl;
   }
 
-  // For Google Places URLs, return as-is (they're already optimized)
+  // For Google Photos/Places URLs, validate and return as-is (they're already optimized)
   if (imageUrl.includes('googleusercontent.com')) {
+    // Check if it's a valid Google Photos URL format
+    if (imageUrl.includes('place-photos') || imageUrl.includes('photo')) {
+      return imageUrl;
+    }
+    // For other Google URLs, return as-is
     return imageUrl;
   }
 

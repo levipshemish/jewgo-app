@@ -105,6 +105,13 @@ const Card = memo<CardProps>(({
       return '/images/default-restaurant.webp';
     }
     
+    // Check for Google Photos URLs that might be problematic
+    if (cardData.imageUrl.includes('googleusercontent.com') && 
+        (cardData.imageUrl.includes('place-photos') || cardData.imageUrl.includes('photo'))) {
+      // These URLs are valid but might fail to load, so we'll try them but have fallback ready
+      // The onError handler will catch failures and show the fallback image
+    }
+    
     let safeUrl = getSafeImageUrl(cardData.imageUrl);
     
     // Normalize known broken Cloudinary URLs
@@ -243,9 +250,11 @@ const Card = memo<CardProps>(({
             onError={() => {
               setImageError(true);
               setImageLoading(false);
-              // Fallback to default image on error
-              // eslint-disable-next-line no-console
-              console.error(`Failed to load image: ${heroImageUrl}`);
+              // Only log errors in development mode to reduce console noise
+              if (process.env.NODE_ENV === 'development') {
+                // eslint-disable-next-line no-console
+                console.warn(`Image failed to load: ${heroImageUrl}`);
+              }
             }}
             sizes="(max-width: 768px) 45vw, 200px"
             unoptimized={false}

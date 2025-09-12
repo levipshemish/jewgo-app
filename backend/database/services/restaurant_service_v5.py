@@ -116,9 +116,7 @@ class RestaurantServiceV5:
         
         This method provides a unified interface for the entity API routes.
         """
-        print(f"DEBUG SERVICE: get_entities method called with page={page}, sort={sort}")
         try:
-            logger.info(f"DEBUG SERVICE: get_entities called with page={page}, sort={sort}")
             restaurants, next_cursor, prev_cursor = self.get_restaurants(
                 cursor=cursor,
                 page=page,
@@ -170,7 +168,6 @@ class RestaurantServiceV5:
         Returns:
             Tuple of (restaurants, next_cursor, prev_cursor)
         """
-        print(f"DEBUG SERVICE: get_restaurants called with page={page}, sort_key={sort_key}")
         try:
             # Check cache first if enabled
             cache_key = None
@@ -193,7 +190,6 @@ class RestaurantServiceV5:
             processed_filters = self._process_filters(filters)
             
             # Get restaurants from repository
-            print(f"DEBUG SERVICE: About to call repository.get_entities_with_cursor with page={page}, sort_key={sort_key}")
             restaurants, next_cursor, prev_cursor = self.repository.get_entities_with_cursor(
                 entity_type='restaurants',
                 cursor=cursor,
@@ -204,7 +200,6 @@ class RestaurantServiceV5:
                 include_relations=include_relations,
                 user_context=user_context
             )
-            print(f"DEBUG SERVICE: Repository returned {len(restaurants)} restaurants, next_cursor={next_cursor}, prev_cursor={prev_cursor}")
             
             # Enhance restaurant data
             enhanced_restaurants = []
