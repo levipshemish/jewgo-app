@@ -220,6 +220,99 @@ class EntityRepositoryV5(BaseRepository):
             logger.error(f"Error getting {entity_type} with distance pagination: {e}")
             return [], None, None
     
+    def _get_entities_with_page_pagination(
+        self,
+        entity_type: str,
+        page: int,
+        limit: int,
+        sort_key: str,
+        filters: Optional[Dict[str, Any]] = None,
+        include_relations: bool = False,
+        user_context: Optional[Dict[str, Any]] = None
+    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
+        """
+        Get entities with page-based pagination for non-distance sorting.
+        
+        This method provides consistent page-based pagination for all sorting types
+        when the page parameter is provided, similar to distance sorting.
+        """
+        try:
+            model_class = self.get_model_class(entity_type)
+            if not model_class:
+                logger.error(f"Unknown entity type: {entity_type}")
+                return [], None, None
+            
+            mapping = self.get_entity_mapping(entity_type)
+            if not mapping:
+                logger.error(f"No mapping for entity type: {entity_type}")
+                return [], None, None
+            
+            with self.connection_manager.session_scope() as session:
+                # Build base query
+                query = session.query(model_class)
+                
+                # Apply eager loading if relations requested
+                if include_relations and mapping.get('relations'):
+                    for relation in mapping['relations']:
+                        if hasattr(model_class, relation):
+                            query = query.options(joinedload(getattr(model_class, relation)))
+                
+                # Apply filters
+                query = self._apply_filters(query, model_class, filters, mapping)
+                
+                # Apply geospatial filtering if needed (skip for distance sorting as we handle it in app layer)
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude') and sort_key != 'distance_asc':
+                    query = self._apply_geospatial_filter(query, model_class, filters)
+                
+                # Apply sorting
+                query = self._apply_sorting(query, model_class, sort_key, filters)
+                
+                # Calculate offset for page-based pagination
+                offset = (page - 1) * limit
+                
+                # Execute query with page-based pagination
+                entities = query.offset(offset).limit(limit).all()
+                
+                # Convert to dictionaries
+                result_entities = []
+                for entity in entities:
+                    entity_dict = self._entity_to_dict(entity, include_relations)
+                    
+                    # Add computed fields
+                    if mapping.get('geospatial') and filters and filters.get('latitude'):
+                        distance = self._calculate_distance(entity, filters)
+                        entity_dict['distance'] = distance
+                    
+                    result_entities.append(entity_dict)
+                
+                # Get total count for pagination info
+                count_query = session.query(model_class)
+                count_query = self._apply_filters(count_query, model_class, filters, mapping)
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude') and sort_key != 'distance_asc':
+                    count_query = self._apply_geospatial_filter(count_query, model_class, filters)
+                
+                total_count = count_query.count()
+                
+                # Generate pagination info
+                has_next = offset + limit < total_count
+                has_prev = page > 1
+                
+                next_cursor = None
+                prev_cursor = None
+                
+                if has_next:
+                    next_cursor = f"page_{page + 1}"
+                if has_prev:
+                    prev_cursor = f"page_{page - 1}"
+                
+                logger.info(f"Page pagination: Page {page}, offset {offset}-{offset + len(result_entities)}, returned {len(result_entities)} entities, total: {total_count}")
+                
+                return result_entities, next_cursor, prev_cursor
+                
+        except Exception as e:
+            logger.error(f"Error getting {entity_type} with page pagination: {e}")
+            return [], None, None
+    
     def get_entities_with_cursor(
         self,
         entity_type: str,
@@ -253,6 +346,12 @@ class EntityRepositoryV5(BaseRepository):
             if sort_key == 'distance_asc' and page is not None:
                 return self._get_entities_with_distance_pagination(
                     entity_type, page, limit, filters, include_relations, user_context
+                )
+            
+            # Handle page-based pagination for all sorting types when page parameter is provided
+            if page is not None:
+                return self._get_entities_with_page_pagination(
+                    entity_type, page, limit, sort_key, filters, include_relations, user_context
                 )
             model_class = self.get_model_class(entity_type)
             if not model_class:
