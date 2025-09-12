@@ -12,6 +12,9 @@ export type RestaurantsResponse = {
   limit: number;
   message?: string;
   error?: string;
+  next_cursor?: string | null;
+  prev_cursor?: string | null;
+  total_count?: number | null;
   pagination?: {
     limit: number;
     offset: number;
@@ -78,6 +81,9 @@ export async function fetchRestaurants({
       totalRestaurants: total,
       page,
       limit: safeLimit,
+      next_cursor: response.next_cursor,
+      prev_cursor: response.prev_cursor,
+      total_count: response.total_count,
     };
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);
