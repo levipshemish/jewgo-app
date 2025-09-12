@@ -213,6 +213,9 @@ class EntityRepositoryV5(BaseRepository):
                     # If distance sorting is requested but no location provided, fall back to created_at
                     result_entities.sort(key=lambda x: x.get('created_at', ''), reverse=True)
                 
+                # Debug: Log the number of entities after sorting
+                logger.info(f"After sorting: {len(result_entities)} entities for {entity_type} with sort_key={sort_key}")
+                
                 # Generate cursors
                 next_cursor = None
                 prev_cursor = None
