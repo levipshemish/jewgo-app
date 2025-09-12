@@ -829,7 +829,12 @@ class EntityRepositoryV5(BaseRepository):
             from utils.cursor_v5 import create_cursor_v5
             
             strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
-            primary_field = strategy['field']
+            
+            # For distance sorting, use created_at field for cursor generation since distance is calculated in app layer
+            if sort_key == 'distance_asc':
+                primary_field = 'created_at'
+            else:
+                primary_field = strategy['field']
             
             primary_value = entity.get(primary_field)
             entity_id = entity.get('id')
