@@ -75,6 +75,10 @@ export async function GET(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        // Add authentication headers if available
+        ...(request.headers.get('authorization') && {
+          'Authorization': request.headers.get('authorization')!
+        }),
       },
     });
 

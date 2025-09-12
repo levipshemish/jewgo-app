@@ -88,7 +88,8 @@ export class AuthTokenManager {
    * Perform actual token refresh request
    */
   private async performTokenRefresh(): Promise<TokenPair> {
-    const response = await fetch('/api/v5/auth/refresh', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const response = await fetch(`${backendUrl}/api/v5/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -168,7 +169,8 @@ export class AuthTokenManager {
 
     try {
       const token = await this.getAccessToken();
-      const response = await fetch('/api/v5/auth/profile', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+      const response = await fetch(`${backendUrl}/api/v5/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
