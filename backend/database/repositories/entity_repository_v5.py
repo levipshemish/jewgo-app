@@ -205,6 +205,10 @@ class EntityRepositoryV5(BaseRepository):
                     
                     result_entities.append(entity_dict)
                 
+                # Apply distance sorting in application layer if needed
+                if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
+                    result_entities.sort(key=lambda x: x.get('distance', float('inf')))
+                
                 # Generate cursors
                 next_cursor = None
                 prev_cursor = None
@@ -677,18 +681,11 @@ class EntityRepositoryV5(BaseRepository):
         
         # Handle distance sorting specially
         if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
-            # Use PostGIS ST_Distance for distance sorting
-            from sqlalchemy import text
-            lat = filters['latitude']
-            lng = filters['longitude']
-            
-            # Create distance expression using PostGIS - handle location column properly
-            # The location column stores PostGIS point as text, so we need to parse it correctly
-            # Use a simpler approach that should work with the location column format
-            distance_expr = text(f"ST_Distance(ST_GeogFromText(location), ST_GeogFromText('POINT({lng} {lat})'))")
-            secondary_field = getattr(model_class, strategy['secondary'])
-            
-            query = query.order_by(asc(distance_expr), asc(secondary_field))
+            # For distance sorting, we'll sort by created_at first and then sort by distance in the application layer
+            # This avoids complex PostGIS distance sorting issues
+            primary_field = getattr(model_class, 'created_at')
+            secondary_field = getattr(model_class, 'id')
+            query = query.order_by(desc(primary_field), desc(secondary_field))
         else:
             # Regular field sorting
             primary_field = getattr(model_class, strategy['field'])
