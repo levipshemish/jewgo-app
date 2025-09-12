@@ -190,15 +190,18 @@ class EntityRepositoryV5(BaseRepository):
                 # Execute query
                 try:
                     entities = query.limit(limit + 1).all()  # Get one extra to check for next page
-                    logger.info(f"Query executed successfully: {len(entities)} entities returned")
+                    logger.info(f"Query executed successfully: {len(entities)} entities returned for limit={limit}")
+                    logger.info(f"DEBUG PAGINATION: entities count={len(entities)}, limit={limit}, limit+1={limit+1}")
                 except Exception as e:
                     logger.error(f"Query execution failed: {e}")
                     entities = []
                 
                 # Process results - fetch one extra to check if there are more
                 has_next = len(entities) > limit
+                logger.info(f"DEBUG PAGINATION: has_next={has_next} (entities={len(entities)} > limit={limit})")
                 if has_next:
                     entities = entities[:limit]  # Keep only the requested limit
+                    logger.info(f"DEBUG PAGINATION: Trimmed entities to {len(entities)} for response")
                 
                 # Convert to dictionaries
                 result_entities = []
@@ -232,15 +235,24 @@ class EntityRepositoryV5(BaseRepository):
                 next_cursor = None
                 prev_cursor = None
                 
+                logger.info(f"DEBUG CURSOR: result_entities count={len(result_entities)}, has_next={has_next}")
+                
                 if result_entities:
                     if has_next:
+                        logger.info(f"DEBUG CURSOR: Generating next_cursor for last entity")
                         next_cursor = self._generate_cursor(
                             result_entities[-1], sort_key, 'next', entity_type
                         )
+                        logger.info(f"DEBUG CURSOR: Generated next_cursor={next_cursor}")
+                    else:
+                        logger.info(f"DEBUG CURSOR: No next_cursor generated because has_next=False")
                     
                     prev_cursor = self._generate_cursor(
                         result_entities[0], sort_key, 'prev', entity_type
                     )
+                    logger.info(f"DEBUG CURSOR: Generated prev_cursor={prev_cursor}")
+                else:
+                    logger.info(f"DEBUG CURSOR: No cursors generated because result_entities is empty")
                 
                 return result_entities, next_cursor, prev_cursor
                 
