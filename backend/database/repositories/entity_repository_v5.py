@@ -607,10 +607,11 @@ class EntityRepositoryV5(BaseRepository):
                 )
             elif hasattr(model_class, 'location'):
                 # Use location column (PostGIS point stored as text)
+                # Cast the location text to geometry and then to geography for distance calculation
                 query = query.filter(
                     func.ST_DWithin(
-                        func.ST_GeomFromText(model_class.location, 4326),
-                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                        func.ST_GeogFromText(model_class.location),
+                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326)::geography,
                         radius_km * 1000  # Convert km to meters
                     )
                 )
