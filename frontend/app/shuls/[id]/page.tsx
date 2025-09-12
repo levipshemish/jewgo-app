@@ -172,7 +172,7 @@ function ShulIdPageContent() {
       setReviewsLoading(true)
       
       // Use the frontend API route for reviews
-      const response = await fetch(`/api/reviews?synagogueId=${synagogueId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
+      const response = await fetch(`/api/v5/reviews?synagogueId=${synagogueId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
       if (!response.ok) {
         if (offset === 0) {
           setReviews([])

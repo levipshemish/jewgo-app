@@ -216,7 +216,7 @@ function EateryIdPageContent() {
       setReviewsLoading(true)
       
       // Use deduplicated fetch to prevent duplicate API calls
-      const data = await deduplicatedFetch(`/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
+      const data = await deduplicatedFetch(`/api/v5/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
       
       if (data.success && data.data && data.data.reviews) {
         if (offset === 0) {

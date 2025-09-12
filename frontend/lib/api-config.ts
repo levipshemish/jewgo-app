@@ -61,7 +61,7 @@ export const API_ENDPOINTS = {
   // Legacy Backend API endpoints (these will be proxied to Render backend)
   RESTAURANTS: '/api/restaurants',
   RESTAURANT_DETAILS: (id: string) => `/api/restaurants/${id}`,
-  REVIEWS: '/api/reviews',
+  REVIEWS: '/api/v5/reviews',
   STATISTICS: '/api/statistics',
   
   // V5 API endpoints (unified endpoints)

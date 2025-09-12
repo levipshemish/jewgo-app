@@ -51,7 +51,7 @@ export function useViewTracking({
     lastTrackTimeRef.current = now
 
     try {
-      const url = `/api/restaurants/${restaurantId}/view`
+      const url = `/api/v5/restaurants/${restaurantId}/view`
       console.log(`📡 [FRONTEND VIEW TRACKING] Making POST request to: ${url}`)
       
       const response = await fetch(url, {
