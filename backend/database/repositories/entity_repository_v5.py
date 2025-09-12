@@ -111,7 +111,7 @@ class EntityRepositoryV5(BaseRepository):
                 'stores': Store
             }
             
-            logger.debug(f"Loaded {len(self._model_cache)} entity models")
+            logger.info(f"Loaded {len(self._model_cache)} entity models: {list(self._model_cache.keys())}")
             
         except ImportError as e:
             logger.error(f"Failed to load entity models: {e}")
@@ -157,6 +157,7 @@ class EntityRepositoryV5(BaseRepository):
                 return [], None, None
             
             mapping = self.get_entity_mapping(entity_type)
+            logger.info(f"Processing {entity_type} with model: {model_class.__name__}, mapping: {mapping}")
             if not mapping:
                 logger.error(f"No mapping for entity type: {entity_type}")
                 return [], None, None
