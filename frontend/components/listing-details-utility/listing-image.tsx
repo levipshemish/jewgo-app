@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import ImageCarousel from '@/components/restaurant/ImageCarousel';
 
 interface ListingImageProps {
@@ -24,6 +25,7 @@ export function ListingImage({
   viewCount: _viewCount
 }: ListingImageProps) {
   const images = allImages.length > 0 ? allImages : src ? [src] : [];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   return (
     <div className={`relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden ${className}`}>
@@ -31,7 +33,13 @@ export function ListingImage({
         images={images}
         restaurantName={restaurantName}
         className="h-full w-full rounded-3xl"
+        onIndexChange={setCurrentImageIndex}
       />
+      {images.length > 0 && (
+        <div className="absolute bottom-3 right-3 bg-white/80 backdrop-blur-md text-gray-800 text-xs font-medium px-2 py-1 rounded-full border border-white/20 shadow-lg">
+          {currentImageIndex + 1}/{images.length}
+        </div>
+      )}
     </div>
   );
 }

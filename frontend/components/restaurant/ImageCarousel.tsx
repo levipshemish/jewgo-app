@@ -12,6 +12,7 @@ interface ImageCarouselProps {
   restaurantName: string;
   kosherCategory?: string;
   className?: string;
+  onIndexChange?: (index: number) => void;
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ 
