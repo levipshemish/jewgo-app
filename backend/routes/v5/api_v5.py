@@ -564,7 +564,7 @@ def get_reviews_fallback():
     try:
         # Return empty reviews data for now
         return jsonify({
-            'data': [],
+            'reviews': [],
             'pagination': {
                 'cursor': None,
                 'next_cursor': None,

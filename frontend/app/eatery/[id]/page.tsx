@@ -357,10 +357,12 @@ function EateryIdPageContent() {
             return certifications.join(', ') || restaurantData.kosher_certification || ''
           })(),
           images: (() => {
-            // Extract image URLs from the images array
-            const imageUrls = restaurantData.images?.map((img: any) => img.image_url) || [];
+            // Extract image URLs from the restaurant_images relationship (new) or images array (legacy)
+            const restaurantImages = restaurantData.restaurant_images?.map((img: any) => img.image_url) || [];
+            const legacyImages = restaurantData.images?.map((img: any) => img.image_url) || [];
             const allImages = [
-              ...imageUrls,
+              ...restaurantImages,
+              ...legacyImages,
               ...(restaurantData.business_images || []),
               restaurantData.image_url
             ].filter(Boolean);

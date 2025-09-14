@@ -13,10 +13,11 @@ interface ImageCarouselProps {
   kosherCategory?: string;
   className?: string;
   onIndexChange?: (index: number) => void;
+  onImagesProcessed?: (processedImages: string[]) => void;
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ 
-  images = [], restaurantName, kosherCategory, className = '', onIndexChange 
+  images = [], restaurantName, kosherCategory, className = '', onIndexChange, onImagesProcessed 
 }) => {
   const [imageLoading, setImageLoading] = useState<boolean[]>([]);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -25,12 +26,10 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const allImages = React.useMemo(() => {
     // Ensure images is always an array
     const safeImages = Array.isArray(images) ? images : [];
-    console.log('ImageCarousel: Input images:', safeImages);
     
     // Use the new validation utility to process images
     const maxImages = safeImages.length > 0 ? safeImages.length : 1;
     const processedImages = processRestaurantImages(safeImages, kosherCategory, maxImages) || [];
-    console.log('ImageCarousel: Processed images:', processedImages);
     
     // Ensure processedImages is an array before filtering
     if (!Array.isArray(processedImages)) {
@@ -74,7 +73,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
        .replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1')
     );
 
-    console.log('ImageCarousel: Final normalized images:', normalized);
     return normalized;
   }, [images, kosherCategory]);
 
@@ -120,6 +118,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       onIndexChange(currentIndex);
     }
   }, [currentIndex, onIndexChange]);
+
+  // Call onImagesProcessed when processed images change
+  useEffect(() => {
+    if (onImagesProcessed) {
+      onImagesProcessed(allImages);
+    }
+  }, [allImages, onImagesProcessed]);
 
   const handleImageError = (index: number) => {
     console.log(`Image ${index} failed to load:`, stableImages[index]);

@@ -147,6 +147,8 @@ class Restaurant(Base):
     
     # 🔗 Relationships
     orders = relationship("Order", back_populates="restaurant")
+    restaurant_images = relationship("RestaurantImage", back_populates="restaurant", cascade="all, delete-orphan")
+    
     def __repr__(self):
         return f"<Restaurant(id={self.id}, name='{self.name}', city='{self.city}')>"
 class Order(Base):
@@ -313,7 +315,7 @@ class RestaurantImage(Base):
     """
     __tablename__ = "restaurant_images"
     id = Column(Integer, primary_key=True)
-    restaurant_id = Column(Integer, nullable=True)
+    restaurant_id = Column(Integer, ForeignKey('restaurants.id'), nullable=True)
     image_url = Column(String, nullable=True)
     image_order = Column(Integer, nullable=True)
     cloudinary_public_id = Column(String, nullable=True)
@@ -321,6 +323,13 @@ class RestaurantImage(Base):
     updated_at = Column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=True
     )
+    
+    # 🔗 Relationships
+    restaurant = relationship("Restaurant", back_populates="restaurant_images")
+    
+    def __repr__(self):
+        return f"<RestaurantImage(id={self.id}, restaurant_id={self.restaurant_id}, image_url='{self.image_url}')>"
+
 class ReviewFlag(Base):
     """Review flag model for reporting inappropriate reviews.
     This model represents flags/reports for reviews that require moderation.
