@@ -432,9 +432,9 @@ class Mikvah(Base):
     
     # Mikvah details
     mikvah_type = Column(String(100))  # Women's, Men's, Both
-    # supervision = Column(String(100))  # Orthodox, Conservative, etc. - TODO: Add to database schema
-    appointment_required = Column(Boolean, default=True)
-    walk_ins_accepted = Column(Boolean, default=False)
+    rabbinical_supervision = Column(String(255))  # Orthodox, Conservative, etc.
+    requires_appointment = Column(Boolean, default=False)
+    walk_in_available = Column(Boolean, default=False)
     
     # Accessibility and amenities
     accessibility = Column(String(100))  # Fully accessible, Limited, Not accessible
@@ -495,7 +495,7 @@ class Store(Base):
     
     # Store details
     store_type = Column(String(100))  # Kosher grocery, Judaica, Books, etc.
-    # business_category = Column(String(100))  # Retail, Wholesale, Online, etc. - TODO: Add to database schema
+    business_category = Column(String(100))  # Retail, Wholesale, Online, etc.
     kosher_certification = Column(String(100))  # OU, Kof-K, etc.
     
     # Services and features

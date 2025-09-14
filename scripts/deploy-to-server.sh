@@ -42,7 +42,7 @@ SERVER_USER="ubuntu"
 SERVER_PATH="/home/ubuntu/jewgo-app"
 BACKUP_DIR="/home/ubuntu/backups"
 DEPLOYMENT_LOG="/tmp/deployment-$(date +%Y%m%d-%H%M%S).log"
-SSH_KEY="./ssh-key-2025-09-11.key"
+SSH_KEY=".secrets/ssh-key-2025-09-11.key"
 
 # Local logging configuration
 LOCAL_LOG_DIR="./deployment-logs"
