@@ -157,7 +157,6 @@ export function ReviewsPopup({
       }
     } else {
       // Fallback for demo purposes
-      console.log('Review submitted:', { rating: reviewRating, comment: reviewComment })
       alert('Review submitted successfully! (Demo mode)')
       setReviewRating(0)
       setReviewComment('')

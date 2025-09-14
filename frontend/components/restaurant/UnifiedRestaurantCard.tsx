@@ -123,7 +123,6 @@ export default function UnifiedRestaurantCard({
     
     // Log the error in development mode
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🖼️ Image failed to load:`, restaurant.image_url);
     }
   };
 

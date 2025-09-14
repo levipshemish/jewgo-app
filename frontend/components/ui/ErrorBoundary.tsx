@@ -73,7 +73,6 @@ export class ErrorBoundary extends ReactComponent<Props, State> {
 
   private handleGoHome = (): void => {
     if (typeof window !== 'undefined') {
-      console.log('ErrorBoundary: Go Home button clicked - but navigation disabled for debugging');
       // TEMPORARILY DISABLED: window.location.href = '/';
     }
   };

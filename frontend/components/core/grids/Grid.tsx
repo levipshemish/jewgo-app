@@ -141,7 +141,6 @@ export default function Grid({
         })
       }
 
-      console.log('fetchItems called with URL:', apiUrl.toString())
 
       // Use unified API call with caching and deduplication
       const { unifiedApiCall } = await import('@/lib/utils/unified-api');
@@ -158,7 +157,6 @@ export default function Grid({
       }
 
       const data = result.data;
-      console.log('fetchItems response data:', data)
       
       if (data.success === false && data.message?.includes('temporarily unavailable')) {
         throw new Error('Backend service unavailable')
@@ -169,7 +167,6 @@ export default function Grid({
       const currentOffset = offset
       const hasMoreData = data.hasNext !== undefined ? data.hasNext : (currentOffset + limit) < total
       
-      console.log('fetchItems calculated hasMore:', hasMoreData, 'total:', total, 'currentOffset:', currentOffset, 'limit:', limit)
       
       return {
         items: data.synagogues || data.products || data.listings || data.data?.restaurants || [],
@@ -182,11 +179,9 @@ export default function Grid({
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Request aborted due to timeout')
         throw new Error('Request timed out - backend may be unreachable')
       }
       if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('TimeoutError'))) {
-        console.log('Timeout error detected')
         throw new Error('Request timed out - backend may be unreachable')
       }
       console.error('Error fetching items:', error)
@@ -241,16 +236,12 @@ export default function Grid({
     }
     
     const paramString = params.toString();
-    console.log('Search params:', paramString);
-    console.log('User location:', userLocation);
     return paramString
   }, [searchQuery, category, activeFilters, dataType, userLocation])
 
   // Load more items in batches of 24
   const loadMoreItems = useCallback(async () => {
-    console.log('loadMoreItems called - loading:', loading, 'hasMore:', hasMore, 'page:', page);
     if (loading || !hasMore) {
-      console.log('loadMoreItems early return - loading:', loading, 'hasMore:', hasMore);
       return;
     }
 
@@ -261,17 +252,12 @@ export default function Grid({
         // Try real API first
         const currentPage = page;
         const offset = currentPage * 24;
-        console.log('Loading more items - page:', currentPage, 'offset:', offset);
         const response = await fetchItems(24, offset, buildSearchParams());
-        console.log('API response - hasMore:', response.hasMore, 'items count:', response.items.length);
-        console.log('Current items count before adding:', items.length);
-        console.log('New items IDs:', response.items.map((item: any) => item.id));
         setItems((prev) => {
           // Deduplicate items by ID to prevent duplicates
           const existingIds = new Set(prev.map(item => item.id));
           const uniqueNewItems = response.items.filter((item: any) => !existingIds.has(item.id));
           const newItems = [...prev, ...uniqueNewItems];
-          console.log('Total items after adding (deduplicated):', newItems.length);
           return newItems;
         });
         setHasMore(response.hasMore);
@@ -296,7 +282,6 @@ export default function Grid({
       console.error('Error loading more items:', error);
       
       // Switch to mock data permanently after error
-      console.log('Backend unreachable, switching to mock data');
       setBackendError(true);
       
       // Fall back to mock data
@@ -340,8 +325,6 @@ export default function Grid({
         try {
             if (useRealData && currentRetryCount < 3) {
               const response = await fetchItems(24, 0, buildSearchParams())
-              console.log('Initial load - API response - hasMore:', response.hasMore, 'items count:', response.items.length);
-              console.log('Initial items IDs:', response.items.map((item: any) => item.id));
               setItems(response.items)
               setHasMore(response.hasMore)
               isRetryingRef.current = false
@@ -354,7 +337,6 @@ export default function Grid({
             setPage(1)
             
             if (currentRetryCount >= 3) {
-              console.log('Backend unreachable after 3 attempts, switching to mock data')
               setBackendError(true)
             }
           }
@@ -368,7 +350,6 @@ export default function Grid({
              error.message.includes('unreachable'))
           
           if (isTimeoutError && currentRetryCount >= 2) {
-            console.log('Timeout error detected, switching to mock data after 2 attempts')
             setBackendError(true)
             
             const mockItems = generateMockShuls(24)
@@ -384,7 +365,6 @@ export default function Grid({
             }, delay)
             return
           } else {
-            console.log('Backend unreachable after 3 attempts, switching to mock data')
             setBackendError(true)
             
               const mockItems = generateMockShuls(24)

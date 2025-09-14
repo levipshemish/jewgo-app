@@ -172,23 +172,18 @@ export default function EateryGrid({
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Request aborted due to timeout')
         throw new Error('TIMEOUT: Request timed out - backend may be unreachable')
       }
       if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('TimeoutError'))) {
-        console.log('Timeout error detected')
         throw new Error('TIMEOUT: Request timed out - backend may be unreachable')
       }
       if (error instanceof Error && error.message.includes('Failed to fetch')) {
-        console.log('Network error detected')
         throw new Error('NETWORK: Unable to connect to server - check your internet connection')
       }
       if (error instanceof Error && error.message.includes('404')) {
-        console.log('Not found error detected')
         throw new Error('NOT_FOUND: Restaurant service endpoint not found')
       }
       if (error instanceof Error && error.message.includes('500')) {
-        console.log('Server error detected')
         throw new Error('SERVER: Internal server error - please try again later')
       }
       console.error('Error fetching restaurants:', error)

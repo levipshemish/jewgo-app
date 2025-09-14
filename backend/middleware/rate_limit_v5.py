@@ -139,6 +139,10 @@ class RateLimitV5Middleware:
     
     def _should_apply_v5_rate_limiting(self) -> bool:
         """Determine if v5 rate limiting should be applied."""
+        # Skip rate limiting for health endpoints
+        if request.path.endswith('/health') or '/health/' in request.path:
+            return False
+            
         # Apply to v5 endpoints
         if request.path.startswith('/api/v5/'):
             return True

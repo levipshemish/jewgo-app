@@ -65,7 +65,6 @@ const MapEngine = () => {
   // Initial data load when map is ready
   const handleMapReady = () => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🗺️ MapEngine: Map ready, loading initial data');
     }
     
     // Load initial data if we have bounds

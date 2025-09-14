@@ -79,11 +79,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   // Debug logging for kosher category changes (only when explicitly enabled)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
-      console.log('[EnhancedAddEateryForm] Kosher category changed:', {
-        kosher_category: watchedKosherCategory,
-        isDairy: isDairyCategory(watchedKosherCategory),
-        isPasYisroel: isPasYisroelCategory(watchedKosherCategory)
-      });
+      // Debug logging removed
     }
   }, [watchedKosherCategory]);
 
@@ -1481,7 +1477,6 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                   disabled={isSubmitting}
                   onClick={() => {
 
-                    console.log('[EnhancedAddEateryForm] Form state:', getValues());
 
 
 

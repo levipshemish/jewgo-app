@@ -65,16 +65,7 @@ export default function EateryGridWithLocation({
     fallbackText: 'Get Location'
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('EateryGridWithLocation location state:', {
-      hasUserLocation: !!userLocation,
-      userLocation,
-      permissionStatus,
-      locationLoading,
-      locationError
-    });
-  }, [userLocation, permissionStatus, locationLoading, locationError]);
+  // Debug logging removed
 
   // Fetch restaurants from API
   const fetchRestaurants = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
@@ -93,7 +84,6 @@ export default function EateryGridWithLocation({
         });
       }
 
-      console.log('fetchRestaurants called with URL:', apiUrl.toString());
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -106,20 +96,17 @@ export default function EateryGridWithLocation({
       });
 
       clearTimeout(timeoutId);
-      console.log('fetchRestaurants response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('fetchRestaurants response data:', data);
 
       const restaurantsData = data.data?.restaurants || data.restaurants || [];
       const total = data.data?.total || data.total || 0;
       const hasMoreData = data.pagination?.hasMore || (offset + limit) < total;
 
-      console.log('fetchRestaurants calculated hasMore:', hasMoreData, 'total:', total, 'currentOffset:', offset, 'limit:', limit);
 
       return {
         restaurants: restaurantsData,
@@ -157,12 +144,6 @@ export default function EateryGridWithLocation({
 
   // Transform and sort restaurants with location data
   const processedRestaurants = useMemo(() => {
-    console.log('Processing restaurants with location data:', {
-      restaurantCount: restaurants.length,
-      hasUserLocation: !!userLocation,
-      userLocation
-    });
-
     // Transform restaurants to include distance calculations
     const transformed = transformItems(restaurants);
     
@@ -305,7 +286,6 @@ export default function EateryGridWithLocation({
           <button
             onClick={() => {
               // Load more logic here
-              console.log('Load more clicked');
             }}
             className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
           >

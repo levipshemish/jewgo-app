@@ -50,7 +50,7 @@ export const useScrollSnapCarousel = ({
     }
   }, [currentIndex, totalSlides, onSlideChange]);
 
-  // Debounced scroll handler
+  // Debounced scroll handler with improved performance
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) {
@@ -58,9 +58,17 @@ export const useScrollSnapCarousel = ({
     }
 
     let timeoutId: NodeJS.Timeout;
+    let isScrolling = false;
+    
     const handleScroll = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(updateCurrentIndex, debounceMs);
+      if (!isScrolling) {
+        isScrolling = true;
+        requestAnimationFrame(() => {
+          isScrolling = false;
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(updateCurrentIndex, debounceMs);
+        });
+      }
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
@@ -143,9 +151,10 @@ export const useScrollSnapCarousel = ({
     const container = scrollContainerRef.current;
     const containerWidth = container.clientWidth;
     
+    // Use instant scroll to prevent flickering during smooth scroll
     container.scrollTo({
       left: index * containerWidth,
-      behavior: 'smooth'
+      behavior: 'auto'
     });
   }, [totalSlides]);
 

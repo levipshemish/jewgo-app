@@ -114,15 +114,7 @@ export function FilterPreview({
         location
       });
       
-      // Debug: Log the response structure to understand what we're getting
-      console.log('FilterPreview response structure:', {
-        hasSuccess: 'success' in response,
-        hasItems: 'items' in response,
-        hasData: 'data' in response,
-        responseKeys: Object.keys(response),
-        responseType: typeof response,
-        isArray: Array.isArray(response)
-      });
+      // Debug: Log the response structure to understand what we're getting - removed
       
       // Handle different response structures
       let items: any[] = [];

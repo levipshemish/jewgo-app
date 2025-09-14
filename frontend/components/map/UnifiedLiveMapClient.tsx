@@ -104,7 +104,6 @@ export default function UnifiedLiveMapClient() {
   useEffect(() => {
     if (memoryInfo?.isCriticalUsage) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('🧹 Triggering cleanup due to critical memory usage');
       }
       forceCleanup();
     }
@@ -194,7 +193,6 @@ export default function UnifiedLiveMapClient() {
   useEffect(() => {
     if (memoryInfo?.isCriticalUsage) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('🧹 Critical memory usage detected, clearing caches...');
       }
       
       // Clear localStorage cache to free up memory
@@ -215,7 +213,6 @@ export default function UnifiedLiveMapClient() {
       // Reduce restaurant count immediately if we have too many
       if (allRestaurants.length > MAX_MARKERS) {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`🗺️ Reducing restaurants from ${allRestaurants.length} to ${MAX_MARKERS} due to memory pressure`);
         }
         const reducedRestaurants = allRestaurants.slice(0, MAX_MARKERS);
         setAllRestaurants(reducedRestaurants);
@@ -776,13 +773,9 @@ export default function UnifiedLiveMapClient() {
         // eslint-disable-next-line no-console
         console.group('📊 Map Performance Report');
         // eslint-disable-next-line no-console
-        console.log(`Total metrics collected: ${summary.totalMetrics}`);
         // eslint-disable-next-line no-console
-        console.log(`Average render time: ${summary.averageRenderTime.toFixed(1)}ms`);
         // eslint-disable-next-line no-console
-        console.log(`Average API time: ${summary.averageApiTime.toFixed(1)}ms`);
         // eslint-disable-next-line no-console
-        console.log(`Current memory usage: ${summary.currentMemoryUsage.toFixed(1)}%`);
         
         if (summary.slowOperations.length > 0) {
           // eslint-disable-next-line no-console

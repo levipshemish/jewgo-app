@@ -20,7 +20,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   images = [], restaurantName, kosherCategory, className = '', onIndexChange, onImagesProcessed 
 }) => {
   const [imageLoading, setImageLoading] = useState<boolean[]>([]);
-  const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set());
+  const [_imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set());
+  const [preloadedImages, setPreloadedImages] = useState<Set<number>>(new Set());
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // Process and validate images, combining with fallbacks
@@ -80,18 +81,51 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   // Memoize the images array to prevent unnecessary re-renders
   const stableImages = React.useMemo(() => allImages, [allImages]);
 
+  // Preload images to prevent flickering
+  useEffect(() => {
+    const preloadImage = (src: string, index: number) => {
+      if (preloadedImages.has(index)) return;
+      
+      const img = new window.Image();
+      img.onload = () => {
+        setPreloadedImages(prev => new Set(prev).add(index));
+        setImageLoading(prev => {
+          const newLoading = [...prev];
+          newLoading[index] = false;
+          return newLoading;
+        });
+        setImagesLoaded(prev => new Set(prev).add(index));
+      };
+      img.onerror = () => {
+        setImageLoading(prev => {
+          const newLoading = [...prev];
+          newLoading[index] = false;
+          return newLoading;
+        });
+      };
+      img.src = src;
+    };
+
+    // Preload all images
+    stableImages.forEach((image, index) => {
+      if (image && !preloadedImages.has(index)) {
+        preloadImage(image, index);
+      }
+    });
+  }, [stableImages, preloadedImages]);
+
   // Initialize image loading states - only for new images
   useEffect(() => {
     setImageLoading(prev => {
       const newLoading = [...prev];
       // Only set new images to loading, keep existing ones as they were
       for (let i = prev.length; i < stableImages.length; i++) {
-        newLoading[i] = !imagesLoaded.has(i);
+        newLoading[i] = !preloadedImages.has(i);
       }
       // Trim array if images were removed
       return newLoading.slice(0, stableImages.length);
     });
-  }, [stableImages.length, imagesLoaded]);
+  }, [stableImages.length, preloadedImages]);
 
   // Add a timeout to prevent infinite loading - only for images that are still loading
   useEffect(() => {
@@ -139,7 +173,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   }, [allImages, onImagesProcessed]);
 
   const handleImageError = (index: number) => {
-    console.log(`Image ${index} failed to load:`, stableImages[index]);
     setImageLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = false;
@@ -149,7 +182,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   };
 
   const handleImageLoad = (index: number) => {
-    console.log(`Image ${index} loaded successfully:`, stableImages[index]);
     setImagesLoaded(prev => new Set(prev).add(index));
     setImageLoading(prev => {
       const newLoading = [...prev];
@@ -181,13 +213,16 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         {/* Scrollable container with snap */}
         <div
           ref={scrollContainerRef}
-          className="flex overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory select-none h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="flex overflow-x-auto overflow-y-hidden select-none h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
             overscrollBehaviorX: 'contain',
-            touchAction: 'pan-x pan-y'
+            touchAction: 'pan-x pan-y',
+            scrollBehavior: 'auto', // Disable smooth scrolling to prevent flickering
+            willChange: 'scroll-position', // Optimize for scrolling
+            transform: 'translateZ(0)' // Force hardware acceleration
           }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -200,37 +235,44 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
           {stableImages.map((image, index) => (
             <div
               key={`${image}-${index}`}
-              className="flex-none w-full snap-center relative h-full"
+              className="flex-none w-full relative h-full"
               style={{ 
                 minWidth: '100%',
-                scrollSnapAlign: 'center'
+                willChange: 'transform', // Optimize for transforms
+                backfaceVisibility: 'hidden' // Prevent flickering on transforms
               }}
             >
-              {/* Loading state */}
-              {imageLoading[index] && (
-                <div className="absolute inset-0 bg-gray-200 flex items-center justify-center z-10">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                </div>
-              )}
-              
-              {/* Image */}
-              <Image
-                src={image || '/images/default-restaurant.webp'}
-                alt={`${restaurantName} - Image ${index + 1}`}
-                fill
-                className={`object-cover transition-opacity duration-200 ease-in-out ${
-                  imageLoading[index] ? 'opacity-0' : 'opacity-100'
-                }`}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                priority={index === 0}
-                onError={() => handleImageError(index)}
-                onLoad={() => handleImageLoad(index)}
-                unoptimized={true}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                crossOrigin="anonymous"
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-              />
+              {/* Image with loading state */}
+              <div className="relative w-full h-full">
+                {/* Background placeholder */}
+                <div className="absolute inset-0 bg-gray-200" />
+                
+                {/* Loading spinner */}
+                {imageLoading[index] && (
+                  <div className="absolute inset-0 flex items-center justify-center z-20">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-blue-600"></div>
+                  </div>
+                )}
+                
+                {/* Image */}
+                <Image
+                  src={image || '/images/default-restaurant.webp'}
+                  alt={`${restaurantName} - Image ${index + 1}`}
+                  fill
+                  className={`object-cover ${
+                    preloadedImages.has(index) ? 'opacity-100' : 'opacity-0'
+                  } transition-opacity duration-300 ease-in-out`}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  priority={index === 0}
+                  onError={() => handleImageError(index)}
+                  onLoad={() => handleImageLoad(index)}
+                  unoptimized={true}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  crossOrigin="anonymous"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                />
+              </div>
               
             </div>
           ))}

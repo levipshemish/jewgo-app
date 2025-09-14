@@ -110,7 +110,6 @@ function EateryPageContent() {
 
   const handleAddEatery = useCallback(() => {
     // TODO: Implement add eatery functionality
-    console.log("Add eatery")
   }, [])
 
   return (

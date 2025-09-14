@@ -6,9 +6,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 import requests
-from playwright.async_api import async_playwright
 from utils.logging_config import get_logger
 from .base_service import BaseService
+
+# Optional playwright import
+try:
+    from playwright.async_api import async_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+    async_playwright = None
 
 logger = get_logger(__name__)
 """Scraper Service.
