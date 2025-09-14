@@ -50,7 +50,7 @@ export const useScrollSnapCarousel = ({
     }
   }, [currentIndex, totalSlides, onSlideChange]);
 
-  // Debounced scroll handler with improved performance
+  // Optimized scroll handler to prevent flickering
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) {
@@ -58,23 +58,26 @@ export const useScrollSnapCarousel = ({
     }
 
     let timeoutId: NodeJS.Timeout;
-    let isScrolling = false;
+    let rafId: number;
     
     const handleScroll = () => {
-      if (!isScrolling) {
-        isScrolling = true;
-        requestAnimationFrame(() => {
-          isScrolling = false;
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(updateCurrentIndex, debounceMs);
-        });
+      if (rafId) {
+        cancelAnimationFrame(rafId);
       }
+      
+      rafId = requestAnimationFrame(() => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(updateCurrentIndex, debounceMs);
+      });
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       container.removeEventListener('scroll', handleScroll);
       clearTimeout(timeoutId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, [updateCurrentIndex, debounceMs]);
 

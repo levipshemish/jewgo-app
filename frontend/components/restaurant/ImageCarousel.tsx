@@ -19,9 +19,7 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ 
   images = [], restaurantName, kosherCategory, className = '', onIndexChange, onImagesProcessed 
 }) => {
-  const [imageLoading, setImageLoading] = useState<boolean[]>([]);
-  const [_imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set());
-  const [preloadedImages, setPreloadedImages] = useState<Set<number>>(new Set());
+  const [imageStates, setImageStates] = useState<Map<number, 'loading' | 'loaded' | 'error'>>(new Map());
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // Process and validate images, combining with fallbacks
@@ -81,66 +79,42 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   // Memoize the images array to prevent unnecessary re-renders
   const stableImages = React.useMemo(() => allImages, [allImages]);
 
-  // Preload images to prevent flickering
+  // Preload all images immediately to prevent flickering
   useEffect(() => {
-    const preloadImage = (src: string, index: number) => {
-      if (preloadedImages.has(index)) return;
+    const preloadImages = async () => {
+      const promises = stableImages.map((image, index) => {
+        return new Promise<void>((resolve) => {
+          if (imageStates.get(index) === 'loaded') {
+            resolve();
+            return;
+          }
+          
+          const img = new window.Image();
+          img.onload = () => {
+            setImageStates(prev => {
+              const newStates = new Map(prev);
+              newStates.set(index, 'loaded');
+              return newStates;
+            });
+            resolve();
+          };
+          img.onerror = () => {
+            setImageStates(prev => {
+              const newStates = new Map(prev);
+              newStates.set(index, 'error');
+              return newStates;
+            });
+            resolve();
+          };
+          img.src = image;
+        });
+      });
       
-      const img = new window.Image();
-      img.onload = () => {
-        setPreloadedImages(prev => new Set(prev).add(index));
-        setImageLoading(prev => {
-          const newLoading = [...prev];
-          newLoading[index] = false;
-          return newLoading;
-        });
-        setImagesLoaded(prev => new Set(prev).add(index));
-      };
-      img.onerror = () => {
-        setImageLoading(prev => {
-          const newLoading = [...prev];
-          newLoading[index] = false;
-          return newLoading;
-        });
-      };
-      img.src = src;
+      await Promise.all(promises);
     };
-
-    // Preload all images
-    stableImages.forEach((image, index) => {
-      if (image && !preloadedImages.has(index)) {
-        preloadImage(image, index);
-      }
-    });
-  }, [stableImages, preloadedImages]);
-
-  // Initialize image loading states - only for new images
-  useEffect(() => {
-    setImageLoading(prev => {
-      const newLoading = [...prev];
-      // Only set new images to loading, keep existing ones as they were
-      for (let i = prev.length; i < stableImages.length; i++) {
-        newLoading[i] = !preloadedImages.has(i);
-      }
-      // Trim array if images were removed
-      return newLoading.slice(0, stableImages.length);
-    });
-  }, [stableImages.length, preloadedImages]);
-
-  // Add a timeout to prevent infinite loading - only for images that are still loading
-  useEffect(() => {
-    if (stableImages.length > 0) {
-      const timeout = setTimeout(() => {
-        setImageLoading(prev => prev.map((loading, index) => {
-          // Only reset to false if it's still loading (true)
-          return loading ? false : loading;
-        }));
-      }, 10000); // 10 second timeout
-
-      return () => clearTimeout(timeout);
-    }
-    return undefined;
-  }, [stableImages.length]);
+    
+    preloadImages();
+  }, [stableImages, imageStates]);
 
   // Use the scroll-snap carousel hook
   const {
@@ -173,20 +147,18 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   }, [allImages, onImagesProcessed]);
 
   const handleImageError = (index: number) => {
-    setImageLoading(prev => {
-      const newLoading = [...prev];
-      newLoading[index] = false;
-      return newLoading;
+    setImageStates(prev => {
+      const newStates = new Map(prev);
+      newStates.set(index, 'error');
+      return newStates;
     });
-    // Don't add to imagesLoaded set on error
   };
 
   const handleImageLoad = (index: number) => {
-    setImagesLoaded(prev => new Set(prev).add(index));
-    setImageLoading(prev => {
-      const newLoading = [...prev];
-      newLoading[index] = false;
-      return newLoading;
+    setImageStates(prev => {
+      const newStates = new Map(prev);
+      newStates.set(index, 'loaded');
+      return newStates;
     });
   };
 
@@ -222,7 +194,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             touchAction: 'pan-x pan-y',
             scrollBehavior: 'auto', // Disable smooth scrolling to prevent flickering
             willChange: 'scroll-position', // Optimize for scrolling
-            transform: 'translateZ(0)' // Force hardware acceleration
+            transform: 'translateZ(0)', // Force hardware acceleration
+            backfaceVisibility: 'hidden', // Prevent flickering on transforms
+            perspective: '1000px' // Enable 3D transforms
           }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -248,30 +222,28 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 <div className="absolute inset-0 bg-gray-200" />
                 
                 {/* Loading spinner */}
-                {imageLoading[index] && (
+                {imageStates.get(index) === 'loading' && (
                   <div className="absolute inset-0 flex items-center justify-center z-20">
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-blue-600"></div>
                   </div>
                 )}
                 
                 {/* Image */}
-                <Image
-                  src={image || '/images/default-restaurant.webp'}
-                  alt={`${restaurantName} - Image ${index + 1}`}
-                  fill
-                  className={`object-cover ${
-                    preloadedImages.has(index) ? 'opacity-100' : 'opacity-0'
-                  } transition-opacity duration-300 ease-in-out`}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  priority={index === 0}
-                  onError={() => handleImageError(index)}
-                  onLoad={() => handleImageLoad(index)}
-                  unoptimized={true}
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  crossOrigin="anonymous"
-                  placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                />
+                {imageStates.get(index) === 'loaded' ? (
+                  <Image
+                    src={image || '/images/default-restaurant.webp'}
+                    alt={`${restaurantName} - Image ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={index === 0}
+                    unoptimized={true}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200" />
+                )}
               </div>
               
             </div>

@@ -527,7 +527,7 @@ def get_reviews_paginated(filters: Dict[str, Any], cursor: Optional[str], limit:
         logger.info("Reviews API called with filters", filters=filters, cursor=cursor, limit=limit)
         
         return {
-            'data': [],
+            'reviews': [],
             'pagination': {
                 'cursor': cursor,
                 'next_cursor': None,
@@ -538,7 +538,7 @@ def get_reviews_paginated(filters: Dict[str, Any], cursor: Optional[str], limit:
     except Exception as e:
         logger.exception("Error in get_reviews_paginated", error=str(e))
         return {
-            'data': [],
+            'reviews': [],
             'pagination': {
                 'cursor': cursor,
                 'next_cursor': None,
