@@ -14,6 +14,7 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     ARRAY,
+    Numeric,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -348,7 +349,7 @@ class Synagogue(Base):
     """Synagogue model for Jewish places of worship.
     This model represents synagogues and Jewish community centers.
     """
-    __tablename__ = "synagogues"
+    __tablename__ = "shuls"
     
     # System fields
     id = Column(Integer, primary_key=True)
@@ -369,37 +370,75 @@ class Synagogue(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     
-    # Synagogue details
+    # Synagogue details (using actual shuls table column names)
     denomination = Column(String(100))  # Orthodox, Conservative, Reform, etc.
-    services_type = Column(String(100))  # Daily, Shabbat, High Holidays, etc.
+    shul_type = Column(String(100))  # Daily, Shabbat, High Holidays, etc.
     rabbi_name = Column(String(255))
-    congregation_size = Column(String(50))  # Small, Medium, Large, etc.
+    rabbi_phone = Column(String(50))
+    rabbi_email = Column(String(255))
     
-    # Services and amenities
-    daily_minyan = Column(Boolean, default=False)
-    shabbat_services = Column(Boolean, default=False)
-    high_holiday_services = Column(Boolean, default=False)
-    hebrew_school = Column(Boolean, default=False)
-    adult_education = Column(Boolean, default=False)
-    social_events = Column(Boolean, default=False)
-    kosher_kitchen = Column(Boolean, default=False)
-    parking_available = Column(Boolean, default=False)
-    wheelchair_accessible = Column(Boolean, default=False)
+    # Services and amenities (using actual shuls table column names)
+    has_daily_minyan = Column(Boolean, default=False)
+    has_shabbat_services = Column(Boolean, default=False)
+    has_holiday_services = Column(Boolean, default=False)
+    has_hebrew_school = Column(Boolean, default=False)
+    has_adult_education = Column(Boolean, default=False)
+    has_social_hall = Column(Boolean, default=False)
+    has_kiddush_facilities = Column(Boolean, default=False)
+    has_parking = Column(Boolean, default=False)
+    has_disabled_access = Column(Boolean, default=False)
     
-    # Hours and schedule
-    hours_of_operation = Column(Text)  # JSON or text description
-    hours_json = Column(Text)  # Structured hours data
-    special_hours = Column(Text)  # Holiday hours, etc.
+    # Hours and schedule (using actual shuls table column names)
+    business_hours = Column(Text)  # Operating hours as text
+    hours_parsed = Column(Boolean, default=False)
     
-    # Additional information
+    # Additional information (using actual shuls table column names)
     description = Column(Text)
     image_url = Column(String(2000))
-    status = Column(String(20), default="active", nullable=False)
+    logo_url = Column(String(2000))
+    is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
     
-    # Audit fields
-    created_by = Column(String(255))
-    updated_by = Column(String(255))
-    deleted_at = Column(DateTime)
+    # Additional shul-specific fields
+    shul_category = Column(String(100))
+    community_affiliation = Column(String(255))
+    religious_authority = Column(String(255))
+    kosher_certification = Column(String(255))
+    membership_required = Column(Boolean, default=False)
+    membership_fee = Column(Numeric(10, 2))
+    visitor_policy = Column(Text)
+    accepts_visitors = Column(Boolean, default=True)
+    
+    # Rating and reviews
+    rating = Column(Float)
+    review_count = Column(Integer, default=0)
+    star_rating = Column(Float)
+    google_rating = Column(Float)
+    
+    # Additional amenities
+    has_mechitza = Column(Boolean, default=False)
+    has_women_section = Column(Boolean, default=False)
+    has_separate_entrance = Column(Boolean, default=False)
+    has_library = Column(Boolean, default=False)
+    has_youth_programs = Column(Boolean, default=False)
+    has_senior_programs = Column(Boolean, default=False)
+    
+    # Distance and location
+    distance = Column(String(50))
+    distance_miles = Column(Numeric(8, 2))
+    timezone = Column(String(50))
+    
+    # Search and categorization
+    search_vector = Column(Text)
+    tags = Column(ARRAY(String))
+    listing_type = Column(String(100), default='shul')
+    specials = Column(Text)
+    admin_notes = Column(Text)
+    
+    # Audit fields (commented out - don't exist in actual database)
+    # created_by = Column(String(255))
+    # updated_by = Column(String(255))
+    # deleted_at = Column(DateTime)
     
     def __repr__(self):
         return f"<Synagogue(id={self.id}, name='{self.name}', city='{self.city}')>"
@@ -436,33 +475,32 @@ class Mikvah(Base):
     requires_appointment = Column(Boolean, default=False)
     walk_in_available = Column(Boolean, default=False)
     
-    # Accessibility and amenities
-    accessibility = Column(String(100))  # Fully accessible, Limited, Not accessible
-    wheelchair_accessible = Column(Boolean, default=False)
-    private_changing_rooms = Column(Boolean, default=True)
-    towels_provided = Column(Boolean, default=False)
-    soap_provided = Column(Boolean, default=False)
-    hair_dryer_available = Column(Boolean, default=False)
+    # Accessibility and amenities (using actual database column names)
+    has_disabled_access = Column(Boolean, default=False)
+    has_changing_rooms = Column(Boolean, default=True)
+    has_towels_provided = Column(Boolean, default=False)
+    has_soap_provided = Column(Boolean, default=False)
+    has_hair_dryers = Column(Boolean, default=False)
     
-    # Hours and schedule
-    hours_of_operation = Column(Text)  # JSON or text description
-    hours_json = Column(Text)  # Structured hours data
-    special_hours = Column(Text)  # Holiday hours, etc.
+    # Hours and schedule (using actual database column names)
+    business_hours = Column(Text)  # Operating hours as text
     
-    # Pricing and policies
-    cost = Column(String(100))  # Free, $X, etc.
-    payment_methods = Column(Text)  # Cash, Credit, etc.
-    cancellation_policy = Column(Text)
+    # Pricing and policies (using actual database column names)
+    fee_amount = Column(Numeric(10, 2))  # Fee amount
+    fee_currency = Column(String(3), default='USD')  # Currency
+    accepts_credit_cards = Column(Boolean, default=False)
+    accepts_cash = Column(Boolean, default=True)
+    accepts_checks = Column(Boolean, default=False)
     
     # Additional information
     description = Column(Text)
     image_url = Column(String(2000))
     status = Column(String(20), default="active", nullable=False)
     
-    # Audit fields
-    created_by = Column(String(255))
-    updated_by = Column(String(255))
-    deleted_at = Column(DateTime)
+    # Audit fields (commented out - don't exist in actual database)
+    # created_by = Column(String(255))
+    # updated_by = Column(String(255))
+    # deleted_at = Column(DateTime)
     
     def __repr__(self):
         return f"<Mikvah(id={self.id}, name='{self.name}', city='{self.city}')>"
@@ -493,37 +531,31 @@ class Store(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     
-    # Store details
+    # Store details (using actual database column names)
     store_type = Column(String(100))  # Kosher grocery, Judaica, Books, etc.
-    business_category = Column(String(100))  # Retail, Wholesale, Online, etc.
-    kosher_certification = Column(String(100))  # OU, Kof-K, etc.
+    store_category = Column(String(100))  # Retail, Wholesale, Online, etc.
+    kosher_certification = Column(String(255))  # OU, Kof-K, etc.
     
-    # Services and features
-    delivery_available = Column(Boolean, default=False)
-    pickup_available = Column(Boolean, default=True)
-    online_ordering = Column(Boolean, default=False)
-    catering_available = Column(Boolean, default=False)
-    gift_wrapping = Column(Boolean, default=False)
+    # Services and features (using actual database column names)
+    has_delivery = Column(Boolean, default=False)
+    has_pickup = Column(Boolean, default=False)
     
-    # Hours and schedule
-    hours_of_operation = Column(Text)  # JSON or text description
-    hours_json = Column(Text)  # Structured hours data
-    special_hours = Column(Text)  # Holiday hours, etc.
+    # Hours and schedule (using actual database column names)
+    business_hours = Column(Text)  # Operating hours as text
     
-    # Payment and policies
-    payment_methods = Column(Text)  # Cash, Credit, Check, etc.
-    return_policy = Column(Text)
-    shipping_policy = Column(Text)
+    # Payment (using actual database column names)
+    accepts_credit_cards = Column(Boolean, default=True)
+    accepts_cash = Column(Boolean, default=True)
     
     # Additional information
     description = Column(Text)
     image_url = Column(String(2000))
     status = Column(String(20), default="active", nullable=False)
     
-    # Audit fields
-    created_by = Column(String(255))
-    updated_by = Column(String(255))
-    deleted_at = Column(DateTime)
+    # Audit fields (commented out - don't exist in actual database)
+    # created_by = Column(String(255))
+    # updated_by = Column(String(255))
+    # deleted_at = Column(DateTime)
     
     def __repr__(self):
         return f"<Store(id={self.id}, name='{self.name}', city='{self.city}')>"

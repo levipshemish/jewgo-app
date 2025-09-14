@@ -43,7 +43,7 @@ class EntityRepositoryV5(BaseRepository):
         },
         'synagogues': {
             'model_name': 'Synagogue',
-            'table_name': 'synagogues',
+            'table_name': 'shuls',
             'primary_key': 'id',
             'default_sort': 'created_at',
             'searchable_fields': ['name', 'description', 'address'],

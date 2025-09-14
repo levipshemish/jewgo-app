@@ -315,22 +315,22 @@ test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/health" "Metrics API heal
 print_status "Testing core API endpoints..."
 
 # Test restaurants endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants?limit=1" "Restaurants API endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants/?limit=1" "Restaurants API endpoint"
 
 # Test synagogues endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues?limit=1" "Synagogues API endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues/?limit=1" "Synagogues API endpoint"
 
 # Test mikvahs endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=1" "Mikvahs API endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs/?limit=1" "Mikvahs API endpoint"
 
 # Test stores endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1" "Stores API endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/stores/?limit=1" "Stores API endpoint"
 
-# Test search endpoint (returns 308 - redirect)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/search?q=test&limit=1" "Search API endpoint" 308
+# Test search endpoint (returns 308 redirect without trailing slash, 200 with trailing slash)
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/?q=test&limit=1" "Search API endpoint" 200
 
-# Test reviews endpoint (returns 308 - redirect)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?limit=1" "Reviews API endpoint" 308
+# Test reviews endpoint (returns 308 redirect without trailing slash, 200 with trailing slash)
+test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews/?limit=1" "Reviews API endpoint" 200
 
 # Note: Monitoring health endpoints require authentication
 # test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/database" "Database health check (requires auth)"
@@ -396,14 +396,14 @@ test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1&distance=20&lat=40
 
 # Test search functionality
 print_status "Testing search functionality..."
-test_endpoint "http://$SERVER_HOST:5000/api/v5/search?q=kosher&limit=5" "General search endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/?q=kosher&limit=5" "General search endpoint"
 test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggestions?q=rest" "Search suggestions endpoint"
 test_endpoint "http://$SERVER_HOST:5000/api/v5/search/popular" "Popular searches endpoint"
 
 # Test reviews functionality
 print_status "Testing reviews functionality..."
-test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?limit=5" "Reviews list endpoint"
-test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews?entity_type=restaurants&limit=3" "Restaurant reviews endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews/?limit=5" "Reviews list endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews/?entity_type=restaurants&limit=3" "Restaurant reviews endpoint"
 
 # Test admin endpoints (should fail with 401/403)
 print_status "Testing admin endpoints (expected to fail without auth)..."
