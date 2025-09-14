@@ -25,10 +25,12 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const allImages = React.useMemo(() => {
     // Ensure images is always an array
     const safeImages = Array.isArray(images) ? images : [];
+    console.log('ImageCarousel: Input images:', safeImages);
     
     // Use the new validation utility to process images
     const maxImages = safeImages.length > 0 ? safeImages.length : 1;
     const processedImages = processRestaurantImages(safeImages, kosherCategory, maxImages) || [];
+    console.log('ImageCarousel: Processed images:', processedImages);
     
     // Ensure processedImages is an array before filtering
     if (!Array.isArray(processedImages)) {
@@ -72,6 +74,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
        .replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1')
     );
 
+    console.log('ImageCarousel: Final normalized images:', normalized);
     return normalized;
   }, [images, kosherCategory]);
 
@@ -236,7 +239,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
         {/* Gradient Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
-      </div>
 
         {/* Dots Indicator - Bottom Center Overlay */}
         {stableImages.length > 1 && (
@@ -256,6 +258,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             ))}
           </div>
         )}
+      </div>
     </div>
   );
 };

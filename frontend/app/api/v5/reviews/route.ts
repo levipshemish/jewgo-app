@@ -71,25 +71,51 @@ export async function GET(request: NextRequest) {
     if (limit) queryParams.append('limit', limit.toString());
     if (sort) queryParams.append('sort', sort);
 
-    const backendResponse = await fetch(`${backendUrl}/api/v5/reviews?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // Add authentication headers if available
-        ...(request.headers.get('authorization') && {
-          'Authorization': request.headers.get('authorization')!
-        }),
-      },
-    });
+    let backendResponse;
+    let backendData;
 
-    if (!backendResponse.ok) {
-      return NextResponse.json(
-        { error: 'Failed to fetch reviews from backend' },
-        { status: backendResponse.status }
-      );
+    try {
+      backendResponse = await fetch(`${backendUrl}/api/v5/reviews?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authentication headers if available
+          ...(request.headers.get('authorization') && {
+            'Authorization': request.headers.get('authorization')!
+          }),
+        },
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+
+      if (!backendResponse.ok) {
+        console.warn(`Backend returned ${backendResponse.status}: ${backendResponse.statusText}`);
+        // Return fallback response instead of error
+        backendData = {
+          reviews: [],
+          pagination: {
+            cursor: cursor || '0',
+            next_cursor: null,
+            has_more: false,
+            total_count: 0
+          }
+        };
+      } else {
+        backendData = await backendResponse.json();
+      }
+    } catch (error) {
+      console.warn('Failed to connect to backend, returning fallback response:', error);
+      // Return fallback response when backend is not accessible
+      backendData = {
+        reviews: [],
+        pagination: {
+          cursor: cursor || '0',
+          next_cursor: null,
+          has_more: false,
+          total_count: 0
+        }
+      };
     }
-
-    const backendData = await backendResponse.json();
 
     // Add cache headers
     const headers = new Headers();

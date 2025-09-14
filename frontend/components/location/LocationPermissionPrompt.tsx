@@ -57,7 +57,13 @@ export default function LocationPermissionPrompt({
             errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
             break;
           case geolocationError.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable. Please try again.';
+            // Enhanced messaging for iOS CoreLocation issues
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+              errorMessage = 'Location temporarily unavailable. This is normal on iOS - please wait a moment and try again.';
+            } else {
+              errorMessage = 'Location information is unavailable. Please try again.';
+            }
             break;
           case geolocationError.TIMEOUT:
             errorMessage = 'Location request timed out. Please try again.';

@@ -57,7 +57,13 @@ export default function LocationAccess({
               setError('Location access was denied. You can still use the app without location services.');
               break;
             case geolocationError.POSITION_UNAVAILABLE:
-              setError('Location information is unavailable.');
+              // Enhanced messaging for iOS CoreLocation issues
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              if (isIOS) {
+                setError('Location temporarily unavailable. This is normal on iOS - please wait a moment and try again.');
+              } else {
+                setError('Location information is unavailable.');
+              }
               break;
             case geolocationError.TIMEOUT:
               setError('Location request timed out.');

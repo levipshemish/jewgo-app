@@ -59,6 +59,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [hasInitialized, setHasInitialized] = useState(false);
   const [hasShownPopup, setHasShownPopup] = useState(false);
   const [lastPopupShownTime, setLastPopupShownTime] = useState<number | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const requestLocation = useCallback(() => {
     // console.log('📍 LocationContext: requestLocation called', {
@@ -118,7 +119,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       try {
         const position = await getPosition();
         setIsLoading(false);
+        setError(null);
         setPermissionStatus('granted');
+        setRetryCount(0); // Reset retry count on successful location
         const location: UserLocation = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -135,6 +138,23 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           // Keep permission status as prompt so user can retry
           setPermissionStatus('prompt');
           if (DEBUG) { debugLog('📍 LocationContext: Location request timed out after 10 seconds'); }
+        } else if (locationError.code === locationError.POSITION_UNAVAILABLE) {
+          // For POSITION_UNAVAILABLE errors (including kCLErrorLocationUnknown), 
+          // automatically retry after a short delay, but limit retries to prevent infinite loops
+          if (DEBUG) { debugLog('📍 LocationContext: POSITION_UNAVAILABLE error, retry count:', retryCount); }
+          
+          if (retryCount < 3) { // Limit to 3 retries
+            setRetryCount(prev => prev + 1);
+            setTimeout(() => {
+              if (DEBUG) { debugLog('📍 LocationContext: Retrying location request after POSITION_UNAVAILABLE (attempt', retryCount + 1, ')'); }
+              requestLocation();
+            }, 2000); // Retry after 2 seconds
+            return; // Don't set error message for automatic retry
+          } else {
+            // After 3 retries, show error message
+            errorMessage = 'Location temporarily unavailable. Please check your location settings and try again.';
+            setRetryCount(0); // Reset retry count
+          }
         } else if (locationError.code) {
           switch (locationError.code) {
             case locationError.PERMISSION_DENIED:
@@ -142,7 +162,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
               break;
             case locationError.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Please try again.';
+              // Enhanced messaging for iOS CoreLocation issues
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              if (isIOS) {
+                errorMessage = 'Location temporarily unavailable. This is normal on iOS - please wait a moment and try again.';
+              } else {
+                errorMessage = 'Location information is unavailable. Please try again.';
+              }
               break;
             case locationError.TIMEOUT:
               errorMessage = 'Location request timed out. Please try again.';

@@ -13,6 +13,11 @@ from datetime import datetime, timedelta
 from functools import wraps
 import logging
 
+# Import required dependencies
+from database.repositories.entity_repository_v5 import EntityRepositoryV5
+from utils.cursor_v5 import CursorV5Manager
+from utils.etag_v5 import ETagV5Manager
+
 logger = logging.getLogger(__name__)
 
 # Create minimal blueprint for debugging
@@ -225,11 +230,19 @@ def moderate_review(review_data: Dict[str, Any]) -> Dict[str, Any]:
 def get_reviews():
     """Get reviews with filtering and pagination."""
     try:
+        # Extract query parameters
+        entity_type = request.args.get('entity_type')
+        entity_id = request.args.get('entity_id', type=int)
+        limit = request.args.get('limit', 10, type=int)
+        cursor = request.args.get('cursor', '0')
+        
+        logger.info(f"Reviews API called with params: entity_type={entity_type}, entity_id={entity_id}, limit={limit}, cursor={cursor}")
+        
         # Simple response for now to isolate the issue
         return jsonify({
-            'data': [],
+            'reviews': [],
             'pagination': {
-                'cursor': None,
+                'cursor': cursor,
                 'next_cursor': None,
                 'has_more': False,
                 'total_count': 0
