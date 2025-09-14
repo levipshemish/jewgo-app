@@ -209,13 +209,6 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
             />
           )}
 
-          {/* Description Section - moved above actions */}
-          {safeData.description && (
-            <div className="p-3 text-center">
-              <span className="text-sm text-gray-600 leading-relaxed">{safeData.description}</span>
-            </div>
-          )}
-
           {/* Actions */}
           {safeData.actions && (
             <ListingActions
@@ -229,6 +222,13 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
               userLocation={safeData.userLocation}
               onLocationRequest={safeData.actions.onLocationRequest}
             />
+          )}
+
+          {/* Description Section - moved below actions/tags */}
+          {safeData.description && (
+            <div className="p-3 text-center">
+              <span className="text-sm text-gray-600 leading-relaxed">{safeData.description}</span>
+            </div>
           )}
         </Stack>
 

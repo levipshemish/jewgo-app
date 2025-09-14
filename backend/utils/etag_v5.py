@@ -63,6 +63,12 @@ class ETagV5Manager:
             'timestamp_column': 'updated_at',
             'include_reviews': False,
             'include_hours': False,
+        },
+        'search': {
+            'table': 'restaurants',  # Use restaurants as primary table for search
+            'timestamp_column': 'updated_at',
+            'include_reviews': False,
+            'include_hours': False,
         }
     }
     

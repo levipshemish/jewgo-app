@@ -463,7 +463,7 @@ class MikvahServiceV5:
             'website': getattr(mikvah, 'website', None),
             'operating_hours': getattr(mikvah, 'operating_hours', {}),
             'features': getattr(mikvah, 'features', []),
-            'supervision': getattr(mikvah, 'supervision', None),
+            # 'supervision': getattr(mikvah, 'supervision', None),  # TODO: Add supervision column to database
             'appointment_required': getattr(mikvah, 'appointment_required', True),
             'latitude': float(mikvah.latitude) if hasattr(mikvah, 'latitude') and mikvah.latitude else None,
             'longitude': float(mikvah.longitude) if hasattr(mikvah, 'longitude') and mikvah.longitude else None,

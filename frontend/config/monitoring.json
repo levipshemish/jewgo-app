@@ -10,7 +10,11 @@
         "https://jewgo-app.netlify.app/health",
         "https://jewgo-app.vercel.app",
         "https://jewgo-app.vercel.app/health",
-        "https://jewgo-app-oyoh.onrender.com/health"
+        "https://jewgo-app-oyoh.onrender.com/health",
+        "https://api.jewgo.app/healthz",
+        "https://api.jewgo.app/api/v5/auth/health",
+        "https://api.jewgo.app/api/v5/search/health",
+        "https://api.jewgo.app/api/v5/monitoring/health"
       ]
     },
     "performance": {

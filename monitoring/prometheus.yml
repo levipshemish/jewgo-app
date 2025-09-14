@@ -25,6 +25,10 @@ scrape_configs:
          - https://api.jewgo.app/healthz
          - https://api.jewgo.app/readyz
          - https://api.jewgo.app/webhook/status
+         - https://api.jewgo.app/api/v5/auth/health
+         - https://api.jewgo.app/api/v5/search/health
+         - https://api.jewgo.app/api/v5/monitoring/health
+         - https://api.jewgo.app/api/v5/metrics/health
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

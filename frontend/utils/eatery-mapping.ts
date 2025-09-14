@@ -37,9 +37,9 @@ function handleOrder(orderUrl?: string) {
   }
 }
 
-function handleFavorite(eateryId: string) {
+function handleFavorite(_eateryId: string) {
   // This would handle favorite functionality
-  console.log('Toggling favorite for:', eateryId)
+  // TODO: Implement favorite functionality
 }
 
 function _handleShare() {
@@ -65,8 +65,8 @@ function handleEmail(email?: string) {
   }
 }
 
-function _handleTagClick(tag: string) {
-  console.log('Tag clicked:', tag)
+function _handleTagClick(_tag: string) {
+  // TODO: Implement tag click functionality
 }
 
 function formatPriceRange(priceRange?: string): string {
@@ -152,7 +152,7 @@ export function mapEateryToListingData(
       })(),
       onAction: () => {
         // This will trigger the gallery view in ListingImage component
-        console.log('View gallery clicked for:', eatery.name)
+        // Gallery view is handled by the ListingImage component
       }
     },
 
@@ -237,19 +237,11 @@ export function mapEateryToListingData(
         label: "Hours",
         onClick: () => {
           // Hours popup will be handled by the component
-          console.log('Hours clicked')
         },
-        hoursInfo: {
-          title: eatery.name,
-          hours: (() => {
-            console.log('=== HOURS FORMATTING DEBUG ===');
-            console.log('eatery.hours:', eatery.hours);
-            const formattedHours = formatHoursForPopup(eatery.hours);
-            console.log('formattedHours:', formattedHours);
-            console.log('==============================');
-            return formattedHours;
-          })()
-        }
+          hoursInfo: {
+            title: eatery.name,
+            hours: formatHoursForPopup(eatery.hours)
+          }
       },
 
       // Location request handler
@@ -260,10 +252,6 @@ export function mapEateryToListingData(
     address: eatery.address,
     description: eatery.short_description || eatery.description,
     reviews: (() => {
-      // Debug logging
-      console.log('=== REVIEWS MAPPING DEBUG ===');
-      console.log('reviews parameter:', reviews);
-      console.log('eatery.google_reviews:', eatery.google_reviews);
       
       // Handle both external reviews and Google reviews from eatery data
       const externalReviews = reviews?.map(review => ({
@@ -277,14 +265,10 @@ export function mapEateryToListingData(
         relative_time_description: review.relative_time_description || null
       })) || []
       
-      console.log('externalReviews:', externalReviews);
-      
       // Parse Google reviews from eatery.google_reviews if it exists
       let googleReviews = []
       if (eatery.google_reviews) {
         try {
-          console.log('Eatery-mapping: Google reviews data type:', typeof eatery.google_reviews);
-          console.log('Eatery-mapping: Google reviews data:', eatery.google_reviews);
           
     const { parseGoogleReviews } = require('@/lib/parseGoogleReviews');
     const googleReviewsData = parseGoogleReviews(eatery.google_reviews);
@@ -314,13 +298,16 @@ export function mapEateryToListingData(
                 if (!isInFuture && !isTooOld) {
                   reviewDate = timestampDate.toISOString();
                 } else {
-                  console.warn('Invalid review timestamp:', {
-                    timestamp: review.time,
-                    date: timestampDate.toISOString(),
-                    isInFuture,
-                    isTooOld,
-                    relativeTime: review.relative_time_description
-                  });
+                  // Log warning in development only
+                  if (process.env.NODE_ENV === 'development') {
+                    console.warn('Invalid review timestamp:', {
+                      timestamp: review.time,
+                      date: timestampDate.toISOString(),
+                      isInFuture,
+                      isTooOld,
+                      relativeTime: review.relative_time_description
+                    });
+                  }
                 }
               }
               
@@ -337,7 +324,10 @@ export function mapEateryToListingData(
             })
           }
         } catch (error) {
-          console.error('Error parsing Google reviews:', error)
+          // Log error in development only
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error parsing Google reviews:', error)
+          }
         }
       }
       
@@ -347,11 +337,6 @@ export function mapEateryToListingData(
         index === self.findIndex(r => r.id === review.id)
       );
       
-      console.log('googleReviews:', googleReviews);
-      console.log('externalReviews:', externalReviews);
-      console.log('allReviews (before dedup):', allReviews);
-      console.log('finalReviews (after dedup):', uniqueReviews);
-      console.log('===============================');
       return uniqueReviews;
     })(),
                 reviewsPagination: undefined, // Will be set by the page component

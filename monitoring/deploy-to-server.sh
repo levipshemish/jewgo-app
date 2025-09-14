@@ -247,6 +247,32 @@ verify_deployment() {
             echo "❌ AlertManager is not responding"
         fi
         
+        # Check JewGo API health endpoints
+        echo ""
+        echo "=== JewGo API Health ==="
+        API_BASE=${API_BASE:-"https://api.jewgo.app"}
+        
+        # Check basic health
+        if curl -s -f "$API_BASE/healthz" > /dev/null 2>&1; then
+            echo "✅ API healthz is healthy"
+        else
+            echo "❌ API healthz is not responding"
+        fi
+        
+        # Check v5 auth health
+        if curl -s -f "$API_BASE/api/v5/auth/health" > /dev/null 2>&1; then
+            echo "✅ API v5 auth health is healthy"
+        else
+            echo "❌ API v5 auth health is not responding"
+        fi
+        
+        # Check v5 search health
+        if curl -s -f "$API_BASE/api/v5/search/health" > /dev/null 2>&1; then
+            echo "✅ API v5 search health is healthy"
+        else
+            echo "❌ API v5 search health is not responding"
+        fi
+        
         echo ""
         echo "=== Port Status ==="
         netstat -tulpn | grep -E ":(3001|9090|9093)" || echo "No monitoring ports found"

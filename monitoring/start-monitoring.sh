@@ -61,6 +61,36 @@ else
     echo "❌ AlertManager is not responding"
 fi
 
+# Check JewGo API health endpoints (if available)
+echo "🔍 Checking JewGo API health endpoints..."
+if command -v curl > /dev/null; then
+    API_BASE=${API_BASE:-"https://api.jewgo.app"}
+    
+    # Check basic health
+    echo -n "Checking API healthz... "
+    if curl -s -f "$API_BASE/healthz" > /dev/null 2>&1; then
+        echo "✅ API healthz is healthy"
+    else
+        echo "❌ API healthz is not responding"
+    fi
+    
+    # Check v5 auth health
+    echo -n "Checking API v5 auth health... "
+    if curl -s -f "$API_BASE/api/v5/auth/health" > /dev/null 2>&1; then
+        echo "✅ API v5 auth health is healthy"
+    else
+        echo "❌ API v5 auth health is not responding"
+    fi
+    
+    # Check v5 search health
+    echo -n "Checking API v5 search health... "
+    if curl -s -f "$API_BASE/api/v5/search/health" > /dev/null 2>&1; then
+        echo "✅ API v5 search health is healthy"
+    else
+        echo "❌ API v5 search health is not responding"
+    fi
+fi
+
 # Display access information
 echo ""
 echo "🎉 JewGo Monitoring Stack is running!"

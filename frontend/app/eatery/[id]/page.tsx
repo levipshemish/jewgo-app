@@ -123,7 +123,10 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
 
     return hours
   } catch (err) {
-    console.error('Error parsing hours JSON:', err)
+    // Log error in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error parsing hours JSON:', err)
+    }
     return {
       monday: { open: '', close: '', closed: true },
       tuesday: { open: '', close: '', closed: true },
@@ -210,7 +213,10 @@ function EateryIdPageContent() {
         }
       }
     } catch (err) {
-      console.error('Error fetching reviews:', err)
+      // Log error in development only
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching reviews:', err)
+      }
       if (offset === 0) {
         setReviews([])
       }
@@ -308,7 +314,10 @@ function EateryIdPageContent() {
                   }
                 }
               } catch (err) {
-                console.error('Error calculating rating from Google reviews:', err);
+                // Log error in development only
+                if (process.env.NODE_ENV === 'development') {
+                  console.error('Error calculating rating from Google reviews:', err);
+                }
               }
             }
             
@@ -427,10 +436,12 @@ function EateryIdPageContent() {
           fetchReviews(eateryData.id, 0, 10) // Start with first 10 reviews
         }
         
-        // Debug logging for rating and reviews removed
       } catch (err) {
-        console.error('Error fetching eatery data:', err)
-        console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace')
+        // Log error in development only
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching eatery data:', err)
+          console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace')
+        }
         
         // More detailed error message
         let errorMessage = 'Failed to load eatery data'
@@ -468,7 +479,10 @@ function EateryIdPageContent() {
     try {
       return mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
     } catch (err) {
-      console.error('Error mapping eatery data:', err)
+      // Log error in development only
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error mapping eatery data:', err)
+      }
       return null
     }
   }, [eatery, legacyUserLocation, reviews, requestLocation, permissionStatus])
@@ -570,7 +584,10 @@ function EateryIdPageContent() {
       
       return <ListingPage data={listingDataWithPagination} />
     } catch (err) {
-      console.error('Error mapping eatery data:', err)
+      // Log error in development only
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error mapping eatery data:', err)
+      }
       return (
         <main className="min-h-screen bg-gray-50 p-4">
           <div className="flex items-center justify-center">
