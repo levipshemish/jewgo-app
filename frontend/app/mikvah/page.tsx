@@ -67,11 +67,11 @@ interface _Mikvah {
   listing_type?: string;
 }
 
-// Real API function for mikvah using unified API
+// Real API function for mikvah using v5 API
 const fetchMikvah = async (limit: number, params?: string, timeoutMs: number = 5000) => {
   try {
     const queryString = params ? `?${params}` : '';
-    const url = `/api/mikvah/unified${queryString}`;
+    const url = `/api/v5/mikvahs${queryString}`;
     
     // Use unified API call with caching and deduplication
     const { unifiedApiCall } = await import('@/lib/utils/unified-api');
@@ -89,8 +89,8 @@ const fetchMikvah = async (limit: number, params?: string, timeoutMs: number = 5
 
     const data = result.data;
     return {
-      mikvah: data.mikvahs || data.data || [],
-      total: data.total || 0,
+      mikvah: data.data || data.mikvahs || [],
+      total: data.total_count || data.total || 0,
       page: data.page || 1,
       limit: data.limit || limit,
       cached: result.cached || false,

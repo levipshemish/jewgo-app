@@ -163,13 +163,13 @@ export default function Grid({
       }
 
       // Calculate hasMore if not provided by backend
-      const total = data.total || 0
+      const total = data.total_count || data.total || 0
       const currentOffset = offset
-      const hasMoreData = data.hasNext !== undefined ? data.hasNext : (currentOffset + limit) < total
+      const hasMoreData = data.next_cursor !== null && data.next_cursor !== undefined
       
       
       return {
-        items: data.synagogues || data.products || data.listings || data.data?.restaurants || [],
+        items: data.data || data.synagogues || data.products || data.listings || [],
         total,
         hasMore: hasMoreData,
         limit,

@@ -75,8 +75,8 @@ function generateCacheKey(url: string, options?: UnifiedApiOptions): string {
     // Try to create URL object directly
     urlObj = new URL(url);
   } catch {
-    // If it fails, assume it's a relative URL and create a dummy base
-    urlObj = new URL(url, 'http://localhost:3000');
+    // If it fails, assume it's a relative URL and use current origin
+    urlObj = new URL(url, window.location.origin);
   }
   
   const params = urlObj.searchParams.toString();
