@@ -205,14 +205,28 @@ class MikvahServiceV5:
         """
         try:
             # Get paginated results from repository
-            entities, next_cursor, prev_cursor = self.repository.get_entities_with_cursor(
-                entity_type='mikvahs',
-                filters=filters,
-                cursor=cursor,
-                page=page,
-                limit=limit,
-                sort_key=sort_key
-            )
+            try:
+                result = self.repository.get_entities_with_cursor(
+                    entity_type='mikvahs',
+                    filters=filters,
+                    cursor=cursor,
+                    page=page,
+                    limit=limit,
+                    sort_key=sort_key
+                )
+                # Handle both 2-tuple and 3-tuple returns
+                if len(result) == 3:
+                    entities, next_cursor, prev_cursor = result
+                elif len(result) == 2:
+                    entities, next_cursor = result
+                    prev_cursor = None
+                else:
+                    entities = result[0] if result else []
+                    next_cursor = None
+                    prev_cursor = None
+            except Exception as e:
+                self.logger.error(f"Error getting entities from repository: {e}")
+                entities, next_cursor, prev_cursor = [], None, None
             
             # Format result to match expected structure
             result = {

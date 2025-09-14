@@ -223,8 +223,8 @@ function ShulIdPageContent() {
           return
         }
 
-        // Use the frontend API route for details
-        const detailUrl = `/api/synagogues/${synagogueId}`
+        // Use the v5 API route for details
+        const detailUrl = `/api/v5/synagogues/${synagogueId}`
         
         const detailResponse = await fetch(detailUrl)
         

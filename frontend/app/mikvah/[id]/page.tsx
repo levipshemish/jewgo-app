@@ -93,7 +93,7 @@ function MikvahDetailContent() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/mikvah/${mikvahId}`);
+        const response = await fetch(`/api/v5/mikvahs/${mikvahId}`);
         
         if (!response.ok) {
           const errorData = await response.json();
