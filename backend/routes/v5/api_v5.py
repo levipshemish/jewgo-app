@@ -115,6 +115,11 @@ def require_entity_permission(entity_type: str, operation: str):
             if not required_permissions:
                 return f(*args, **kwargs)
             
+            # Allow public read access for all entity types
+            if operation == 'read':
+                return f(*args, **kwargs)
+            
+            # For non-read operations, require authentication
             if not hasattr(g, 'user_permissions') or not g.user_permissions:
                 return jsonify({'error': 'Authentication required'}), 401
             

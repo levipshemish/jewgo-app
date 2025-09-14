@@ -250,11 +250,12 @@ class MikvahServiceV5:
                            count=len(enriched_mikvahs), 
                            has_more=result['pagination']['has_more'])
             
-            return result
+            # Return tuple format to match restaurant service
+            return (enriched_mikvahs, result['pagination']['next_cursor'], result['pagination']['prev_cursor'])
             
         except Exception as e:
             self.logger.exception("Failed to get mikvahs", error=str(e))
-            return {'data': [], 'pagination': {'has_more': False, 'next_cursor': None}}
+            return ([], None, None)
 
     def create_mikvah(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create new mikvah with validation.
