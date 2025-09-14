@@ -20,6 +20,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   images = [], restaurantName, kosherCategory, className = '', onIndexChange, onImagesProcessed 
 }) => {
   const [imageLoading, setImageLoading] = useState<boolean[]>([]);
+  const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set());
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // Process and validate images, combining with fallbacks
@@ -79,16 +80,27 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   // Memoize the images array to prevent unnecessary re-renders
   const stableImages = React.useMemo(() => allImages, [allImages]);
 
-  // Initialize image loading states
+  // Initialize image loading states - only for new images
   useEffect(() => {
-    setImageLoading(new Array(stableImages.length).fill(true));
-  }, [stableImages.length]);
+    setImageLoading(prev => {
+      const newLoading = [...prev];
+      // Only set new images to loading, keep existing ones as they were
+      for (let i = prev.length; i < stableImages.length; i++) {
+        newLoading[i] = !imagesLoaded.has(i);
+      }
+      // Trim array if images were removed
+      return newLoading.slice(0, stableImages.length);
+    });
+  }, [stableImages.length, imagesLoaded]);
 
-  // Add a timeout to prevent infinite loading
+  // Add a timeout to prevent infinite loading - only for images that are still loading
   useEffect(() => {
     if (stableImages.length > 0) {
       const timeout = setTimeout(() => {
-        setImageLoading(prev => prev.map(() => false));
+        setImageLoading(prev => prev.map((loading, index) => {
+          // Only reset to false if it's still loading (true)
+          return loading ? false : loading;
+        }));
       }, 10000); // 10 second timeout
 
       return () => clearTimeout(timeout);
@@ -133,10 +145,12 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       newLoading[index] = false;
       return newLoading;
     });
+    // Don't add to imagesLoaded set on error
   };
 
   const handleImageLoad = (index: number) => {
     console.log(`Image ${index} loaded successfully:`, stableImages[index]);
+    setImagesLoaded(prev => new Set(prev).add(index));
     setImageLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = false;
@@ -185,7 +199,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         >
           {stableImages.map((image, index) => (
             <div
-              key={image || `img-${index}`}
+              key={`${image}-${index}`}
               className="flex-none w-full snap-center relative h-full"
               style={{ 
                 minWidth: '100%',
@@ -204,16 +218,18 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 src={image || '/images/default-restaurant.webp'}
                 alt={`${restaurantName} - Image ${index + 1}`}
                 fill
-                className={`object-cover transition-opacity duration-300 ${
+                className={`object-cover transition-opacity duration-200 ease-in-out ${
                   imageLoading[index] ? 'opacity-0' : 'opacity-100'
                 }`}
-                sizes="200px"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 priority={index === 0}
                 onError={() => handleImageError(index)}
                 onLoad={() => handleImageLoad(index)}
                 unoptimized={true}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 crossOrigin="anonymous"
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
               />
               
             </div>

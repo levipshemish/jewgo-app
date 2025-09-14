@@ -57,6 +57,12 @@ class ETagV5Manager:
             'timestamp_column': 'updated_at',
             'include_reviews': False,
             'include_hours': True,
+        },
+        'reviews': {
+            'table': 'reviews',
+            'timestamp_column': 'updated_at',
+            'include_reviews': False,
+            'include_hours': False,
         }
     }
     

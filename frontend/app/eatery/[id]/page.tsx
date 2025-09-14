@@ -357,15 +357,28 @@ function EateryIdPageContent() {
             return certifications.join(', ') || restaurantData.kosher_certification || ''
           })(),
           images: (() => {
-            // Extract image URLs from the restaurant_images relationship (new) or images array (legacy)
+            // Prioritize restaurant_images from the database relationship
             const restaurantImages = restaurantData.restaurant_images?.map((img: any) => img.image_url) || [];
-            const legacyImages = restaurantData.images?.map((img: any) => img.image_url) || [];
-            const allImages = [
-              ...restaurantImages,
-              ...legacyImages,
-              ...(restaurantData.business_images || []),
-              restaurantData.image_url
-            ].filter(Boolean);
+            
+            // Only use other sources if no restaurant_images are available
+            let allImages = [];
+            if (restaurantImages.length > 0) {
+              // Use restaurant_images as primary source
+              allImages = [
+                ...restaurantImages,
+                ...(restaurantData.business_images || []).filter(img => 
+                  !restaurantImages.includes(img) // Avoid duplicates
+                )
+              ];
+            } else {
+              // Fallback to legacy sources
+              const legacyImages = restaurantData.images?.map((img: any) => img.image_url) || [];
+              allImages = [
+                ...legacyImages,
+                ...(restaurantData.business_images || []),
+                restaurantData.image_url
+              ].filter(Boolean);
+            }
             
             if (allImages.length === 0) {
               return ['/images/default-restaurant.webp'];
