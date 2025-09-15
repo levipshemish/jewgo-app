@@ -355,7 +355,7 @@ class EnhancedConnectionPool:
         self.lock = threading.RLock()
         
         # Connection warming
-        self.warm_connections = True
+        self.warm_connections_enabled = True
         self.warm_query = "SELECT 1"
         
         self._initialize_engines()
@@ -455,7 +455,7 @@ class EnhancedConnectionPool:
 
     def warm_connections(self, num_connections: int = None):
         """Warm up connections in the pool."""
-        if not self.warm_connections:
+        if not self.warm_connections_enabled:
             return
         
         num_connections = num_connections or min(self.pool_size, 5)

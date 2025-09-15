@@ -323,7 +323,7 @@ class L3DatabaseCache:
             
             with self.connection_manager.get_session() as session:
                 # Create table if it doesn't exist
-                create_table_sql = f"""
+                create_table_sql = text(f"""
                 CREATE TABLE IF NOT EXISTS {self.table_name} (
                     cache_key VARCHAR(255) PRIMARY KEY,
                     cache_value BYTEA NOT NULL,
@@ -338,7 +338,7 @@ class L3DatabaseCache:
                 CREATE INDEX IF NOT EXISTS idx_cache_expires_at ON {self.table_name}(expires_at);
                 CREATE INDEX IF NOT EXISTS idx_cache_tags ON {self.table_name} USING GIN(tags);
                 CREATE INDEX IF NOT EXISTS idx_cache_last_accessed ON {self.table_name}(last_accessed);
-                """
+                """)
                 
                 session.execute(create_table_sql)
                 session.commit()
