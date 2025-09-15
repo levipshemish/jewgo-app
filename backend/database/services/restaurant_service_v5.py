@@ -117,22 +117,22 @@ class RestaurantServiceV5:
                     logger.info("Retrieved filter options from cache")
                     return cached_options
             
-             # Use direct database queries instead of fetching all restaurants
-             with self.repository.connection_manager.session_scope() as session:
-                 from sqlalchemy import distinct, func
-                 from database.models import Restaurant
+            # Use direct database queries instead of fetching all restaurants
+            with self.repository.connection_manager.session_scope() as session:
+                from sqlalchemy import distinct, func
+                from database.models import Restaurant
                 
-                 # Get distinct values efficiently with limited results
-                 filter_options = {
-                     'kosherCategories': [],
-                     'agencies': [],
-                     'priceRanges': [],
-                     'cities': [],
-                     'states': [],
-                     'listingTypes': [],
-                     'ratings': [],
-                     'kosherDetails': []
-                 }
+                # Get distinct values efficiently with limited results
+                filter_options = {
+                    'kosherCategories': [],
+                    'agencies': [],
+                    'priceRanges': [],
+                    'cities': [],
+                    'states': [],
+                    'listingTypes': [],
+                    'ratings': [],
+                    'kosherDetails': []
+                }
                 
                 # Get kosher categories (limit to top 20)
                 kosher_cats = session.query(distinct(Restaurant.kosher_category)).filter(
@@ -169,51 +169,51 @@ class RestaurantServiceV5:
                 ).limit(20).all()
                 filter_options['states'] = sorted([state[0] for state in states if state[0]])
                 
-                 # Get listing types (limit to top 10)
-                 types = session.query(distinct(Restaurant.listing_type)).filter(
-                     Restaurant.listing_type.isnot(None),
-                     Restaurant.listing_type != ''
-                 ).limit(10).all()
-                 filter_options['listingTypes'] = sorted([type_[0] for type_ in types if type_[0]])
-                 
-                 # Get ratings from google_rating field (limit to top 20)
-                 ratings = session.query(distinct(Restaurant.google_rating)).filter(
-                     Restaurant.google_rating.isnot(None),
-                     Restaurant.google_rating > 0
-                 ).limit(20).all()
-                 # Round ratings to nearest 0.5 for cleaner filter options
-                 rounded_ratings = set()
-                 for rating in ratings:
-                     if rating[0]:
-                         rounded_rating = round(float(rating[0]) * 2) / 2
-                         rounded_ratings.add(rounded_rating)
-                 filter_options['ratings'] = sorted(list(rounded_ratings), reverse=True)  # Highest ratings first
-                 
-                 # Get kosher details based on boolean fields
-                 kosher_details = set()
-                 
-                 # Check for Cholov Yisroel
-                 cholov_yisroel_count = session.query(func.count(Restaurant.id)).filter(
-                     Restaurant.is_cholov_yisroel == True
-                 ).scalar()
-                 if cholov_yisroel_count and cholov_yisroel_count > 0:
-                     kosher_details.add('Cholov Yisroel')
-                 
-                 # Check for Pas Yisroel
-                 pas_yisroel_count = session.query(func.count(Restaurant.id)).filter(
-                     Restaurant.is_pas_yisroel == True
-                 ).scalar()
-                 if pas_yisroel_count and pas_yisroel_count > 0:
-                     kosher_details.add('Pas Yisroel')
-                 
-                 # Check for Cholov Stam
-                 cholov_stam_count = session.query(func.count(Restaurant.id)).filter(
-                     Restaurant.cholov_stam == True
-                 ).scalar()
-                 if cholov_stam_count and cholov_stam_count > 0:
-                     kosher_details.add('Cholov Stam')
-                 
-                 filter_options['kosherDetails'] = sorted(list(kosher_details))
+                # Get listing types (limit to top 10)
+                types = session.query(distinct(Restaurant.listing_type)).filter(
+                    Restaurant.listing_type.isnot(None),
+                    Restaurant.listing_type != ''
+                ).limit(10).all()
+                filter_options['listingTypes'] = sorted([type_[0] for type_ in types if type_[0]])
+                
+                # Get ratings from google_rating field (limit to top 20)
+                ratings = session.query(distinct(Restaurant.google_rating)).filter(
+                    Restaurant.google_rating.isnot(None),
+                    Restaurant.google_rating > 0
+                ).limit(20).all()
+                # Round ratings to nearest 0.5 for cleaner filter options
+                rounded_ratings = set()
+                for rating in ratings:
+                    if rating[0]:
+                        rounded_rating = round(float(rating[0]) * 2) / 2
+                        rounded_ratings.add(rounded_rating)
+                filter_options['ratings'] = sorted(list(rounded_ratings), reverse=True)  # Highest ratings first
+                
+                # Get kosher details based on boolean fields
+                kosher_details = set()
+                
+                # Check for Cholov Yisroel
+                cholov_yisroel_count = session.query(func.count(Restaurant.id)).filter(
+                    Restaurant.is_cholov_yisroel == True
+                ).scalar()
+                if cholov_yisroel_count and cholov_yisroel_count > 0:
+                    kosher_details.add('Cholov Yisroel')
+                
+                # Check for Pas Yisroel
+                pas_yisroel_count = session.query(func.count(Restaurant.id)).filter(
+                    Restaurant.is_pas_yisroel == True
+                ).scalar()
+                if pas_yisroel_count and pas_yisroel_count > 0:
+                    kosher_details.add('Pas Yisroel')
+                
+                # Check for Cholov Stam
+                cholov_stam_count = session.query(func.count(Restaurant.id)).filter(
+                    Restaurant.cholov_stam == True
+                ).scalar()
+                if cholov_stam_count and cholov_stam_count > 0:
+                    kosher_details.add('Cholov Stam')
+                
+                filter_options['kosherDetails'] = sorted(list(kosher_details))
             
             # Cache the filter options for 1 hour
             if self.cache_manager:
