@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 interface AuthContextType {
@@ -19,10 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
-    // Only check auth once on mount to prevent rate limiting
-    if (!authChecked) {
+    // Only check auth once on mount to prevent rate limiting (including React Strict Mode)
+    if (!authChecked && !hasRunRef.current) {
+      hasRunRef.current = true;
       checkAuth();
       setAuthChecked(true);
     }

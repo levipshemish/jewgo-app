@@ -57,6 +57,14 @@ export interface V5ApiResponse<T = any> {
   next_cursor?: string | null;
   prev_cursor?: string | null;
   total_count?: number | null;
+  filterOptions?: {
+    agencies: string[];
+    kosherCategories: string[];
+    listingTypes: string[];
+    priceRanges: string[];
+    cities: string[];
+    states: string[];
+  } | null;
   pagination?: {
     page: number;
     limit: number;

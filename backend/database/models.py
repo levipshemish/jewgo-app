@@ -468,8 +468,8 @@ class Mikvah(Base):
     email = Column(String(255))
     
     # Location data
-    latitude = Column(Float)  # Changed from Numeric to Float to match Synagogue
-    longitude = Column(Float)  # Changed from Numeric to Float to match Synagogue
+    latitude = Column(Numeric(10, 8))  # Match actual database type
+    longitude = Column(Numeric(11, 8))  # Match actual database type
     
     # Mikvah details
     mikvah_type = Column(String(100))

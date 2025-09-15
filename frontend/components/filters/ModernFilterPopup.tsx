@@ -72,15 +72,25 @@ export function ModernFilterPopup({
   }, [draftFilters, userLocation]);
 
 
+  // Debug: Log when preloadedFilterOptions changes
+  useEffect(() => {
+    console.log('ModernFilterPopup preloadedFilterOptions changed:', preloadedFilterOptions);
+  }, [preloadedFilterOptions]);
+
   // Conditionally trigger filter options load when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Only load filter options if we don't have preloaded ones and haven't triggered yet
-      if (!preloadedFilterOptions && !fetchedFilterOptions) {
-        // Note: This fallback should rarely be needed since filter options should come from main API
-        console.warn('No preloaded filter options available, falling back to separate API call');
-        loadFilterOptions(); // Lazy load filter options only when needed
-      }
+      // Wait a bit for preloaded filter options to be available
+      const timer = setTimeout(() => {
+        // Only load filter options if we don't have preloaded ones and haven't triggered yet
+        if (!preloadedFilterOptions && !fetchedFilterOptions) {
+          // Note: This fallback should rarely be needed since filter options should come from main API
+          console.warn('No preloaded filter options available after timeout, falling back to separate API call');
+          loadFilterOptions(); // Lazy load filter options only when needed
+        }
+      }, 100); // Small delay to allow filter options to be passed down
+      
+      return () => clearTimeout(timer);
     }
   }, [isOpen, loadFilterOptions, preloadedFilterOptions, fetchedFilterOptions]); // Now safe to include since loadFilterOptions is memoized
 

@@ -46,12 +46,10 @@ function EateryPageContent() {
   // State for filter options from restaurants API
   const [filterOptions, setFilterOptions] = useState<any>(null)
   
-  // Debug filter options
+  // Debug: Log when filterOptions changes
   useEffect(() => {
-    if (filterOptions) {
-      console.log('Filter options received in EateryPageClient:', filterOptions)
-    }
-  }, [filterOptions])
+    console.log('EateryPageClient filterOptions changed:', filterOptions);
+  }, [filterOptions]);
 
   // Update active tab based on current pathname
   useEffect(() => {

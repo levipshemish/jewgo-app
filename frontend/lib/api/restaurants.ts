@@ -90,7 +90,7 @@ export async function fetchRestaurants({
       next_cursor: response.next_cursor,
       prev_cursor: response.prev_cursor,
       total_count: response.total_count,
-      filterOptions: response.filterOptions || null, // Pass through filter options from API response
+      filterOptions: response.filterOptions || undefined, // Pass through filter options from API response
     };
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);
@@ -161,7 +161,7 @@ export async function fetchRestaurants({
         totalRestaurants: total,
         page,
         limit: safeLimit,
-        filterOptions: json.filterOptions || null, // Pass through filter options from fallback response
+        filterOptions: json.filterOptions || undefined, // Pass through filter options from fallback response
       };
     }
     

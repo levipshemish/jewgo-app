@@ -92,7 +92,6 @@ class CSRFMiddleware:
             
             # Validate CSRF token
             user_agent = request.headers.get('User-Agent', '')
-            logger.debug(f"CSRF validation: session_id={session_id}, user_agent={repr(user_agent)}, token={csrf_token[:50]}...")
             is_valid = self.csrf_manager.validate_token(csrf_token, session_id, user_agent)
             
             if not is_valid:

@@ -28,9 +28,13 @@ auth_bp = BlueprintFactoryV5.create_blueprint(
     'auth_api', __name__, '/api/v5/auth'
 )
 
-# Initialize auth service and CSRF manager
+# Initialize auth service
 auth_service = AuthServiceV5()
-csrf_manager = get_csrf_manager()
+
+# Get CSRF manager (will be initialized by middleware)
+def get_csrf_manager_for_auth():
+    from utils.csrf_manager import get_csrf_manager
+    return get_csrf_manager()
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -532,7 +536,7 @@ def csrf_token():
         
         # Generate CSRF token
         user_agent = request.headers.get('User-Agent', '')
-        logger.debug(f"CSRF generation: session_id={session_id}, user_agent={repr(user_agent)}")
+        csrf_manager = get_csrf_manager_for_auth()
         csrf_token = csrf_manager.generate_token(session_id, user_agent)
         
         # Create response

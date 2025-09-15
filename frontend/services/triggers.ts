@@ -11,8 +11,8 @@ import { runFilter } from "./workerManager";
 import type { Bounds } from "@/types/livemap";
 
 // Performance limits - increased debounce times to reduce API calls
-const BOUNDS_DEBOUNCE_MS = 1000; // Increased from 250ms to 1s
-const FILTER_DEBOUNCE_MS = 300;  // Increased from 150ms to 300ms
+const BOUNDS_DEBOUNCE_MS = 2000; // Increased to 2s to prevent rate limiting
+const FILTER_DEBOUNCE_MS = 500;  // Increased to 500ms
 
 // Debounced bounds change handler
 export const onBoundsChanged = debounce((bounds: Bounds) => {

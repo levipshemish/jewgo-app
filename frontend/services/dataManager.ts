@@ -12,6 +12,26 @@ import type { Restaurant, Bounds } from "@/types/livemap";
 const cache = new Map<string, { ts: number; data: Restaurant[] }>();
 const TTL = 5 * 60 * 1000; // 5 minutes
 
+// Maximum bounds size to prevent excessive API calls
+const MAX_BOUNDS_DEGREES = 10.0; // ~1000km max bounds (increased from 2.0)
+const EXTREME_BOUNDS_DEGREES = 50.0; // ~5000km - truly extreme bounds
+
+// Check if bounds are too large for normal API calls
+function isBoundsTooLarge(bounds: Bounds): boolean {
+  const { ne, sw } = bounds;
+  const latDiff = Math.abs(ne.lat - sw.lat);
+  const lngDiff = Math.abs(ne.lng - sw.lng);
+  return latDiff > MAX_BOUNDS_DEGREES || lngDiff > MAX_BOUNDS_DEGREES;
+}
+
+// Check if bounds are extremely large (should be blocked entirely)
+function isBoundsExtremelyLarge(bounds: Bounds): boolean {
+  const { ne, sw } = bounds;
+  const latDiff = Math.abs(ne.lat - sw.lat);
+  const lngDiff = Math.abs(ne.lng - sw.lng);
+  return latDiff > EXTREME_BOUNDS_DEGREES || lngDiff > EXTREME_BOUNDS_DEGREES;
+}
+
 // Generate cache key from bounds with quantization for better caching
 function hashBounds(bounds: Bounds): string {
   const { ne, sw } = bounds;
@@ -30,6 +50,12 @@ function hashBounds(bounds: Bounds): string {
 // Performance monitoring
 let fetchCount = 0;
 let cacheHits = 0;
+
+// Rate limiting state
+let lastRequestTime = 0;
+let consecutiveFailures = 0;
+const MIN_REQUEST_INTERVAL = 1000; // 1 second minimum between requests
+const MAX_BACKOFF_MS = 10000; // 10 seconds max backoff
 
 // Find overlapping cached data that covers the requested bounds
 function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
@@ -81,6 +107,20 @@ function expandBounds(bounds: Bounds, factor: number = 1.5): Bounds {
 }
 
 export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
+  // Check if bounds are extremely large - block entirely
+  if (isBoundsExtremelyLarge(bounds)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🗺️ Bounds extremely large (${Math.abs(bounds.ne.lat - bounds.sw.lat).toFixed(2)}° x ${Math.abs(bounds.ne.lng - bounds.sw.lng).toFixed(2)}°), blocking API call`);
+    }
+    return;
+  }
+
+  // For large bounds, use a different strategy - don't expand bounds and use smaller limit
+  const isLargeBounds = isBoundsTooLarge(bounds);
+  if (isLargeBounds && process.env.NODE_ENV === 'development') {
+    console.log(`🗺️ Large bounds detected (${Math.abs(bounds.ne.lat - bounds.sw.lat).toFixed(2)}° x ${Math.abs(bounds.ne.lng - bounds.sw.lng).toFixed(2)}°), using conservative strategy`);
+  }
+
   const key = hashBounds(bounds);
   const existing = cache.get(key);
   const now = Date.now();
@@ -115,16 +155,42 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
   }));
 
   try {
+    // Rate limiting: check if we need to wait
+    const currentTime = Date.now();
+    const timeSinceLastRequest = currentTime - lastRequestTime;
+    const backoffMs = Math.min(consecutiveFailures * 1000, MAX_BACKOFF_MS);
+    
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL + backoffMs) {
+      const waitTime = MIN_REQUEST_INTERVAL + backoffMs - timeSinceLastRequest;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🗺️ Rate limiting: waiting ${waitTime}ms before next request`);
+      }
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
     fetchCount++;
     const startTime = performance.now();
+    lastRequestTime = currentTime;
     
-    // Expand bounds to get more data and improve caching
-    const expandedBounds = expandBounds(bounds, 1.5);
-    const expandedKey = hashBounds(expandedBounds);
+    // Use different strategies for large vs normal bounds
+    let apiBounds = bounds;
+    let limit = 200;
     
-    // Fetch from direct backend API (same as eatery page) with expanded bounds parameter
+    if (isLargeBounds) {
+      // For large bounds: don't expand, use smaller limit, and use original bounds
+      apiBounds = bounds;
+      limit = 50; // Smaller limit for large areas
+    } else {
+      // For normal bounds: expand bounds to get more data and improve caching
+      apiBounds = expandBounds(bounds, 1.5);
+      limit = 200;
+    }
+    
+    const apiKey = hashBounds(apiBounds);
+    
+    // Fetch from direct backend API (same as eatery page) with bounds parameter
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-    const response = await fetch(`${backendUrl}/api/v5/restaurants?bounds=${encodeURIComponent(expandedKey)}&limit=200`);
+    const response = await fetch(`${backendUrl}/api/v5/restaurants?bounds=${encodeURIComponent(apiKey)}&limit=${limit}`);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -166,15 +232,15 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     }));
 
     // Filter data to the actual requested bounds (client-side filtering)
-    const filteredData = transformedData.filter(restaurant => {
+    const filteredData = transformedData.filter((restaurant: any) => {
       const lat = restaurant.pos.lat;
       const lng = restaurant.pos.lng;
       return lat >= bounds.sw.lat && lat <= bounds.ne.lat &&
              lng >= bounds.sw.lng && lng <= bounds.ne.lng;
     });
 
-    // Cache the transformed result with expanded bounds key for better coverage
-    cache.set(expandedKey, { ts: now, data: transformedData });
+    // Cache the transformed result with the API bounds key
+    cache.set(apiKey, { ts: currentTime, data: transformedData });
     
     // Update store with filtered data
     useLivemapStore.getState().setRestaurants(filteredData);
@@ -190,7 +256,13 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
       console.log(`🗺️ Loaded ${data?.length || 0} restaurants, filtered to ${filteredData.length} in ${fetchTime.toFixed(1)}ms (cache miss)`);
     }
     
+    // Reset failure count on success
+    consecutiveFailures = 0;
+    
   } catch (error: any) {
+    // Increment failure count for rate limiting
+    consecutiveFailures++;
+    
     useLivemapStore.setState((s) => ({ 
       loading: { ...s.loading, restaurants: "error" }, 
       error: error?.message ?? "Failed to load restaurants" 

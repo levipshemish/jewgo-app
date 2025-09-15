@@ -117,6 +117,8 @@ class RestaurantServiceV5:
             cities = set()
             states = set()
             listing_types = set()
+            ratings = set()
+            kosher_details = set()
             
             for restaurant in restaurants:
                 if restaurant.get('kosher_category'):
@@ -131,9 +133,22 @@ class RestaurantServiceV5:
                     states.add(restaurant['state'])
                 if restaurant.get('listing_type'):
                     listing_types.add(restaurant['listing_type'])
+                
+                # Extract ratings for dynamic rating filter
+                if restaurant.get('google_rating') and restaurant['google_rating'] > 0:
+                    rating = restaurant['google_rating']
+                    # Round to nearest 0.5 for cleaner filter options
+                    rounded_rating = round(rating * 2) / 2
+                    ratings.add(rounded_rating)
+                
+                # Extract kosher details for additional filters
+                if restaurant.get('is_cholov_yisroel'):
+                    kosher_details.add('Cholov Yisroel')
+                if restaurant.get('is_pas_yisroel'):
+                    kosher_details.add('Pas Yisroel')
+                if restaurant.get('cholov_stam'):
+                    kosher_details.add('Cholov Stam')
             
-            # Debug logging to see what data we're getting
-            logger.info(f"Filter options extracted: kosher_categories={len(kosher_categories)}, agencies={len(certifying_agencies)}, price_ranges={len(price_ranges)}, cities={len(cities)}, states={len(states)}, listing_types={len(listing_types)}")
             
             # Convert to sorted lists
             filter_options = {
@@ -142,7 +157,9 @@ class RestaurantServiceV5:
                 'priceRanges': sorted(list(price_ranges)),
                 'cities': sorted(list(cities)),
                 'states': sorted(list(states)),
-                'listingTypes': sorted(list(listing_types))
+                'listingTypes': sorted(list(listing_types)),
+                'ratings': sorted(list(ratings), reverse=True),  # Highest ratings first
+                'kosherDetails': sorted(list(kosher_details))
             }
             
             logger.info("Successfully retrieved filter options")
@@ -154,6 +171,8 @@ class RestaurantServiceV5:
                 'kosherCategories': [],
                 'agencies': [],
                 'priceRanges': [],
+                'ratings': [],
+                'kosherDetails': [],
                 'cities': [],
                 'states': [],
                 'listingTypes': []

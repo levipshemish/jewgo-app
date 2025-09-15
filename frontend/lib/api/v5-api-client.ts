@@ -137,6 +137,7 @@ export class V5ApiClient {
           data: data.data || data, // Use data.data if it exists, otherwise use data directly
           message: 'Request successful',
           next_cursor: data.next_cursor,
+          filterOptions: data.filterOptions, // Pass through filter options from backend response
           prev_cursor: data.prev_cursor,
           total_count: data.total_count
         };

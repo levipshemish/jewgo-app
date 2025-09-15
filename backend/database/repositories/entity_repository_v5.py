@@ -83,8 +83,8 @@ class EntityRepositoryV5(BaseRepository):
         'created_at_asc': {'field': 'created_at', 'direction': 'ASC', 'secondary': 'id'},
         'updated_at_desc': {'field': 'updated_at', 'direction': 'DESC', 'secondary': 'id'},
         'updated_at_asc': {'field': 'updated_at', 'direction': 'ASC', 'secondary': 'id'},
-        'name_asc': {'field': 'title', 'direction': 'ASC', 'secondary': 'id'},
-        'name_desc': {'field': 'title', 'direction': 'DESC', 'secondary': 'id'},
+        'name_asc': {'field': 'name', 'direction': 'ASC', 'secondary': 'id'},
+        'name_desc': {'field': 'name', 'direction': 'DESC', 'secondary': 'id'},
         'distance_asc': {'field': 'distance', 'direction': 'ASC', 'secondary': 'id'},
         'rating_desc': {'field': 'rating', 'direction': 'DESC', 'secondary': 'id'}
     }
