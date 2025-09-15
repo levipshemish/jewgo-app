@@ -1,0 +1,207 @@
+# Prometheus Alerting Rules for JewGo Security Monitoring
+# Defines alerts for authentication failures, rate limiting, and security events
+
+groups:
+  - name: authentication_security
+    rules:
+      # High authentication failure rate
+      - alert: HighAuthFailureRate
+        expr: rate(auth_login_fail_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High authentication failure rate detected"
+          description: "Authentication failure rate is {{ $value }} failures per second over the last 5 minutes"
+          runbook_url: "https://docs.jewgo.app/runbooks/auth-failures"
+
+      # Suspicious authentication pattern
+      - alert: SuspiciousAuthPattern
+        expr: rate(auth_login_fail_total{reason="invalid_password"}[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Suspicious authentication pattern detected"
+          description: "High rate of invalid password attempts: {{ $value }} per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/brute-force"
+
+      # Token refresh replay attacks
+      - alert: TokenRefreshReplayAttack
+        expr: rate(auth_refresh_replay_total[5m]) > 0.001
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Token refresh replay attack detected"
+          description: "Refresh token replay rate: {{ $value }} per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/token-replay"
+
+      # CSRF validation failures
+      - alert: HighCSRFFailureRate
+        expr: rate(auth_csrf_invalid_total[2m]) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High CSRF validation failure rate"
+          description: "CSRF validation failure rate: {{ $value }} per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/csrf-failures"
+
+      # Step-up authentication bypass attempts
+      - alert: StepUpBypassAttempts
+        expr: rate(auth_step_up_bypass_total[5m]) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Step-up authentication bypass attempts detected"
+          description: "Step-up bypass attempts: {{ $value }} per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/step-up-bypass"
+
+  - name: rate_limiting_security
+    rules:
+      # High rate limit violations
+      - alert: HighRateLimitViolations
+        expr: rate(nginx_http_requests_total{status="429"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High rate of rate limit violations"
+          description: "Rate limit violations: {{ $value }} per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/rate-limits"
+
+      # DDoS attack indicators
+      - alert: PossibleDDoSAttack
+        expr: rate(nginx_http_requests_total[1m]) > 100
+        for: 30s
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Possible DDoS attack detected"
+          description: "Request rate: {{ $value }} requests per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/ddos-response"
+
+  - name: performance_security
+    rules:
+      # Slow token verification (potential DoS)
+      - alert: SlowTokenVerification
+        expr: histogram_quantile(0.95, rate(auth_verify_token_duration_seconds_bucket[5m])) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Token verification is slow"
+          description: "95th percentile token verification time: {{ $value }}s"
+          runbook_url: "https://docs.jewgo.app/runbooks/slow-auth"
+
+      # High memory usage (potential memory leak)
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.jewgo.app/runbooks/memory-issues"
+
+  - name: database_security
+    rules:
+      # Database connection failures
+      - alert: DatabaseConnectionFailures
+        expr: rate(database_connection_errors_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Database connection failures detected"
+          description: "Database connection failure rate: {{ $value }} per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/db-connection"
+
+      # Slow database queries
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile query time: {{ $value }}s"
+          runbook_url: "https://docs.jewgo.app/runbooks/slow-queries"
+
+  - name: application_security
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(flask_http_request_exceptions_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "High application error rate"
+          description: "Application error rate: {{ $value }} errors per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/app-errors"
+
+      # WebAuthn failures
+      - alert: WebAuthnFailures
+        expr: rate(auth_webauthn_fail_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High WebAuthn failure rate"
+          description: "WebAuthn failure rate: {{ $value }} per second"
+          runbook_url: "https://docs.jewgo.app/runbooks/webauthn-issues"
+
+  - name: infrastructure_security
+    rules:
+      # SSL certificate expiration
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 7
+        for: 1h
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}"
+          runbook_url: "https://docs.jewgo.app/runbooks/ssl-renewal"
+
+      # Service down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Service is down"
+          description: "{{ $labels.job }} service is down"
+          runbook_url: "https://docs.jewgo.app/runbooks/service-down"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space usage: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.jewgo.app/runbooks/disk-space"

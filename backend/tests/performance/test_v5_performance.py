@@ -164,9 +164,9 @@ class TestV5Performance:
         }
         
         start_time = time.time()
-        response = self.client.post('/api/v5/auth/login',
-                                  data=json.dumps(login_data),
-                                  content_type='application/json')
+        self.client.post('/api/v5/auth/login',
+                        data=json.dumps(login_data),
+                        content_type='application/json')
         end_time = time.time()
         
         response_time = (end_time - start_time) * 1000
@@ -192,9 +192,9 @@ class TestV5Performance:
         }
         
         start_time = time.time()
-        response = self.client.post('/api/v5/restaurants/bulk',
-                                  data=json.dumps(bulk_data),
-                                  content_type='application/json')
+        self.client.post('/api/v5/restaurants/bulk',
+                        data=json.dumps(bulk_data),
+                        content_type='application/json')
         end_time = time.time()
         
         response_time = (end_time - start_time) * 1000

@@ -69,12 +69,6 @@ export async function fetchRestaurants({
       locationPayload = { ...location, radius: radiusKm };
     }
     
-    // Debug: Log the filters being processed
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 fetchRestaurants received filters:', filters);
-      console.log('🔍 fetchRestaurants normalizedFilters:', normalizedFilters);
-      console.log('🔍 fetchRestaurants locationPayload:', locationPayload);
-    }
     // Use V5 API client for restaurants
     const response = await v5ApiClient.getRestaurants({
       page: page || undefined, // Only pass page if it's provided

@@ -1,0 +1,61 @@
+[Unit]
+Description=JewGo JWT Key Rotation Service
+Documentation=https://docs.jewgo.app/security/key-rotation
+After=network.target redis.service postgresql.service
+Wants=redis.service postgresql.service
+Requires=network.target
+
+[Service]
+Type=simple
+User=jewgo
+Group=jewgo
+WorkingDirectory=/opt/jewgo/backend
+Environment=PYTHONPATH=/opt/jewgo/backend
+Environment=FLASK_ENV=production
+Environment=JWT_ROTATION_INTERVAL_HOURS=168
+Environment=JWT_CHECK_INTERVAL_MINUTES=60
+Environment=JWT_EMERGENCY_THRESHOLD_HOURS=24
+Environment=JWT_MAX_KEY_AGE_DAYS=30
+Environment=JWT_MIN_KEYS_REQUIRED=2
+Environment=JWT_ENABLE_METRICS=true
+Environment=JWT_ENABLE_ALERTS=true
+
+# Load environment variables from file
+EnvironmentFile=-/opt/jewgo/backend/.env
+
+# Command to run
+ExecStart=/opt/jewgo/backend/.venv/bin/python /opt/jewgo/backend/scripts/automated_key_rotation.py --daemon
+
+# Restart policy
+Restart=always
+RestartSec=30
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/jewgo/backend/logs
+ReadOnlyPaths=/opt/jewgo/backend
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jewgo-key-rotation
+
+# Health check
+ExecReload=/bin/kill -HUP $MAINPID
+TimeoutStopSec=30
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

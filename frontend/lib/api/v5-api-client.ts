@@ -169,10 +169,6 @@ export class V5ApiClient {
       throw new V5ApiError('entityType is required');
     }
     
-    // Debug: Log the parameters being received
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 V5ApiClient.getEntities received params:', params);
-    }
     
     const searchParams = new URLSearchParams();
     
@@ -213,11 +209,6 @@ export class V5ApiClient {
       searchParams.set('include_filter_options', 'true');
     }
 
-    // Debug: Log the final search parameters
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 V5ApiClient.getEntities final searchParams:', searchParams.toString());
-      console.log('🔍 V5ApiClient.getEntities final endpoint:', `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`);
-    }
 
     const endpoint = `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`;
     return this.makeRequest(endpoint);

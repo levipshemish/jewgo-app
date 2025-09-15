@@ -26,14 +26,6 @@ export interface WebAuthnCredential {
   last_used?: string;
 }
 
-export interface AuthError {
-  error: string;
-  code: string;
-  message: string;
-  correlation_id?: string;
-  step_up_challenge?: StepUpChallenge;
-  retry_after?: number;
-}
 
 export interface AuthServiceConfig {
   baseUrl: string;
@@ -123,7 +115,7 @@ class EnhancedAuthService {
       await this.ensureValidToken();
     }
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers
     };
@@ -155,12 +147,8 @@ class EnhancedAuthService {
     // Handle rate limiting
     if (response.status === 429) {
       const retryAfter = response.headers.get('Retry-After');
-      const error: AuthError = {
-        error: 'Rate limit exceeded',
-        code: 'RATE_LIMIT_EXCEEDED',
-        message: 'Too many requests. Please try again later.',
-        retry_after: retryAfter ? parseInt(retryAfter) : 60
-      };
+      const error = new AuthError('Too many requests. Please try again later.', 'RATE_LIMIT_EXCEEDED');
+      error.retry_after = retryAfter ? parseInt(retryAfter) : 60;
       throw error;
     }
 
@@ -168,16 +156,12 @@ class EnhancedAuthService {
     if (response.status === 403) {
       const errorData = await response.json().catch(() => ({}));
       if (errorData.code === 'STEP_UP_REQUIRED') {
-        const error: AuthError = {
-          error: errorData.error,
-          code: errorData.code,
-          message: errorData.message,
-          step_up_challenge: {
-            challenge_id: errorData.challenge_id,
-            required_method: errorData.required_method,
-            expires_at: errorData.expires_at,
-            step_up_url: errorData.step_up_url
-          }
+        const error = new AuthError(errorData.message || 'Step-up authentication required', errorData.code);
+        error.step_up_challenge = {
+          challenge_id: errorData.challenge_id,
+          required_method: errorData.required_method,
+          expires_at: errorData.expires_at,
+          step_up_url: errorData.step_up_url
         };
         throw error;
       }
@@ -525,9 +509,7 @@ class EnhancedAuthService {
 
   async hasRole(role: string): Promise<boolean> {
     const user = await this.getCurrentUser();
-    return user?.roles?.some(userRole => 
-      typeof userRole === 'string' ? userRole === role : userRole.role === role
-    ) || false;
+    return user?.roles?.includes(role) || false;
   }
 
   async isAdmin(): Promise<boolean> {
@@ -536,21 +518,26 @@ class EnhancedAuthService {
 }
 
 // Custom error class for authentication errors
-class AuthError extends Error {
+export class AuthError extends Error {
   public code: string;
+  public error: string;
+  public message: string;
+  public correlation_id?: string;
+  public step_up_challenge?: StepUpChallenge;
+  public retry_after?: number;
   public originalMessage: string;
-  public stepUpChallenge?: StepUpChallenge;
-  public retryAfter?: number;
 
   constructor(message: string, code: string, originalMessage?: string) {
     super(message);
     this.name = 'AuthError';
     this.code = code;
+    this.error = message;
+    this.message = message;
     this.originalMessage = originalMessage || message;
   }
 }
 
 // Export singleton instance
 export const enhancedAuthService = new EnhancedAuthService();
-export { EnhancedAuthService, AuthError };
+export { EnhancedAuthService };
 export type { AuthServiceConfig, StepUpChallenge, WebAuthnCredential };

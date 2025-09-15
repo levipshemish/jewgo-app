@@ -44,37 +44,16 @@ export function FilterPreview({
   const normalizedSignature = useMemo(() => JSON.stringify(normalizedFilters), [normalizedFilters]);
   
   // Memoize hasActiveFilters calculation
-  const hasActiveFilters = useMemo(() => {
-    const hasActive = Object.values(filters).some(value => 
+  const hasActiveFilters = useMemo(() => 
+    Object.values(filters).some(value => 
       value !== undefined && value !== null && value !== '' && 
       !(Array.isArray(value) && value.length === 0)
-    );
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 FilterPreview hasActiveFilters calculation:', {
-        filters,
-        hasActive,
-        filterValues: Object.values(filters)
-      });
-    }
-    
-    return hasActive;
-  }, [filters]);
+    ), [filters]
+  );
 
   // Debounced preview fetch
   const fetchPreview = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 FilterPreview fetchPreview called with:', {
-        hasActiveFilters,
-        validationErrors: validation.errors.length,
-        filters
-      });
-    }
-    
     if (!hasActiveFilters || validation.errors.length > 0) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview early return - no active filters or validation errors');
-      }
       setPreview(prev => ({
         ...prev,
         loading: false,
@@ -115,10 +94,6 @@ export function FilterPreview({
         delete previewFilters.priceRange; // Remove the frontend field name
       }
       
-      // TEMPORARY DEBUG: Test without filter mapping to see if that's the issue
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview testing with original normalized filters (no mapping):', normalizedFilters);
-      }
       
       // If user location is available, ensure distance sorting is applied for accurate count
       if (userLocation) {
@@ -134,58 +109,28 @@ export function FilterPreview({
 
       // Debug: Log the filters being sent to the API
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview original filters:', filters);
-        console.log('🔍 FilterPreview normalized filters:', normalizedFilters);
         console.log('🔍 FilterPreview final filters being sent:', previewFilters);
-        console.log('🔍 FilterPreview userLocation:', userLocation);
-        console.log('🔍 FilterPreview hasActiveFilters:', hasActiveFilters);
       }
 
       // Ask backend for count by requesting minimal page
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview making API call with:', {
-          page: 1,
-          limit: 1,
-          filters: previewFilters,
-          location,
-          includeFilterOptions: false
-        });
-      }
-      
-      // TEMPORARY DEBUG: Test with empty filters to see if API works
-      const testFilters = process.env.NODE_ENV === 'development' ? {} : previewFilters;
       
       const response = await fetchRestaurants({
         page: 1,
         limit: 1, // Only need count; backend returns total_count
-        filters: testFilters,
+        filters: previewFilters,
         location,
         includeFilterOptions: false,
       });
       
       // Debug: Log the response structure to understand what we're getting
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview response:', response);
-        console.log('🔍 FilterPreview total_count:', (response as any).total_count);
-        console.log('🔍 FilterPreview totalRestaurants:', (response as any).totalRestaurants);
-        console.log('🔍 FilterPreview restaurants length:', response.restaurants?.length);
-        console.log('🔍 FilterPreview response success:', response.success);
-        console.log('🔍 FilterPreview response error:', (response as any).error);
+        console.log('🔍 FilterPreview response total_count:', (response as any).total_count);
       }
       
       // Handle different response structures
       // Prefer backend-provided total_count when available
       const total = (response as any).total_count ?? (response as any).totalRestaurants ?? (response.restaurants?.length || 0);
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview total calculation:', {
-          total_count: (response as any).total_count,
-          totalRestaurants: (response as any).totalRestaurants,
-          restaurantsLength: response.restaurants?.length,
-          finalTotal: total,
-          finalCount: Number(total) || 0
-        });
-      }
 
       setPreview({
         count: Number(total) || 0,

@@ -17,7 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
-  register: (data: any) => Promise<void>;
+  register: (data: any) => Promise<AuthUser>;
   refreshUser: () => Promise<void>;
   hasPermission: (permission: string) => Promise<boolean>;
   hasRole: (role: string) => Promise<boolean>;
@@ -248,7 +248,7 @@ export function useWebAuthn() {
       if (error instanceof AuthError) {
         throw error;
       }
-      throw new AuthError('WebAuthn registration failed', 'WEBAUTHN_REGISTRATION_FAILED', error.message);
+      throw new AuthError('WebAuthn registration failed', 'WEBAUTHN_REGISTRATION_FAILED', error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoading(false);
     }
@@ -281,7 +281,7 @@ export function useWebAuthn() {
       if (error instanceof AuthError) {
         throw error;
       }
-      throw new AuthError('WebAuthn authentication failed', 'WEBAUTHN_AUTH_FAILED', error.message);
+      throw new AuthError('WebAuthn authentication failed', 'WEBAUTHN_AUTH_FAILED', error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoading(false);
     }
@@ -382,7 +382,7 @@ export function useAuthenticatedRequest() {
     try {
       const token = enhancedAuthService.getAccessToken();
       
-      const headers: HeadersInit = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers
       };
@@ -426,7 +426,7 @@ export function useAuthenticatedRequest() {
       if (error instanceof AuthError) {
         throw error;
       }
-      throw new AuthError('Request failed', 'REQUEST_FAILED', error.message);
+      throw new AuthError('Request failed', 'REQUEST_FAILED', error instanceof Error ? error.message : String(error));
     }
   }, [logout]);
 
@@ -453,7 +453,7 @@ export function useAuthError() {
         console.log('Rate limit exceeded, retry after:', error.retryAfter);
       }
     } else {
-      setError(new AuthError('Unknown error', 'UNKNOWN_ERROR', error.message));
+      setError(new AuthError('Unknown error', 'UNKNOWN_ERROR', error instanceof Error ? error.message : String(error)));
     }
   }, []);
 

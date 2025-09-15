@@ -10,7 +10,6 @@ import time
 import threading
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
-import json
 
 # Test utilities
 def utcnow():
@@ -130,7 +129,6 @@ class TestTokenRotationEdgeCases:
     def test_token_reuse_detection_family_revocation(self):
         """Test that reused tokens trigger family-wide revocation."""
         from services.auth import sessions
-        import hashlib
         
         # Mock the pepper for consistent hashing
         with patch.dict('os.environ', {'REFRESH_PEPPER': 'test_pepper'}):
@@ -207,7 +205,6 @@ class TestJWTTokenEdgeCases:
     def test_jwt_with_wrong_secret(self):
         """Test JWT verification with wrong secret key."""
         import jwt
-        import os
         
         # Create token with different secret
         wrong_payload = {
@@ -237,7 +234,6 @@ class TestPasswordResetEdgeCases:
         mock_session = Mock()
         
         # Return user with expired reset token
-        expired_time = utcnow() - timedelta(minutes=1)
         mock_session.execute.return_value.fetchone.return_value = None  # No valid token found
         
         mock_db.connection_manager.session_scope.return_value.__enter__.return_value = mock_session

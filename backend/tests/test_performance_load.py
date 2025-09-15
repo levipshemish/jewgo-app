@@ -11,7 +11,6 @@ import time
 import concurrent.futures
 import statistics
 from datetime import datetime
-from unittest.mock import MagicMock
 import json
 
 # Add backend directory to path
@@ -424,7 +423,7 @@ class TestRateLimitingPerformance:
         assert avg_check_latency < 10, f"Average check latency {avg_check_latency:.2f}ms too high"
         assert avg_record_latency < 10, f"Average record latency {avg_record_latency:.2f}ms too high"
         
-        print(f"\nAbuse Control Performance:")
+        print("\nAbuse Control Performance:")
         print(f"  Average check latency: {avg_check_latency:.2f}ms")
         print(f"  Average record latency: {avg_record_latency:.2f}ms")
 

@@ -77,33 +77,58 @@ const environmentConfigs: Record<string, Partial<SecurityConfig>> = {
   development: {
     auth: {
       baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000',
+      tokenRefreshThreshold: 300,
+      maxRetryAttempts: 2,
+      retryDelay: 1000,
+      sessionTimeout: 28800,
     },
     webauthn: {
+      enabled: process.env.NEXT_PUBLIC_WEBAUTHN_ENABLED === 'true',
+      rpId: process.env.NEXT_PUBLIC_WEBAUTHN_RP_ID || 'localhost',
+      rpName: process.env.NEXT_PUBLIC_WEBAUTHN_RP_NAME || 'JewGo Dev',
       origin: process.env.NEXT_PUBLIC_WEBAUTHN_ORIGIN || 'http://localhost:3000',
+      timeout: 300000,
+    },
+    rateLimiting: {
+      enabled: true,
+      showWarnings: true,
+      warningThreshold: 0.8,
     },
     security: {
       enableCSP: false,
       enableHSTS: false,
+      enableXFrameOptions: true,
     },
     monitoring: {
       enableErrorReporting: false,
+      enablePerformanceMonitoring: false,
+      enableSecurityEventLogging: true,
     },
   },
   test: {
     auth: {
       baseUrl: 'http://localhost:5000',
+      tokenRefreshThreshold: 300,
       maxRetryAttempts: 1,
       retryDelay: 100,
+      sessionTimeout: 28800,
     },
     webauthn: {
       enabled: false,
+      rpId: 'test',
+      rpName: 'JewGo Test',
+      origin: 'http://localhost:3000',
+      timeout: 300000,
     },
     rateLimiting: {
       enabled: false,
+      showWarnings: false,
+      warningThreshold: 0.8,
     },
     security: {
       enableCSP: false,
       enableHSTS: false,
+      enableXFrameOptions: true,
     },
     monitoring: {
       enableErrorReporting: false,
@@ -114,16 +139,32 @@ const environmentConfigs: Record<string, Partial<SecurityConfig>> = {
   production: {
     auth: {
       baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app',
+      tokenRefreshThreshold: 300,
+      maxRetryAttempts: 2,
+      retryDelay: 1000,
+      sessionTimeout: 28800,
     },
     webauthn: {
+      enabled: process.env.NEXT_PUBLIC_WEBAUTHN_ENABLED === 'true',
+      rpId: process.env.NEXT_PUBLIC_WEBAUTHN_RP_ID || 'jewgo.app',
+      rpName: process.env.NEXT_PUBLIC_WEBAUTHN_RP_NAME || 'JewGo',
       origin: process.env.NEXT_PUBLIC_WEBAUTHN_ORIGIN || 'https://jewgo.app',
+      timeout: 300000,
+    },
+    rateLimiting: {
+      enabled: true,
+      showWarnings: false,
+      warningThreshold: 0.8,
     },
     security: {
       enableCSP: true,
       enableHSTS: true,
+      enableXFrameOptions: true,
     },
     monitoring: {
       enableErrorReporting: true,
+      enablePerformanceMonitoring: true,
+      enableSecurityEventLogging: true,
     },
   },
 };

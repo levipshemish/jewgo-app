@@ -1,4 +1,4 @@
-from flask import Flask, make_response, Request
+from flask import Flask, make_response
 from services.auth import csrf, cookies
 
 

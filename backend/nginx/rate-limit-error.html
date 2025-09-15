@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Limit Exceeded - JewGo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            margin: 20px;
+        }
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+        }
+        h1 {
+            color: #333;
+            margin: 0 0 16px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin: 0 0 24px;
+        }
+        .retry-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            border-left: 4px solid #007bff;
+        }
+        .retry-timer {
+            font-weight: 600;
+            color: #007bff;
+            font-size: 18px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .tips {
+            text-align: left;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #eee;
+        }
+        .tips h3 {
+            color: #333;
+            margin: 0 0 12px;
+            font-size: 18px;
+        }
+        .tips ul {
+            color: #666;
+            padding-left: 20px;
+        }
+        .tips li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⏱️</div>
+        <h1>Rate Limit Exceeded</h1>
+        <p>You've made too many requests in a short period. Please wait a moment before trying again.</p>
+        
+        <div class="retry-info">
+            <div>You can retry in:</div>
+            <div class="retry-timer" id="countdown">60 seconds</div>
+        </div>
+        
+        <a href="javascript:history.back()" class="button" id="retryButton" style="opacity: 0.5; pointer-events: none;">
+            Try Again
+        </a>
+        
+        <div class="tips">
+            <h3>Why am I seeing this?</h3>
+            <ul>
+                <li>Rate limiting helps protect our service from abuse and ensures fair access for all users</li>
+                <li>Different endpoints have different limits based on their resource requirements</li>
+                <li>Authentication endpoints have stricter limits for security reasons</li>
+                <li>If you're using our API, consider implementing exponential backoff in your requests</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Get retry time from URL parameter or default to 60 seconds
+        const urlParams = new URLSearchParams(window.location.search);
+        let retryAfter = parseInt(urlParams.get('retry')) || 60;
+        
+        const countdownElement = document.getElementById('countdown');
+        const retryButton = document.getElementById('retryButton');
+        
+        function updateCountdown() {
+            if (retryAfter > 0) {
+                countdownElement.textContent = `${retryAfter} seconds`;
+                retryAfter--;
+                setTimeout(updateCountdown, 1000);
+            } else {
+                countdownElement.textContent = 'Ready to retry!';
+                retryButton.style.opacity = '1';
+                retryButton.style.pointerEvents = 'auto';
+                retryButton.textContent = 'Try Again Now';
+            }
+        }
+        
+        updateCountdown();
+        
+        // Auto-refresh when countdown reaches zero
+        setTimeout(() => {
+            if (document.referrer) {
+                window.location.href = document.referrer;
+            } else {
+                window.location.href = '/';
+            }
+        }, (retryAfter + 1) * 1000);
+    </script>
+</body>
+</html>

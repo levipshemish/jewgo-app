@@ -7,15 +7,12 @@ security event logging, and Prometheus integration.
 
 import pytest
 import time
-import json
-from unittest.mock import patch, MagicMock
-from flask import Flask, g, request
+from unittest.mock import patch
+from flask import Flask, g
 from services.auth.auth_metrics_v5 import (
     AuthMetricsV5,
     AuthEventType,
     AuthFailureReason,
-    AuthMetric,
-    PerformanceMetric,
     get_auth_metrics,
     record_auth_event,
     record_performance_metric,

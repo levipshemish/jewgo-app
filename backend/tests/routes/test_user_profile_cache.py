@@ -6,11 +6,9 @@ ensuring proper ETag handling, 304 responses, and rate limiting per user.
 """
 
 import pytest
-from unittest.mock import patch, Mock
 from freezegun import freeze_time
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Flask, jsonify, request
-from werkzeug.datastructures import Headers
 
 
 class TestUserProfileCache:

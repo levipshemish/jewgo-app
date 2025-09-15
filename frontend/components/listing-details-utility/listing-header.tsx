@@ -79,7 +79,7 @@ export function ListingHeader({
   return (
     <div className="flex justify-center px-4">
       {/* Header bar with consistent spacing and better visual hierarchy */}
-      <div className="inline-flex items-center px-4 py-2 rounded-full mt-6 shadow-lg max-w-fit backdrop-blur-md bg-white/80 border border-white/20 dark:bg-white/14 dark:border-white/22" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}>
+      <div className="inline-flex items-center px-4 py-2 rounded-full mt-6 shadow-lg max-w-fit backdrop-blur-md bg-white/80 border border-white/20 dark:bg-white/14 dark:border-white/22 whitespace-nowrap" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}>
         {/* Back button */}
         {onBack && (
           <Button 
@@ -96,8 +96,8 @@ export function ListingHeader({
         {/* Kosher type */}
         {kosherType && (
           <>
-            <div className="w-2" />
-            <span className={`text-sm font-medium m-0 ${
+            <div className="w-2 flex-shrink-0" />
+            <span className={`text-sm font-medium m-0 whitespace-nowrap flex-shrink-0 ${
               kosherType.toLowerCase() === 'meat' ? 'text-red-600' :
               kosherType.toLowerCase() === 'dairy' ? 'text-blue-600' :
               kosherType.toLowerCase() === 'parve' || kosherType.toLowerCase() === 'pareve' ? 'text-orange-600' :
@@ -111,7 +111,7 @@ export function ListingHeader({
         {/* Kosher agency */}
         {kosherAgency && (
           <>
-            <div className="w-2" />
+            <div className="w-2 flex-shrink-0" />
             {(() => {
               const lowerAgency = kosherAgency.toLowerCase()
               const isClickable = kosherAgencyWebsite || 
@@ -125,12 +125,12 @@ export function ListingHeader({
               return isClickable ? (
                 <button
                   onClick={handleAgencyClick}
-                  className="text-sm text-gray-600 hover:text-blue-600 underline transition-colors rounded p-1 m-0"
+                  className="text-sm text-gray-600 hover:text-blue-600 underline transition-colors rounded p-1 m-0 whitespace-nowrap flex-shrink-0"
                 >
                   {kosherAgency}
                 </button>
               ) : (
-                <span className="text-sm text-gray-600 m-0">
+                <span className="text-sm text-gray-600 m-0 whitespace-nowrap flex-shrink-0">
                   {kosherAgency}
                 </span>
               )
@@ -141,9 +141,9 @@ export function ListingHeader({
         {/* View count */}
         {viewCount !== undefined && viewCount >= 0 && (
           <>
-            <div className="w-2" />
-            <div className="flex items-center gap-1.5 text-gray-600 m-0">
-              <Eye className="h-4 w-4 text-blue-500" />
+            <div className="w-2 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 text-gray-600 m-0 whitespace-nowrap flex-shrink-0">
+              <Eye className="h-4 w-4 text-blue-500 flex-shrink-0" />
               <span className="text-sm font-medium">{viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
             </div>
           </>
@@ -152,12 +152,12 @@ export function ListingHeader({
         {/* Share button */}
         {shareCount !== undefined && (
           <>
-            <div className="w-2" />
+            <div className="w-2 flex-shrink-0" />
             <Button
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-8 w-8 p-0 m-0 min-w-0 min-h-0 max-w-8 max-h-8 hover:bg-gray-100 transition-colors"
+              className="h-8 w-8 p-0 m-0 min-w-0 min-h-0 max-w-8 max-h-8 hover:bg-gray-100 transition-colors flex-shrink-0"
               style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '2rem', maxHeight: '2rem' }}
             >
               <Share className="h-5 w-5" />
@@ -168,12 +168,12 @@ export function ListingHeader({
         {/* Favorite button */}
         {onFavorite && (
           <>
-            <div className="w-2" />
+            <div className="w-2 flex-shrink-0" />
             <Button
               variant="ghost"
               size="icon"
               onClick={onFavorite}
-              className="h-8 w-8 p-0 m-0 min-w-0 min-h-0 max-w-8 max-h-8 hover:bg-gray-100 transition-colors group"
+              className="h-8 w-8 p-0 m-0 min-w-0 min-h-0 max-w-8 max-h-8 hover:bg-gray-100 transition-colors group flex-shrink-0"
               style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '2rem', maxHeight: '2rem' }}
             >
               <Heart
