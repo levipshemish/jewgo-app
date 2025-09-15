@@ -20,8 +20,8 @@ from typing import Dict, Any, List
 
 from utils.logging_config import get_logger
 from utils.optimization_integration import get_optimization_manager, get_optimization_dashboard
-from middleware.auth_middleware import require_auth
-from middleware.rate_limit_middleware import rate_limit
+from middleware.auth_v5 import require_auth_v5
+from middleware.rate_limit_v5 import rate_limit_v5
 
 logger = get_logger(__name__)
 
@@ -30,8 +30,8 @@ optimization_api = Blueprint('optimization_api', __name__, url_prefix='/api/v5/o
 
 
 @optimization_api.route('/dashboard', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=30)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=30)
 def get_dashboard():
     """Get comprehensive optimization dashboard."""
     try:
@@ -51,8 +51,8 @@ def get_dashboard():
 
 
 @optimization_api.route('/status', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=60)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=60)
 def get_optimization_status():
     """Get optimization system status."""
     try:
@@ -74,8 +74,8 @@ def get_optimization_status():
 
 
 @optimization_api.route('/cache/warm', methods=['POST'])
-@require_auth
-@rate_limit(requests_per_minute=10)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=10)
 def warm_cache():
     """Warm cache using registered strategies."""
     try:
@@ -113,8 +113,8 @@ def warm_cache():
 
 
 @optimization_api.route('/cache/metrics', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=60)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=60)
 def get_cache_metrics():
     """Get detailed cache metrics."""
     try:
@@ -143,8 +143,8 @@ def get_cache_metrics():
 
 
 @optimization_api.route('/cache/reset', methods=['POST'])
-@require_auth
-@rate_limit(requests_per_minute=5)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=5)
 def reset_cache_metrics():
     """Reset cache metrics."""
     try:
@@ -173,8 +173,8 @@ def reset_cache_metrics():
 
 
 @optimization_api.route('/database/metrics', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=60)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=60)
 def get_database_metrics():
     """Get database performance metrics."""
     try:
@@ -203,8 +203,8 @@ def get_database_metrics():
 
 
 @optimization_api.route('/database/slow-queries', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=30)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=30)
 def get_slow_queries():
     """Get slow query analysis."""
     try:
@@ -236,8 +236,8 @@ def get_slow_queries():
 
 
 @optimization_api.route('/database/index-recommendations', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=30)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=30)
 def get_index_recommendations():
     """Get database index recommendations."""
     try:
@@ -269,8 +269,8 @@ def get_index_recommendations():
 
 
 @optimization_api.route('/connection-pool/status', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=60)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=60)
 def get_connection_pool_status():
     """Get connection pool status."""
     try:
@@ -303,8 +303,8 @@ def get_connection_pool_status():
 
 
 @optimization_api.route('/performance/dashboard', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=30)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=30)
 def get_performance_dashboard():
     """Get performance monitoring dashboard."""
     try:
@@ -333,8 +333,8 @@ def get_performance_dashboard():
 
 
 @optimization_api.route('/recommendations', methods=['GET'])
-@require_auth
-@rate_limit(requests_per_minute=30)
+@require_auth_v5
+@rate_limit_v5(requests_per_minute=30)
 def get_recommendations():
     """Get performance optimization recommendations."""
     try:
