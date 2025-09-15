@@ -119,7 +119,7 @@ class RestaurantServiceV5:
             
             # Use direct database queries instead of fetching all restaurants
             with self.repository.connection_manager.session_scope() as session:
-                from sqlalchemy import distinct, func, text, and_
+                from sqlalchemy import distinct, func, text, and_, or_
                 from database.models import Restaurant
                 
                 # Get distinct values efficiently with limited results
@@ -227,13 +227,18 @@ class RestaurantServiceV5:
                 logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
                 
                 # Count restaurants currently open (based on open_now field in hours_json)
-                # Since hours_json is stored as text, we'll use a text search approach
+                # Since hours_json is stored as text, we'll use a more flexible text search approach
                 restaurants_open_now = session.query(func.count(Restaurant.id)).filter(
                     and_(
                         Restaurant.hours_json.isnot(None),
                         Restaurant.hours_json != '',
                         Restaurant.hours_json != 'null',
-                        Restaurant.hours_json.like('%"open_now": true%')
+                        or_(
+                            Restaurant.hours_json.like('%"open_now": true%'),
+                            Restaurant.hours_json.like('%"open_now":true%'),
+                            Restaurant.hours_json.like("% 'open_now': true%"),
+                            Restaurant.hours_json.like("%'open_now':true%")
+                        )
                     )
                 ).scalar()
                 
@@ -250,12 +255,12 @@ class RestaurantServiceV5:
                 logger.info(f"Generated hours options: {hours_options}")
                 filter_options['hoursOptions'] = hours_options
         
-            # Cache the filter options for 1 hour
-            if self.cache_manager:
-                self.cache_manager.set(cache_key, filter_options, ttl=3600)
-            
-            logger.info("Successfully retrieved filter options using efficient queries")
-            return filter_options
+                # Cache the filter options for 1 hour
+                if self.cache_manager:
+                    self.cache_manager.set(cache_key, filter_options, ttl=3600)
+                
+                logger.info("Successfully retrieved filter options using efficient queries")
+                return filter_options
         
         except Exception as e:
             logger.error(f"Error getting filter options: {e}")
