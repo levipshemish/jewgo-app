@@ -224,20 +224,20 @@ class RestaurantServiceV5:
                     Restaurant.hours_json != 'null'
                 ).scalar()
                 
-        # Count restaurants currently open (based on open_now field in hours_json)
-        restaurants_open_now = session.query(func.count(Restaurant.id)).filter(
-            Restaurant.hours_json.op('->>')('open_now') == 'true'
-        ).scalar()
-        
-        # Build hours options based on actual data availability
-        hours_options = []
-        if restaurants_with_hours and restaurants_with_hours > 0:
-            hours_options.append('openNow')
-            # Only include time period options if we have sufficient data
-            if restaurants_with_hours >= 5:  # Minimum threshold for meaningful filtering
-                hours_options.extend(['morning', 'afternoon', 'evening', 'lateNight'])
-        
-        filter_options['hoursOptions'] = hours_options
+                # Count restaurants currently open (based on open_now field in hours_json)
+                restaurants_open_now = session.query(func.count(Restaurant.id)).filter(
+                    Restaurant.hours_json.op('->>')('open_now') == 'true'
+                ).scalar()
+                
+                # Build hours options based on actual data availability
+                hours_options = []
+                if restaurants_with_hours and restaurants_with_hours > 0:
+                    hours_options.append('openNow')
+                    # Only include time period options if we have sufficient data
+                    if restaurants_with_hours >= 5:  # Minimum threshold for meaningful filtering
+                        hours_options.extend(['morning', 'afternoon', 'evening', 'lateNight'])
+                
+                filter_options['hoursOptions'] = hours_options
         
         # Cache the filter options for 1 hour
         if self.cache_manager:
