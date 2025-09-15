@@ -9,6 +9,7 @@ Replaces: api_v4.py, restaurants_api.py, synagogues_api.py, and store-related ro
 from flask import Blueprint, request, jsonify, g
 from typing import Dict, Any, Optional, List
 import json
+import os
 from functools import wraps
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
