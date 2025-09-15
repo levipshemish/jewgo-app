@@ -140,6 +140,12 @@ class PostgresAuthClient {
         await this.handleAuthError(new PostgresAuthError('Unauthorized', 'UNAUTHORIZED', 401));
       }
 
+      // Handle 413 responses with user-friendly guidance
+      if (response.status === 413) {
+        const hint = 'Request headers too large. This often happens when too many or oversized cookies are sent to the API domain. Try clearing cookies for api.jewgo.app (and jewgo.app if needed), then retry.';
+        throw new PostgresAuthError(hint, 'REQUEST_HEADERS_TOO_LARGE', 413);
+      }
+
       // Handle 403 responses by clearing CSRF cookies and local session state
       if (response.status === 403) {
         await this.handle403Response();
@@ -175,7 +181,8 @@ class PostgresAuthClient {
    * Fetch and cache CSRF token (and set CSRF cookie via backend)
    */
   public async getCsrf(): Promise<string> {
-    const resp = await fetch(`${this.baseUrl}/api/auth/csrf`, { credentials: 'include', cache: 'no-store' });
+    // v5 auth exposes CSRF at /api/v5/auth/csrf
+    const resp = await fetch(`${this.baseUrl}/api/v5/auth/csrf`, { credentials: 'include', cache: 'no-store' });
     // Try to parse JSON, but handle HTML/error bodies gracefully
     const contentType = resp.headers.get('Content-Type') || '';
     let token: string | null = null;
@@ -183,7 +190,8 @@ class PostgresAuthClient {
       try {
         if (contentType.includes('application/json')) {
           const data = await resp.json();
-          token = data?.token ?? null;
+          // Backend returns { success, data: { csrf_token } }
+          token = data?.data?.csrf_token ?? data?.csrf_token ?? data?.token ?? null;
         } else {
           // Unexpected content-type on success
           const _ = await resp.text();
@@ -244,6 +252,23 @@ class PostgresAuthClient {
   private clearTokens(): void {
     this.accessToken = null;
     this.refreshToken = null;
+  }
+
+  /**
+   * Debug: list cookie names visible to JS on this origin.
+   * Note: HttpOnly cookies (like auth cookies) won’t appear here.
+   */
+  public getVisibleCookieNames(): string[] {
+    if (typeof document === 'undefined') return [];
+    try {
+      return document.cookie
+        .split(';')
+        .map((c) => c.trim())
+        .filter(Boolean)
+        .map((c) => c.split('=')[0]);
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -317,9 +342,18 @@ class PostgresAuthClient {
   }
 
   private async _fetchProfile(): Promise<AuthUser> {
-    const response = await this.request('/profile');
-    const result = await this.handleResponse<{ user: AuthUser }>(response);
-    return result.user;
+    try {
+      const response = await this.request('/profile');
+      const result = await this.handleResponse<{ user: AuthUser }>(response);
+      return result.user;
+    } catch (err) {
+      if (err instanceof PostgresAuthError && err.status === 413) {
+        // Log a concise hint plus visible cookies to aid cleanup
+        const cookies = this.getVisibleCookieNames();
+        console.error('[Auth] Profile fetch failed: 413 Request Too Large. Tip: clear cookies for api.jewgo.app. Visible cookies:', cookies);
+      }
+      throw err;
+    }
   }
 
   /**
@@ -432,7 +466,7 @@ class PostgresAuthClient {
 
   /**
    * Handle 403 responses by clearing CSRF cookies and local session state
-   */
+  */
   private async handle403Response(): Promise<void> {
     // Clear CSRF token
     this.csrfToken = null;
@@ -440,15 +474,7 @@ class PostgresAuthClient {
     // Clear any local session state
     this.clearTokens();
     
-    // Try to clear CSRF cookies by making a request to clear them
-    try {
-      await fetch(`${this.baseUrl}/api/auth/csrf`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-    } catch {
-      // Ignore errors when clearing CSRF cookies
-    }
+    // No explicit CSRF delete endpoint in v5; backend will rotate on next GET
   }
 
   /**
