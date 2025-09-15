@@ -559,6 +559,17 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 reviews API blueprint: {e}")
         
+        # Register v5 optimization API
+        if feature_flags_v5.is_enabled('optimization_api_v5', default=True):
+            try:
+                from routes.v5.optimization_api import optimization_api
+                app.register_blueprint(optimization_api)
+                logger.info("V5 optimization API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 optimization API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 optimization API blueprint: {e}")
+        
         # Register v5 monitoring API
         try:
             from routes.v5.monitoring_api import monitoring_v5, init_services as init_monitoring_services
