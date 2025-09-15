@@ -226,7 +226,7 @@ class RestaurantServiceV5:
                 
                 # Count restaurants currently open (based on open_now field in hours_json)
                 restaurants_open_now = session.query(func.count(Restaurant.id)).filter(
-                    func.json_extract_path_text(Restaurant.hours_json, 'open_now') == 'true'
+                    Restaurant.hours_json.op('->>')('open_now') == 'true'
                 ).scalar()
                 
                 # Build hours options based on actual data availability
