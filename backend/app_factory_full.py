@@ -17,6 +17,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
 from flask_session import Session
+from flask_socketio import SocketIO
 import redis
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -402,8 +403,19 @@ def create_app(config_class=None):
     deps["cache"] = cache
     deps["cache_manager"] = cache_manager
     
+    # Initialize SocketIO for real-time features
+    socketio = SocketIO(
+        app,
+        cors_allowed_origins="*",  # Configure based on your needs
+        async_mode='threading',
+        logger=True,
+        engineio_logger=True
+    )
+    logger.info("SocketIO initialized for real-time features")
+    
     # Make dependencies available to routes
     app.config["dependencies"] = deps
+    app.config["socketio"] = socketio
     
     # Monitoring blueprint registration is handled later after service init
     
@@ -559,16 +571,27 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 reviews API blueprint: {e}")
         
-        # Register v5 optimization API
-        if feature_flags_v5.is_enabled('optimization_api_v5', default=True):
-            try:
-                from routes.v5.optimization_api import optimization_api
-                app.register_blueprint(optimization_api)
-                logger.info("V5 optimization API blueprint registered successfully")
-            except ImportError as e:
-                logger.warning(f"Could not import v5 optimization API blueprint: {e}")
-            except Exception as e:
-                logger.warning(f"Could not register v5 optimization API blueprint: {e}")
+    # Register v5 optimization API
+    if feature_flags_v5.is_enabled('optimization_api_v5', default=True):
+        try:
+            from routes.v5.optimization_api import optimization_api
+            app.register_blueprint(optimization_api)
+            logger.info("V5 optimization API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 optimization API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 optimization API blueprint: {e}")
+    
+    # Register v5 WebSocket API
+    if feature_flags_v5.is_enabled('websocket_api_v5', default=True):
+        try:
+            from routes.v5.websocket_api import websocket_api
+            app.register_blueprint(websocket_api)
+            logger.info("V5 WebSocket API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 WebSocket API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 WebSocket API blueprint: {e}")
         
         # Register v5 monitoring API
         try:
@@ -664,6 +687,18 @@ def create_app(config_class=None):
         return jsonify({"success": False, "error": "Internal server error"}), 500
     
     # Log startup performance
+    # Initialize WebSocket integration
+    try:
+        from services.websocket_integration import initialize_websocket_integration
+        socketio = app.config.get("socketio")
+        if socketio:
+            initialize_websocket_integration(socketio)
+            logger.info("WebSocket integration initialized successfully")
+        else:
+            logger.warning("SocketIO not available for WebSocket integration")
+    except Exception as e:
+        logger.warning(f"Failed to initialize WebSocket integration: {e}")
+    
     startup_time = time.time() - startup_start_time
     logger.info(f"V5 application factory initialization completed successfully in {startup_time:.2f} seconds")
     return app
