@@ -226,10 +226,11 @@ class RestaurantServiceV5:
                 
                 logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
                 
-                # Count restaurants currently open (based on open_now field in hours_json)
-                # Temporarily simplified due to SQLAlchemy TextClause errors
-                # TODO: Implement proper open_now detection once SQLAlchemy issues are resolved
-                restaurants_open_now = 0  # For now, assume no restaurants are open
+        # Count restaurants currently open (based on open_now field in hours_json)
+        # Temporarily disabled due to SQLAlchemy TextClause errors
+        # TODO: Implement proper open_now detection once SQLAlchemy issues are resolved
+        # The hours_json field is causing SQLAlchemy errors when performing any text operations
+        restaurants_open_now = 0  # For now, assume no restaurants are open
                 
                 logger.info(f"Restaurants currently open: {restaurants_open_now}")
                 
