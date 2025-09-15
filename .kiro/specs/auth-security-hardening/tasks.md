@@ -24,8 +24,8 @@
   - Write integration tests for CSRF protection across all mutating endpoints
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 3. Enhanced Token Management System
-- [ ] 3.1 Implement TokenManagerV5 with Leeway Support
+- [-] 3. Enhanced Token Management System
+- [-] 3.1 Implement TokenManagerV5 with Leeway Support
   - Create TokenManagerV5 class with configurable leeway for JWT verification (default 60 seconds)
   - Implement HEAD /api/v5/auth/verify-token endpoint with sub-120ms p95 performance target
   - Add enhanced token minting with JTI (JWT ID) for tracking and revocation

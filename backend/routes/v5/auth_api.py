@@ -12,11 +12,13 @@ from datetime import timedelta as td
 import jwt
 import bcrypt
 import os
+import time
 from typing import Dict, Any, Optional
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from middleware.auth_v5 import require_permission_v5
 from services.auth_service_v5 import AuthServiceV5
+from services.auth.token_manager_v5 import TokenManagerV5
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5
 from utils.csrf_manager import get_csrf_manager
@@ -28,8 +30,9 @@ auth_bp = BlueprintFactoryV5.create_blueprint(
     'auth_api', __name__, '/api/v5/auth'
 )
 
-# Initialize auth service
+# Initialize auth service and token manager
 auth_service = AuthServiceV5()
+token_manager_v5 = TokenManagerV5()
 
 # Get CSRF manager (will be initialized by middleware)
 def get_csrf_manager_for_auth():
@@ -487,42 +490,80 @@ def change_password():
         }), 503
 
 
-@auth_bp.route('/verify-token', methods=['POST'])
+@auth_bp.route('/verify-token', methods=['HEAD', 'POST'])
 def verify_token():
-    """Verify JWT token validity."""
+    """Verify JWT token validity with optimized HEAD method for performance."""
+    start_time = time.perf_counter()
+    
     try:
-        data = request.get_json()
-        token = data.get('token') if data else None
+        # Get token from various sources
+        token = None
+        
+        if request.method == 'POST':
+            data = request.get_json()
+            token = data.get('token') if data else None
         
         if not token:
             token = request.cookies.get('access_token') or \
                    request.headers.get('Authorization', '').replace('Bearer ', '')
 
         if not token:
+            if request.method == 'HEAD':
+                return '', 400
             return jsonify({
                 'success': False,
                 'error': 'Token required'
             }), 400
 
-        # Verify token
-        payload = auth_service.verify_token(token)
+        # Verify token using TokenManagerV5 for enhanced performance
+        payload = token_manager_v5.verify_token(token)
         is_valid = payload is not None
         
-        return jsonify({
+        # Calculate response time
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        
+        # For HEAD requests, return minimal response for performance
+        if request.method == 'HEAD':
+            response = make_response('', 200 if is_valid else 401)
+            response.headers['X-Token-Valid'] = 'true' if is_valid else 'false'
+            response.headers['X-Response-Time'] = f'{duration_ms:.2f}ms'
+            
+            # Add user info headers if token is valid
+            if is_valid and payload:
+                response.headers['X-User-ID'] = payload.get('uid', '')
+                response.headers['X-Token-Type'] = payload.get('type', '')
+                response.headers['X-Token-JTI'] = payload.get('jti', '')[:16]  # Truncated for security
+            
+            return response
+        
+        # For POST requests, return full JSON response
+        response_data = {
             'success': is_valid,
             'data': {
                 'valid': is_valid,
                 'payload': payload if is_valid else None,
-                'error': 'Invalid token' if not is_valid else None
+                'error': 'Invalid token' if not is_valid else None,
+                'response_time_ms': round(duration_ms, 2)
             },
             'timestamp': datetime.utcnow().isoformat()
-        })
+        }
+        
+        return jsonify(response_data), 200 if is_valid else 401
 
     except Exception as e:
-        logger.error(f"Token verification error: {e}")
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        logger.error(f"Token verification error: {e} (took {duration_ms:.2f}ms)")
+        
+        if request.method == 'HEAD':
+            response = make_response('', 503)
+            response.headers['X-Token-Valid'] = 'error'
+            response.headers['X-Response-Time'] = f'{duration_ms:.2f}ms'
+            return response
+            
         return jsonify({
             'success': False,
-            'error': 'Token verification service unavailable'
+            'error': 'Token verification service unavailable',
+            'response_time_ms': round(duration_ms, 2)
         }), 503
 
 

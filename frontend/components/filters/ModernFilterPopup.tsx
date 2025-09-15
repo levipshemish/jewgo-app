@@ -27,6 +27,8 @@ interface ModernFilterPopupProps {
     priceRanges: string[];
     cities: string[];
     states: string[];
+    ratings: number[];
+    kosherDetails: string[];
   } | null;
 }
 
@@ -92,6 +94,8 @@ export function ModernFilterPopup({
       
       return () => clearTimeout(timer);
     }
+    // No cleanup needed when modal is closed
+    return undefined;
   }, [isOpen, loadFilterOptions, preloadedFilterOptions, fetchedFilterOptions]); // Now safe to include since loadFilterOptions is memoized
 
 
@@ -346,9 +350,17 @@ export function ModernFilterPopup({
                 }}
                 options={[
                   { value: "", label: "All Ratings" },
-                  { value: "3", label: "3+ Stars" },
-                  { value: "4", label: "4+ Stars" },
-                  { value: "4.5", label: "4.5+ Stars" }
+                  ...(effectiveFilterOptionsLoading 
+                    ? [{ value: "", label: "Loading..." }]
+                    : (filterOptions?.ratings?.map((rating) => ({
+                        value: rating.toString(),
+                        label: `${rating}+ Stars`
+                      })) || [
+                        { value: "3", label: "3+ Stars" },
+                        { value: "4", label: "4+ Stars" },
+                        { value: "4.5", label: "4.5+ Stars" }
+                      ])
+                  )
                 ]}
                 placeholder="All Ratings"
               />
@@ -374,6 +386,25 @@ export function ModernFilterPopup({
                 placeholder="All Hours"
               />
             </div>
+
+            {/* Kosher Details Filter */}
+            {filterOptions?.kosherDetails && filterOptions.kosherDetails.length > 0 && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-900">Kosher Details</label>
+                <CustomDropdown
+                  value={draftFilters.kosherDetails || ""}
+                  onChange={(value) => setDraftFilter('kosherDetails', value || undefined)}
+                  options={[
+                    { value: "", label: "All Kosher Details" },
+                    ...(filterOptions.kosherDetails.map((detail) => ({
+                      value: detail,
+                      label: detail
+                    })))
+                  ]}
+                  placeholder="All Kosher Details"
+                />
+              </div>
+            )}
           </div>
         </div>
 

@@ -153,6 +153,42 @@ def parse_filters(request_args: Dict[str, Any]) -> Dict[str, Any]:
     if request_args.get('category'):
         filters['category'] = request_args.get('category')
     
+    # Restaurant-specific filters
+    if request_args.get('agency'):
+        filters['agency'] = request_args.get('agency')
+    
+    if request_args.get('kosher_category'):
+        filters['kosher_category'] = request_args.get('kosher_category')
+    
+    if request_args.get('ratingMin'):
+        try:
+            filters['ratingMin'] = float(request_args.get('ratingMin'))
+        except (ValueError, TypeError):
+            pass
+    
+    if request_args.get('priceRange'):
+        try:
+            # Handle price range as comma-separated string or array
+            price_range = request_args.get('priceRange')
+            if isinstance(price_range, str) and ',' in price_range:
+                filters['priceRange'] = [int(x) for x in price_range.split(',')]
+            elif isinstance(price_range, (list, tuple)):
+                filters['priceRange'] = price_range
+        except (ValueError, TypeError):
+            pass
+    
+    if request_args.get('kosherDetails'):
+        filters['kosherDetails'] = request_args.get('kosherDetails')
+    
+    if request_args.get('hoursFilter'):
+        filters['hoursFilter'] = request_args.get('hoursFilter')
+    
+    if request_args.get('listing_type'):
+        filters['listing_type'] = request_args.get('listing_type')
+    
+    if request_args.get('certifying_agency'):
+        filters['certifying_agency'] = request_args.get('certifying_agency')
+    
     # Location filters
     if request_args.get('latitude') and request_args.get('longitude'):
         try:
@@ -161,6 +197,25 @@ def parse_filters(request_args: Dict[str, Any]) -> Dict[str, Any]:
             filters['radius'] = float(request_args.get('radius', 10))  # Default 10km radius
         except (ValueError, TypeError):
             pass  # Invalid location data, skip
+    
+    # Distance filters (multiple formats supported)
+    if request_args.get('maxDistanceMi'):
+        try:
+            filters['maxDistanceMi'] = float(request_args.get('maxDistanceMi'))
+        except (ValueError, TypeError):
+            pass
+    
+    if request_args.get('maxDistance'):
+        try:
+            filters['maxDistance'] = float(request_args.get('maxDistance'))
+        except (ValueError, TypeError):
+            pass
+    
+    if request_args.get('distanceMi'):
+        try:
+            filters['distanceMi'] = float(request_args.get('distanceMi'))
+        except (ValueError, TypeError):
+            pass
     
     # Bounds filter for map viewport
     if request_args.get('bounds'):
@@ -177,6 +232,10 @@ def parse_filters(request_args: Dict[str, Any]) -> Dict[str, Any]:
                 }
         except (ValueError, TypeError, AttributeError):
             pass  # Invalid bounds data, skip
+    
+    # Time-based filters
+    if request_args.get('openNow'):
+        filters['openNow'] = request_args.get('openNow').lower() in ('true', '1', 'yes')
     
     # Date filters
     if request_args.get('created_after'):

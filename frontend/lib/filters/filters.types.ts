@@ -41,6 +41,7 @@ export interface Filters {
   
   ratingMin?: number;
   priceRange?: [number, number];
+  kosherDetails?: string;
   lat?: number;
   lng?: number;
   page?: number;
@@ -89,6 +90,7 @@ export interface FilterState {
   
   ratingMin?: number;
   priceRange?: [number, number];
+  kosherDetails?: string;
   searchQuery?: string;
   userLocation?: {
     latitude: number;
@@ -104,6 +106,11 @@ export interface FilterOptions {
   kosherCategories: string[];
   listingTypes: string[];
   businessTypes: string[];
+  priceRanges?: string[];
+  cities?: string[];
+  states?: string[];
+  ratings?: number[];
+  kosherDetails?: string[];
 }
 
 export interface AppliedFilters extends Filters {
@@ -150,6 +157,7 @@ export interface AppliedFilters extends Filters {
   
   ratingMin?: number;
   priceRange?: [number, number];
+  kosherDetails?: string;
   lat?: number;
   lng?: number;
   page?: number;
@@ -221,6 +229,7 @@ export interface DraftFilters extends FilterState {
   
   ratingMin?: number;
   priceRange?: [number, number];
+  kosherDetails?: string;
 
   // Shul-specific filters
   denomination?: string;

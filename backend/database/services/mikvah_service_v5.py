@@ -205,11 +205,14 @@ class MikvahServiceV5:
             Paginated mikvah results with metadata
         """
         try:
+            # Normalize filters (e.g., coerce booleans, parse numbers)
+            processed_filters = self._process_filters(filters)
+
             # Get paginated results from repository
             try:
                 result = self.repository.get_entities_with_cursor(
                     entity_type='mikvahs',
-                    filters=filters,
+                    filters=processed_filters,
                     cursor=cursor,
                     page=page,
                     limit=limit,
@@ -257,6 +260,59 @@ class MikvahServiceV5:
         except Exception as e:
             self.logger.exception("Failed to get mikvahs", error=str(e))
             return ([], None, None)
+
+    def _process_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Process and normalize filter parameters for mikvah queries."""
+        if not filters:
+            return {}
+
+        processed: Dict[str, Any] = {}
+
+        # Copy non-empty values
+        for key, value in filters.items():
+            if value is not None and value != '':
+                processed[key] = value
+
+        # Coerce booleans from common string forms
+        def to_bool(v: Any) -> Optional[bool]:
+            if isinstance(v, bool):
+                return v
+            if isinstance(v, str):
+                s = v.strip().lower()
+                if s in ('true', '1', 'yes', 'y'): return True
+                if s in ('false', '0', 'no', 'n'): return False
+            return None
+
+        for bool_key in ('is_active', 'requires_appointment', 'appointment_required'):
+            if bool_key in processed:
+                b = to_bool(processed[bool_key])
+                if b is not None:
+                    processed[bool_key] = b
+                else:
+                    # Remove invalid boolean to avoid filtering out all results
+                    processed.pop(bool_key, None)
+
+        # Normalize latitude/longitude and radius if present
+        if 'latitude' in processed and 'longitude' in processed:
+            try:
+                processed['latitude'] = float(processed['latitude'])
+                processed['longitude'] = float(processed['longitude'])
+                if 'radius' in processed:
+                    processed['radius'] = float(processed['radius'])
+                else:
+                    processed['radius'] = 25.0
+            except (ValueError, TypeError):
+                processed.pop('latitude', None)
+                processed.pop('longitude', None)
+                processed.pop('radius', None)
+
+        # Bounds validation if provided already parsed
+        if 'bounds' in processed:
+            b = processed['bounds']
+            if not (isinstance(b, dict) and 'ne' in b and 'sw' in b):
+                processed.pop('bounds', None)
+
+        return processed
 
     def create_mikvah(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create new mikvah with validation.
@@ -461,32 +517,65 @@ class MikvahServiceV5:
             return None
 
     def _format_mikvah_response(self, mikvah: Any) -> Dict[str, Any]:
-        """Format mikvah database record for API response.
-        
-        Args:
-            mikvah: Database mikvah record
-            
-        Returns:
-            Formatted mikvah data
-        """
-        return {
-            'id': mikvah.id,
-            'name': mikvah.name,
-            'address': mikvah.address,
-            'phone': getattr(mikvah, 'phone', None),
-            'contact_person': getattr(mikvah, 'contact_person', None),
-            'email': getattr(mikvah, 'email', None),
-            'website': getattr(mikvah, 'website', None),
-            'operating_hours': getattr(mikvah, 'operating_hours', {}),
-            'features': getattr(mikvah, 'features', []),
-            # 'supervision': getattr(mikvah, 'supervision', None),  # TODO: Add supervision column to database
-            'appointment_required': getattr(mikvah, 'appointment_required', True),
-            'latitude': float(mikvah.latitude) if hasattr(mikvah, 'latitude') and mikvah.latitude else None,
-            'longitude': float(mikvah.longitude) if hasattr(mikvah, 'longitude') and mikvah.longitude else None,
-            'status': getattr(mikvah, 'status', 'active'),
-            'created_at': mikvah.created_at.isoformat() if hasattr(mikvah, 'created_at') and mikvah.created_at else None,
-            'updated_at': mikvah.updated_at.isoformat() if hasattr(mikvah, 'updated_at') and mikvah.updated_at else None
-        }
+        """Format mikvah record (ORM or dict) for API response."""
+        try:
+            if isinstance(mikvah, dict):
+                # Repository returns dictionaries; map fields safely
+                created_at = mikvah.get('created_at')
+                updated_at = mikvah.get('updated_at')
+                return {
+                    'id': mikvah.get('id'),
+                    'name': mikvah.get('name'),
+                    'address': mikvah.get('address'),
+                    'phone': mikvah.get('phone') or mikvah.get('phone_number'),
+                    'contact_person': mikvah.get('contact_person'),
+                    'email': mikvah.get('email'),
+                    'website': mikvah.get('website'),
+                    'operating_hours': mikvah.get('operating_hours') or {},
+                    'features': mikvah.get('features') or [],
+                    'appointment_required': (
+                        mikvah.get('appointment_required')
+                        if 'appointment_required' in mikvah
+                        else mikvah.get('requires_appointment')
+                    ),
+                    'latitude': mikvah.get('latitude'),
+                    'longitude': mikvah.get('longitude'),
+                    'status': mikvah.get('status', 'active'),
+                    'created_at': created_at,
+                    'updated_at': updated_at,
+                }
+            else:
+                # Fallback for ORM instances
+                return {
+                    'id': getattr(mikvah, 'id', None),
+                    'name': getattr(mikvah, 'name', None),
+                    'address': getattr(mikvah, 'address', None),
+                    'phone': getattr(mikvah, 'phone', None) or getattr(mikvah, 'phone_number', None),
+                    'contact_person': getattr(mikvah, 'contact_person', None),
+                    'email': getattr(mikvah, 'email', None),
+                    'website': getattr(mikvah, 'website', None),
+                    'operating_hours': getattr(mikvah, 'operating_hours', {}) or {},
+                    'features': getattr(mikvah, 'features', []) or [],
+                    'appointment_required': (
+                        getattr(mikvah, 'appointment_required', None)
+                        if hasattr(mikvah, 'appointment_required')
+                        else getattr(mikvah, 'requires_appointment', None)
+                    ),
+                    'latitude': float(getattr(mikvah, 'latitude')) if getattr(mikvah, 'latitude', None) is not None else None,
+                    'longitude': float(getattr(mikvah, 'longitude')) if getattr(mikvah, 'longitude', None) is not None else None,
+                    'status': getattr(mikvah, 'status', 'active'),
+                    'created_at': (
+                        getattr(getattr(mikvah, 'created_at', None), 'isoformat', lambda: None)()
+                        if getattr(mikvah, 'created_at', None) is not None else None
+                    ),
+                    'updated_at': (
+                        getattr(getattr(mikvah, 'updated_at', None), 'isoformat', lambda: None)()
+                        if getattr(mikvah, 'updated_at', None) is not None else None
+                    ),
+                }
+        except Exception as e:
+            self.logger.warning("Failed to format mikvah response", error=str(e))
+            return {'id': mikvah.get('id') if isinstance(mikvah, dict) else getattr(mikvah, 'id', None)}
 
     def _enrich_mikvah_data(self, mikvah_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enrich mikvah data with additional information.

@@ -18,6 +18,8 @@ interface FilterOptions {
   listingTypes: string[];
   priceRanges: string[];
   kosherCategories: string[];
+  ratings?: number[];
+  kosherDetails?: string[];
   counts: FilterCounts;
 }
 
