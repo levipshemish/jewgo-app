@@ -969,7 +969,7 @@ class EntityRepositoryV5(BaseRepository):
             if 'latitude' in filters and 'longitude' in filters:
                 lat = float(filters['latitude'])
                 lng = float(filters['longitude'])
-                radius_km = float(filters.get('radius', 10))  # Default 10km radius
+                radius_km = float(filters.get('radius', 160))  # Default 160km radius (100mi)
                 # Always set fallback radius for application-layer enforcement
                 filters['_radius_km'] = radius_km
                 
@@ -1353,7 +1353,7 @@ class EntityRepositoryV5(BaseRepository):
                     if filters and 'latitude' in filters and 'longitude' in filters:
                         lat = filters['latitude']
                         lng = filters['longitude']
-                        radius = filters.get('radius', 10)
+                        radius = filters.get('radius', 160)
                         
                         # Use the centralized geospatial filter method
                         query = self._apply_geospatial_filter(query, model_class, {
@@ -1456,7 +1456,7 @@ class EntityRepositoryV5(BaseRepository):
         if filters and 'latitude' in filters and 'longitude' in filters:
             lat = filters['latitude']
             lng = filters['longitude']
-            radius = filters.get('radius', 10)  # Default 10km radius
+            radius = filters.get('radius', 160)  # Default 160km radius (100mi)
             
             where_conditions.append(f"""
                 ST_DWithin(

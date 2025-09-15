@@ -62,8 +62,8 @@ SEARCH_CONFIG = {
         'categories': 2.0
     },
     'geospatial': {
-        'default_radius_km': 10,
-        'max_radius_km': 100,
+        'default_radius_km': 160,
+        'max_radius_km': 200,
         'distance_weight': 0.3
     },
     'facets': {

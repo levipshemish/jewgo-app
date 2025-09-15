@@ -386,7 +386,7 @@ def _parse_search_filters(args) -> Dict[str, Any]:
     # Location filters
     lat = args.get('latitude')
     lng = args.get('longitude')
-    radius = args.get('radius', '10')
+    radius = args.get('radius', '160')
     
     if lat and lng:
         try:
