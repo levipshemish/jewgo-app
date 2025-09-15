@@ -8,6 +8,8 @@ Status: Production Ready ✅
 
 ## Recent highlights (Jan 2025)
 
+- **Hours filtering functionality**: Implemented proper JSONB-based hours filtering for restaurants with support for "Open Now", "Morning", "Afternoon", "Evening", and "Late Night" filters
+- **Database optimization**: Migrated hours_json field to proper JSONB type for optimal performance and SQLAlchemy compatibility
 - **Codebase cleanup and organization**: Removed unused backup files, duplicate Dockerfiles, and deprecated code
 - **Backend optimization**: Consolidated database managers, removed unused health endpoints, cleaned up connection managers
 - **Frontend cleanup**: Removed unused development pages, duplicate utility files, and unnecessary dependencies
@@ -45,7 +47,7 @@ For detailed implementation and migration notes, see the docs/ directory.
 
 ## Features
 
-- Restaurant management: searchable kosher restaurant listings, reviews, ratings, hours, specials, map integration.
+- Restaurant management: searchable kosher restaurant listings, reviews, ratings, hours with advanced filtering (Open Now, Morning, Afternoon, Evening, Late Night), specials, map integration.
 - Synagogue directory: searchable synagogue listings and community contact information.
 - Reviews: user and Google reviews combined, with moderation tools.
 - User accounts: authentication, profile management, avatars, favorites.

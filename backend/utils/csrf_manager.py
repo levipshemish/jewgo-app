@@ -30,6 +30,12 @@ class CSRFManager:
         # Token configuration
         self.token_length = 32
         self.day_bucket_format = '%Y-%m-%d'
+        # TTL (seconds) used by routes for response hints and cookie max-age
+        # Keep default reasonable; allow override via environment.
+        try:
+            self.token_ttl = int(os.getenv('CSRF_TOKEN_TTL', '3600'))
+        except ValueError:
+            self.token_ttl = 3600
     
     def generate_token(self, session_id: str, user_agent: str) -> str:
         """
@@ -317,4 +323,23 @@ def get_csrf_manager() -> CSRFManager:
     Returns:
         CSRFManager instance
     """
+    return csrf_manager
+
+
+def init_csrf_manager(secret_key: Optional[str] = None, token_ttl: Optional[int] = None) -> CSRFManager:
+    """(Re)initialize the global CSRF manager with optional overrides.
+
+    Useful for tests and controlled reconfiguration without restarting the app.
+
+    Args:
+        secret_key: Optional override for the CSRF secret key
+        token_ttl: Optional override for token TTL in seconds
+
+    Returns:
+        The initialized CSRFManager instance.
+    """
+    global csrf_manager
+    csrf_manager = CSRFManager(secret_key=secret_key)
+    if token_ttl is not None:
+        csrf_manager.token_ttl = int(token_ttl)
     return csrf_manager

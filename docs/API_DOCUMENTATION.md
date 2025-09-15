@@ -4,6 +4,16 @@
 
 The JewGo API provides comprehensive endpoints for managing kosher restaurants, synagogues, user authentication, and marketplace functionality.
 
+### API Versions
+
+- **V5 API**: Enhanced endpoints with advanced filtering, JSONB optimization, and improved performance
+  - Base URL: `https://api.jewgo.app/api/v5`
+  - Features: Hours filtering, cursor pagination, enhanced filter options
+  - Documentation: [V5 API Documentation](./V5_API_DOCUMENTATION.md)
+- **Legacy API**: Standard endpoints for basic functionality
+  - Base URL: `https://api.jewgo.app/api`
+  - Features: Basic CRUD operations, standard pagination
+
 ### Base URL
 - **Production**: `https://api.jewgo.app`
 - **Development**: `http://localhost:5000`
