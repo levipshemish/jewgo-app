@@ -32,15 +32,14 @@ export const config = {
     '/settings/:path*',
     '/favorites/:path*',
     '/account/:path*',
-    // Exclude auth routes to prevent redirect loops
-    '/((?!auth|_next|static|api/auth|favicon.ico).*)',
   ]
 };
 
 /**
  * Enhanced security middleware with authentication checks
- * Applies security headers, rate limiting, CSRF protection, and auth checks
- * Redirects unauthenticated users to sign-in page for protected routes
+ * Uses HEAD /api/v5/auth/verify-token for performance optimization
+ * Preserves returnTo parameter for post-login redirects
+ * Applies security headers and handles authentication failures
  * 
  * Note: Auth pages (/auth/*) are excluded from middleware processing to prevent redirect loops
  */
@@ -57,35 +56,38 @@ export async function middleware(request: NextRequest) {
     }
     
     if (!isProtectedPath(path)) {
-      return NextResponse.next();
+      // Apply security headers to all responses, even non-protected ones
+      const response = NextResponse.next();
+      Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
+      return response;
     }
 
     // Create response with security headers
     const response = NextResponse.next();
     Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
     
-    // Verify JWT token with backend using cookies only
-    // Skip cookie presence check to avoid cross-domain issues
+    // Use HEAD /api/v5/auth/verify-token for performance optimization
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
         process.env.BACKEND_URL ||
         'https://api.jewgo.app';
-      const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, {
-        credentials: 'include'
+      
+      // Use HEAD method for performance - no response body needed
+      const verifyResponse = await fetch(`${backendUrl}/api/v5/auth/verify-token`, {
+        method: 'HEAD',
+        credentials: 'include',
+        // Add timeout for performance
+        signal: AbortSignal.timeout(5000)
       });
 
       if (!verifyResponse.ok) {
         return handleUnauthenticatedUser(request, isApi);
       }
 
-      const userData: UserData = await verifyResponse.json();
-      if (!userData.success || !userData.data) {
-        return handleUnauthenticatedUser(request, isApi);
-      }
-
+      // For HEAD requests, we only get status - assume authenticated if 200
       // Handle authenticated users
-      return await handleAuthenticatedUser(request, isApi, userData.data, response);
+      return await handleAuthenticatedUser(request, isApi, null, response);
     } catch (error) {
       console.error('Middleware auth verification error:', error);
       return handleAuthError(request, isApi, error as AuthError);
@@ -129,9 +131,14 @@ function handleUnauthenticatedUser(request: NextRequest, isApi: boolean): NextRe
 async function handleAuthenticatedUser(
   request: NextRequest, 
   isApi: boolean, 
-  _user: UserData['data'], 
+  _user: UserData['data'] | null, 
   response: NextResponse
 ): Promise<NextResponse> {
+  // Check if this is a sensitive operation requiring step-up authentication
+  if (requiresStepUpAuth(request.nextUrl.pathname)) {
+    return handleStepUpAuthRequired(request, isApi);
+  }
+
   // For middleware, we just check that the user is authenticated
   // Admin role checking will be handled in the API routes and components
   if (isApi) {
@@ -161,13 +168,15 @@ function handleMiddlewareError(request: NextRequest, _error: unknown): NextRespo
 }
 
 /**
- * Redirect to sign-in page with proper error handling
+ * Redirect to sign-in page with returnTo parameter preservation
  */
 function redirectToSignin(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
   const fullPath = pathname + search;
   const sanitizedRedirect = validateRedirectUrl(fullPath);
-  const redirectUrl = `/auth/signin?redirectTo=${encodeURIComponent(sanitizedRedirect)}`;
+  
+  // Preserve returnTo parameter for post-login redirects
+  const redirectUrl = `/auth/signin?returnTo=${encodeURIComponent(sanitizedRedirect)}`;
   
   const redirectResponse = NextResponse.redirect(new URL(redirectUrl, request.url), 302);
   
@@ -187,11 +196,63 @@ function isProtectedPath(pathname: string): boolean {
   if (pathname.startsWith('/auth/') || 
       pathname.startsWith('/_next/') || 
       pathname.startsWith('/static/') ||
-      pathname.startsWith('/api/auth/')) {
+      pathname.startsWith('/api/auth/') ||
+      pathname.startsWith('/favicon.ico')) {
     return false;
   }
   
-  return pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
+  // Protected paths that require authentication
+  const protectedPaths = [
+    '/admin',
+    '/api/admin',
+    '/dashboard',
+    '/profile',
+    '/settings',
+    '/favorites',
+    '/account'
+  ];
+  
+  return protectedPaths.some(path => pathname.startsWith(path));
+}
+
+/**
+ * Check if path requires step-up authentication
+ */
+function requiresStepUpAuth(pathname: string): boolean {
+  // Sensitive operations requiring fresh session or WebAuthn
+  const stepUpPaths = [
+    '/admin/users/roles',
+    '/admin/api-keys',
+    '/settings/billing',
+    '/settings/security',
+    '/account/delete'
+  ];
+  
+  return stepUpPaths.some(path => pathname.startsWith(path));
+}
+
+/**
+ * Handle step-up authentication requirement
+ */
+function handleStepUpAuthRequired(request: NextRequest, isApi: boolean): NextResponse {
+  if (isApi) {
+    return NextResponse.json(
+      { 
+        error: 'Step-up authentication required',
+        code: 'STEP_UP_REQUIRED',
+        hint: 'fresh_session_required'
+      }, 
+      { status: 403, headers: corsHeaders(request) }
+    );
+  }
+  
+  // Redirect to step-up authentication challenge
+  const { pathname, search } = request.nextUrl;
+  const fullPath = pathname + search;
+  const sanitizedRedirect = validateRedirectUrl(fullPath);
+  const challengeUrl = `/auth/step-up?returnTo=${encodeURIComponent(sanitizedRedirect)}`;
+  
+  return NextResponse.redirect(new URL(challengeUrl, request.url), 302);
 }
 
 /**

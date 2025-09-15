@@ -189,14 +189,20 @@ execute_on_server "
           --network-alias backend \
           -p 5000:5000 \
           --env-file .env \
+          -e PGHOST=129.80.190.110 \
+          -e PGPORT=5432 \
+          -e PGDATABASE=jewgo_db \
+          -e PGUSER=app_user \
+          -e PGPASSWORD=Jewgo123 \
+          -e DATABASE_URL=postgresql://app_user:Jewgo123@129.80.190.110:5432/jewgo_db \
           -e REDIS_URL=redis://jewgo_redis:6379/0 \
           -e REDIS_HOST=jewgo_redis \
           -e REDIS_PORT=6379 \
           -e REDIS_DB=0 \
           -e REDIS_PASSWORD= \
-          -w /app/backend \
+          -w /app \
           jewgo-app-backend \
-          gunicorn --config config/gunicorn.conf.py wsgi:app && \
+          gunicorn --bind 0.0.0.0:5000 wsgi:app && \
         echo 'Backend container started (docker run with gunicorn and network alias)'
     fi
 " "Starting new backend container"

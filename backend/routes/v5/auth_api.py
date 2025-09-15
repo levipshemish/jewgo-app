@@ -712,5 +712,220 @@ def jwks_endpoint():
         }), 503
 
 
+# Step-up Authentication Endpoints
+
+@auth_bp.route('/step-up/challenge', methods=['POST'])
+@require_permission_v5('authenticated')
+def step_up_challenge():
+    """Create step-up authentication challenge for sensitive operations."""
+    try:
+        data = request.get_json() or {}
+        return_to = data.get('return_to', '/')
+        
+        # Get current user session info
+        user_id = g.user_id
+        auth_time = getattr(g, 'auth_time', None)
+        
+        # Determine required authentication method based on operation sensitivity
+        # and current session age
+        current_time = int(time.time())
+        session_age = current_time - (auth_time or 0) if auth_time else float('inf')
+        
+        # Require fresh session if older than 5 minutes (300 seconds)
+        max_session_age = 300
+        
+        if session_age > max_session_age:
+            required_method = 'fresh_session'
+        else:
+            # Check if user has WebAuthn credentials
+            has_webauthn = auth_service.user_has_webauthn_credentials(user_id)
+            required_method = 'webauthn' if has_webauthn else 'password'
+        
+        # Create challenge
+        challenge_id = auth_service.create_step_up_challenge(
+            user_id=user_id,
+            required_method=required_method,
+            return_to=return_to
+        )
+        
+        challenge_data = {
+            'challenge_id': challenge_id,
+            'required_method': required_method,
+            'auth_time': auth_time,
+            'max_age': max_session_age
+        }
+        
+        logger.info(f"Step-up challenge created for user {user_id}: {required_method}")
+        
+        return jsonify({
+            'success': True,
+            'challenge': challenge_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Step-up challenge error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to create step-up challenge'
+        }), 500
+
+
+@auth_bp.route('/step-up/webauthn/challenge', methods=['POST'])
+@require_permission_v5('authenticated')
+def step_up_webauthn_challenge():
+    """Get WebAuthn challenge for step-up authentication."""
+    try:
+        data = request.get_json() or {}
+        challenge_id = data.get('challenge_id')
+        
+        if not challenge_id:
+            return jsonify({
+                'success': False,
+                'error': 'Challenge ID required'
+            }), 400
+        
+        # Validate challenge
+        challenge = auth_service.get_step_up_challenge(challenge_id)
+        if not challenge or challenge['user_id'] != g.user_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid challenge'
+            }), 400
+        
+        if challenge['required_method'] != 'webauthn':
+            return jsonify({
+                'success': False,
+                'error': 'WebAuthn not required for this challenge'
+            }), 400
+        
+        # Generate WebAuthn challenge
+        webauthn_challenge = auth_service.create_webauthn_challenge(g.user_id)
+        
+        # Get user's registered credentials
+        credentials = auth_service.get_user_webauthn_credentials(g.user_id)
+        
+        options = {
+            'challenge': webauthn_challenge['challenge'],
+            'timeout': 60000,  # 60 seconds
+            'rpId': request.host.split(':')[0],  # Remove port if present
+            'allowCredentials': [
+                {
+                    'type': 'public-key',
+                    'id': cred['credential_id'],
+                    'transports': cred.get('transports', ['usb', 'nfc', 'ble', 'internal'])
+                }
+                for cred in credentials
+            ],
+            'userVerification': 'required'
+        }
+        
+        # Store challenge for verification
+        auth_service.store_webauthn_challenge(
+            challenge_id=challenge_id,
+            webauthn_challenge=webauthn_challenge['challenge']
+        )
+        
+        return jsonify({
+            'success': True,
+            'options': options
+        })
+        
+    except Exception as e:
+        logger.error(f"WebAuthn challenge error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to create WebAuthn challenge'
+        }), 500
+
+
+@auth_bp.route('/step-up/webauthn/verify', methods=['POST'])
+@require_permission_v5('authenticated')
+def step_up_webauthn_verify():
+    """Verify WebAuthn assertion for step-up authentication."""
+    try:
+        data = request.get_json() or {}
+        challenge_id = data.get('challenge_id')
+        assertion = data.get('assertion')
+        
+        if not challenge_id or not assertion:
+            return jsonify({
+                'success': False,
+                'error': 'Challenge ID and assertion required'
+            }), 400
+        
+        # Validate challenge
+        challenge = auth_service.get_step_up_challenge(challenge_id)
+        if not challenge or challenge['user_id'] != g.user_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid challenge'
+            }), 400
+        
+        # Verify WebAuthn assertion
+        verification_result = auth_service.verify_webauthn_assertion(
+            user_id=g.user_id,
+            challenge_id=challenge_id,
+            assertion=assertion
+        )
+        
+        if not verification_result['verified']:
+            return jsonify({
+                'success': False,
+                'error': 'WebAuthn verification failed'
+            }), 400
+        
+        # Mark challenge as completed
+        auth_service.complete_step_up_challenge(challenge_id)
+        
+        # Update session with step-up completion
+        auth_service.mark_session_step_up_complete(g.session_id)
+        
+        logger.info(f"Step-up WebAuthn verification successful for user {g.user_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Step-up authentication completed'
+        })
+        
+    except Exception as e:
+        logger.error(f"WebAuthn verification error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'WebAuthn verification failed'
+        }), 500
+
+
+@auth_bp.route('/step-up/verify', methods=['POST'])
+@require_permission_v5('authenticated')
+def verify_step_up():
+    """Verify if user has completed step-up authentication for current session."""
+    try:
+        # Check if current session has completed step-up auth
+        has_step_up = auth_service.session_has_step_up(g.session_id)
+        
+        # Get session age for fresh session requirement
+        auth_time = getattr(g, 'auth_time', None)
+        current_time = int(time.time())
+        session_age = current_time - (auth_time or 0) if auth_time else float('inf')
+        
+        # Consider session fresh if less than 5 minutes old
+        is_fresh_session = session_age < 300
+        
+        return jsonify({
+            'success': True,
+            'step_up_completed': has_step_up,
+            'fresh_session': is_fresh_session,
+            'session_age': session_age,
+            'auth_time': auth_time
+        })
+        
+    except Exception as e:
+        logger.error(f"Step-up verification error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to verify step-up status'
+        }), 500
+
+
 # Export blueprint for app factory
 __all__ = ['auth_bp']

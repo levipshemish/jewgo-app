@@ -112,6 +112,7 @@ class SynagogueServiceV5:
         limit: int = 20,
         sort: str = 'created_at_desc',
         include_relations: bool = False,
+        include_filter_options: bool = False,
         user_context: Optional[Dict[str, Any]] = None,
         use_cache: bool = True
     ) -> Dict[str, Any]:
@@ -132,11 +133,19 @@ class SynagogueServiceV5:
                 use_cache=use_cache
             )
             
-            return {
+            response = {
                 'data': synagogues,
                 'next_cursor': next_cursor,
                 'prev_cursor': prev_cursor
             }
+            # Optionally include filter options metadata on first page
+            if include_filter_options and (page is None or page == 1):
+                try:
+                    response['filter_options'] = self._get_filter_options()
+                except Exception:
+                    # Don't fail the request if metadata can't be built
+                    response['filter_options'] = {}
+            return response
             
         except Exception as e:
             logger.error(f"Error getting entities: {e}")
@@ -199,6 +208,22 @@ class SynagogueServiceV5:
                 processed.pop('radius', None)
         
         return processed
+
+    def _get_filter_options(self) -> Dict[str, Any]:
+        """Build filter options metadata for synagogues UI.
+
+        Returns lightweight static/dynamic options that mirror other services.
+        """
+        try:
+            options: Dict[str, Any] = {
+                'denominations': self.VALIDATION_RULES.get('denomination', {}).get('allowed_values', []),
+                'service_types': self.VALIDATION_RULES.get('services_type', {}).get('allowed_values', []),
+                'status': self.VALIDATION_RULES.get('status', {}).get('allowed_values', []),
+                'accessibility': ['wheelchair_accessible', 'parking_available'],
+            }
+            return options
+        except Exception:
+            return {}
 
     def get_synagogues(
         self,

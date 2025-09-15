@@ -458,3 +458,280 @@ class AuthServiceV5:
         except Exception as e:
             logger.error(f"Error getting user {user_id}: {e}")
             return None
+    
+    # Step-up Authentication Methods
+    
+    def create_step_up_challenge(self, user_id: str, required_method: str, return_to: str) -> str:
+        """
+        Create step-up authentication challenge.
+        
+        Args:
+            user_id: User ID
+            required_method: Required authentication method ('fresh_session', 'webauthn', 'password')
+            return_to: URL to return to after successful authentication
+            
+        Returns:
+            Challenge ID
+        """
+        try:
+            challenge_id = secrets.token_urlsafe(32)
+            
+            challenge_data = {
+                'challenge_id': challenge_id,
+                'user_id': user_id,
+                'required_method': required_method,
+                'return_to': return_to,
+                'created_at': datetime.utcnow().isoformat(),
+                'expires_at': (datetime.utcnow() + timedelta(minutes=10)).isoformat(),
+                'completed': False
+            }
+            
+            # Store challenge in Redis with 10-minute expiration
+            cache_key = f"step_up_challenge:{challenge_id}"
+            self.redis_manager.set(
+                cache_key,
+                challenge_data,
+                ttl=600,  # 10 minutes
+                prefix='auth'
+            )
+            
+            logger.info(f"Step-up challenge created: {challenge_id} for user {user_id}")
+            return challenge_id
+            
+        except Exception as e:
+            logger.error(f"Error creating step-up challenge for user {user_id}: {e}")
+            raise
+    
+    def get_step_up_challenge(self, challenge_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get step-up challenge data.
+        
+        Args:
+            challenge_id: Challenge ID
+            
+        Returns:
+            Challenge data or None if not found/expired
+        """
+        try:
+            cache_key = f"step_up_challenge:{challenge_id}"
+            challenge_data = self.redis_manager.get(cache_key, prefix='auth')
+            
+            if challenge_data:
+                # Check if challenge has expired
+                expires_at = datetime.fromisoformat(challenge_data['expires_at'])
+                if datetime.utcnow() > expires_at:
+                    # Challenge expired, remove it
+                    self.redis_manager.delete(cache_key, prefix='auth')
+                    return None
+                
+                return challenge_data
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting step-up challenge {challenge_id}: {e}")
+            return None
+    
+    def complete_step_up_challenge(self, challenge_id: str) -> bool:
+        """
+        Mark step-up challenge as completed.
+        
+        Args:
+            challenge_id: Challenge ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cache_key = f"step_up_challenge:{challenge_id}"
+            challenge_data = self.redis_manager.get(cache_key, prefix='auth')
+            
+            if challenge_data:
+                challenge_data['completed'] = True
+                challenge_data['completed_at'] = datetime.utcnow().isoformat()
+                
+                # Update challenge data
+                self.redis_manager.set(
+                    cache_key,
+                    challenge_data,
+                    ttl=600,  # Keep for remaining TTL
+                    prefix='auth'
+                )
+                
+                logger.info(f"Step-up challenge completed: {challenge_id}")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error completing step-up challenge {challenge_id}: {e}")
+            return False
+    
+    def user_has_webauthn_credentials(self, user_id: str) -> bool:
+        """
+        Check if user has registered WebAuthn credentials.
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            True if user has WebAuthn credentials, False otherwise
+        """
+        try:
+            # For now, return False as WebAuthn is not fully implemented
+            # In a real implementation, this would query the database for user's WebAuthn credentials
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error checking WebAuthn credentials for user {user_id}: {e}")
+            return False
+    
+    def get_user_webauthn_credentials(self, user_id: str) -> List[Dict[str, Any]]:
+        """
+        Get user's registered WebAuthn credentials.
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            List of WebAuthn credentials
+        """
+        try:
+            # For now, return empty list as WebAuthn is not fully implemented
+            # In a real implementation, this would query the database for user's WebAuthn credentials
+            return []
+            
+        except Exception as e:
+            logger.error(f"Error getting WebAuthn credentials for user {user_id}: {e}")
+            return []
+    
+    def create_webauthn_challenge(self, user_id: str) -> Dict[str, Any]:
+        """
+        Create WebAuthn challenge for authentication.
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            WebAuthn challenge data
+        """
+        try:
+            # Generate random challenge
+            challenge = secrets.token_urlsafe(32)
+            
+            challenge_data = {
+                'challenge': challenge,
+                'user_id': user_id,
+                'created_at': datetime.utcnow().isoformat(),
+                'expires_at': (datetime.utcnow() + timedelta(minutes=5)).isoformat()
+            }
+            
+            # Store challenge in Redis with 5-minute expiration
+            cache_key = f"webauthn_challenge:{challenge}"
+            self.redis_manager.set(
+                cache_key,
+                challenge_data,
+                ttl=300,  # 5 minutes
+                prefix='auth'
+            )
+            
+            return challenge_data
+            
+        except Exception as e:
+            logger.error(f"Error creating WebAuthn challenge for user {user_id}: {e}")
+            raise
+    
+    def store_webauthn_challenge(self, challenge_id: str, webauthn_challenge: str) -> None:
+        """
+        Store WebAuthn challenge for step-up authentication.
+        
+        Args:
+            challenge_id: Step-up challenge ID
+            webauthn_challenge: WebAuthn challenge string
+        """
+        try:
+            # Link WebAuthn challenge to step-up challenge
+            cache_key = f"step_up_webauthn:{challenge_id}"
+            self.redis_manager.set(
+                cache_key,
+                {'webauthn_challenge': webauthn_challenge},
+                ttl=300,  # 5 minutes
+                prefix='auth'
+            )
+            
+        except Exception as e:
+            logger.error(f"Error storing WebAuthn challenge for step-up {challenge_id}: {e}")
+            raise
+    
+    def verify_webauthn_assertion(self, user_id: str, challenge_id: str, assertion: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Verify WebAuthn assertion for step-up authentication.
+        
+        Args:
+            user_id: User ID
+            challenge_id: Step-up challenge ID
+            assertion: WebAuthn assertion data
+            
+        Returns:
+            Verification result
+        """
+        try:
+            # For now, return success as WebAuthn is not fully implemented
+            # In a real implementation, this would verify the WebAuthn assertion
+            logger.info(f"WebAuthn assertion verification (mock) for user {user_id}")
+            
+            return {
+                'verified': True,
+                'credential_id': assertion.get('id', 'mock_credential'),
+                'counter': 1
+            }
+            
+        except Exception as e:
+            logger.error(f"Error verifying WebAuthn assertion for user {user_id}: {e}")
+            return {'verified': False, 'error': str(e)}
+    
+    def mark_session_step_up_complete(self, session_id: str) -> None:
+        """
+        Mark session as having completed step-up authentication.
+        
+        Args:
+            session_id: Session ID
+        """
+        try:
+            # Store step-up completion flag in Redis
+            cache_key = f"session_step_up:{session_id}"
+            self.redis_manager.set(
+                cache_key,
+                {
+                    'step_up_completed': True,
+                    'completed_at': datetime.utcnow().isoformat()
+                },
+                ttl=3600,  # 1 hour
+                prefix='auth'
+            )
+            
+            logger.info(f"Session step-up marked complete: {session_id}")
+            
+        except Exception as e:
+            logger.error(f"Error marking session step-up complete {session_id}: {e}")
+            raise
+    
+    def session_has_step_up(self, session_id: str) -> bool:
+        """
+        Check if session has completed step-up authentication.
+        
+        Args:
+            session_id: Session ID
+            
+        Returns:
+            True if session has completed step-up, False otherwise
+        """
+        try:
+            cache_key = f"session_step_up:{session_id}"
+            step_up_data = self.redis_manager.get(cache_key, prefix='auth')
+            
+            return step_up_data is not None and step_up_data.get('step_up_completed', False)
+            
+        except Exception as e:
+            logger.error(f"Error checking session step-up status {session_id}: {e}")
+            return False
