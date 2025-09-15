@@ -218,11 +218,9 @@ class RestaurantServiceV5:
                 
                 # Get hours options based on actual restaurant data
                 # Count restaurants with hours data
-                restaurants_with_hours = session.query(func.count(Restaurant.id)).filter(
-                    Restaurant.hours_json.isnot(None),
-                    Restaurant.hours_json != '',
-                    Restaurant.hours_json != 'null'
-                ).scalar()
+                # Temporarily disabled due to SQLAlchemy TextClause errors
+                # TODO: Implement proper hours data counting once SQLAlchemy issues are resolved
+                restaurants_with_hours = 0  # For now, assume no restaurants have hours data
                 
                 logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
                 
