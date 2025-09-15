@@ -60,6 +60,7 @@ class PostgresAuthClient {
   public accessToken: string | null = null;
   private refreshToken: string | null = null;
   private csrfToken: string | null = null;
+  private _csrfPromise: Promise<string> | null = null;
   
   // Enhanced auth client properties for loop guards and deduplication
   private refreshPromise: Promise<AuthResponse> | null = null;
@@ -181,17 +182,23 @@ class PostgresAuthClient {
    * Fetch and cache CSRF token (and set CSRF cookie via backend)
    */
   public async getCsrf(): Promise<string> {
+    // Return cached token if present
+    if (this.csrfToken) return this.csrfToken;
+    // Deduplicate concurrent requests
+    if (this._csrfPromise) return this._csrfPromise;
+
     // v5 auth exposes CSRF at /api/v5/auth/csrf
     const url = `${this.baseUrl}/api/v5/auth/csrf`;
     const attempts = 3;
     let lastError: PostgresAuthError | null = null;
 
-    for (let i = 0; i < attempts; i++) {
-      try {
-        const resp = await fetch(url, { credentials: 'include', cache: 'no-store' });
-        const contentType = resp.headers.get('Content-Type') || '';
-        let token: string | null = null;
-        if (resp.ok) {
+    this._csrfPromise = (async () => {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const resp = await fetch(url, { credentials: 'include', cache: 'no-store' });
+          const contentType = resp.headers.get('Content-Type') || '';
+          let token: string | null = null;
+          if (resp.ok) {
           try {
             if (contentType.includes('application/json')) {
               const data = await resp.json();
@@ -207,11 +214,11 @@ class PostgresAuthClient {
             this.csrfToken = token;
             return this.csrfToken;
           }
-        }
+          }
 
-        // Not OK response — construct informative error
-        let bodyPreview = '';
-        try { bodyPreview = (await resp.text()).slice(0, 120); } catch {}
+          // Not OK response — construct informative error
+          let bodyPreview = '';
+          try { bodyPreview = (await resp.text()).slice(0, 120); } catch {}
 
         if (resp.status === 503) {
           lastError = new PostgresAuthError(
@@ -239,19 +246,27 @@ class PostgresAuthClient {
           await new Promise((r) => setTimeout(r, delay));
           continue;
         }
-      } catch (e) {
-        // Network or other error; store and backoff
-        lastError = e instanceof PostgresAuthError ? e : new PostgresAuthError('Network error fetching CSRF token', 'NETWORK_ERROR');
-        if (i < attempts - 1) {
-          const delay = 200 * Math.pow(2, i);
-          await new Promise((r) => setTimeout(r, delay));
-          continue;
+        } catch (e) {
+          // Network or other error; store and backoff
+          lastError = e instanceof PostgresAuthError ? e : new PostgresAuthError('Network error fetching CSRF token', 'NETWORK_ERROR');
+          if (i < attempts - 1) {
+            const delay = 200 * Math.pow(2, i);
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
         }
       }
-    }
 
-    // Out of attempts
-    throw lastError ?? new PostgresAuthError('Failed to obtain CSRF token', 'CSRF_ERROR');
+      // Out of attempts
+      throw lastError ?? new PostgresAuthError('Failed to obtain CSRF token', 'CSRF_ERROR');
+    })();
+
+    try {
+      const token = await this._csrfPromise;
+      return token;
+    } finally {
+      this._csrfPromise = null;
+    }
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {

@@ -217,13 +217,32 @@ class RestaurantServiceV5:
                 
                 filter_options['kosherDetails'] = sorted(list(kosher_details))
                 
-                # Hours options generation - temporarily disabled due to SQLAlchemy TextClause errors
-                # TODO: Implement proper hours options generation once SQLAlchemy issues are resolved
+                # Hours options generation - using proper JSONB queries
                 try:
-                    # Temporarily disable hours options generation to prevent SQLAlchemy errors
-                    # The hours_json field is causing 'TextClause' object has no attribute '_static_cache_key' errors
-                    filter_options['hoursOptions'] = []
-                    logger.info("Hours options generation temporarily disabled due to SQLAlchemy errors")
+                    # Count restaurants with hours data using JSONB queries
+                    restaurants_with_hours = session.query(Restaurant).filter(
+                        Restaurant.hours_json.isnot(None),
+                        Restaurant.hours_json['periods'].isnot(None)
+                    ).count()
+                    
+                    logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
+                    
+                    # Count restaurants currently open using JSONB queries
+                    restaurants_open_now = session.query(Restaurant).filter(
+                        Restaurant.hours_json['open_now'].astext == 'true'
+                    ).count()
+                            
+                    logger.info(f"Restaurants currently open: {restaurants_open_now}")
+                    
+                    # Build hours options based on actual data availability
+                    hours_options = []
+                    if restaurants_open_now > 0:
+                        hours_options.append('openNow')
+                    if restaurants_with_hours >= 5:  # Minimum threshold for meaningful filtering
+                        hours_options.extend(['morning', 'afternoon', 'evening', 'lateNight'])
+                    
+                    logger.info(f"Generated hours options: {hours_options}")
+                    filter_options['hoursOptions'] = hours_options
                     
                 except Exception as e:
                     logger.error(f"Error generating hours options: {e}")

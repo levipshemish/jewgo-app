@@ -16,6 +16,7 @@ from sqlalchemy import (
     ARRAY,
     Numeric,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 # SQLAlchemy Base
@@ -78,7 +79,7 @@ class Restaurant(Base):
     price_range = Column(String(20))  # Optional
     short_description = Column(Text)  # Optional (e.g. from GMB or internal AI)
     hours_of_operation = Column(Text)  # Optional (check every 7 days)
-    hours_json = Column(Text)  # JSONB for structured hours data
+    hours_json = Column(JSONB)  # JSONB for structured hours data
     hours_last_updated = Column(DateTime)  # Track when hours were last updated
     timezone = Column(String(50))  # Based on geolocation or ORB data
     latitude = Column(Float)  # Based on geocoded address

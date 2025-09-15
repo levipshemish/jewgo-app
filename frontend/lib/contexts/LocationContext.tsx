@@ -229,13 +229,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               localStorage.removeItem(LOCATION_STORAGE_KEY);
               if (DEBUG) { debugLog('📍 LocationContext: Permission denied, cleared location data'); }
             } else if (newState === 'granted') {
+              // Do not auto-request geolocation here to satisfy browser gesture requirement.
+              // The UI should call requestLocation() via an explicit user action.
               setError(null);
-              if (DEBUG) { debugLog('📍 LocationContext: Permission granted, requesting fresh location'); }
-              // Automatically request fresh location when permission is granted
-              // Use setTimeout to ensure state update has completed
-              setTimeout(() => {
-                requestLocation();
-              }, 100);
+              if (DEBUG) { debugLog('📍 LocationContext: Permission granted; waiting for user gesture to request location'); }
             }
           };
           
@@ -278,11 +275,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               setUserLocation(data.userLocation);
               if (DEBUG) { debugLog('📍 LocationContext: Loaded saved location data'); }
             } else {
-              // Location is too old, clear it
+              // Location is too old, clear it, and wait for user gesture to refresh
               localStorage.removeItem(LOCATION_STORAGE_KEY);
               if (DEBUG) { debugLog(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`); }
-              // Request fresh location since saved data is expired
-              requestLocation();
             }
           }
         } catch (_error) {
@@ -290,9 +285,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           localStorage.removeItem(LOCATION_STORAGE_KEY);
         }
       } else if (permissionStatus === 'granted' && !savedLocationData) {
-        // Permission is granted but no saved data, request location
-        if (DEBUG) { debugLog('📍 LocationContext: Permission granted but no saved data, requesting location'); }
-        requestLocation();
+        // Permission is granted but no saved data; wait for explicit user action
+        if (DEBUG) { debugLog('📍 LocationContext: Permission granted but no saved data; awaiting user gesture to request location'); }
       } else if (permissionStatus === 'denied') {
         // Clear any saved location data if permission is denied
         localStorage.removeItem(LOCATION_STORAGE_KEY);
