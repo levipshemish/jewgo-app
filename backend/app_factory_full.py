@@ -557,19 +557,18 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 admin API blueprint: {e}")
         
-
-        # Register v5 reviews API
-        if True:  # Enable reviews API
-            try:
-                from routes.v5.reviews_v5 import reviews_v5, init_services as init_reviews_services
-                # Initialize reviews services
-                init_reviews_services(connection_manager_v5, redis_manager_v5, feature_flags_v5)
-                app.register_blueprint(reviews_v5)
-                logger.info("V5 reviews API blueprint registered successfully")
-            except ImportError as e:
-                logger.warning(f"Could not import v5 reviews API blueprint: {e}")
-            except Exception as e:
-                logger.warning(f"Could not register v5 reviews API blueprint: {e}")
+    # Register v5 reviews API
+    if True:  # Enable reviews API
+        try:
+            from routes.v5.reviews_v5 import reviews_v5, init_services as init_reviews_services
+            # Initialize reviews services
+            init_reviews_services(connection_manager_v5, redis_manager_v5, feature_flags_v5)
+            app.register_blueprint(reviews_v5)
+            logger.info("V5 reviews API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 reviews API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 reviews API blueprint: {e}")
     
     # Register v5 optimization API
     if feature_flags_v5.is_enabled('optimization_api_v5', default=True):
