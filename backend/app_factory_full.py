@@ -159,6 +159,16 @@ def create_app(config_class=None):
             'timestamp': datetime.utcnow().isoformat()
         }), 200
     
+    @app.route('/health', methods=['GET'])
+    def health():
+        """Simple health check for Docker health checks."""
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'service': 'jewgo-backend',
+            'version': '1.0.0'
+        }), 200
+    
     logger.info("Simple health check routes registered successfully")
     
     # Load configuration
