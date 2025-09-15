@@ -719,17 +719,14 @@ export default function EateryGrid({
       {/* End of Results */}
       {!hasMore && sortedRestaurants.length > 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          {totalCount ? (
-            <div>
-              <p className="text-lg font-medium text-gray-900">
-                All {totalCount} restaurants loaded
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Showing {sortedRestaurants.length} restaurants
-              </p>
-            </div>
+          {typeof totalCount === 'number' && totalCount >= 0 ? (
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium text-gray-900">{sortedRestaurants.length}</span>
+              {' '}of{' '}
+              <span className="font-medium text-gray-900">{totalCount}</span> restaurants
+            </p>
           ) : (
-            <p>Showing all {sortedRestaurants.length} restaurants</p>
+            <p>Showing {sortedRestaurants.length} restaurants</p>
           )}
         </div>
       )}

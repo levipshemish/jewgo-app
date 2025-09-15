@@ -299,7 +299,12 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
       kosher_category: restaurant.kosher_category,
       kosher_details: restaurant.kosher_details,
       google_rating: restaurant.google_rating,
-      quality_rating: restaurant.quality_rating
+      quality_rating: restaurant.quality_rating,
+      // Include hours data for filtering
+      hours_of_operation: restaurant.hours_of_operation,
+      hours_json: restaurant.hours_json,
+      timezone: restaurant.timezone,
+      next_open_time: restaurant.next_open_time
     }));
 
     // Handle filter options if included in response

@@ -38,6 +38,10 @@ export function FilterPreview({
 
   // Memoize validation to prevent infinite re-renders
   const validation = useMemo(() => validateFilters(filters, userLocation), [filters, userLocation]);
+
+  // Normalize filters once and create a stable signature to trigger preview updates
+  const normalizedFilters = useMemo(() => normalizeFilters(filters as any), [filters]);
+  const normalizedSignature = useMemo(() => JSON.stringify(normalizedFilters), [normalizedFilters]);
   
   // Memoize hasActiveFilters calculation
   const hasActiveFilters = useMemo(() => 
@@ -62,9 +66,6 @@ export function FilterPreview({
     setPreview(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Normalize filters to use standard field names
-      const normalizedFilters = normalizeFilters(filters as any);
-
       // Build location payload (fetchRestaurants will attach radius if present)
       const location = userLocation
         ? { latitude: userLocation.latitude, longitude: userLocation.longitude }
@@ -100,7 +101,7 @@ export function FilterPreview({
         hasValidationErrors: false
       });
     }
-  }, [userLocation, validation.errors.length, hasActiveFilters]);
+  }, [userLocation, validation.errors.length, hasActiveFilters, normalizedSignature]);
 
   // Debounced effect
   useEffect(() => {

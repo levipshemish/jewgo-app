@@ -522,6 +522,11 @@ class ETagV5Manager:
                     result = session.execute(text(query), params).fetchone()
                 except Exception as qe:
                     logger.error("Database watermark query failed", error=str(qe))
+                    # Reset failed transaction so fallback can run
+                    try:
+                        session.rollback()
+                    except Exception:
+                        pass
                     result = None
                 
                 if result and getattr(result, 'watermark', None):

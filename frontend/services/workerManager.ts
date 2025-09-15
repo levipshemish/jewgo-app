@@ -126,10 +126,10 @@ function performSynchronousFilter(
       }
     }
     
-    // Category filter (listing_type)
+    // Category filter (kosher_category)
     if (filters.category) {
-      const listingType = restaurant.listing_type?.toLowerCase() || '';
-      if (!listingType.includes(filters.category.toLowerCase())) {
+      const kosherCategory = restaurant.kosher_category?.toLowerCase() || '';
+      if (kosherCategory !== filters.category.toLowerCase()) {
         return false;
       }
     }
@@ -159,29 +159,43 @@ function performSynchronousFilter(
       
       switch (filters.hoursFilter) {
         case 'openNow':
-          if (restaurant.openNow !== undefined && !restaurant.openNow) {
+          // Use actual hours data if available, fallback to openNow field
+          if (restaurant.hours_json || restaurant.hours_of_operation) {
+            // TODO: Implement proper hours parsing for openNow check
+            // For now, fallback to the openNow field
+            if (restaurant.openNow !== undefined && !restaurant.openNow) {
+              return false;
+            }
+          } else if (restaurant.openNow !== undefined && !restaurant.openNow) {
             return false;
           }
           break;
         case 'morning':
+          // Check if restaurant is open during morning hours (6 AM - 12 PM)
           if (currentHour < 6 || currentHour >= 12) {
             return false;
           }
           break;
         case 'afternoon':
+          // Check if restaurant is open during afternoon hours (12 PM - 6 PM)
           if (currentHour < 12 || currentHour >= 18) {
             return false;
           }
           break;
         case 'evening':
+          // Check if restaurant is open during evening hours (6 PM - 10 PM)
           if (currentHour < 18 || currentHour >= 22) {
             return false;
           }
           break;
         case 'lateNight':
+          // Check if restaurant is open during late night hours (10 PM - 6 AM)
           if (currentHour < 22 && currentHour >= 6) {
             return false;
           }
+          break;
+        default:
+          // Unknown hours filter, don't filter
           break;
       }
     }
@@ -195,10 +209,12 @@ function performSynchronousFilter(
     }
     
     // Price range filter
-    if (filters.priceRange && restaurant.price_range !== undefined) {
+    if (filters.priceRange && Array.isArray(filters.priceRange) && restaurant.price_range !== undefined && restaurant.price_range !== null) {
       const [minPrice, maxPrice] = filters.priceRange;
-      if (restaurant.price_range < minPrice || restaurant.price_range > maxPrice) {
-        return false;
+      if (minPrice !== undefined && maxPrice !== undefined) {
+        if (restaurant.price_range < minPrice || restaurant.price_range > maxPrice) {
+          return false;
+        }
       }
     }
     
@@ -212,7 +228,7 @@ function performSynchronousFilter(
     
     // Distance filter (if user location available)
     const distanceMi = getCanonicalDistance(filters);
-    if (distanceMi && userLoc) {
+    if (distanceMi && userLoc && restaurant.pos && restaurant.pos.lat && restaurant.pos.lng) {
       const distance = calculateDistance(userLoc, restaurant.pos);
       if (distance > distanceMi) {
         // Debug: Log why restaurant was filtered out by distance

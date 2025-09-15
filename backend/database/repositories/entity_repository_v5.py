@@ -829,6 +829,9 @@ class EntityRepositoryV5(BaseRepository):
             with self.connection_manager.session_scope() as session:
                 query = session.query(func.count(model_class.id))
                 query = self._apply_filters(query, model_class, filters, mapping)
+                # Include geospatial filtering in counts when applicable
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 return query.scalar() or 0
                 
