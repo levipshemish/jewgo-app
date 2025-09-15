@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [-] 1. Database Schema Migration for Session Management
+- [x] 1. Database Schema Migration for Session Management
   - Create Alembic migration to add required fields to auth_sessions table: family_id, current_jti, revoked_at, reused_jti_of, device_hash, last_ip_cidr, auth_time
   - Add partial unique index: one active current_jti per family_id where revoked_at IS NULL
   - Add database indexes for performance: idx_auth_sessions_family_id, idx_auth_sessions_current_jti, idx_auth_sessions_revoked_at
@@ -8,8 +8,8 @@
   - Write migration rollback functionality for safe deployment
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 2. CSRF Protection System Implementation
-- [ ] 2.1 Create CSRF Manager Core Module
+- [-] 2. CSRF Protection System Implementation
+- [-] 2.1 Create CSRF Manager Core Module
   - Implement CSRFManager class with HMAC-based token generation using session_id, user_agent, and day bucket
   - Add token validation with timing attack protection using constant-time comparison
   - Create environment-aware cookie configuration method
