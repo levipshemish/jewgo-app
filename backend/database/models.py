@@ -471,16 +471,20 @@ class Mikvah(Base):
     
     # Mikvah details
     mikvah_type = Column(String(100))  # Women's, Men's, Both
-    rabbinical_supervision = Column(String(255))  # Orthodox, Conservative, etc.
-    requires_appointment = Column(Boolean, default=False)
-    walk_in_available = Column(Boolean, default=False)
+    appointment_required = Column(Boolean, default=False)
+    
+    # Hours (using actual database column names)
+    hours_monday = Column(String(100))
+    hours_tuesday = Column(String(100))
+    hours_wednesday = Column(String(100))
+    hours_thursday = Column(String(100))
+    hours_friday = Column(String(100))
+    hours_saturday = Column(String(100))
+    hours_sunday = Column(String(100))
     
     # Accessibility and amenities (using actual database column names)
-    has_disabled_access = Column(Boolean, default=False)
-    has_changing_rooms = Column(Boolean, default=True)
-    has_towels_provided = Column(Boolean, default=False)
-    has_soap_provided = Column(Boolean, default=False)
-    has_hair_dryers = Column(Boolean, default=False)
+    accessibility_features = Column(Text)
+    parking_available = Column(Boolean, default=False)
     
     # Hours and schedule (using actual database column names)
     business_hours = Column(Text)  # Operating hours as text
