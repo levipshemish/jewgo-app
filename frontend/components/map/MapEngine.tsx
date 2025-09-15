@@ -14,7 +14,7 @@ import Header from '@/components/layout/Header';
 import EateryFilterModal from '@/app/eatery/components/EateryFilterModal';
 import RestaurantDetails from './RestaurantDetails';
 import MapLegend from './MapLegend';
-import { onBoundsChanged, onBoundsChangedImmediate } from '@/services/triggers';
+import { onBoundsChanged } from '@/services/triggers';
 import { loadRestaurantsInBounds } from '@/services/dataManager';
 import { runFilter } from '@/services/workerManager';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -39,6 +39,14 @@ const MapEngine = () => {
     clearAllFilters
   } = useAdvancedFilters();
   
+  // Sync advanced filters with livemap store
+  const setLivemapFilters = useLivemapStore((state) => state.setFilters);
+  
+  // Update livemap store filters when advanced filters change
+  useEffect(() => {
+    setLivemapFilters(activeFilters);
+  }, [activeFilters, setLivemapFilters]);
+  
   // Use the same location system as eatery page
   const {
     userLocation,
@@ -51,7 +59,7 @@ const MapEngine = () => {
   
   // Filter modal state
   const [showFilters, setShowFilters] = useState(false);
-  const [filterOptions, setFilterOptions] = useState<any>(null);
+  const [_filterOptions, setFilterOptions] = useState<any>(null);
   
   // Search handler
   const handleSearch = useCallback((query: string) => {

@@ -8,6 +8,7 @@ import { useLivemapStore } from "@/lib/stores/livemap-store";
 import { makeWorker } from "@/lib/workers/makeWorker";
 import type { WorkRequest, WorkResponse } from "@/workers/protocol";
 import type { AppliedFilters } from "@/lib/filters/filters.types";
+import { getCanonicalDistance } from "@/lib/utils/filterValidation";
 
 // Performance limits
 const MAX_VISIBLE = 200;
@@ -53,7 +54,7 @@ export function runFilter(maxVisible: number = MAX_VISIBLE): void {
   }
 }
 
-// Synchronous filtering function - now uses the same filter schema as eatery page
+// Synchronous filtering function - now uses the same comprehensive filter schema as eatery page
 function performSynchronousFilter(
   restaurants: any[],
   filters: AppliedFilters,
@@ -65,38 +66,114 @@ function performSynchronousFilter(
   }
 
   let filtered = restaurants.filter(restaurant => {
-    // Search query filter (q)
+    // Search query filter (q) - comprehensive search across multiple fields
     if (filters.q) {
-      const query = filters.q.toLowerCase();
-      if (!restaurant.name.toLowerCase().includes(query)) {
+      const query = filters.q.toLowerCase().trim();
+      const name = restaurant.name?.toLowerCase() || '';
+      const address = restaurant.address?.toLowerCase() || '';
+      const city = restaurant.city?.toLowerCase() || '';
+      const state = restaurant.state?.toLowerCase() || '';
+      const listingType = restaurant.listing_type?.toLowerCase() || '';
+      const certifyingAgency = restaurant.certifying_agency?.toLowerCase() || '';
+      
+      if (!name.includes(query) && 
+          !address.includes(query) && 
+          !city.includes(query) && 
+          !state.includes(query) && 
+          !listingType.includes(query) && 
+          !certifyingAgency.includes(query)) {
         return false;
       }
     }
     
     // Agency filter
     if (filters.agency) {
-      if (!restaurant.agencies || !restaurant.agencies.includes(filters.agency)) {
+      const certifyingAgency = restaurant.certifying_agency?.toLowerCase() || '';
+      if (!certifyingAgency.includes(filters.agency.toLowerCase())) {
         return false;
       }
     }
     
-    // Category filter (kosher_category)
+    // Dietary filter - supports multiple dietary preferences
+    if (filters.dietary && filters.dietary.length > 0) {
+      const kosherCategory = restaurant.kosher_category?.toLowerCase() || '';
+      const matchesDietary = filters.dietary.some(dietary => {
+        switch (dietary.toLowerCase()) {
+          case 'meat': return kosherCategory === 'meat';
+          case 'dairy': return kosherCategory === 'dairy';
+          case 'pareve': return kosherCategory === 'pareve';
+          default: return true;
+        }
+      });
+      if (!matchesDietary) {
+        return false;
+      }
+    }
+    
+    // Category filter (listing_type)
     if (filters.category) {
-      if (restaurant.kosher !== filters.category.toUpperCase()) {
+      const listingType = restaurant.listing_type?.toLowerCase() || '';
+      if (!listingType.includes(filters.category.toLowerCase())) {
+        return false;
+      }
+    }
+    
+    // Business types filter
+    if (filters.businessTypes && filters.businessTypes.length > 0) {
+      const listingType = restaurant.listing_type?.toLowerCase() || '';
+      const matchesBusinessType = filters.businessTypes.some(businessType => 
+        listingType.includes(businessType.toLowerCase())
+      );
+      if (!matchesBusinessType) {
         return false;
       }
     }
     
     // Open now filter
-    if (filters.openNow && restaurant.openNow !== undefined) {
-      if (!restaurant.openNow) {
+    if (filters.openNow && restaurant.is_open !== undefined) {
+      if (!restaurant.is_open) {
         return false;
       }
     }
     
+    // Hours filter - time-based filtering
+    if (filters.hoursFilter) {
+      const currentTime = new Date();
+      const currentHour = currentTime.getHours();
+      
+      switch (filters.hoursFilter) {
+        case 'openNow':
+          if (restaurant.is_open !== undefined && !restaurant.is_open) {
+            return false;
+          }
+          break;
+        case 'morning':
+          if (currentHour < 6 || currentHour >= 12) {
+            return false;
+          }
+          break;
+        case 'afternoon':
+          if (currentHour < 12 || currentHour >= 18) {
+            return false;
+          }
+          break;
+        case 'evening':
+          if (currentHour < 18 || currentHour >= 22) {
+            return false;
+          }
+          break;
+        case 'lateNight':
+          if (currentHour < 22 && currentHour >= 6) {
+            return false;
+          }
+          break;
+      }
+    }
+    
     // Rating filter
-    if (filters.ratingMin && restaurant.rating !== undefined) {
-      if (restaurant.rating < filters.ratingMin) {
+    if (filters.ratingMin) {
+      const rating = restaurant.google_rating || restaurant.rating || restaurant.quality_rating || 0;
+      if (rating < filters.ratingMin) {
         return false;
       }
     }
@@ -109,10 +186,19 @@ function performSynchronousFilter(
       }
     }
     
+    // Kosher details filter
+    if (filters.kosherDetails) {
+      const kosherDetails = restaurant.kosher_details?.toLowerCase() || '';
+      if (!kosherDetails.includes(filters.kosherDetails.toLowerCase())) {
+        return false;
+      }
+    }
+    
     // Distance filter (if user location available)
-    if (filters.distanceMi && userLoc) {
+    const distanceMi = getCanonicalDistance(filters);
+    if (distanceMi && userLoc) {
       const distance = calculateDistance(userLoc, restaurant.pos);
-      if (distance > filters.distanceMi) {
+      if (distance > distanceMi) {
         return false;
       }
     }

@@ -208,31 +208,60 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
     const boundsStr = `${bounds.ne.lat},${bounds.ne.lng}-${bounds.sw.lat},${bounds.sw.lng}`;
     filters.bounds = boundsStr;
     
-    // Add active filters if provided
+    // Add active filters if provided - comprehensive filter support matching eatery page
     if (activeFilters) {
       if (activeFilters.q) filters.search = activeFilters.q;
       if (activeFilters.agency) filters.agency = activeFilters.agency;
       if (activeFilters.category) filters.kosher_category = activeFilters.category;
-      if (activeFilters.distanceMi) {
-        // Convert miles to km for backend
-        filters.radius = (activeFilters.distanceMi * 1.60934).toString();
+      
+      // Dietary filters - support multiple dietary preferences
+      if (activeFilters.dietary && activeFilters.dietary.length > 0) {
+        filters.dietary = activeFilters.dietary.join(',');
       }
+      
+      // Business types filter
+      if (activeFilters.businessTypes && activeFilters.businessTypes.length > 0) {
+        filters.businessTypes = activeFilters.businessTypes.join(',');
+      }
+      
+      // Distance: support distanceMi or maxDistanceMi (miles)
+      const distanceMi = activeFilters.distanceMi || activeFilters.maxDistanceMi;
+      if (distanceMi) {
+        const radiusKm = distanceMi * 1.60934;
+        // Backend expects 'radius' in km
+        filters.radius = radiusKm.toString();
+      }
+      
       if (activeFilters.priceRange) {
         const [min, max] = activeFilters.priceRange;
         if (min) filters.price_min = min.toString();
         if (max) filters.price_max = max.toString();
       }
+      
       if (activeFilters.ratingMin) filters.ratingMin = activeFilters.ratingMin.toString();
       if (activeFilters.openNow) filters.openNow = 'true';
       if (activeFilters.kosherDetails) filters.kosherDetails = activeFilters.kosherDetails;
+      
+      // Hours filter - time-based filtering
+      if (activeFilters.hoursFilter) {
+        filters.hoursFilter = activeFilters.hoursFilter;
+      }
     }
     
     // Use the same API as eatery page
+    // If we have a distance filter, include radius in the location payload for the V5 client
+    let locationPayload = userLocation;
+    const distanceMi = activeFilters?.distanceMi || activeFilters?.maxDistanceMi;
+    if (userLocation && distanceMi) {
+      const radiusKm = distanceMi * 1.60934;
+      locationPayload = { ...userLocation, radius: radiusKm } as any;
+    }
+
     const response = await apiFetchRestaurants({
       page: 1,
       limit: 200,
       filters,
-      location: userLocation,
+      location: locationPayload,
       cursor: undefined,
       includeFilterOptions: false
     });
