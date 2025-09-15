@@ -397,16 +397,11 @@ export function ModernFilterPopup({
                 onChange={(value) => setDraftFilter('hoursFilter', value || undefined)}
                 options={[
                   { value: "", label: "All Hours" },
-                  ...(filterOptions?.hoursOptions || []).map(option => {
-                    const labels: Record<string, string> = {
-                      'openNow': 'Open Now',
-                      'morning': 'Morning (6 AM - 12 PM)',
-                      'afternoon': 'Afternoon (12 PM - 6 PM)',
-                      'evening': 'Evening (6 PM - 10 PM)',
-                      'lateNight': 'Late Night (10 PM - 6 AM)'
-                    };
-                    return { value: option, label: labels[option] || option };
-                  })
+                  { value: "openNow", label: "Open Now" },
+                  { value: "morning", label: "Morning (6 AM - 12 PM)" },
+                  { value: "afternoon", label: "Afternoon (12 PM - 6 PM)" },
+                  { value: "evening", label: "Evening (6 PM - 10 PM)" },
+                  { value: "lateNight", label: "Late Night (10 PM - 6 AM)" }
                 ]}
                 placeholder="All Hours"
               />

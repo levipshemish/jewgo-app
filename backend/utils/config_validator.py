@@ -38,6 +38,18 @@ class ConfigValidator:
         'JWT_SECRET_KEY': {
             'description': 'JWT signing secret key',
             'example': 'jwt-secret-key-here'
+        },
+        'JWT_ISSUER': {
+            'description': 'JWT issuer claim for v5 tokens',
+            'example': 'jewgo.app'
+        },
+        'JWT_AUDIENCE': {
+            'description': 'JWT audience claim for v5 tokens',
+            'example': 'jewgo.app'
+        },
+        'REFRESH_PEPPER': {
+            'description': 'Pepper used to hash refresh tokens in auth_sessions',
+            'example': 'random-long-secret-value'
         }
     }
     
