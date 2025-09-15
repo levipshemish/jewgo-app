@@ -38,6 +38,7 @@ if (normalizedBackend && validateBackendUrl(normalizedBackend)) {
 } else if (isDevelopment) {
   // Development fallbacks
   const devFallbacks = [
+    'https://api.jewgo.app',  // Production API for development
     'http://127.0.0.1:8082',
     'http://localhost:8082',
     'http://127.0.0.1:5000',
