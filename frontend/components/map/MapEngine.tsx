@@ -13,6 +13,7 @@ import GoogleMap from './vendors/GoogleMap';
 import Header from '@/components/layout/Header';
 import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
 import RestaurantDetails from './RestaurantDetails';
+import MapLegend from './MapLegend';
 import { onBoundsChanged, onBoundsChangedImmediate } from '@/services/triggers';
 import { loadRestaurantsInBounds } from '@/services/dataManager';
 import { runFilter } from '@/services/workerManager';
@@ -35,7 +36,7 @@ const MapEngine = () => {
   
   // Search handler
   const handleSearch = useCallback((query: string) => {
-    setFilters({ ...filters, query });
+    setFilters({ ...filters, q: query });
   }, [filters, setFilters]);
   
   // Filter handlers
@@ -213,6 +214,9 @@ const MapEngine = () => {
                   <span className="text-sm font-medium">My Location</span>
                 </button>
               </div>
+
+      {/* Map Legend */}
+      <MapLegend showRatingBubbles={true} />
       
       <RestaurantDetails />
       

@@ -7,6 +7,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition
 import { InteractiveRestaurantMap } from '@/components/map/InteractiveRestaurantMap';
 import MapErrorBoundary from '@/components/map/MapErrorBoundary';
 import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
+import MapLegend from '@/components/map/MapLegend';
 import Card from '@/components/core/cards/Card';
 // Remove old fetchRestaurants import - we'll use unified API directly
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
@@ -17,7 +18,7 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useMemoryMonitoring } from '@/lib/hooks/useMemoryMonitoring';
 import { usePerformanceMonitoring } from '@/lib/hooks/usePerformanceMonitoring';
 import { favoritesManager } from '@/lib/utils/favorites';
-import { calculateDistance } from '@/lib/utils/geolocation';
+import { calculateDistance } from '@/lib/utils/distance';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
@@ -1148,6 +1149,9 @@ export default function UnifiedLiveMapClient() {
           </MapErrorBoundary>
         </div>
       </div>
+
+      {/* Map Legend */}
+      <MapLegend showRatingBubbles={true} />
 
       {/* Restaurant Detail Card */}
       {showRestaurantCard && selectedRestaurant && (

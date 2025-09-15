@@ -10,7 +10,8 @@
 
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import type { Restaurant, Filters, MapState, LatLng, Id, LoadingState } from '@/types/livemap';
+import type { Restaurant, MapState, LatLng, Id, LoadingState } from '@/types/livemap';
+import type { AppliedFilters } from '@/lib/filters/filters.types';
 
 interface LivemapState {
   // Data
@@ -23,7 +24,7 @@ interface LivemapState {
   favorites: Set<Id>;
 
   // Filters / UI
-  filters: Filters;
+  filters: AppliedFilters;
   loading: { restaurants: LoadingState; location: LoadingState };
   error: string | null;
 
@@ -32,7 +33,7 @@ interface LivemapState {
 
   // Actions (NO side-effects here except store ops)
   setMap: (s: Partial<MapState>) => void;
-  setFilters: (f: Partial<Filters>) => void;
+  setFilters: (f: Partial<AppliedFilters>) => void;
   setRestaurants: (rs: Restaurant[]) => void;
   select: (id: Id | null) => void;
   toggleFavorite: (id: Id) => void;

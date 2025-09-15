@@ -110,6 +110,10 @@ let cacheHits = 0;
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 500; // 500ms minimum between requests
 
+// Track initial load state
+let isInitialLoad = true;
+let initialLoadStartTime = Date.now();
+
 // Find overlapping cached data that covers the requested bounds
 function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
   const now = Date.now();

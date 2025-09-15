@@ -954,6 +954,8 @@ class EntityRepositoryV5(BaseRepository):
                 lat = float(filters['latitude'])
                 lng = float(filters['longitude'])
                 radius_km = float(filters.get('radius', 10))  # Default 10km radius
+                # Always set fallback radius for application-layer enforcement
+                filters['_radius_km'] = radius_km
                 
                 # If PostGIS not available, apply coarse bbox filter and mark for app-layer filtering
                 if not getattr(self, '_postgis_available', False) and hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
@@ -977,11 +979,18 @@ class EntityRepositoryV5(BaseRepository):
                     logger.info("Applied bbox geospatial fallback; PostGIS unavailable")
                 elif hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
                     # Use traditional latitude/longitude columns (most common case)
+                    # Cast to geography so distance is in meters
                     query = query.filter(
                         func.ST_DWithin(
-                            func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
-                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                            radius_km * 1000  # Convert km to meters
+                            func.cast(
+                                func.ST_SetSRID(func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')), 4326),
+                                text('geography')
+                            ),
+                            func.cast(
+                                func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                                text('geography')
+                            ),
+                            radius_km * 1000  # meters
                         )
                     )
                     logger.info(f"Applied PostGIS geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
@@ -989,9 +998,9 @@ class EntityRepositoryV5(BaseRepository):
                     # Use geom column (PostGIS geometry column)
                     query = query.filter(
                         func.ST_DWithin(
-                            model_class.geom,
-                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                            radius_km * 1000  # Convert km to meters
+                            func.cast(getattr(model_class, 'geom'), text('geography')),
+                            func.cast(func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326), text('geography')),
+                            radius_km * 1000
                         )
                     )
                 elif hasattr(model_class, 'location'):
@@ -999,9 +1008,9 @@ class EntityRepositoryV5(BaseRepository):
                     # Cast the location text to geometry and then to geography for distance calculation
                     query = query.filter(
                         func.ST_DWithin(
-                            func.ST_GeogFromText(model_class.location),
-                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                            radius_km * 1000  # Convert km to meters
+                            func.ST_GeogFromText(getattr(model_class, 'location')),
+                            func.cast(func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326), text('geography')),
+                            radius_km * 1000
                         )
                     )
                 

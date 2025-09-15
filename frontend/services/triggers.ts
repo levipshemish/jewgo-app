@@ -30,12 +30,13 @@ export const onBoundsChangedImmediate = (bounds: Bounds, activeFilters?: Applied
 };
 
 // Debounced filter change handler
-export const onFiltersChanged = debounce(() => {
+export const onFiltersChanged = debounce((filters: AppliedFilters) => {
+  useLivemapStore.getState().setFilters(filters);
   runFilter();
 }, FILTER_DEBOUNCE_MS);
 
 // Debounced search handler
 export const onSearchChanged = debounce((query: string) => {
-  useLivemapStore.getState().setFilters({ query });
+  useLivemapStore.getState().setFilters({ q: query });
   runFilter();
 }, FILTER_DEBOUNCE_MS);

@@ -7,6 +7,7 @@
 import { useLivemapStore } from "@/lib/stores/livemap-store";
 import { makeWorker } from "@/lib/workers/makeWorker";
 import type { WorkRequest, WorkResponse } from "@/workers/protocol";
+import type { AppliedFilters } from "@/lib/filters/filters.types";
 
 // Performance limits
 const MAX_VISIBLE = 200;
@@ -52,10 +53,10 @@ export function runFilter(maxVisible: number = MAX_VISIBLE): void {
   }
 }
 
-// Synchronous filtering function
+// Synchronous filtering function - now uses the same filter schema as eatery page
 function performSynchronousFilter(
   restaurants: any[],
-  filters: any,
+  filters: AppliedFilters,
   userLoc: any,
   maxVisible: number
 ): string[] {
@@ -64,17 +65,24 @@ function performSynchronousFilter(
   }
 
   let filtered = restaurants.filter(restaurant => {
-    // Query filter
-    if (filters.query) {
-      const query = filters.query.toLowerCase();
+    // Search query filter (q)
+    if (filters.q) {
+      const query = filters.q.toLowerCase();
       if (!restaurant.name.toLowerCase().includes(query)) {
         return false;
       }
     }
     
-    // Kosher type filter
-    if (filters.kosher && filters.kosher.length > 0) {
-      if (!filters.kosher.includes(restaurant.kosher)) {
+    // Agency filter
+    if (filters.agency) {
+      if (!restaurant.agencies || !restaurant.agencies.includes(filters.agency)) {
+        return false;
+      }
+    }
+    
+    // Category filter (kosher_category)
+    if (filters.category) {
+      if (restaurant.kosher !== filters.category.toUpperCase()) {
         return false;
       }
     }
@@ -86,26 +94,25 @@ function performSynchronousFilter(
       }
     }
     
-    // Agencies filter
-    if (filters.agencies && filters.agencies.length > 0) {
-      if (!restaurant.agencies || !filters.agencies.some((agency: string) => 
-        restaurant.agencies.includes(agency)
-      )) {
+    // Rating filter
+    if (filters.ratingMin && restaurant.rating !== undefined) {
+      if (restaurant.rating < filters.ratingMin) {
         return false;
       }
     }
     
-    // Rating filter
-    if (filters.minRating && restaurant.rating !== undefined) {
-      if (restaurant.rating < filters.minRating) {
+    // Price range filter
+    if (filters.priceRange && restaurant.price_range !== undefined) {
+      const [minPrice, maxPrice] = filters.priceRange;
+      if (restaurant.price_range < minPrice || restaurant.price_range > maxPrice) {
         return false;
       }
     }
     
     // Distance filter (if user location available)
-    if (filters.maxDistanceMi && userLoc) {
+    if (filters.distanceMi && userLoc) {
       const distance = calculateDistance(userLoc, restaurant.pos);
-      if (distance > filters.maxDistanceMi) {
+      if (distance > filters.distanceMi) {
         return false;
       }
     }
