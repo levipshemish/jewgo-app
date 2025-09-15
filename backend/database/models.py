@@ -355,6 +355,7 @@ class Synagogue(Base):
     id = Column(Integer, primary_key=True)
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
     
     # Basic information
     name = Column(String(255), nullable=False)
