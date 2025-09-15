@@ -359,82 +359,81 @@ class Synagogue(Base):
     
     # Basic information
     name = Column(String(255), nullable=False)
-    address = Column(String(500), nullable=False)
-    city = Column(String(100), nullable=False)
-    state = Column(String(50), nullable=False)
-    zip_code = Column(String(20), nullable=False)
+    description = Column(Text)
+    address = Column(Text)
+    city = Column(String(100))
+    state = Column(String(50))
+    zip_code = Column(String(20))
+    country = Column(String(50), default='USA')
     phone_number = Column(String(50))
     website = Column(String(500))
     email = Column(String(255))
     
     # Location data
-    latitude = Column(Float)
-    longitude = Column(Float)
+    latitude = Column(Numeric(10, 8))
+    longitude = Column(Numeric(11, 8))
     
-    # Synagogue details (using actual shuls table column names)
-    denomination = Column(String(100))  # Orthodox, Conservative, Reform, etc.
-    shul_type = Column(String(100))  # Daily, Shabbat, High Holidays, etc.
+    # Synagogue details
+    denomination = Column(String(100))
+    shul_type = Column(String(100))
+    shul_category = Column(String(100))
     rabbi_name = Column(String(255))
     rabbi_phone = Column(String(50))
     rabbi_email = Column(String(255))
+    religious_authority = Column(String(255))
+    community_affiliation = Column(String(255))
+    kosher_certification = Column(String(255))
     
-    # Services and amenities (using actual shuls table column names)
+    # Services and amenities
     has_daily_minyan = Column(Boolean, default=False)
-    has_shabbat_services = Column(Boolean, default=False)
-    has_holiday_services = Column(Boolean, default=False)
+    has_shabbat_services = Column(Boolean, default=True)
+    has_holiday_services = Column(Boolean, default=True)
+    has_women_section = Column(Boolean, default=True)
+    has_mechitza = Column(Boolean, default=True)
+    has_separate_entrance = Column(Boolean, default=False)
     has_hebrew_school = Column(Boolean, default=False)
     has_adult_education = Column(Boolean, default=False)
+    has_youth_programs = Column(Boolean, default=False)
+    has_senior_programs = Column(Boolean, default=False)
     has_social_hall = Column(Boolean, default=False)
     has_kiddush_facilities = Column(Boolean, default=False)
+    has_library = Column(Boolean, default=False)
     has_parking = Column(Boolean, default=False)
     has_disabled_access = Column(Boolean, default=False)
     
-    # Hours and schedule (using actual shuls table column names)
-    business_hours = Column(Text)  # Operating hours as text
+    # Hours and schedule
+    business_hours = Column(Text)
     hours_parsed = Column(Boolean, default=False)
-    
-    # Additional information (using actual shuls table column names)
-    description = Column(Text)
-    image_url = Column(String(2000))
-    logo_url = Column(String(2000))
-    is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)
-    
-    # Additional shul-specific fields
-    shul_category = Column(String(100))
-    community_affiliation = Column(String(255))
-    religious_authority = Column(String(255))
-    kosher_certification = Column(String(255))
-    membership_required = Column(Boolean, default=False)
-    membership_fee = Column(Numeric(10, 2))
-    visitor_policy = Column(Text)
-    accepts_visitors = Column(Boolean, default=True)
-    
-    # Rating and reviews
-    rating = Column(Float)
-    review_count = Column(Integer, default=0)
-    star_rating = Column(Float)
-    google_rating = Column(Float)
-    
-    # Additional amenities
-    has_mechitza = Column(Boolean, default=False)
-    has_women_section = Column(Boolean, default=False)
-    has_separate_entrance = Column(Boolean, default=False)
-    has_library = Column(Boolean, default=False)
-    has_youth_programs = Column(Boolean, default=False)
-    has_senior_programs = Column(Boolean, default=False)
-    
-    # Distance and location
-    distance = Column(String(50))
-    distance_miles = Column(Numeric(8, 2))
     timezone = Column(String(50))
     
-    # Search and categorization
-    search_vector = Column(Text)
-    tags = Column(ARRAY(String))
-    listing_type = Column(String(100), default='shul')
-    specials = Column(Text)
+    # Distance and ratings
+    distance = Column(String(50))
+    distance_miles = Column(Numeric(8, 2))
+    rating = Column(Numeric(3, 2))
+    review_count = Column(Integer, default=0)
+    star_rating = Column(Numeric(3, 2))
+    google_rating = Column(Numeric(3, 2))
+    
+    # Images and media
+    image_url = Column(Text)
+    logo_url = Column(Text)
+    
+    # Membership and policies
+    membership_required = Column(Boolean, default=False)
+    membership_fee = Column(Numeric(10, 2))
+    fee_currency = Column(String(3), default='USD')
+    accepts_visitors = Column(Boolean, default=True)
+    visitor_policy = Column(Text)
+    
+    # Status and verification
+    is_verified = Column(Boolean, default=False)
+    
+    # Additional fields
+    search_vector = Column(Text)  # tsvector for full-text search
+    tags = Column(Text)  # text array
     admin_notes = Column(Text)
+    specials = Column(Text)
+    listing_type = Column(String(100), default='shul')
     
     # Audit fields (commented out - don't exist in actual database)
     # created_by = Column(String(255))

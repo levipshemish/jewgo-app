@@ -6,7 +6,7 @@ Provides comprehensive authentication and authorization services including
 JWT management, session handling, role-based access control, and security features.
 """
 
-from flask import request, jsonify, g, make_response
+from flask import request, jsonify, g, make_response, redirect
 from datetime import datetime, timedelta
 from datetime import timedelta as td
 import jwt
@@ -598,12 +598,18 @@ def verify_email():
     try:
         token = request.args.get('token') or (request.json.get('token') if request.is_json and request.json else None)
         if not token:
-            return jsonify({'success': False, 'error': 'Verification token is required'}), 400
+            # Optionally redirect to error page
+            frontend_base = os.getenv('FRONTEND_URL', os.getenv('NEXT_PUBLIC_FRONTEND_URL', 'http://localhost:3000'))
+            error_url = f"{frontend_base}/auth/verify-error?code=MISSING_TOKEN"
+            return redirect(error_url, code=302)
         auth_mgr = get_postgres_auth()
         ok = auth_mgr.verify_email(token)
+        frontend_base = os.getenv('FRONTEND_URL', os.getenv('NEXT_PUBLIC_FRONTEND_URL', 'http://localhost:3000'))
         if not ok:
-            return jsonify({'success': False, 'error': 'Invalid or expired verification token'}), 400
-        return jsonify({'success': True, 'message': 'Email verified successfully'}), 200
+            error_url = f"{frontend_base}/auth/verify-error?code=INVALID_OR_EXPIRED"
+            return redirect(error_url, code=302)
+        success_url = f"{frontend_base}/auth/verify-success"
+        return redirect(success_url, code=302)
     except Exception as e:
         logger.error(f"Email verification error: {e}")
         return jsonify({'success': False, 'error': 'Verification service unavailable'}), 503
