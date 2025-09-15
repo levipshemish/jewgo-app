@@ -227,17 +227,17 @@ class RestaurantServiceV5:
                 logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
                 
                 # Count restaurants currently open (based on open_now field in hours_json)
-                # Since hours_json is stored as text, we'll use a more flexible text search approach
+                # Since hours_json is stored as text, we'll use PostgreSQL text functions
                 restaurants_open_now = session.query(func.count(Restaurant.id)).filter(
                     and_(
                         Restaurant.hours_json.isnot(None),
                         Restaurant.hours_json != '',
                         Restaurant.hours_json != 'null',
                         or_(
-                            Restaurant.hours_json.like('%"open_now": true%'),
-                            Restaurant.hours_json.like('%"open_now":true%'),
-                            Restaurant.hours_json.like("% 'open_now': true%"),
-                            Restaurant.hours_json.like("%'open_now':true%")
+                            func.position('"open_now": true', Restaurant.hours_json) > 0,
+                            func.position('"open_now":true', Restaurant.hours_json) > 0,
+                            func.position("'open_now': true", Restaurant.hours_json) > 0,
+                            func.position("'open_now':true", Restaurant.hours_json) > 0
                         )
                     )
                 ).scalar()
