@@ -33,8 +33,10 @@ export type RestaurantsResponse = {
   };
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
-if (!API_BASE) {
+// Use proxy in development, direct backend URL in production
+const isDevelopment = process.env.NODE_ENV === 'development';
+const API_BASE = isDevelopment ? '' : process.env.NEXT_PUBLIC_BACKEND_URL;
+if (!API_BASE && !isDevelopment) {
   // Helps catch "relative fetch" bugs in prod logs
   // (relative fetch would hit /eatery page HTML and blow up parsing)
   console.warn("NEXT_PUBLIC_BACKEND_URL is not set; fetches may fail.");

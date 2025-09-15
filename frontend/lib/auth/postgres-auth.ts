@@ -71,13 +71,20 @@ class PostgresAuthClient {
   private requestTimeoutMs: number = 10000; // 10 seconds default timeout
 
   constructor() {
-    // Use direct backend URLs from NEXT_PUBLIC_BACKEND_URL for enhanced security
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    if (backendUrl) {
-      this.baseUrl = backendUrl;
-    } else {
-      // Fallback to frontend API routes for backward compatibility
+    // Use proxy in development, direct backend URL in production
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (isDevelopment) {
+      // Use Next.js proxy in development to avoid CORS issues
       this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    } else {
+      // Use direct backend URLs in production for enhanced security
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      if (backendUrl) {
+        this.baseUrl = backendUrl;
+      } else {
+        // Fallback to frontend API routes for backward compatibility
+        this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+      }
     }
   }
 
@@ -87,7 +94,7 @@ class PostgresAuthClient {
   ): Promise<Response> {
     // Use direct backend URL if available, otherwise fallback to API routes
     const isDirectBackend = this.baseUrl !== (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
-    const url = isDirectBackend ? `${this.baseUrl}/api/v5/auth${endpoint}` : `${this.baseUrl}/api/auth${endpoint}`;
+    const url = isDirectBackend ? `${this.baseUrl}/api/v5/auth${endpoint}` : `${this.baseUrl}/api/v5/auth${endpoint}`;
     
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
