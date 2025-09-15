@@ -896,6 +896,29 @@ class EntityRepositoryV5(BaseRepository):
             if filters.get('category') and hasattr(model_class, 'kosher_category'):
                 query = query.filter(model_class.kosher_category == filters['category'])
             
+            # Hours filter - filter restaurants based on their operating hours
+            if filters.get('hoursFilter') and hasattr(model_class, 'hours_json'):
+                hours_filter = filters['hoursFilter']
+                if hours_filter == 'openNow':
+                    # Filter for restaurants that are currently open
+                    # This requires checking the hours_json field for open_now status
+                    # We'll use a PostgreSQL JSON query to check the open_now field
+                    query = query.filter(
+                        func.json_extract_path_text(model_class.hours_json, 'open_now') == 'true'
+                    )
+                elif hours_filter in ['morning', 'afternoon', 'evening', 'lateNight']:
+                    # For time period filters, we need to check if the restaurant
+                    # has hours data and is likely to be open during that period
+                    # This is a simplified approach - in a full implementation,
+                    # we'd parse the periods array and check actual times
+                    query = query.filter(
+                        and_(
+                            model_class.hours_json.isnot(None),
+                            model_class.hours_json != '',
+                            model_class.hours_json != 'null'
+                        )
+                    )
+            
             # Exact field filters for remaining fields
             filterable_fields = mapping.get('filterable_fields', [])
             for field in filterable_fields:

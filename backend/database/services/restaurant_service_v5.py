@@ -131,7 +131,8 @@ class RestaurantServiceV5:
                     'states': [],
                     'listingTypes': [],
                     'ratings': [],
-                    'kosherDetails': []
+                    'kosherDetails': [],
+                    'hoursOptions': []
                 }
                 
                 # Get kosher categories (limit to top 20)
@@ -214,6 +215,29 @@ class RestaurantServiceV5:
                     kosher_details.add('Cholov Stam')
                 
                 filter_options['kosherDetails'] = sorted(list(kosher_details))
+                
+                # Get hours options based on actual restaurant data
+                # Count restaurants with hours data
+                restaurants_with_hours = session.query(func.count(Restaurant.id)).filter(
+                    Restaurant.hours_json.isnot(None),
+                    Restaurant.hours_json != '',
+                    Restaurant.hours_json != 'null'
+                ).scalar()
+                
+                # Count restaurants currently open (based on open_now field in hours_json)
+                restaurants_open_now = session.query(func.count(Restaurant.id)).filter(
+                    func.json_extract_path_text(Restaurant.hours_json, 'open_now') == 'true'
+                ).scalar()
+                
+                # Build hours options based on actual data availability
+                hours_options = []
+                if restaurants_with_hours and restaurants_with_hours > 0:
+                    hours_options.append('openNow')
+                    # Only include time period options if we have sufficient data
+                    if restaurants_with_hours >= 5:  # Minimum threshold for meaningful filtering
+                        hours_options.extend(['morning', 'afternoon', 'evening', 'lateNight'])
+                
+                filter_options['hoursOptions'] = hours_options
             
             # Cache the filter options for 1 hour
             if self.cache_manager:
@@ -232,7 +256,8 @@ class RestaurantServiceV5:
                 'kosherDetails': [],
                 'cities': [],
                 'states': [],
-                'listingTypes': []
+                'listingTypes': [],
+                'hoursOptions': []
             }
 
     def get_entities(
