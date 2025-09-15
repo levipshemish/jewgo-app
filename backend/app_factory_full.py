@@ -556,7 +556,7 @@ def create_app(config_class=None):
                 logger.warning(f"Could not import v5 admin API blueprint: {e}")
             except Exception as e:
                 logger.warning(f"Could not register v5 admin API blueprint: {e}")
-        
+    
     # Register v5 reviews API
     if True:  # Enable reviews API
         try:
