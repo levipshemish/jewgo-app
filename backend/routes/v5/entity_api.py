@@ -107,17 +107,12 @@ def get_entities(entity_type: str):
         # Parse location filters (support both lat/lng and latitude/longitude)
         lat = request.args.get('lat') or request.args.get('latitude')
         lng = request.args.get('lng') or request.args.get('longitude')
-        radius = request.args.get('radius')
-        
-        # Only apply location filtering if radius is explicitly provided
-        # This allows location-based sorting without automatic filtering
+        radius = request.args.get('radius', '100')  # Increased default radius from 10km to 100km
         if lat and lng:
             try:
                 filters['latitude'] = float(lat)
                 filters['longitude'] = float(lng)
-                # Only apply radius filter if explicitly requested
-                if radius:
-                    filters['radius'] = float(radius)
+                filters['radius'] = float(radius)
             except ValueError:
                 return jsonify({
                     'success': False,
