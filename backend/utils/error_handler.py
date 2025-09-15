@@ -218,7 +218,6 @@ def handle_database_operation(operation_name_or_func=None):
     if callable(operation_name_or_func):
         return database_operation_decorator(operation_name_or_func)
     else:
-        operation_name = operation_name_or_func or "database operation"
         return database_operation_decorator
 
 
@@ -266,7 +265,6 @@ def handle_operation_with_fallback(
     if callable(operation_name_or_func):
         return operation_fallback_decorator(operation_name_or_func)
     else:
-        operation_name = operation_name_or_func or "operation"
         return operation_fallback_decorator
 
 

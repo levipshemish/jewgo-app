@@ -5,9 +5,8 @@ Tests for Mikvah and Store models.
 Tests the newly added Mikvah and Store models in the entity repository v5.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from sqlalchemy import create_engine, text
+from unittest.mock import Mock, patch
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Import the models
@@ -219,7 +218,7 @@ class TestMikvahStoreIntegration:
         mock_session = Mock()
         
         # Create repository instance
-        repo = EntityRepositoryV5(mock_session)
+        EntityRepositoryV5(mock_session)
         
         # Verify that _load_models was called
         mock_load_models.assert_called_once()

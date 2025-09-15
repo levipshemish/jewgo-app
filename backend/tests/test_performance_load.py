@@ -8,11 +8,10 @@ session rotation under high load, and rate limiting validation.
 
 import pytest
 import time
-import threading
 import concurrent.futures
 import statistics
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from datetime import datetime
+from unittest.mock import MagicMock
 import json
 
 # Add backend directory to path
@@ -21,6 +20,7 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
+# Import after path setup
 from app import create_app
 from services.auth_service_v5 import AuthServiceV5
 from services.abuse_control_service import AbuseControlService
@@ -75,7 +75,7 @@ class TestTokenVerificationPerformance:
         assert p99 < 200, f"P99 latency {p99:.2f}ms exceeds 200ms target"
         
         # Log performance metrics
-        print(f"\nToken Verification Performance:")
+        print("\nToken Verification Performance:")
         print(f"  P50: {p50:.2f}ms")
         print(f"  P95: {p95:.2f}ms")
         print(f"  P99: {p99:.2f}ms")
@@ -132,7 +132,7 @@ class TestTokenVerificationPerformance:
             p95 = sorted(latencies)[int(len(latencies) * 0.95)]
             assert p95 < 150, f"P95 latency under load {p95:.2f}ms exceeds 150ms target"
             
-            print(f"\nConcurrent Load Performance:")
+            print("\nConcurrent Load Performance:")
             print(f"  Total requests: {total_requests}")
             print(f"  Success rate: {success_rate:.2%}")
             print(f"  P95 latency: {p95:.2f}ms")
@@ -170,12 +170,12 @@ class TestCSRFValidationPerformance:
         
         for _ in range(num_requests):
             start_time = time.time()
-            response = client.post('/api/v5/auth/login',
-                                 json={'email': 'test@example.com', 'password': 'test123'},
-                                 headers={
-                                     'Content-Type': 'application/json',
-                                     'X-CSRF-Token': csrf_token
-                                 })
+            client.post('/api/v5/auth/login',
+                       json={'email': 'test@example.com', 'password': 'test123'},
+                       headers={
+                           'Content-Type': 'application/json',
+                           'X-CSRF-Token': csrf_token
+                       })
             latency = (time.time() - start_time) * 1000
             latencies.append(latency)
         
@@ -187,7 +187,7 @@ class TestCSRFValidationPerformance:
         assert avg_latency < 50, f"Average CSRF validation latency {avg_latency:.2f}ms too high"
         assert p95_latency < 100, f"P95 CSRF validation latency {p95_latency:.2f}ms too high"
         
-        print(f"\nCSRF Validation Performance:")
+        print("\nCSRF Validation Performance:")
         print(f"  Average latency: {avg_latency:.2f}ms")
         print(f"  P95 latency: {p95_latency:.2f}ms")
     
@@ -225,7 +225,7 @@ class TestCSRFValidationPerformance:
         # Timing difference should be minimal
         assert timing_diff < 0.01, f"Timing attack vulnerability: {timing_diff:.4f}s difference"
         
-        print(f"\nCSRF Timing Attack Resistance:")
+        print("\nCSRF Timing Attack Resistance:")
         print(f"  Average valid token time: {avg_valid_time*1000:.2f}ms")
         print(f"  Average invalid token time: {avg_invalid_time*1000:.2f}ms")
         print(f"  Timing difference: {timing_diff*1000:.2f}ms")
@@ -292,7 +292,7 @@ class TestSessionRotationPerformance:
         assert avg_latency < 100, f"Average session rotation latency {avg_latency:.2f}ms too high"
         assert p95_latency < 200, f"P95 session rotation latency {p95_latency:.2f}ms too high"
         
-        print(f"\nSession Rotation Performance:")
+        print("\nSession Rotation Performance:")
         print(f"  Successful refreshes: {successful_refreshes}/{num_threads}")
         print(f"  Average latency: {avg_latency:.2f}ms")
         print(f"  P95 latency: {p95_latency:.2f}ms")
@@ -336,7 +336,7 @@ class TestSessionRotationPerformance:
         assert avg_blacklist_latency < 50, f"Average blacklist latency {avg_blacklist_latency:.2f}ms too high"
         assert avg_check_latency < 20, f"Average check latency {avg_check_latency:.2f}ms too high"
         
-        print(f"\nToken Blacklist Performance:")
+        print("\nToken Blacklist Performance:")
         print(f"  Average blacklist latency: {avg_blacklist_latency:.2f}ms")
         print(f"  Average check latency: {avg_check_latency:.2f}ms")
 
@@ -389,7 +389,7 @@ class TestRateLimitingPerformance:
         # Rate limiting should not add excessive latency
         assert avg_latency < 100, f"Average rate limiting latency {avg_latency:.2f}ms too high"
         
-        print(f"\nRate Limiting Performance:")
+        print("\nRate Limiting Performance:")
         print(f"  Total requests: {len(responses)}")
         print(f"  Successful: {success_count}")
         print(f"  Rate limited: {rate_limited_count}")
@@ -407,7 +407,7 @@ class TestRateLimitingPerformance:
         # Measure check performance
         for _ in range(50):
             start_time = time.time()
-            result = abuse_service.check_login_abuse(username)
+            abuse_service.check_login_abuse(username)
             check_latencies.append((time.time() - start_time) * 1000)
         
         # Measure record performance
@@ -479,7 +479,7 @@ class TestMemoryAndResourceUsage:
         final_memory = process.memory_info().rss / 1024 / 1024
         total_memory_increase = final_memory - initial_memory
         
-        print(f"\nMemory Usage Under Load:")
+        print("\nMemory Usage Under Load:")
         print(f"  Initial memory: {initial_memory:.2f}MB")
         print(f"  Final memory: {final_memory:.2f}MB")
         print(f"  Total increase: {total_memory_increase:.2f}MB")
@@ -537,7 +537,7 @@ class TestPerformanceRegression:
         assert baseline_p95 < max_p95, f"Baseline P95 {baseline_p95:.2f}ms exceeds {max_p95}ms"
         assert baseline_avg < max_avg, f"Baseline average {baseline_avg:.2f}ms exceeds {max_avg}ms"
         
-        print(f"\nPerformance Baseline:")
+        print("\nPerformance Baseline:")
         print(f"  P95 latency: {baseline_p95:.2f}ms")
         print(f"  Average latency: {baseline_avg:.2f}ms")
         print(f"  Baseline metrics: {baseline_metrics}")

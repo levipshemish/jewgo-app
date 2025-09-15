@@ -6,9 +6,8 @@ Tests the feature flags API endpoints including getting all flags,
 checking specific flags, and migration status.
 """
 
-import pytest
 import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 from flask import Flask
 
 # Import the feature flags API blueprint

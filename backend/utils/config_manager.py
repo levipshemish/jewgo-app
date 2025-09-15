@@ -324,7 +324,7 @@ class ConfigManager:
         if not db_config.get("name"):
             errors.append("DATABASE_NAME is required")
         # Check required security configuration
-        security_config = self.get_security_config()
+        self.get_security_config()
         # Legacy admin auth check removed - feature has been deprecated
         # Check required external services
         return errors

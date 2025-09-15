@@ -6,7 +6,6 @@ Tests the get_current_data_version function and its behavior
 across different environments and entity types.
 """
 
-import pytest
 import os
 from unittest.mock import patch
 from backend.utils.data_version import get_current_data_version

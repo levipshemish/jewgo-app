@@ -6,7 +6,6 @@ This module provides a way to run tests in different modes and get clear reporti
 import pytest
 import os
 import sys
-from pathlib import Path
 
 def run_core_tests():
     """Run only core functionality tests."""

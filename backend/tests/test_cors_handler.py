@@ -5,8 +5,7 @@ Tests environment-aware CORS handling with multiple origin support,
 preflight request handling, and proper credentials support.
 """
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from flask import Flask, request
 
 from services.auth.cors_handler import CORSHandler, create_cors_middleware

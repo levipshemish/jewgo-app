@@ -8,7 +8,6 @@ import os
 import time
 import json
 import threading
-import logging
 from typing import Optional, Dict, Any
 from utils.logging_config import get_logger
 from utils.redis_client import get_redis_client

@@ -95,18 +95,69 @@ const MapEngine = () => {
       );
   }, [ids, restaurants]);
 
-  // Handle bounds changes - trigger data loading with current filters
+  // Debounce timeout for bounds changes
+  const boundsDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastBoundsRef = useRef<Bounds | null>(null);
+  
+  // Helper function to check if bounds are significantly different
+  // This prevents API calls for minor map movements that don't change the visible area meaningfully
+  const areBoundsSignificantlyDifferent = (bounds1: Bounds, bounds2: Bounds): boolean => {
+    if (!bounds1 || !bounds2) return true;
+    
+    const latDiff1 = Math.abs(bounds1.ne.lat - bounds1.sw.lat);
+    const lngDiff1 = Math.abs(bounds1.ne.lng - bounds1.sw.lng);
+    const latDiff2 = Math.abs(bounds2.ne.lat - bounds2.sw.lat);
+    const lngDiff2 = Math.abs(bounds2.ne.lng - bounds2.sw.lng);
+    
+    // Check if the bounds have moved significantly (more than 10% of the viewport)
+    const latThreshold = Math.max(latDiff1, latDiff2) * 0.1;
+    const lngThreshold = Math.max(lngDiff1, lngDiff2) * 0.1;
+    
+    return (
+      Math.abs(bounds1.ne.lat - bounds2.ne.lat) > latThreshold ||
+      Math.abs(bounds1.ne.lng - bounds2.ne.lng) > lngThreshold ||
+      Math.abs(bounds1.sw.lat - bounds2.sw.lat) > latThreshold ||
+      Math.abs(bounds1.sw.lng - bounds2.sw.lng) > lngThreshold
+    );
+  };
+  
+  // Handle bounds changes - trigger data loading with current filters (debounced)
   const handleBoundsChange = (bounds: Bounds) => {
-    // Update bounds in store first
+    // Update bounds in store immediately for responsive UI
     useLivemapStore.getState().setMap({ bounds });
     
-    // Load data with current filters (server-side filtering)
-    loadRestaurantsInBounds(bounds, activeFilters).then(() => {
-      // After reloading, set all restaurants as filtered (server already filtered them)
-      const state = useLivemapStore.getState();
-      const allRestaurantIds = state.restaurants.map(r => r.id);
-      useLivemapStore.getState().applyFilterResults(allRestaurantIds);
-    });
+    // Check if bounds are significantly different from last request
+    if (lastBoundsRef.current && !areBoundsSignificantlyDifferent(bounds, lastBoundsRef.current)) {
+      // Bounds haven't changed significantly, skip API call
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🗺️ Bounds change too small, skipping API call');
+      }
+      return;
+    }
+    
+    // Clear any existing timeout
+    if (boundsDebounceRef.current) {
+      clearTimeout(boundsDebounceRef.current);
+    }
+    
+    // Debounce the API call to prevent excessive requests during map panning
+    boundsDebounceRef.current = setTimeout(() => {
+      // Store the bounds that triggered this request
+      lastBoundsRef.current = bounds;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🗺️ Debounced bounds change triggered API call');
+      }
+      
+      // Load data with current filters (server-side filtering)
+      loadRestaurantsInBounds(bounds, activeFilters).then(() => {
+        // After reloading, set all restaurants as filtered (server already filtered them)
+        const state = useLivemapStore.getState();
+        const allRestaurantIds = state.restaurants.map(r => r.id);
+        useLivemapStore.getState().applyFilterResults(allRestaurantIds);
+      });
+    }, 1000); // Increased to 1000ms debounce for even smoother panning
+    // This prevents API calls during continuous map panning/zooming, only triggering after user stops moving
   };
 
   // Track if map has been initialized to prevent multiple calls
@@ -154,12 +205,17 @@ const MapEngine = () => {
     // initializeURLSync();
   }, []);
   
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (filterDebounceRef.current) {
         clearTimeout(filterDebounceRef.current);
       }
+      if (boundsDebounceRef.current) {
+        clearTimeout(boundsDebounceRef.current);
+      }
+      // Reset bounds tracking
+      lastBoundsRef.current = null;
     };
   }, []);
 

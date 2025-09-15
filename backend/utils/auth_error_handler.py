@@ -5,10 +5,9 @@ This module provides standardized error handling, logging, and user-friendly
 error messages for authentication operations.
 """
 
-import os
 import traceback
 from typing import Dict, Any, Optional, Tuple
-from flask import jsonify, request
+from flask import request
 from utils.logging_config import get_logger
 from utils.error_handler import ValidationError, AuthenticationError
 

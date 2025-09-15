@@ -1,11 +1,8 @@
-import json
-import pytest
 
 
 def create_test_client(monkeypatch, super_admin: bool = True):
     # Bypass admin auth decorator in routes by patching before app creation
     import importlib
-    from backend import utils as backend_utils
     sec = importlib.import_module('backend.utils.security')
 
     def passthrough(f):

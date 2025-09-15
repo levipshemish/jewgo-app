@@ -8,7 +8,7 @@ and that the migration can be done gradually without breaking existing clients.
 
 import pytest
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from flask import Flask
 
 # Import both v4 and v5 components for comparison

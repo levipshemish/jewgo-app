@@ -7,13 +7,12 @@ role-based access control.
 """
 
 import os
-import hashlib
 import secrets
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
-from sqlalchemy import text, and_, bindparam
+from sqlalchemy import text, bindparam
 from sqlalchemy.types import JSON
 from sqlalchemy.exc import IntegrityError
 from utils.logging_config import get_logger
@@ -671,7 +670,7 @@ class PostgresAuthManager:
                     """),
                     {
                         'user_id': user_id,
-                        'name': f'Guest User',
+                        'name': 'Guest User',
                         'email': guest_email
                     }
                 )

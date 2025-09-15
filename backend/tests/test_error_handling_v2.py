@@ -248,7 +248,7 @@ class TestIntegration:
         """Test HTTP client integration with monitoring."""
         client = get_http_client()
         # Make a request that should succeed
-        response = client.get(
+        client.get(
             "http://httpbin.org/get", operation_name="integration_test"
         )
         # Check that monitoring data was recorded
@@ -276,7 +276,7 @@ class TestIntegration:
 
         # Create initial context
         initial_context = create_error_context(user_id=123, operation="main_operation")
-        result = handle_database_operation(
+        handle_database_operation(
             operation=mock_operation,
             operation_name="test_context_propagation",
             context=initial_context,

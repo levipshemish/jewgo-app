@@ -12,19 +12,14 @@ This module provides thorough testing of all authentication functionality includ
 """
 
 import pytest
-import os
 import json
-import time
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from flask import Flask
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 
 # Import authentication modules
 from utils.auth_utils import AuthUtils, validate_email, validate_password, generate_token
-from utils.postgres_auth import PostgresAuthManager, PasswordSecurity, TokenManager
-from utils.auth_error_handler import AuthErrorHandler, handle_auth_exception
+from utils.postgres_auth import PasswordSecurity, TokenManager
+from utils.auth_error_handler import AuthErrorHandler
 from utils.rbac import RoleBasedAccessControl
 from database.database_manager_v4 import DatabaseManager
 from routes.auth_api import auth_bp
@@ -36,17 +31,17 @@ class TestAuthUtils:
     def test_validate_email(self):
         """Test email validation."""
         # Valid emails
-        assert validate_email("test@example.com") == True
-        assert validate_email("user.name+tag@domain.co.uk") == True
-        assert validate_email("test123@test-domain.org") == True
+        assert validate_email("test@example.com")
+        assert validate_email("user.name+tag@domain.co.uk")
+        assert validate_email("test123@test-domain.org")
         
         # Invalid emails
-        assert validate_email("") == False
-        assert validate_email("invalid-email") == False
-        assert validate_email("@domain.com") == False
-        assert validate_email("test@") == False
-        assert validate_email("test@domain") == False
-        assert validate_email(None) == False
+        assert not validate_email("")
+        assert not validate_email("invalid-email")
+        assert not validate_email("@domain.com")
+        assert not validate_email("test@")
+        assert not validate_email("test@domain")
+        assert not validate_email(None)
     
     def test_normalize_email(self):
         """Test email normalization."""
@@ -60,24 +55,24 @@ class TestAuthUtils:
         """Test password strength validation."""
         # Strong password
         result = validate_password("StrongPass123!")
-        assert result['is_valid'] == True
+        assert result['is_valid']
         assert result['strength'] == 'strong'
         assert len(result['issues']) == 0
         
         # Weak password
         result = validate_password("weak")
-        assert result['is_valid'] == False
+        assert not result['is_valid']
         assert result['strength'] == 'weak'
         assert len(result['issues']) > 0
         
         # Medium password
         result = validate_password("MediumPass123")
-        assert result['is_valid'] == True
+        assert result['is_valid']
         assert result['strength'] in ['medium', 'strong']
         
         # Empty password
         result = validate_password("")
-        assert result['is_valid'] == False
+        assert not result['is_valid']
         assert 'Password is required' in result['issues']
     
     def test_generate_secure_token(self):
@@ -125,15 +120,15 @@ class TestAuthUtils:
     def test_validate_name(self):
         """Test name validation."""
         # Valid names
-        assert AuthUtils.validate_name("John Doe") == True
-        assert AuthUtils.validate_name("Mary-Jane") == True
-        assert AuthUtils.validate_name("O'Connor") == True
+        assert AuthUtils.validate_name("John Doe")
+        assert AuthUtils.validate_name("Mary-Jane")
+        assert AuthUtils.validate_name("O'Connor")
         
         # Invalid names
-        assert AuthUtils.validate_name("") == False
-        assert AuthUtils.validate_name("John123") == False
-        assert AuthUtils.validate_name("John@Doe") == False
-        assert AuthUtils.validate_name(None) == False
+        assert not AuthUtils.validate_name("")
+        assert not AuthUtils.validate_name("John123")
+        assert not AuthUtils.validate_name("John@Doe")
+        assert not AuthUtils.validate_name(None)
     
     def test_format_user_display_name(self):
         """Test user display name formatting."""
@@ -172,23 +167,23 @@ class TestPasswordSecurity:
         password_hash = PasswordSecurity.hash_password(password)
         
         # Correct password
-        assert PasswordSecurity.verify_password(password, password_hash) == True
+        assert PasswordSecurity.verify_password(password, password_hash)
         
         # Wrong password
-        assert PasswordSecurity.verify_password("WrongPassword", password_hash) == False
+        assert not PasswordSecurity.verify_password("WrongPassword", password_hash)
         
         # Empty password
-        assert PasswordSecurity.verify_password("", password_hash) == False
+        assert not PasswordSecurity.verify_password("", password_hash)
     
     def test_password_validation(self):
         """Test password validation."""
         # Valid password
         result = PasswordSecurity.validate_password_strength("ValidPass123")
-        assert result['is_valid'] == True
+        assert result['is_valid']
         
         # Invalid password (too short)
         result = PasswordSecurity.validate_password_strength("short")
-        assert result['is_valid'] == False
+        assert not result['is_valid']
         assert 'at least 8 characters' in result['issues'][0]
 
 
@@ -273,7 +268,7 @@ class TestAuthErrorHandler:
         assert status == 401
         assert 'error' in response
         assert response['code'] == 'invalid_credentials'
-        assert response['success'] == False
+        assert not response['success']
 
 
 class TestRoleBasedAccessControl:
@@ -283,42 +278,42 @@ class TestRoleBasedAccessControl:
         """Test role level checking."""
         # User with sufficient level
         user_roles = [{"role": "admin", "level": 10}]
-        assert RoleBasedAccessControl.check_role_level(user_roles, 5) == True
+        assert RoleBasedAccessControl.check_role_level(user_roles, 5)
         
         # User with insufficient level
         user_roles = [{"role": "user", "level": 1}]
-        assert RoleBasedAccessControl.check_role_level(user_roles, 5) == False
+        assert not RoleBasedAccessControl.check_role_level(user_roles, 5)
         
         # User with no roles
-        assert RoleBasedAccessControl.check_role_level([], 1) == False
+        assert not RoleBasedAccessControl.check_role_level([], 1)
     
     def test_is_admin(self):
         """Test admin role checking."""
         # Admin user
         admin_roles = [{"role": "admin", "level": 10}]
-        assert RoleBasedAccessControl.is_admin(admin_roles) == True
+        assert RoleBasedAccessControl.is_admin(admin_roles)
         
         # Super admin user
         super_admin_roles = [{"role": "super_admin", "level": 99}]
-        assert RoleBasedAccessControl.is_admin(super_admin_roles) == True
+        assert RoleBasedAccessControl.is_admin(super_admin_roles)
         
         # Regular user
         user_roles = [{"role": "user", "level": 1}]
-        assert RoleBasedAccessControl.is_admin(user_roles) == False
+        assert not RoleBasedAccessControl.is_admin(user_roles)
     
     def test_is_moderator(self):
         """Test moderator role checking."""
         # Moderator user
         moderator_roles = [{"role": "moderator", "level": 5}]
-        assert RoleBasedAccessControl.is_moderator(moderator_roles) == True
+        assert RoleBasedAccessControl.is_moderator(moderator_roles)
         
         # Admin user (should also be moderator)
         admin_roles = [{"role": "admin", "level": 10}]
-        assert RoleBasedAccessControl.is_moderator(admin_roles) == True
+        assert RoleBasedAccessControl.is_moderator(admin_roles)
         
         # Regular user
         user_roles = [{"role": "user", "level": 1}]
-        assert RoleBasedAccessControl.is_moderator(user_roles) == False
+        assert not RoleBasedAccessControl.is_moderator(user_roles)
 
 
 class TestAuthAPI:
@@ -431,8 +426,6 @@ class TestDatabaseIntegration:
         """Test database manager initialization."""
         # This would require a test database setup
         # For now, we'll test that the class can be imported
-        from database.database_manager_v4 import DatabaseManager
-        
         assert DatabaseManager is not None
     
     def test_auth_schema_consistency(self):

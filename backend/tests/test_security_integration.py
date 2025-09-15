@@ -10,12 +10,8 @@ security hardening requirements.
 import pytest
 import json
 import time
-import hashlib
-import secrets
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
-from flask import Flask, g
-import jwt
+from unittest.mock import patch
 
 # Add backend directory to path
 import sys
@@ -25,11 +21,8 @@ sys.path.insert(0, str(backend_dir))
 
 from app import create_app
 from services.auth_service_v5 import AuthServiceV5
-from services.abuse_control_service import AbuseControlService, AbuseControlResult
-from middleware.auth_decorators import auth_required, admin_required, step_up_required
-from utils.postgres_auth import TokenManager, PasswordSecurity
-from cache.redis_manager_v5 import get_redis_manager_v5
-from database.connection_manager import get_connection_manager
+from services.abuse_control_service import AbuseControlService
+from utils.postgres_auth import TokenManager
 
 
 class TestCSRFProtection:
@@ -573,12 +566,12 @@ class TestPerformanceRequirements:
         latencies = []
         for _ in range(50):
             start_time = time.time()
-            response = client.post('/api/v5/auth/login',
-                                 json={'email': 'test@example.com', 'password': 'test123'},
-                                 headers={
-                                     'Content-Type': 'application/json',
-                                     'X-CSRF-Token': csrf_token
-                                 })
+            client.post('/api/v5/auth/login',
+                       json={'email': 'test@example.com', 'password': 'test123'},
+                       headers={
+                           'Content-Type': 'application/json',
+                           'X-CSRF-Token': csrf_token
+                       })
             latency = (time.time() - start_time) * 1000
             latencies.append(latency)
         

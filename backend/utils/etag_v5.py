@@ -11,10 +11,10 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union
+from datetime import datetime
+from typing import Any, Dict, Optional, Tuple
 
-from flask import request, g
+from flask import request
 
 from utils.logging_config import get_logger
 

@@ -4,7 +4,6 @@ These tests ensure the basic API infrastructure is working correctly.
 """
 
 import pytest
-from unittest.mock import Mock, patch
 import json
 
 

@@ -7,7 +7,7 @@ Tests to ensure the verify-token endpoint meets sub-120ms p95 performance target
 import pytest
 import time
 import statistics
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from services.auth.token_manager_v5 import TokenManagerV5
 
 
@@ -179,7 +179,7 @@ class TestTokenManagerV5Performance:
         p95_duration = statistics.quantiles(all_durations, n=20)[18]
         throughput = total_operations / total_duration
         
-        print(f"Concurrent verification performance:")
+        print("Concurrent verification performance:")
         print(f"  {num_threads} threads × {iterations_per_thread} operations = {total_operations} total")
         print(f"  Total time: {total_duration:.2f}s")
         print(f"  Throughput: {throughput:.1f} ops/sec")

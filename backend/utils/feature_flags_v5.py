@@ -9,12 +9,10 @@ rollback mechanisms. Built upon existing v4 patterns with v5 enhancements.
 from __future__ import annotations
 
 import hashlib
-import json
 import os
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set
 
 from utils.logging_config import get_logger
 
@@ -701,7 +699,7 @@ def require_feature_flag_v5(flag_name: str, default_response: Optional[Dict[str,
     def decorator(f):
         def wrapper(*args, **kwargs):
             try:
-                from flask import request, jsonify, g
+                from flask import jsonify, g
                 
                 user_id = getattr(g, 'user_id', None)
                 user_roles = [role.get('role') for role in getattr(g, 'user_roles', []) if role.get('role')]

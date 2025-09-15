@@ -7,7 +7,6 @@ Tests the complete password reset flow including security measures.
 import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
-import secrets
 
 def utcnow():
     return datetime.now(timezone.utc)
@@ -66,7 +65,6 @@ class TestPasswordResetFlow:
     def test_reset_password_valid_token(self, mock_auth_manager):
         """Test successful password reset with valid token."""
         # Mock valid reset token
-        future_time = utcnow() + timedelta(hours=1)
         mock_auth_manager._session.execute.return_value.fetchone.return_value = Mock(
             id='user123', 
             email='test@example.com'
@@ -213,7 +211,6 @@ class TestPasswordResetAuditing:
             # Should log the password reset request
             mock_log.assert_called_once()
             args = mock_log.call_args[0]
-            kwargs = mock_log.call_args[1] if mock_log.call_args[1] else {}
             
             assert args[0] == 'user123'  # user_id
             assert args[1] == 'password_reset_requested'  # action

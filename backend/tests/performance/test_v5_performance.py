@@ -9,9 +9,7 @@ including response times, throughput, and resource usage.
 import pytest
 import time
 import json
-import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, Any, List
 import statistics
 
 from utils.logging_config import get_logger

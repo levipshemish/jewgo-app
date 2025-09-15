@@ -11,7 +11,6 @@ import pytest
 import os
 import sys
 import uuid
-import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -21,7 +20,7 @@ sys.path.insert(0, str(backend_dir))
 
 from utils.postgres_auth import PostgresAuthManager, PasswordSecurity, TokenManager
 from utils.rbac import RoleBasedAccessControl
-from utils.error_handler import ValidationError, AuthenticationError
+from utils.error_handler import ValidationError
 from database.database_manager_v4 import DatabaseManager
 
 

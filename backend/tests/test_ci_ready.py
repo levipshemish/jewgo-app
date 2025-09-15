@@ -5,8 +5,6 @@ This test suite focuses on what's working and provides clear results for CI/CD p
 
 import pytest
 import os
-import sys
-from unittest.mock import Mock, patch
 
 # Test configuration for CI
 os.environ['SKIP_AUTH_TESTS'] = 'true'
@@ -64,7 +62,7 @@ class TestCICoreFunctionality:
                              json={'name': 'Test User', 'email': 'test@example.com'})
         assert response.status_code == 200
         data = response.get_json()
-        assert data['valid'] == True
+        assert data['valid']
 
 class TestCIInfrastructure:
     """Infrastructure tests that must pass for CI/CD."""

@@ -8,7 +8,7 @@ import pytest
 import jwt
 import time
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 from services.auth.token_manager_v5 import TokenManagerV5
 
 

@@ -3,7 +3,7 @@
 
 import pytest
 import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from redis.exceptions import ConnectionError, TimeoutError, RedisError
 
 from utils.cache_manager_v4 import CacheManagerV4, CircuitBreaker

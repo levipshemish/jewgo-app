@@ -4,10 +4,9 @@ Tests for Cookie Policy Manager.
 Tests environment-aware cookie configurations for production, preview, and development environments.
 """
 import os
-import pytest
 from unittest.mock import patch
 
-from services.auth.cookies import CookiePolicyManager, Environment
+from services.auth.cookies import CookiePolicyManager
 
 
 class TestCookiePolicyManager:

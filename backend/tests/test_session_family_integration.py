@@ -407,7 +407,7 @@ class TestSessionFamilyIntegration:
         else:
             avg_duration = max_duration = 0
         
-        print(f"Stress test results:")
+        print("Stress test results:")
         print(f"  Total threads: {num_threads}")
         print(f"  Total duration: {total_duration:.2f}s")
         print(f"  Successful: {len(successful)}")

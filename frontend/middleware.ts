@@ -73,21 +73,61 @@ export async function middleware(request: NextRequest) {
         process.env.BACKEND_URL ||
         'https://api.jewgo.app';
       
+      // Get access token from cookies or headers
+      const accessToken = request.cookies.get('access_token')?.value ||
+                         request.headers.get('authorization')?.replace('Bearer ', '');
+      
+      if (!accessToken) {
+        return handleUnauthenticatedUser(request, isApi);
+      }
+      
       // Use HEAD method for performance - no response body needed
       const verifyResponse = await fetch(`${backendUrl}/api/v5/auth/verify-token`, {
         method: 'HEAD',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'User-Agent': 'JewGo-Frontend-Middleware/1.0'
+        },
         credentials: 'include',
         // Add timeout for performance
         signal: AbortSignal.timeout(5000)
       });
 
-      if (!verifyResponse.ok) {
+      // Handle different response codes
+      if (verifyResponse.status === 401) {
         return handleUnauthenticatedUser(request, isApi);
       }
+      
+      if (verifyResponse.status === 403) {
+        // Check if step-up authentication is required
+        const stepUpHeader = verifyResponse.headers.get('X-Step-Up-Required');
+        if (stepUpHeader) {
+          return handleStepUpAuthRequired(request, isApi, stepUpHeader);
+        }
+        return handleInsufficientPermissions(request, isApi);
+      }
+      
+      if (verifyResponse.status === 429) {
+        return handleRateLimitExceeded(request, isApi, verifyResponse);
+      }
 
-      // For HEAD requests, we only get status - assume authenticated if 200
+      if (!verifyResponse.ok) {
+        return handleAuthError(request, isApi, new AuthError(`Auth verification failed: ${verifyResponse.status}`));
+      }
+
+      // Extract user info from response headers if available
+      const userId = verifyResponse.headers.get('X-User-ID');
+      const userRoles = verifyResponse.headers.get('X-User-Roles');
+      const userPermissions = verifyResponse.headers.get('X-User-Permissions');
+      
+      const userData = userId ? {
+        id: userId,
+        roles: userRoles ? userRoles.split(',') : [],
+        permissions: userPermissions ? userPermissions.split(',') : []
+      } : null;
+
       // Handle authenticated users
-      return await handleAuthenticatedUser(request, isApi, null, response);
+      return await handleAuthenticatedUser(request, isApi, userData, response);
     } catch (error) {
       console.error('Middleware auth verification error:', error);
       return handleAuthError(request, isApi, error as AuthError);
@@ -131,23 +171,56 @@ function handleUnauthenticatedUser(request: NextRequest, isApi: boolean): NextRe
 async function handleAuthenticatedUser(
   request: NextRequest, 
   isApi: boolean, 
-  _user: UserData['data'] | null, 
+  user: { id: string; roles: string[]; permissions: string[] } | null, 
   response: NextResponse
 ): Promise<NextResponse> {
+  const pathname = request.nextUrl.pathname;
+  
   // Check if this is a sensitive operation requiring step-up authentication
-  if (requiresStepUpAuth(request.nextUrl.pathname)) {
-    return handleStepUpAuthRequired(request, isApi);
+  if (requiresStepUpAuth(pathname)) {
+    return handleStepUpAuthRequired(request, isApi, getRequiredStepUpMethod(pathname));
   }
 
-  // For middleware, we just check that the user is authenticated
-  // Admin role checking will be handled in the API routes and components
-  if (isApi) {
-    // For API routes, let the route handler check admin permissions
-    return response;
-  } else {
-    // For UI routes, allow access to admin pages (permissions will be checked in components)
-    return response;
+  // Check admin access for admin routes
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    if (!user || !hasAdminRole(user.roles)) {
+      return handleInsufficientPermissions(request, isApi);
+    }
   }
+
+  // Add user context to response headers for client-side access
+  if (user) {
+    response.headers.set('X-User-ID', user.id);
+    response.headers.set('X-User-Roles', user.roles.join(','));
+    response.headers.set('X-User-Permissions', user.permissions.join(','));
+  }
+
+  return response;
+}
+
+/**
+ * Check if user has admin role
+ */
+function hasAdminRole(roles: string[]): boolean {
+  return roles.some(role => ['admin', 'super_admin'].includes(role));
+}
+
+/**
+ * Get required step-up method for path
+ */
+function getRequiredStepUpMethod(pathname: string): string {
+  // Define step-up methods based on sensitivity
+  const webauthnPaths = [
+    '/admin/users/roles',
+    '/admin/api-keys',
+    '/settings/security/webauthn'
+  ];
+  
+  if (webauthnPaths.some(path => pathname.startsWith(path))) {
+    return 'webauthn';
+  }
+  
+  return 'password'; // Default to password
 }
 
 /**
@@ -234,13 +307,14 @@ function requiresStepUpAuth(pathname: string): boolean {
 /**
  * Handle step-up authentication requirement
  */
-function handleStepUpAuthRequired(request: NextRequest, isApi: boolean): NextResponse {
+function handleStepUpAuthRequired(request: NextRequest, isApi: boolean, stepUpMethod?: string): NextResponse {
   if (isApi) {
     return NextResponse.json(
       { 
         error: 'Step-up authentication required',
         code: 'STEP_UP_REQUIRED',
-        hint: 'fresh_session_required'
+        required_method: stepUpMethod || 'password',
+        hint: 'Additional verification required for this operation'
       }, 
       { status: 403, headers: corsHeaders(request) }
     );
@@ -250,9 +324,56 @@ function handleStepUpAuthRequired(request: NextRequest, isApi: boolean): NextRes
   const { pathname, search } = request.nextUrl;
   const fullPath = pathname + search;
   const sanitizedRedirect = validateRedirectUrl(fullPath);
-  const challengeUrl = `/auth/step-up?returnTo=${encodeURIComponent(sanitizedRedirect)}`;
+  const challengeUrl = `/auth/step-up?returnTo=${encodeURIComponent(sanitizedRedirect)}&method=${stepUpMethod || 'password'}`;
   
   return NextResponse.redirect(new URL(challengeUrl, request.url), 302);
+}
+
+/**
+ * Handle insufficient permissions
+ */
+function handleInsufficientPermissions(request: NextRequest, isApi: boolean): NextResponse {
+  if (isApi) {
+    return NextResponse.json(
+      { 
+        error: 'Insufficient permissions',
+        code: 'INSUFFICIENT_PERMISSIONS',
+        message: 'You do not have permission to access this resource'
+      }, 
+      { status: 403, headers: corsHeaders(request) }
+    );
+  }
+  
+  // Redirect to unauthorized page
+  return NextResponse.redirect(new URL('/unauthorized', request.url), 302);
+}
+
+/**
+ * Handle rate limit exceeded
+ */
+function handleRateLimitExceeded(request: NextRequest, isApi: boolean, response: Response): NextResponse {
+  const retryAfter = response.headers.get('Retry-After') || '60';
+  
+  if (isApi) {
+    return NextResponse.json(
+      { 
+        error: 'Rate limit exceeded',
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests. Please try again later.',
+        retry_after: parseInt(retryAfter)
+      }, 
+      { 
+        status: 429, 
+        headers: {
+          ...corsHeaders(request),
+          'Retry-After': retryAfter
+        }
+      }
+    );
+  }
+  
+  // Redirect to rate limit page
+  return NextResponse.redirect(new URL(`/rate-limited?retry=${retryAfter}`, request.url), 302);
 }
 
 /**

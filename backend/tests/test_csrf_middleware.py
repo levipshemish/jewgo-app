@@ -8,7 +8,7 @@ and proper error handling.
 import pytest
 import json
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from flask import Flask, Blueprint, request, jsonify, g
 
 from middleware.csrf_v5 import (

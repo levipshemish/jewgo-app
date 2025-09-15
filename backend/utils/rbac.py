@@ -9,7 +9,7 @@ from typing import Dict, List, Set, Optional, Any
 from functools import wraps
 from flask import request, jsonify, g
 from utils.logging_config import get_logger
-from utils.error_handler import AuthenticationError, AuthorizationError
+from utils.error_handler import AuthenticationError
 from utils.postgres_auth import get_postgres_auth
 
 logger = get_logger(__name__)

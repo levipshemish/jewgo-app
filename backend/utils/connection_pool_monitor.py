@@ -9,7 +9,7 @@ to detect potential memory leaks and connection issues.
 import time
 import threading
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from dataclasses import dataclass, asdict
 from collections import deque
 
@@ -173,7 +173,7 @@ class ConnectionPoolMonitor:
             # Rough estimate: each connection ~1MB
             total_connections = pool.size() + pool.overflow()
             return total_connections * 1.0
-        except:
+        except Exception:
             return 0.0
     
     def _estimate_redis_pool_memory_usage(self, pool) -> float:
@@ -182,7 +182,7 @@ class ConnectionPoolMonitor:
             # Rough estimate: each Redis connection ~0.1MB
             total_connections = len(pool._available_connections) + len(pool._in_use_connections)
             return total_connections * 0.1
-        except:
+        except Exception:
             return 0.0
     
     def _track_connection_timestamps(self, metrics: ConnectionPoolMetrics):

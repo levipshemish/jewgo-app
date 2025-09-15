@@ -10,11 +10,9 @@ This module provides CDN integration for:
 """
 
 import os
-import hashlib
 import requests
-from typing import Dict, List, Optional, Tuple
-from urllib.parse import urljoin, urlparse
-import logging
+from typing import Dict, List
+from urllib.parse import urljoin
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

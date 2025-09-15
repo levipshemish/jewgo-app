@@ -9,9 +9,8 @@ with proper mocking and error handling.
 import pytest
 import json
 import time
-from unittest.mock import Mock, patch, MagicMock
-from flask import Flask, request, g
-from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+from flask import Flask
 
 # Import v5 middleware components
 from middleware.auth_v5 import AuthV5Middleware

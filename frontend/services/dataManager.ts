@@ -108,7 +108,7 @@ let cacheHits = 0;
 
 // Simple rate limiting - just prevent rapid fire requests
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 500; // 500ms minimum between requests
+const MIN_REQUEST_INTERVAL = 1000; // 1000ms minimum between requests (increased for better performance)
 
 // Track initial load state
 const _isInitialLoad = true;

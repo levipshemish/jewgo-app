@@ -4,11 +4,9 @@ Tests for comprehensive health check system.
 """
 
 import pytest
-import asyncio
 import os
 import time
-from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime, timezone
+from unittest.mock import patch, MagicMock
 
 from services.comprehensive_health_service import ComprehensiveHealthService, HealthCheckResult
 

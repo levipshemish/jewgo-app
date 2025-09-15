@@ -11,8 +11,7 @@ This module provides comprehensive rate limiting with:
 """
 
 import time
-import hashlib
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 from functools import wraps
 from flask import request, jsonify, g
 import redis

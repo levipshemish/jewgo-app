@@ -9,8 +9,7 @@ standardized error handlers, CORS configuration, and feature flag integration.
 from __future__ import annotations
 
 import os
-from typing import Dict, Any, List, Optional, Callable
-from functools import wraps
+from typing import Dict, Any, Optional
 
 from flask import Blueprint, jsonify, request, g
 
@@ -328,7 +327,7 @@ class BlueprintFactoryV5:
                 
                 # ETag caching if enabled and not already set by route handler
                 if config.get('enable_etag', False) and response.status_code == 200:
-                    if not response.headers.get('ETag') and not config.get('factory_sets_etag') is False:
+                    if not response.headers.get('ETag') and config.get('factory_sets_etag') is not False:
                         from utils.etag_v5 import generate_collection_etag_v5
                         cache_ttl = config.get('cache_ttl', 300)
                         # For entity routes under /api/v5/<entity>

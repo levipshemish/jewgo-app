@@ -11,10 +11,9 @@ import re
 import hashlib
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List, Tuple
-from flask import request, jsonify
+from typing import Optional, Dict, Any
+from flask import request
 from utils.logging_config import get_logger
-from utils.error_handler import ValidationError, AuthenticationError
 
 logger = get_logger(__name__)
 

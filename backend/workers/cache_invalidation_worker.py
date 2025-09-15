@@ -9,13 +9,12 @@ matching, and integration with Redis cache service patterns.
 from __future__ import annotations
 
 import json
-import re
 import signal
 import sys
 import threading
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Callable
+from typing import Any, Dict, List, Optional, Callable
 
 import psycopg2
 import psycopg2.extensions

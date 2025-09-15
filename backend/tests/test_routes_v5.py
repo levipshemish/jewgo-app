@@ -8,9 +8,8 @@ with proper mocking and error handling.
 
 import pytest
 import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from flask import Flask
-from datetime import datetime
 
 # Import v5 route blueprints
 from routes.v5.api_v5 import api_v5

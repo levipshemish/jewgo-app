@@ -7,9 +7,6 @@ used in the v5 API.
 """
 
 import pytest
-import json
-from datetime import datetime
-from typing import Dict, Any, List
 
 from utils.cursor_v5 import CursorV5
 from utils.etag_v5 import ETagV5, generate_collection_etag_v5
@@ -164,12 +161,6 @@ class TestETagV5:
     
     def test_collection_etag_generation(self):
         """Test collection ETag generation."""
-        # Test collection data
-        collection_data = [
-            {'id': 1, 'name': 'Entity 1', 'created_at': '2024-01-01T00:00:00Z'},
-            {'id': 2, 'name': 'Entity 2', 'created_at': '2024-01-01T01:00:00Z'},
-        ]
-        
         # Generate collection ETag
         etag = generate_collection_etag_v5(
             entity_type='restaurants',

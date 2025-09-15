@@ -7,8 +7,8 @@ cache control for auth endpoints, and middleware integration.
 
 import pytest
 import uuid
-from unittest.mock import patch, MagicMock
-from flask import Flask, jsonify, g, request
+from unittest.mock import patch
+from flask import Flask, jsonify, g
 from middleware.security_headers_v5 import (
     SecurityHeadersV5Middleware,
     register_security_headers_v5_middleware,
@@ -254,10 +254,10 @@ class TestSecurityHeadersV5Middleware:
     
     def test_middleware_error_handling(self, app):
         """Test middleware handles errors gracefully."""
-        middleware = SecurityHeadersV5Middleware(app)
+        SecurityHeadersV5Middleware(app)
         
         # Mock an error in header processing
-        with patch('middleware.security_headers_v5.logger') as mock_logger:
+        with patch('middleware.security_headers_v5.logger'):
             with app.test_client() as client:
                 # This should not raise an exception even if there's an error
                 response = client.get('/test')

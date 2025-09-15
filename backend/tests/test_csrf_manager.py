@@ -8,9 +8,9 @@ and environment-aware cookie configuration.
 import pytest
 import time
 import os
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
-from flask import Flask, request
+from datetime import datetime
+from unittest.mock import patch
+from flask import Flask
 
 from utils.csrf_manager import CSRFManager, get_csrf_manager, init_csrf_manager
 

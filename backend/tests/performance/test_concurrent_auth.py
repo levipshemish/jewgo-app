@@ -6,15 +6,13 @@ concurrent load, particularly focusing on token rotation safety and
 database connection handling.
 """
 
-import asyncio
 import concurrent.futures
 import time
 import threading
 import requests
-import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 import statistics
-from typing import List, Dict, Any, Tuple
+from typing import Dict, Any
 
 
 class AuthLoadTester:
@@ -128,7 +126,7 @@ class TestConcurrentAuthentication:
         successful_logins = [r for r in results if r.get("success")]
         failed_logins = [r for r in results if not r.get("success")]
         
-        print(f"Concurrent Login Test Results:")
+        print("Concurrent Login Test Results:")
         print(f"Total requests: {len(results)}")
         print(f"Successful: {len(successful_logins)}")
         print(f"Failed: {len(failed_logins)}")
@@ -175,7 +173,7 @@ class TestConcurrentAuthentication:
         # Analyze results
         successful_refreshes = [r for r in results if r.get("success")]
         
-        print(f"Concurrent Refresh Test Results:")
+        print("Concurrent Refresh Test Results:")
         print(f"Total requests: {len(results)}")
         print(f"Successful: {len(successful_refreshes)}")
         
@@ -185,12 +183,10 @@ class TestConcurrentAuthentication:
 
     def test_concurrent_same_token_refresh_race_condition(self):
         """Test concurrent refresh attempts with the same token (should detect reuse)."""
-        from services.auth import sessions, tokens
-        import os
+        from services.auth import sessions
         
         # Mock database for controlled testing
         mock_db = Mock()
-        mock_sessions = {}
         
         def mock_session_execute(query, params=None):
             # Simulate database operations with thread safety
@@ -236,7 +232,7 @@ class TestConcurrentAuthentication:
         successful_rotations = [r for r in results if r is not None]
         failed_rotations = [r for r in results if r is None]
         
-        print(f"Same Token Concurrent Refresh Results:")
+        print("Same Token Concurrent Refresh Results:")
         print(f"Successful rotations: {len(successful_rotations)}")
         print(f"Rejected (reuse detected): {len(failed_rotations)}")
         
@@ -305,7 +301,7 @@ class TestDatabaseConcurrency:
         mock_db = Mock()
         mock_db.connection_manager.session_scope = MockConnection
         
-        auth_manager = PostgresAuthManager(mock_db)
+        PostgresAuthManager(mock_db)
         
         def simulate_auth_operation(user_id):
             # Simulate various auth operations
@@ -324,7 +320,7 @@ class TestDatabaseConcurrency:
             for future in concurrent.futures.as_completed(futures):
                 results.append(future.result())
         
-        print(f"Database Connection Test:")
+        print("Database Connection Test:")
         print(f"Max concurrent connections: {max_concurrent_connections}")
         print(f"Final connection count: {connection_count}")
         
@@ -336,7 +332,6 @@ class TestDatabaseConcurrency:
 
     def test_session_cleanup_performance(self):
         """Test performance of session cleanup operations."""
-        from services.auth import sessions
         
         # Mock database with many expired sessions
         mock_db = Mock()
@@ -354,7 +349,7 @@ class TestDatabaseConcurrency:
         # Simulate cleanup (in real implementation, this would be a batch DELETE)
         cleanup_time = time.time() - start_time
         
-        print(f"Session Cleanup Performance:")
+        print("Session Cleanup Performance:")
         print(f"Cleaned up {num_expired_sessions} sessions in {cleanup_time:.3f}s")
         
         # Cleanup should be fast
@@ -404,7 +399,7 @@ class TestRateLimitingPerformance:
         
         allowed_requests = sum(results)
         
-        print(f"Rate Limiting Test:")
+        print("Rate Limiting Test:")
         print(f"Total requests: {num_requests}")
         print(f"Allowed requests: {allowed_requests}")
         print(f"Rejected requests: {rejected_requests}")

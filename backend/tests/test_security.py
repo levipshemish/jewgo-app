@@ -307,9 +307,8 @@ class TestSecurityHeaders:
 
     def test_security_headers_present(self, client):
         """Test that security headers are present"""
-        response = client.get("/api/health")
+        client.get("/api/health")
         # Check for security headers
-        headers = response.headers
         # These headers should be present for security
         security_headers = [
             "X-Content-Type-Options",

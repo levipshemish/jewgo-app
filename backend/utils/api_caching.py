@@ -7,7 +7,7 @@ import hashlib
 import json
 import time
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional
 from flask import request, jsonify
 from utils.cache_manager_v4 import CacheManagerV4
 from utils.logging_config import get_logger

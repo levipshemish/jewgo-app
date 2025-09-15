@@ -5,10 +5,8 @@ Tests for session family management with replay hardening and rotation.
 """
 
 import pytest
-import secrets
-import time
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from services.auth.session_family_manager import SessionFamilyManager
 
 

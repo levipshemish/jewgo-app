@@ -1,5 +1,4 @@
 import importlib
-import pytest
 
 
 def make_client(monkeypatch, role='super_admin', authed=True):
