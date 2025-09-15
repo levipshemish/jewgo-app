@@ -647,11 +647,17 @@ def csrf_token():
         
         # Create response with secure cookie
         response = make_response(jsonify(response_data))
-        
+
         # Set CSRF cookie with environment-aware configuration
+        # Note: csrf_manager.get_csrf_cookie_config() includes a 'name' key which
+        # is not an accepted kwarg for Flask's set_cookie(). Passing it causes a
+        # TypeError, leading to 503 responses. Strip it before passing kwargs.
         cookie_config = csrf_manager.get_csrf_cookie_config()
+        cookie_config = dict(cookie_config) if cookie_config else {}
+        cookie_config.pop('name', None)
+
         response.set_cookie(
-            '_csrf_token',
+            '_csrf_token',  # keep consistent with middleware expectations
             csrf_token,
             **cookie_config
         )

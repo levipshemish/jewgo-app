@@ -8,7 +8,7 @@ import { useEffect, useState, Suspense } from "react";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { postgresAuth } from "@/lib/auth/postgres-auth";
+import { postgresAuth, PostgresAuthError } from "@/lib/auth/postgres-auth";
 import { useToast } from '@/components/ui/Toast';
 import { handleAuthError } from '@/lib/auth/error-handler';
 
@@ -22,6 +22,7 @@ function SignInForm() {
   const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
   const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
   const [csrfMessage, setCsrfMessage] = useState<string | null>(null);
+  const [showHeaderTooLargeHint, setShowHeaderTooLargeHint] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeEmail, setUpgradeEmail] = useState("");
   const [upgradePassword, setUpgradePassword] = useState("");
@@ -76,9 +77,15 @@ function SignInForm() {
         await postgresAuth.getProfile();
         router.push(redirectTo);
         return;
-      } catch {
+      } catch (err: any) {
         // Not authenticated; show form
         setIsCheckingAuth(false);
+        // Show cookie-size hint if 413 is encountered
+        if (err instanceof PostgresAuthError && err.status === 413) {
+          setShowHeaderTooLargeHint(true);
+        } else if (typeof err?.message === 'string' && err.message.toLowerCase().includes('headers too large')) {
+          setShowHeaderTooLargeHint(true);
+        }
       }
     };
     checkAuthStatus();
@@ -105,6 +112,18 @@ function SignInForm() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  const handleLogVisibleCookies = () => {
+    try {
+      const names = postgresAuth.getVisibleCookieNames();
+      appLogger.info('Visible cookies on current origin', { cookies: names });
+      // Also output to console for quick inspection
+      // eslint-disable-next-line no-console
+      console.log('[Auth] Visible cookie names:', names);
+    } catch (e) {
+      appLogger.warn('Failed to read visible cookies', { error: String(e) });
+    }
+  };
 
   // Handle form submission
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -300,6 +319,27 @@ function SignInForm() {
               </Link>
             </p>
           </div>
+
+          {/* 413 Hint Banner */}
+          {showHeaderTooLargeHint && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded">
+              <p className="text-sm">
+                Having trouble loading your session? Your browser may be sending too many or oversized cookies to the API.
+                Clear cookies for <strong>api.jewgo.app</strong> (and <strong>jewgo.app</strong> if needed), then try again.
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleLogVisibleCookies}
+                  className="inline-flex items-center px-3 py-1.5 text-xs font-medium border rounded bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
+                  title="Logs JS-visible cookie names to the console"
+                >
+                  Log visible cookie names
+                </button>
+                <span className="text-xs text-gray-600">(HttpOnly auth cookies won’t appear here)</span>
+              </div>
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (

@@ -330,6 +330,12 @@ export const CATEGORY_NAVIGATION_ITEMS: NavigationItem[] = [
     icon: () => null,
   },
   {
+    id: 'eatery',
+    label: 'Eatery',
+    href: '/eatery',
+    icon: () => null,
+  },
+  {
     id: 'marketplace',
     label: 'Marketplace',
     href: '/marketplace',
@@ -339,12 +345,6 @@ export const CATEGORY_NAVIGATION_ITEMS: NavigationItem[] = [
     id: 'shtel',
     label: 'Shtel',
     href: '/shtel',
-    icon: () => null,
-  },
-  {
-    id: 'eatery',
-    label: 'Eatery',
-    href: '/eatery',
     icon: () => null,
   },
   {

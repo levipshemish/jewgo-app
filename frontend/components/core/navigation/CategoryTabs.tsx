@@ -130,6 +130,12 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
       href: '/shuls'
     },
     {
+      id: 'eatery',
+      label: 'Eatery',
+      icon: KitchenTools,
+      href: '/eatery'
+    },
+    {
       id: 'marketplace',
       label: 'Shuk',
       icon: Ticket,
@@ -140,12 +146,6 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
       label: 'Shtetl',
       icon: Shtel,
       href: '/shtel'
-    },
-    {
-      id: 'eatery',
-      label: 'Eatery',
-      icon: KitchenTools,
-      href: '/eatery'
     },
     {
       id: 'stores',
