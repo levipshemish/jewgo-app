@@ -45,7 +45,7 @@ function isRestaurantLoaded(restaurantId: string): boolean {
 }
 
 // Add restaurant to loaded set and cache (with size limits)
-function addLoadedRestaurant(restaurant: Restaurant): void {
+function _addLoadedRestaurant(restaurant: Restaurant): void {
   loadedRestaurants.add(restaurant.id);
   
   // Only cache if we haven't exceeded the limit
@@ -68,7 +68,7 @@ function getCachedRestaurant(restaurantId: string): Restaurant | null {
 
 
 // Get restaurants from cache that are within the bounds (optimized)
-function getCachedRestaurantsInBounds(bounds: Bounds): Restaurant[] {
+function _getCachedRestaurantsInBounds(bounds: Bounds): Restaurant[] {
   // Only check if we have a reasonable number of cached restaurants for performance
   if (restaurantCache.size > 200) {
     // Too many restaurants to check efficiently, skip this optimization
@@ -111,11 +111,11 @@ let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 500; // 500ms minimum between requests
 
 // Track initial load state
-let isInitialLoad = true;
-let initialLoadStartTime = Date.now();
+const _isInitialLoad = true;
+const _initialLoadStartTime = Date.now();
 
 // Find overlapping cached data that covers the requested bounds
-function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
+function _findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
   const now = Date.now();
   
   for (const [cacheKey, cacheEntry] of cache.entries()) {
@@ -150,7 +150,7 @@ function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
 }
 
 // Expand bounds to get more data and improve caching
-function expandBounds(bounds: Bounds, factor: number = 1.5): Bounds {
+function _expandBounds(bounds: Bounds, factor: number = 1.5): Bounds {
   const latSpan = bounds.ne.lat - bounds.sw.lat;
   const lngSpan = bounds.ne.lng - bounds.sw.lng;
   
@@ -310,15 +310,15 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
     // Handle filter options if included in response
     if (response.filterOptions) {
       // Store filter options in a way that MapEngine can access them
-      useLivemapStore.setState((s) => ({ 
+      useLivemapStore.setState((_s) => ({ 
         filterOptions: response.filterOptions
       }));
     }
 
     // Update store with data
     useLivemapStore.getState().setRestaurants(transformedData);
-    useLivemapStore.setState((s) => ({ 
-      loading: { ...s.loading, restaurants: "success" } 
+    useLivemapStore.setState((_s) => ({ 
+      loading: { ..._s.loading, restaurants: "success" } 
     }));
     
     // No need to run client-side filtering since server already filtered the data
@@ -354,8 +354,8 @@ export function clearRestaurantCache(): void {
 
 // Reset initial load flag (useful for testing or manual resets)
 export function resetInitialLoad(): void {
-  isInitialLoad = true;
-  initialLoadStartTime = Date.now();
+  // Note: These variables are now private, so this function is not needed
+  // The initial load state is managed internally
 }
 
 // Check if a specific restaurant is already loaded

@@ -30,10 +30,6 @@ export default function StepUpAuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchStepUpChallenge();
-  }, [fetchStepUpChallenge]);
-
   const fetchStepUpChallenge = useCallback(async () => {
     try {
       const response = await postgresAuth.request('/step-up/challenge', {
@@ -53,6 +49,10 @@ export default function StepUpAuthPage() {
       setLoading(false);
     }
   }, [returnTo]);
+
+  useEffect(() => {
+    fetchStepUpChallenge();
+  }, [fetchStepUpChallenge]);
 
   const handleFreshSession = async () => {
     setProcessing(true);

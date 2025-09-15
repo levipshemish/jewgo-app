@@ -298,6 +298,7 @@ def logout():
 
 
 @auth_bp.route('/refresh', methods=['POST'])
+@rate_limit_by_user(max_requests=30, window_minutes=60)  # Allow frequent token refresh
 def refresh_token():
     """Refresh access token using refresh token."""
     try:
@@ -353,7 +354,8 @@ def refresh_token():
 
 
 @auth_bp.route('/profile', methods=['GET'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=100, window_minutes=60)
 def get_profile():
     """Get current user profile."""
     try:
@@ -395,7 +397,8 @@ def get_profile():
 
 
 @auth_bp.route('/profile', methods=['PUT'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=10, window_minutes=60)
 def update_profile():
     """Update current user profile."""
     try:
@@ -440,7 +443,9 @@ def update_profile():
 
 
 @auth_bp.route('/change-password', methods=['POST'])
-@require_permission_v5('authenticated')
+@auth_required
+@step_up_required('password')  # Require step-up authentication for password changes
+@rate_limit_by_user(max_requests=5, window_minutes=60)
 def change_password():
     """Change user password."""
     try:
@@ -627,7 +632,8 @@ def csrf_token():
 
 
 @auth_bp.route('/permissions', methods=['GET'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=50, window_minutes=60)
 def get_permissions():
     """Get current user permissions and roles."""
     try:
@@ -719,7 +725,8 @@ def jwks_endpoint():
 # Step-up Authentication Endpoints
 
 @auth_bp.route('/step-up/challenge', methods=['POST'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def step_up_challenge():
     """Create step-up authentication challenge for sensitive operations."""
     try:
@@ -775,7 +782,8 @@ def step_up_challenge():
 
 
 @auth_bp.route('/step-up/webauthn/challenge', methods=['POST'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def step_up_webauthn_challenge():
     """Get WebAuthn challenge for step-up authentication."""
     try:
@@ -843,7 +851,8 @@ def step_up_webauthn_challenge():
 
 
 @auth_bp.route('/step-up/webauthn/verify', methods=['POST'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def step_up_webauthn_verify():
     """Verify WebAuthn assertion for step-up authentication."""
     try:
@@ -900,7 +909,8 @@ def step_up_webauthn_verify():
 
 
 @auth_bp.route('/step-up/verify', methods=['POST'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def verify_step_up():
     """Verify if user has completed step-up authentication for current session."""
     try:

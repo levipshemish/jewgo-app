@@ -45,56 +45,6 @@ export default function CaptchaChallenge({
   const widgetRef = useRef<HTMLDivElement>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
 
-  // Load CAPTCHA script
-  useEffect(() => {
-    const loadCaptchaScript = () => {
-      if (isLoaded) return;
-
-      const scriptId = provider === 'turnstile' ? 'turnstile-script' : 'recaptcha-script';
-      
-      // Remove existing script if present
-      const existingScript = document.getElementById(scriptId);
-      if (existingScript) {
-        existingScript.remove();
-      }
-
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.async = true;
-      script.defer = true;
-      
-      if (provider === 'turnstile') {
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        script.onload = () => {
-          setIsLoaded(true);
-          renderTurnstile();
-        };
-      } else {
-        script.src = `https://www.google.com/recaptcha/api.js?render=explicit&onload=recaptchaCallback`;
-        (window as any).recaptchaCallback = () => {
-          setIsLoaded(true);
-          renderRecaptcha();
-        };
-      }
-
-      script.onerror = () => {
-        setError(`Failed to load ${provider} script`);
-        onError?.(`Failed to load ${provider} script`);
-      };
-
-      document.head.appendChild(script);
-      scriptRef.current = script;
-    };
-
-    loadCaptchaScript();
-
-    return () => {
-      if (scriptRef.current) {
-        scriptRef.current.remove();
-      }
-    };
-  }, [provider, isLoaded, siteKey, renderRecaptcha, renderTurnstile]);
-
   const renderTurnstile = useCallback(() => {
     if (!widgetRef.current || !(window as any).turnstile) return;
 
@@ -154,6 +104,56 @@ export default function CaptchaChallenge({
       onError?.('Failed to render reCAPTCHA widget');
     }
   }, [siteKey, theme, size, onVerify, onError, onExpired]);
+
+  // Load CAPTCHA script
+  useEffect(() => {
+    const loadCaptchaScript = () => {
+      if (isLoaded) return;
+
+      const scriptId = provider === 'turnstile' ? 'turnstile-script' : 'recaptcha-script';
+      
+      // Remove existing script if present
+      const existingScript = document.getElementById(scriptId);
+      if (existingScript) {
+        existingScript.remove();
+      }
+
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.async = true;
+      script.defer = true;
+      
+      if (provider === 'turnstile') {
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+        script.onload = () => {
+          setIsLoaded(true);
+          renderTurnstile();
+        };
+      } else {
+        script.src = `https://www.google.com/recaptcha/api.js?render=explicit&onload=recaptchaCallback`;
+        (window as any).recaptchaCallback = () => {
+          setIsLoaded(true);
+          renderRecaptcha();
+        };
+      }
+
+      script.onerror = () => {
+        setError(`Failed to load ${provider} script`);
+        onError?.(`Failed to load ${provider} script`);
+      };
+
+      document.head.appendChild(script);
+      scriptRef.current = script;
+    };
+
+    loadCaptchaScript();
+
+    return () => {
+      if (scriptRef.current) {
+        scriptRef.current.remove();
+      }
+    };
+  }, [provider, isLoaded, siteKey, renderRecaptcha, renderTurnstile, onError]);
 
   const resetCaptcha = () => {
     setError(null);

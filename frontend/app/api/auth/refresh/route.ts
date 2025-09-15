@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxyToBackend, createAuthErrorResponse, requireNodeRuntime } from '@/lib/api/proxy-utils';
+import { proxyToBackend, createAuthErrorResponse, ensureNodeRuntime } from '@/lib/api/proxy-utils';
 
 // Use Node.js runtime for proper Set-Cookie header handling
 export const runtime = 'nodejs';
@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     // Ensure Node.js runtime for proper multiple Set-Cookie header forwarding
-    requireNodeRuntime();
+    ensureNodeRuntime();
 
     // Get request body
     const body = await request.text();

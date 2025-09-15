@@ -97,6 +97,9 @@ const MapEngine = () => {
 
   // Handle bounds changes - trigger data loading with current filters
   const handleBoundsChange = (bounds: Bounds) => {
+    // Update bounds in store first
+    useLivemapStore.getState().setMap({ bounds });
+    
     // Load data with current filters (server-side filtering)
     loadRestaurantsInBounds(bounds, activeFilters).then(() => {
       // After reloading, set all restaurants as filtered (server already filtered them)
@@ -108,6 +111,9 @@ const MapEngine = () => {
 
   // Track if map has been initialized to prevent multiple calls
   const mapInitializedRef = useRef(false);
+  
+  // Debounce timeout for filter changes
+  const filterDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initial data load when map is ready
   const handleMapReady = () => {
@@ -147,19 +153,45 @@ const MapEngine = () => {
   useEffect(() => {
     // initializeURLSync();
   }, []);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (filterDebounceRef.current) {
+        clearTimeout(filterDebounceRef.current);
+      }
+    };
+  }, []);
 
   // Reload data when filters change (server-side filtering like eatery page)
+  const filtersString = JSON.stringify(activeFilters);
   useEffect(() => {
-    const state = useLivemapStore.getState();
-    if (state.map.bounds) {
-      // Reload data with new filters instead of client-side filtering
-      loadRestaurantsInBounds(state.map.bounds, activeFilters).then(() => {
-        // After reloading, set all restaurants as filtered (server already filtered them)
-        const allRestaurantIds = state.restaurants.map(r => r.id);
-        useLivemapStore.getState().applyFilterResults(allRestaurantIds);
-      });
+    // Clear any existing timeout
+    if (filterDebounceRef.current) {
+      clearTimeout(filterDebounceRef.current);
     }
-  }, [activeFilters]);
+    
+    // Debounce filter changes to prevent rapid-fire API calls
+    filterDebounceRef.current = setTimeout(() => {
+      const state = useLivemapStore.getState();
+      if (state.map.bounds) {
+        // Reload data with new filters instead of client-side filtering
+        loadRestaurantsInBounds(state.map.bounds, activeFilters).then(() => {
+          // After reloading, set all restaurants as filtered (server already filtered them)
+          const updatedState = useLivemapStore.getState();
+          const allRestaurantIds = updatedState.restaurants.map(r => r.id);
+          updatedState.applyFilterResults(allRestaurantIds);
+        });
+      }
+    }, 300); // 300ms debounce like eatery page
+    
+    // Cleanup timeout on unmount or when filters change
+    return () => {
+      if (filterDebounceRef.current) {
+        clearTimeout(filterDebounceRef.current);
+      }
+    };
+  }, [filtersString, activeFilters]);
 
   return (
     <div className="relative w-full h-full">

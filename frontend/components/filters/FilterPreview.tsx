@@ -41,7 +41,7 @@ export function FilterPreview({
 
   // Normalize filters once and create a stable signature to trigger preview updates
   const normalizedFilters = useMemo(() => normalizeFilters(filters as any), [filters]);
-  const normalizedSignature = useMemo(() => JSON.stringify(normalizedFilters), [normalizedFilters]);
+  const _normalizedSignature = useMemo(() => JSON.stringify(normalizedFilters), [normalizedFilters]);
   
   // Memoize hasActiveFilters calculation
   const hasActiveFilters = useMemo(() => 
@@ -75,9 +75,41 @@ export function FilterPreview({
       // by using the same sorting parameters as the main grid
       const previewFilters = { ...normalizedFilters } as any;
       
+      // Map frontend filter names to API parameter names (same as EateryGrid)
+      if (previewFilters.q && previewFilters.q.trim()) {
+        previewFilters.search = previewFilters.q.trim();
+        delete previewFilters.q; // Remove the frontend field name
+      }
+      
+      if (previewFilters.category) {
+        previewFilters.kosher_category = previewFilters.category;
+        delete previewFilters.category; // Remove the frontend field name
+      }
+      
+      // Map price range to separate min/max fields
+      if (previewFilters.priceRange && Array.isArray(previewFilters.priceRange)) {
+        const [min, max] = previewFilters.priceRange;
+        if (min) previewFilters.price_min = min.toString();
+        if (max) previewFilters.price_max = max.toString();
+        delete previewFilters.priceRange; // Remove the frontend field name
+      }
+      
       // If user location is available, ensure distance sorting is applied for accurate count
       if (userLocation) {
         previewFilters.sort = 'distance_asc';
+      }
+      
+      // Ensure distance filter is properly converted to radius (same as main API)
+      const distanceMi = previewFilters.distanceMi;
+      if (userLocation && distanceMi) {
+        const radiusKm = Number(distanceMi) * 1.60934;
+        previewFilters.radius = radiusKm.toString();
+      }
+
+      // Debug: Log the filters being sent to the API
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 FilterPreview sending filters:', previewFilters);
+        console.log('🔍 FilterPreview userLocation:', userLocation);
       }
 
       // Ask backend for count by requesting minimal page
@@ -89,7 +121,13 @@ export function FilterPreview({
         includeFilterOptions: false,
       });
       
-      // Debug: Log the response structure to understand what we're getting - removed
+      // Debug: Log the response structure to understand what we're getting
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 FilterPreview response:', response);
+        console.log('🔍 FilterPreview total_count:', (response as any).total_count);
+        console.log('🔍 FilterPreview totalRestaurants:', (response as any).totalRestaurants);
+        console.log('🔍 FilterPreview restaurants length:', response.restaurants?.length);
+      }
       
       // Handle different response structures
       // Prefer backend-provided total_count when available
@@ -110,7 +148,7 @@ export function FilterPreview({
         hasValidationErrors: false
       });
     }
-  }, [userLocation, validation.errors.length, hasActiveFilters, normalizedSignature, normalizedFilters]);
+  }, [userLocation, validation.errors.length, hasActiveFilters, normalizedFilters]);
 
   // Debounced effect
   useEffect(() => {

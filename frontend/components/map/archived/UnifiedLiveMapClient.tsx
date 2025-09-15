@@ -149,7 +149,7 @@ export default function UnifiedLiveMapClient() {
     // Note: kosherDetails filter removed as it's not in AppliedFilters schema
 
     return filtered;
-  }, [allRestaurants, activeFilters, userLocation, calculateDistance]);
+  }, [allRestaurants, activeFilters, userLocation]);
 
   // Update displayed restaurants when filtered restaurants change
   useEffect(() => {
@@ -941,7 +941,7 @@ export default function UnifiedLiveMapClient() {
       certifyingAgency: restaurant.certifying_agency || 'Unknown',
       distance: distanceText, // Add distance to the returned object
     };
-  }, [userLocation, calculateDistance]);
+  }, [userLocation]);
 
   const _handleFilterChange = useCallback((filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
