@@ -19,6 +19,7 @@ from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from middleware.auth_v5 import require_permission_v5
 from services.auth_service_v5 import AuthServiceV5
 from services.auth.token_manager_v5 import TokenManagerV5
+from services.auth.jwks_manager import JWKSManager
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5
 from utils.csrf_manager import get_csrf_manager
@@ -30,9 +31,10 @@ auth_bp = BlueprintFactoryV5.create_blueprint(
     'auth_api', __name__, '/api/v5/auth'
 )
 
-# Initialize auth service and token manager
+# Initialize auth service, token manager, and JWKS manager
 auth_service = AuthServiceV5()
 token_manager_v5 = TokenManagerV5()
+jwks_manager = JWKSManager()
 
 # Get CSRF manager (will be initialized by middleware)
 def get_csrf_manager_for_auth():
@@ -678,6 +680,35 @@ def auth_health_check():
             'status': 'unhealthy',
             'error': str(e),
             'timestamp': datetime.utcnow().isoformat()
+        }), 503
+
+
+@auth_bp.route('/.well-known/jwks.json', methods=['GET'])
+def jwks_endpoint():
+    """JSON Web Key Set endpoint for public key distribution."""
+    try:
+        # Get public JWKS
+        jwks = jwks_manager.get_public_jwks()
+        
+        # Create response with appropriate headers
+        response = make_response(jsonify(jwks))
+        
+        # Set caching headers (5 minute cache)
+        response.headers['Cache-Control'] = f'public, max-age={jwks_manager.jwks_cache_ttl}'
+        response.headers['Content-Type'] = 'application/json'
+        
+        # Add security headers
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Referrer-Policy'] = 'no-referrer'
+        
+        logger.debug(f"JWKS endpoint served {len(jwks.get('keys', []))} keys")
+        return response
+        
+    except Exception as e:
+        logger.error(f"JWKS endpoint error: {e}")
+        return jsonify({
+            'error': 'JWKS service unavailable'
         }), 503
 
 

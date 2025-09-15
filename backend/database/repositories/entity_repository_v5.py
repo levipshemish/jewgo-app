@@ -110,6 +110,20 @@ class EntityRepositoryV5(BaseRepository):
         # Cache for model classes
         self._model_cache = {}
         self._load_models()
+        
+        # Detect PostGIS availability and cache the result
+        self._postgis_available = False
+        try:
+            with self.connection_manager.engine.connect() as conn:
+                result = conn.execute(text("""
+                    SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis')
+                """))
+                row = result.fetchone()
+                self._postgis_available = bool(row and row[0])
+                logger.info(f"PostGIS availability: {self._postgis_available}")
+        except Exception as e:
+            logger.warning(f"Could not determine PostGIS availability; assuming false: {e}")
+            self._postgis_available = False
     
     def _load_models(self):
         """Load and cache SQLAlchemy model classes."""
@@ -941,22 +955,36 @@ class EntityRepositoryV5(BaseRepository):
                 lng = float(filters['longitude'])
                 radius_km = float(filters.get('radius', 10))  # Default 10km radius
                 
-                # Use PostGIS ST_DWithin for efficient spatial queries
-                if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                # If PostGIS not available, apply coarse bbox filter and mark for app-layer filtering
+                if not getattr(self, '_postgis_available', False) and hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                    from math import cos, radians
+                    lat_delta = radius_km / 110.574
                     try:
-                        # Use traditional latitude/longitude columns (most common case)
-                        query = query.filter(
-                            func.ST_DWithin(
-                                func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
-                                func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                                radius_km * 1000  # Convert km to meters
-                            )
+                        lng_delta = radius_km / (111.320 * max(0.1, cos(radians(lat))))
+                    except Exception:
+                        lng_delta = radius_km / 111.320
+                    query = query.filter(
+                        and_(
+                            getattr(model_class, 'latitude').isnot(None),
+                            getattr(model_class, 'longitude').isnot(None),
+                            getattr(model_class, 'latitude') >= (lat - lat_delta),
+                            getattr(model_class, 'latitude') <= (lat + lat_delta),
+                            getattr(model_class, 'longitude') >= (lng - lng_delta),
+                            getattr(model_class, 'longitude') <= (lng + lng_delta),
                         )
-                        logger.info(f"Applied PostGIS geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
-                    except Exception as e:
-                        logger.warning(f"PostGIS geospatial filter failed, will filter in application layer: {e}")
-                        # Store radius filter for application-layer filtering
-                        filters['_radius_km'] = radius_km
+                    )
+                    filters['_radius_km'] = radius_km
+                    logger.info("Applied bbox geospatial fallback; PostGIS unavailable")
+                elif hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                    # Use traditional latitude/longitude columns (most common case)
+                    query = query.filter(
+                        func.ST_DWithin(
+                            func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
+                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                            radius_km * 1000  # Convert km to meters
+                        )
+                    )
+                    logger.info(f"Applied PostGIS geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
                 elif hasattr(model_class, 'geom'):
                     # Use geom column (PostGIS geometry column)
                     query = query.filter(

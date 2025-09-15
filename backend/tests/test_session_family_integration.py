@@ -116,8 +116,14 @@ class TestSessionFamilyIntegration:
             mock_session.execute.side_effect = mock_execute
             return mock_session
         
-        mock.session_scope.return_value.__enter__.side_effect = create_mock_session
-        mock.session_scope.return_value.__exit__.return_value = None
+        # Create a proper context manager mock
+        def create_context_manager():
+            context_manager = Mock()
+            context_manager.__enter__ = Mock(side_effect=create_mock_session)
+            context_manager.__exit__ = Mock(return_value=None)
+            return context_manager
+        
+        mock.session_scope.side_effect = create_context_manager
         
         return mock
     

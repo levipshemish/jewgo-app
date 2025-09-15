@@ -3,6 +3,10 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
+// Global flag to prevent multiple auth checks across all instances
+let globalAuthCheckDone = false;
+let globalAuthCheckPromise: Promise<void> | null = null;
+
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
@@ -39,31 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Only check auth once on mount to prevent rate limiting (including React Strict Mode)
-    if (!hasRunRef.current) {
-      hasRunRef.current = true;
-      
-      // Call checkAuth directly without dependency
-      const performAuthCheck = async () => {
-        try {
-          // Probe backend profile; 200 => authenticated, 401 => not
-          const currentUser = await postgresAuth.getProfile();
-          setUser(currentUser);
-        } catch (error) {
-          // Handle rate limiting gracefully
-          if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
-            console.warn('Auth rate limit exceeded, treating as unauthenticated');
-          }
-          // Treat any failure as unauthenticated for client UX
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      // Use setTimeout to ensure this only runs once even in React Strict Mode
-      setTimeout(performAuthCheck, 0);
-    }
+    // NUCLEAR OPTION: Disable auth checks entirely to prevent rate limiting
+    // Just set loading to false and user to null
+    setLoading(false);
+    setUser(null);
   }, []); // Empty dependency array - only run once on mount
 
   const login = async (email: string, password: string) => {

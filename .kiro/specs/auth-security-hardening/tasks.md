@@ -24,7 +24,7 @@
   - Write integration tests for CSRF protection across all mutating endpoints
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [-] 3. Enhanced Token Management System
+- [x] 3. Enhanced Token Management System
 - [x] 3.1 Implement TokenManagerV5 with Leeway Support
   - Create TokenManagerV5 class with configurable leeway for JWT verification (default 60 seconds)
   - Implement HEAD /api/v5/auth/verify-token endpoint with sub-120ms p95 performance target
@@ -32,7 +32,7 @@
   - Write performance tests to ensure verify-token endpoint meets latency requirements
   - _Requirements: 2.1, 2.2, 2.5, 8.8_
 
-- [-] 3.2 Implement Session Family Management with Replay Hardening
+- [x] 3.2 Implement Session Family Management with Replay Hardening
   - Create SessionFamilyManager class for managing token families and rotation
   - Implement server-side refresh mutex per family_id using Redis SET NX with 10s TTL
   - Add one-time use refresh token validation (revoke used JTI, second use triggers family revoke)
@@ -42,7 +42,7 @@
   - Write integration tests for simultaneous refresh attempts (exactly one success, other gets 409/429 with Retry-After)
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 10.1, 10.2, 10.3_
 
-- [ ] 3.3 Implement Signing Keys and JWKS Rotation System
+- [x] 3.3 Implement Signing Keys and JWKS Rotation System
   - Store private keys in KMS/HSM using RS256/ES256 algorithms (no symmetric HS256 in production)
   - Implement /.well-known/jwks.json endpoint publishing current + 1-2 retired keys
   - Add kid (key ID) to all JWTs with algorithm pinning and iss/aud enforcement
@@ -51,8 +51,8 @@
   - Write tests for old kid validation during grace window and unknown kid rejection (401)
   - _Requirements: 2.1, 2.2, 2.5_
 
-- [ ] 4. Environment-Aware Configuration System
-- [ ] 4.1 Implement Cookie Policy Manager with Preview Environment Support
+- [-] 4. Environment-Aware Configuration System
+- [-] 4.1 Implement Cookie Policy Manager with Preview Environment Support
   - Create CookiePolicyManager class with environment-specific cookie configurations
   - Implement production settings: Secure, HttpOnly, SameSite=None, Domain=.jewgo.app
   - Implement preview settings: host-only cookies, SameSite=None, Secure (HTTPS only) for Vercel compatibility

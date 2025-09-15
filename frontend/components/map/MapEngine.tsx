@@ -81,14 +81,14 @@ const MapEngine = () => {
       console.log('🗺️ Map ready, loading initial data...');
     }
     
-    // Load initial data if we have bounds - use immediate loading for faster initial load
-    const currentBounds = useLivemapStore.getState().map.bounds;
-    if (currentBounds) {
-      // Use immediate loading for initial data load (no debounce)
-      loadRestaurantsInBounds(currentBounds).then(() => {
-        runFilter(); // Apply current filters to loaded data
-      });
-    }
+        // Load initial data if we have bounds - use immediate loading for faster initial load
+        const currentBounds = useLivemapStore.getState().map.bounds;
+        if (currentBounds) {
+          // Use immediate loading for initial data load (no debounce, no rate limiting)
+          loadRestaurantsInBounds(currentBounds).then(() => {
+            runFilter(); // Apply current filters to loaded data
+          });
+        }
   };
 
   // Handle restaurant selection

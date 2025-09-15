@@ -151,6 +151,29 @@ class RestaurantRepository(BaseRepository[Restaurant]):
             )
             return []
 
+    def search_restaurants_near_location(
+        self,
+        latitude: float,
+        longitude: float,
+        radius_miles: float = 10.0,
+        limit: int = 50,
+    ) -> List[Restaurant]:
+        """Alias for DatabaseManager compatibility (expects miles).
+
+        Delegates to get_restaurants_near_location after converting miles to km.
+        """
+        try:
+            radius_km = radius_miles / 0.621371 if radius_miles is not None else 10.0
+        except Exception:
+            radius_km = 10.0
+        return self.get_restaurants_near_location(
+            latitude=latitude,
+            longitude=longitude,
+            radius_km=radius_km,
+            limit=limit,
+            offset=0,
+        )
+
     def get_restaurants_with_hours_count(self) -> int:
         """Get count of restaurants that have hours information."""
         try:

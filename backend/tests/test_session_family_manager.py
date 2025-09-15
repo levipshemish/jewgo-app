@@ -36,8 +36,11 @@ class TestSessionFamilyManager:
         mock_session.fetchall.return_value = []
         mock_session.mappings.return_value.all.return_value = []
         
-        mock.session_scope.return_value.__enter__.return_value = mock_session
-        mock.session_scope.return_value.__exit__.return_value = None
+        # Create a proper context manager mock
+        context_manager = Mock()
+        context_manager.__enter__ = Mock(return_value=mock_session)
+        context_manager.__exit__ = Mock(return_value=None)
+        mock.session_scope.return_value = context_manager
         
         return mock
     
