@@ -30,6 +30,7 @@ import zlib
 
 from utils.logging_config import get_logger
 from cache.redis_manager_v5 import get_redis_manager_v5
+from sqlalchemy import text
 
 logger = get_logger(__name__)
 
