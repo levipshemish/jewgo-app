@@ -14,6 +14,7 @@ from datetime import datetime, timezone, time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+from sqlalchemy import func, text
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -217,18 +218,19 @@ class RestaurantServiceV5:
                 filter_options['kosherDetails'] = sorted(list(kosher_details))
                 
                 # Get hours options based on actual restaurant data
-                # Count restaurants with hours data using simple text checks
+                # Count restaurants with hours data using proper JSONB queries
                 try:
                     restaurants_with_hours = session.query(Restaurant).filter(
                         Restaurant.hours_json.isnot(None),
-                        Restaurant.hours_json != ''
+                        Restaurant.hours_json != '',
+                        func.cast(Restaurant.hours_json, text('jsonb'))['periods'].isnot(None)
                     ).count()
                     
                     logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
                     
-                    # Count restaurants currently open using simple text search
+                    # Count restaurants currently open using JSONB query
                     restaurants_open_now = session.query(Restaurant).filter(
-                        Restaurant.hours_json.contains('"open_now": true')
+                        func.cast(Restaurant.hours_json, text('jsonb'))['open_now'].astext == 'true'
                     ).count()
                             
                     logger.info(f"Restaurants currently open: {restaurants_open_now}")

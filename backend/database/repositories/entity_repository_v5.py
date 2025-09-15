@@ -896,19 +896,20 @@ class EntityRepositoryV5(BaseRepository):
             if filters.get('category') and hasattr(model_class, 'kosher_category'):
                 query = query.filter(model_class.kosher_category == filters['category'])
             
-            # Hours filter - simplified implementation using basic text matching
+            # Hours filter - using proper JSONB queries
             if filters.get('hoursFilter') and hasattr(model_class, 'hours_json'):
                 hours_filter = filters.get('hoursFilter')
                 if hours_filter == 'openNow':
-                    # Simple text search for open_now: true (works with Text field)
+                    # Use JSONB operator to check open_now field
                     query = query.filter(
-                        model_class.hours_json.contains('"open_now": true')
+                        func.cast(model_class.hours_json, text('jsonb'))['open_now'].astext == 'true'
                     )
                 elif hours_filter in ['morning', 'afternoon', 'evening', 'lateNight']:
-                    # For time periods, just ensure hours_json exists and is not empty
+                    # For time periods, ensure hours_json exists and has periods data
                     query = query.filter(
                         model_class.hours_json.isnot(None),
-                        model_class.hours_json != ''
+                        model_class.hours_json != '',
+                        func.cast(model_class.hours_json, text('jsonb'))['periods'].isnot(None)
                     )
             
             # Exact field filters for remaining fields
