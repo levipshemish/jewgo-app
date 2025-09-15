@@ -901,17 +901,17 @@ class EntityRepositoryV5(BaseRepository):
                 hours_filter = filters['hoursFilter']
                 if hours_filter == 'openNow':
                     # Filter for restaurants that are currently open
-                    # Since hours_json is stored as text, we'll use PostgreSQL text functions
+                    # Since hours_json is stored as text, we'll use PostgreSQL strpos function
                     query = query.filter(
                         and_(
                             model_class.hours_json.isnot(None),
                             model_class.hours_json != '',
                             model_class.hours_json != 'null',
                             or_(
-                                func.position('"open_now": true', model_class.hours_json) > 0,
-                                func.position('"open_now":true', model_class.hours_json) > 0,
-                                func.position("'open_now': true", model_class.hours_json) > 0,
-                                func.position("'open_now':true", model_class.hours_json) > 0
+                                func.strpos(model_class.hours_json, '"open_now": true') > 0,
+                                func.strpos(model_class.hours_json, '"open_now":true') > 0,
+                                func.strpos(model_class.hours_json, "'open_now': true") > 0,
+                                func.strpos(model_class.hours_json, "'open_now':true") > 0
                             )
                         )
                     )
