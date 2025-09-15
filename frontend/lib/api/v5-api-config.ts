@@ -98,6 +98,7 @@ export interface V5EntityParams {
   page?: number;
   limit?: number;
   sort?: string;
+  includeFilterOptions?: boolean;
   order?: 'asc' | 'desc';
   cursor?: string;
 }

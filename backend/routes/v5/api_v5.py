@@ -215,13 +215,17 @@ def get_entities(entity_type: str):
         # Get service for entity type
         service = get_entity_service(entity_type)
         
+        # Check if filter options should be included (typically on first page)
+        include_filter_options = request.args.get('include_filter_options', 'false').lower() == 'true'
+        
         # Get entities
         result = service.get_entities(
             filters=filters,
             cursor=pagination.get('cursor'),
             page=pagination.get('page'),
             limit=pagination.get('limit', 20),
-            sort=pagination.get('sort', 'created_at_desc')
+            sort=pagination.get('sort', 'created_at_desc'),
+            include_filter_options=include_filter_options
         )
         
         # Add total count for pagination info

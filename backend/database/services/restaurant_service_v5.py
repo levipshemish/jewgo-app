@@ -100,6 +100,62 @@ class RestaurantServiceV5:
             logger.error(f"Error getting entity count: {e}")
             return 0
 
+    def get_filter_options(self) -> Dict[str, Any]:
+        """Get available filter options for restaurants."""
+        try:
+            # Get all restaurants to extract unique values
+            restaurants, _, _ = self.get_restaurants(
+                limit=1000,  # Get all restaurants for filter options
+                include_relations=False,
+                use_cache=True
+            )
+            
+            # Extract unique values
+            kosher_categories = set()
+            certifying_agencies = set()
+            price_ranges = set()
+            cities = set()
+            states = set()
+            listing_types = set()
+            
+            for restaurant in restaurants:
+                if restaurant.get('kosher_category'):
+                    kosher_categories.add(restaurant['kosher_category'])
+                if restaurant.get('certifying_agency'):
+                    certifying_agencies.add(restaurant['certifying_agency'])
+                if restaurant.get('price_range'):
+                    price_ranges.add(restaurant['price_range'])
+                if restaurant.get('city'):
+                    cities.add(restaurant['city'])
+                if restaurant.get('state'):
+                    states.add(restaurant['state'])
+                if restaurant.get('listing_type'):
+                    listing_types.add(restaurant['listing_type'])
+            
+            # Convert to sorted lists
+            filter_options = {
+                'kosherCategories': sorted(list(kosher_categories)),
+                'agencies': sorted(list(certifying_agencies)),
+                'priceRanges': sorted(list(price_ranges)),
+                'cities': sorted(list(cities)),
+                'states': sorted(list(states)),
+                'listingTypes': sorted(list(listing_types))
+            }
+            
+            logger.info("Successfully retrieved filter options")
+            return filter_options
+            
+        except Exception as e:
+            logger.error(f"Error getting filter options: {e}")
+            return {
+                'kosherCategories': [],
+                'agencies': [],
+                'priceRanges': [],
+                'cities': [],
+                'states': [],
+                'listingTypes': []
+            }
+
     def get_entities(
         self,
         filters: Optional[Dict[str, Any]] = None,
@@ -109,7 +165,8 @@ class RestaurantServiceV5:
         sort: str = 'created_at_desc',
         include_relations: bool = False,
         user_context: Optional[Dict[str, Any]] = None,
-        use_cache: bool = True
+        use_cache: bool = True,
+        include_filter_options: bool = False
     ) -> Dict[str, Any]:
         """
         Get entities (restaurants) with API-compatible interface.
@@ -128,11 +185,17 @@ class RestaurantServiceV5:
                 use_cache=use_cache
             )
             
-            return {
+            result = {
                 'data': restaurants,
                 'next_cursor': next_cursor,
                 'prev_cursor': prev_cursor
             }
+            
+            # Include filter options if requested (typically on first page)
+            if include_filter_options and (page is None or page == 1):
+                result['filterOptions'] = self.get_filter_options()
+            
+            return result
             
         except Exception as e:
             logger.error(f"Error getting entities: {e}")

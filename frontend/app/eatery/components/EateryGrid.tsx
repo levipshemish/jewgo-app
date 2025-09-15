@@ -24,6 +24,7 @@ interface EateryGridProps {
   useRealData?: boolean
   activeFilters?: AppliedFilters
   onCardClick?: (restaurant: LightRestaurant) => void
+  onFilterOptionsReceived?: (filterOptions: any) => void
 }
 
 export default function EateryGrid({ 
@@ -36,7 +37,8 @@ export default function EateryGrid({
   userLocation,
   useRealData = true,
   activeFilters = {},
-  onCardClick
+  onCardClick,
+  onFilterOptionsReceived
 }: EateryGridProps) {
   const [restaurants, setRestaurants] = useState<LightRestaurant[]>([])
   const [loading, setLoading] = useState(false)
@@ -134,7 +136,8 @@ export default function EateryGrid({
         limit,
         filters,
         location,
-        cursor: undefined // Never use cursor-based pagination
+        cursor: undefined, // Never use cursor-based pagination
+        includeFilterOptions: page === 1 // Include filter options on first page only
       })
       
       if (!response.success) {
@@ -143,6 +146,11 @@ export default function EateryGrid({
 
       // Handle the response format from the restaurants API
       const responseRestaurants = response.restaurants || []
+      
+      // Handle filter options if included in response (first page only)
+      if (page === 1 && response.filterOptions && onFilterOptionsReceived) {
+        onFilterOptionsReceived(response.filterOptions)
+      }
       
       // Handle pagination based on sorting type
       let hasMoreData = false

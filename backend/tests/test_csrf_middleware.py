@@ -24,6 +24,9 @@ from utils.csrf_manager import CSRFManager, init_csrf_manager
 class TestCSRFMiddleware:
     """Test cases for CSRF middleware functionality."""
     
+    # Standard test user agent to match what werkzeug test client sends
+    TEST_USER_AGENT = 'werkzeug/3.0.4'
+    
     @pytest.fixture
     def app(self):
         """Create Flask app for testing."""
@@ -81,9 +84,9 @@ class TestCSRFMiddleware:
             data = json.loads(response.data)
             return data['data']['csrf_token']
         
-        # Fallback: generate token manually
+        # Fallback: generate token manually with werkzeug user agent to match test client
         csrf_manager = CSRFManager('test-csrf-secret')
-        return csrf_manager.generate_token('anon:127.0.0.1')
+        return csrf_manager.generate_token('anon:127.0.0.1', self.TEST_USER_AGENT)
     
     def test_get_request_not_protected(self, client):
         """Test that GET requests are not protected by CSRF."""
@@ -107,7 +110,7 @@ class TestCSRFMiddleware:
         """Test that POST requests work with valid CSRF token."""
         response = client.post(
             '/api/test',
-            headers={'X-CSRF-Token': csrf_token}
+            headers={'X-CSRF-Token': csrf_token, 'User-Agent': self.TEST_USER_AGENT}
         )
         assert response.status_code == 200
         
@@ -132,14 +135,14 @@ class TestCSRFMiddleware:
         # Test X-CSRF-Token header
         response = client.post(
             '/api/test',
-            headers={'X-CSRF-Token': csrf_token}
+            headers={'X-CSRF-Token': csrf_token, 'User-Agent': self.TEST_USER_AGENT}
         )
         assert response.status_code == 200
         
         # Test X-CSRFToken header (alternative)
         response = client.post(
             '/api/test',
-            headers={'X-CSRFToken': csrf_token}
+            headers={'X-CSRFToken': csrf_token, 'User-Agent': self.TEST_USER_AGENT}
         )
         assert response.status_code == 200
     

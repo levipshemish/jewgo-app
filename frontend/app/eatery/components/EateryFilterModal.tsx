@@ -12,6 +12,7 @@ type Props = {
   userLocation: { latitude: number; longitude: number; timestamp: number } | null;
   locationLoading: boolean;
   onRequestLocation: () => void;
+  preloadedFilterOptions?: any;
 };
 
 export default function EateryFilterModal({
@@ -22,6 +23,7 @@ export default function EateryFilterModal({
   userLocation,
   locationLoading,
   onRequestLocation,
+  preloadedFilterOptions,
 }: Props) {
   return (
     <ModernFilterPopup
@@ -32,7 +34,7 @@ export default function EateryFilterModal({
       userLocation={userLocation}
       locationLoading={locationLoading}
       onRequestLocation={onRequestLocation}
-      preloadedFilterOptions={null}
+      preloadedFilterOptions={preloadedFilterOptions}
     />
   );
 }

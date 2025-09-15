@@ -47,6 +47,7 @@ export async function fetchRestaurants({
   location,
   cursor,
   signal,
+  includeFilterOptions = false,
 }: { 
   page?: number; 
   limit?: number;
@@ -54,6 +55,7 @@ export async function fetchRestaurants({
   location?: { latitude: number; longitude: number };
   cursor?: string;
   signal?: AbortSignal;
+  includeFilterOptions?: boolean;
 }): Promise<RestaurantsResponse> {
   try {
     // Use V5 API client for restaurants
@@ -66,6 +68,7 @@ export async function fetchRestaurants({
         lng: location.longitude,
       } : undefined,
       cursor,
+      includeFilterOptions,
     });
 
     if (!response.success) {

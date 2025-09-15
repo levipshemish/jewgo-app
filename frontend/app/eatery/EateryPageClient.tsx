@@ -43,6 +43,9 @@ function EateryPageContent() {
     clearAllFilters
   } = useAdvancedFilters()
 
+  // State for filter options from restaurants API
+  const [filterOptions, setFilterOptions] = useState<any>(null)
+
   // Update active tab based on current pathname
   useEffect(() => {
     if (pathname.startsWith('/eatery')) {
@@ -165,6 +168,7 @@ function EateryPageContent() {
           useRealData={true}
           activeFilters={activeFilters}
           onCardClick={handleCardClick}
+          onFilterOptionsReceived={setFilterOptions}
         />
       </div>
 
@@ -180,6 +184,7 @@ function EateryPageContent() {
         userLocation={userLocation}
         locationLoading={locationLoading}
         onRequestLocation={requestLocation}
+        preloadedFilterOptions={filterOptions}
       />
 
     </div>

@@ -201,6 +201,11 @@ export class V5ApiClient {
     }
     
     if (params.order) searchParams.set('order', params.order);
+    
+    // Handle filter options inclusion
+    if (params.includeFilterOptions) {
+      searchParams.set('include_filter_options', 'true');
+    }
 
     const endpoint = `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`;
     return this.makeRequest(endpoint);
