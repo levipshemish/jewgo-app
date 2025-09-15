@@ -1,32 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { proxyToBackend, createAuthErrorResponse, requireNodeRuntime } from '@/lib/api/proxy-utils';
+
+// Use Node.js runtime for proper Set-Cookie header handling
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    
-    // Forward to v5 auth API with refresh action
-    const v5Response = await fetch(`${request.nextUrl.origin}/api/v5/auth`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': request.headers.get('cookie') || '',
-      },
-      body: JSON.stringify({
-        action: 'refresh',
-        ...data
-      })
-    });
+    // Ensure Node.js runtime for proper multiple Set-Cookie header forwarding
+    requireNodeRuntime();
 
-    const responseData = await v5Response.json();
-    
-    return NextResponse.json(responseData, { 
-      status: v5Response.status,
-      headers: v5Response.headers 
-    });
+    // Get request body
+    const body = await request.text();
+
+    // Proxy to backend with enhanced error handling
+    const { response } = await proxyToBackend(
+      request,
+      '/api/v5/auth/refresh',
+      {
+        method: 'POST',
+        body,
+        timeout: 10000,
+        preserveHeaders: ['cookie', 'user-agent', 'x-csrf-token'],
+        mapErrors: true,
+        requireNodeRuntime: true
+      }
+    );
+
+    return response;
+
   } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Token refresh failed', message: error.message },
-      { status: 500 }
+    console.error('Token refresh proxy error:', error);
+    
+    return createAuthErrorResponse(
+      'Token refresh service temporarily unavailable',
+      'REFRESH_ERROR',
+      503,
+      error.message
     );
   }
 }

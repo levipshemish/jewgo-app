@@ -1,32 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { proxyToBackend, createAuthErrorResponse } from '@/lib/api/proxy-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    
-    // Forward to v5 auth API with change-password action
-    const v5Response = await fetch(`${request.nextUrl.origin}/api/v5/auth`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': request.headers.get('cookie') || '',
-      },
-      body: JSON.stringify({
-        action: 'change-password',
-        ...data
-      })
-    });
+    // Get request body
+    const body = await request.text();
 
-    const responseData = await v5Response.json();
-    
-    return NextResponse.json(responseData, { 
-      status: v5Response.status,
-      headers: v5Response.headers 
-    });
+    // Proxy to backend with enhanced error handling
+    const { response } = await proxyToBackend(
+      request,
+      '/api/v5/auth/change-password',
+      {
+        method: 'POST',
+        body,
+        timeout: 10000,
+        preserveHeaders: ['cookie', 'authorization', 'user-agent', 'x-csrf-token'],
+        mapErrors: true,
+        requireNodeRuntime: false // Password change doesn't typically set new cookies
+      }
+    );
+
+    return response;
+
   } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Password change failed', message: error.message },
-      { status: 500 }
+    console.error('Change password proxy error:', error);
+    
+    return createAuthErrorResponse(
+      'Password change service temporarily unavailable',
+      'PASSWORD_CHANGE_ERROR',
+      503,
+      error.message
     );
   }
 }

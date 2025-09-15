@@ -86,8 +86,8 @@
   - Write tests to verify metrics collection, PII masking, and correlation ID propagation
   - _Requirements: 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 6. Frontend Authentication Client Enhancements
-- [ ] 6.1 Implement Enhanced Auth Client with Loop Guards
+- [-] 6. Frontend Authentication Client Enhancements
+- [x] 6.1 Implement Enhanced Auth Client with Loop Guards
   - Modify PostgresAuthClient to use direct backend URLs from NEXT_PUBLIC_BACKEND_URL
   - Implement 401 loop guard with maximum 2 refresh attempts and exponential backoff with jitter
   - Add request deduplication using shared in-flight promises for concurrent refresh requests
@@ -96,7 +96,7 @@
   - Write Jest tests for loop guard, deduplication, timeout, and error handling
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 9.4_
 
-- [ ] 6.2 Implement API Proxy Enhancements
+- [-] 6.2 Implement API Proxy Enhancements
   - Modify API route handlers to use Node.js runtime only where necessary
   - Implement proper multiple Set-Cookie header forwarding using response.headers.raw()['set-cookie']
   - Add network error mapping while preserving original status codes

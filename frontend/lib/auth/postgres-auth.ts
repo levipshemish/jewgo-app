@@ -60,24 +60,43 @@ class PostgresAuthClient {
   public accessToken: string | null = null;
   private refreshToken: string | null = null;
   private csrfToken: string | null = null;
+  
+  // Enhanced auth client properties for loop guards and deduplication
+  private refreshPromise: Promise<AuthResponse> | null = null;
+  private refreshAttempts: number = 0;
+  private maxRefreshAttempts: number = 2;
+  private lastRefreshTime: number = 0;
+  private refreshBackoffDelay: number = 1000; // Base delay in ms
+  private requestTimeoutMs: number = 10000; // 10 seconds default timeout
 
   constructor() {
-    // Use frontend API routes instead of direct backend calls
-    // This ensures CORS headers are properly handled
-    this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    // Use direct backend URLs from NEXT_PUBLIC_BACKEND_URL for enhanced security
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (backendUrl) {
+      this.baseUrl = backendUrl;
+    } else {
+      // Fallback to frontend API routes for backward compatibility
+      this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    }
   }
 
   public async request(
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<Response> {
-    const url = `${this.baseUrl}/api/auth${endpoint}`;
+    // Use direct backend URL if available, otherwise fallback to API routes
+    const isDirectBackend = this.baseUrl !== (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+    const url = isDirectBackend ? `${this.baseUrl}/api/v5/auth${endpoint}` : `${this.baseUrl}/api/auth${endpoint}`;
     
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
     // Cookie-mode: do not attach Authorization; rely on HttpOnly cookies
+
+    // Create AbortController for request timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.requestTimeoutMs);
 
     const config: RequestInit = {
       ...options,
@@ -87,6 +106,7 @@ class PostgresAuthClient {
       },
       // Always include credentials so HttpOnly cookies are sent
       credentials: 'include',
+      signal: controller.signal,
     };
 
     // Inject CSRF token for mutating requests (double-submit)
@@ -103,6 +123,7 @@ class PostgresAuthClient {
 
     try {
       const response = await fetch(url, config);
+      clearTimeout(timeoutId);
       
       // Handle rate limiting
       if (response.status === 429) {
@@ -114,10 +135,32 @@ class PostgresAuthClient {
         );
       }
 
+      // Handle 401 responses with loop guard
+      if (response.status === 401) {
+        await this.handleAuthError(new PostgresAuthError('Unauthorized', 'UNAUTHORIZED', 401));
+      }
+
+      // Handle 403 responses by clearing CSRF cookies and local session state
+      if (response.status === 403) {
+        await this.handle403Response();
+        throw new PostgresAuthError('Forbidden - CSRF token invalid or expired', 'CSRF_INVALID', 403);
+      }
+
       return response;
     } catch (error) {
+      clearTimeout(timeoutId);
+      
       if (error instanceof PostgresAuthError) {
         throw error;
+      }
+      
+      // Handle timeout errors
+      if (error.name === 'AbortError') {
+        throw new PostgresAuthError(
+          'Request timeout - please try again',
+          'REQUEST_TIMEOUT',
+          408
+        );
       }
       
       // Handle network errors
@@ -330,21 +373,7 @@ class PostgresAuthClient {
     await this.handleResponse(response);
   }
 
-  /**
-   * Refresh access token using refresh token
-   */
-  async refreshAccessToken(): Promise<AuthTokens> {
-    try { await this.getCsrf(); } catch {}
-    const response = await this.request('/refresh', {
-      method: 'POST',
-      // Body retains param for backward compatibility (server prefers cookie)
-      body: JSON.stringify({}),
-    });
 
-    const tokens: AuthTokens = await this.handleResponse(response);
-    // Tokens are cookie-based
-    return tokens;
-  }
 
   /**
    * Check if user is currently authenticated
@@ -402,6 +431,106 @@ class PostgresAuthClient {
   }
 
   /**
+   * Handle 403 responses by clearing CSRF cookies and local session state
+   */
+  private async handle403Response(): Promise<void> {
+    // Clear CSRF token
+    this.csrfToken = null;
+    
+    // Clear any local session state
+    this.clearTokens();
+    
+    // Try to clear CSRF cookies by making a request to clear them
+    try {
+      await fetch(`${this.baseUrl}/api/auth/csrf`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+    } catch {
+      // Ignore errors when clearing CSRF cookies
+    }
+  }
+
+  /**
+   * Handle authentication errors with loop guard and exponential backoff
+   */
+  private async handleAuthError(error: PostgresAuthError): Promise<void> {
+    if (error.status !== 401) {
+      return;
+    }
+
+    // Check if we've exceeded max refresh attempts
+    if (this.refreshAttempts >= this.maxRefreshAttempts) {
+      this.refreshAttempts = 0;
+      this.clearTokens();
+      throw new PostgresAuthError(
+        'Maximum refresh attempts exceeded - please log in again',
+        'MAX_REFRESH_ATTEMPTS_EXCEEDED',
+        401
+      );
+    }
+
+    // Implement exponential backoff with jitter
+    const now = Date.now();
+    const timeSinceLastRefresh = now - this.lastRefreshTime;
+    const backoffDelay = this.refreshBackoffDelay * Math.pow(2, this.refreshAttempts);
+    const jitter = Math.random() * 0.1 * backoffDelay; // 10% jitter
+    const totalDelay = backoffDelay + jitter;
+
+    if (timeSinceLastRefresh < totalDelay) {
+      await new Promise(resolve => setTimeout(resolve, totalDelay - timeSinceLastRefresh));
+    }
+
+    this.refreshAttempts++;
+    this.lastRefreshTime = Date.now();
+  }
+
+  /**
+   * Enhanced token refresh with deduplication and loop guards
+   */
+  async refreshAccessToken(): Promise<AuthTokens> {
+    // If there's already a refresh in progress, return that promise
+    if (this.refreshPromise) {
+      return this.refreshPromise.then(response => response.tokens);
+    }
+
+    // Create new refresh promise
+    this.refreshPromise = this.performRefreshWithRetry();
+    
+    try {
+      const result = await this.refreshPromise;
+      // Reset refresh attempts on success
+      this.refreshAttempts = 0;
+      return result.tokens;
+    } catch (error) {
+      // Handle refresh failure
+      if (error instanceof PostgresAuthError && error.status === 401) {
+        await this.handleAuthError(error);
+      }
+      throw error;
+    } finally {
+      // Clear the promise when done (success or failure)
+      this.refreshPromise = null;
+    }
+  }
+
+  /**
+   * Perform the actual refresh with retry logic
+   */
+  private async performRefreshWithRetry(): Promise<AuthResponse> {
+    try { await this.getCsrf(); } catch {}
+    const response = await this.request('/refresh', {
+      method: 'POST',
+      // Body retains param for backward compatibility (server prefers cookie)
+      body: JSON.stringify({}),
+    });
+
+    const result: AuthResponse = await this.handleResponse(response);
+    // Tokens are cookie-based
+    return result;
+  }
+
+  /**
    * Handle automatic token refresh on API failures
    */
   async withTokenRefresh<T>(apiCall: () => Promise<T>): Promise<T> {
@@ -409,12 +538,12 @@ class PostgresAuthClient {
       return await apiCall();
     } catch (error) {
       if (error instanceof PostgresAuthError && error.status === 401) {
-        // Try to refresh the token
+        // Try to refresh the token with loop guard
         try {
           await this.refreshAccessToken();
           // Retry the original call
           return await apiCall();
-        } catch (_refreshError) {
+        } catch (refreshError) {
           // Refresh failed, clear tokens and throw original error
           this.clearTokens();
           throw error;

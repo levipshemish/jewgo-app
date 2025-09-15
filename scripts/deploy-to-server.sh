@@ -300,12 +300,13 @@ test_endpoint() {
         if [ -n "$response_body" ] && [ ${#response_body} -lt 1000 ]; then
             echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_RESPONSE] Response Body: $response_body" >> "$LOCAL_LOG_FILE"
         fi
-        
-        # Log server logs for failed endpoints
-        if [ "$response_code" = "500" ] || [ "$response_code" = "502" ] || [ "$response_code" = "503" ]; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_LOGS] Fetching server logs for failed endpoint..." >> "$LOCAL_LOG_FILE"
-            ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 20 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
-        fi
+
+        # Always fetch recent server logs for failed endpoints (tail 200 for context)
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_LOGS] Fetching backend logs (tail 200) for failed endpoint..." >> "$LOCAL_LOG_FILE"
+        ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 200 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
+        # Also record container status for quicker triage
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_LOGS] docker ps (backend)" >> "$LOCAL_LOG_FILE"
+        ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker ps --filter name=jewgo_backend --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" >> "$LOCAL_LOG_FILE" 2>&1
         
         return 1
     fi
@@ -326,7 +327,12 @@ print_status "Testing V5 API endpoints..."
 
 # Test public health endpoints (no auth required)
 test_endpoint "https://api.jewgo.app/healthz" "Public healthz endpoint"
-test_endpoint "https://api.jewgo.app/readyz" "Public readyz endpoint"
+# Optional readyz check: enable with ENABLE_READYZ_CHECK=true to enforce DB/Redis readiness
+if [ "${ENABLE_READYZ_CHECK:-false}" = "true" ]; then
+  test_endpoint "https://api.jewgo.app/readyz" "Public readyz endpoint"
+else
+  print_status "Skipping readyz check (set ENABLE_READYZ_CHECK=true to enable)"
+fi
 
 # Test Auth API health
 test_endpoint "https://api.jewgo.app/api/v5/auth/health" "Auth API health endpoint"

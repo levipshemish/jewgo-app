@@ -1,21 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { proxyToBackend, createAuthErrorResponse, requireNodeRuntime } from '@/lib/api/proxy-utils';
 
-export async function POST(_request: NextRequest) {
+// Use Node.js runtime for proper Set-Cookie header handling
+export const runtime = 'nodejs';
+
+export async function POST(request: NextRequest) {
   try {
-    // For now, return a proper error response instead of causing 500 errors
-    // TODO: Implement proper authentication when backend auth system is ready
-    return NextResponse.json(
-      { 
-        error: 'Authentication service not available',
-        message: 'The authentication system is currently being updated. Please try again later.',
-        success: false
-      },
-      { status: 503 }
+    // Ensure Node.js runtime for proper multiple Set-Cookie header forwarding
+    requireNodeRuntime();
+
+    // Get request body
+    const body = await request.text();
+
+    // Proxy to backend with enhanced error handling
+    const { response } = await proxyToBackend(
+      request,
+      '/api/v5/auth/login',
+      {
+        method: 'POST',
+        body,
+        timeout: 15000, // Login might take longer
+        preserveHeaders: ['cookie', 'user-agent', 'x-csrf-token', 'x-forwarded-for'],
+        mapErrors: true,
+        requireNodeRuntime: true
+      }
     );
+
+    return response;
+
   } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Login failed', message: error.message },
-      { status: 500 }
+    console.error('Login proxy error:', error);
+    
+    return createAuthErrorResponse(
+      'Login service temporarily unavailable',
+      'SERVICE_ERROR',
+      503,
+      error.message
     );
   }
 }
