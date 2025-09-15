@@ -51,8 +51,8 @@
   - Write tests for old kid validation during grace window and unknown kid rejection (401)
   - _Requirements: 2.1, 2.2, 2.5_
 
-- [-] 4. Environment-Aware Configuration System
-- [-] 4.1 Implement Cookie Policy Manager with Preview Environment Support
+- [x] 4. Environment-Aware Configuration System
+- [x] 4.1 Implement Cookie Policy Manager with Preview Environment Support
   - Create CookiePolicyManager class with environment-specific cookie configurations
   - Implement production settings: Secure, HttpOnly, SameSite=None, Domain=.jewgo.app
   - Implement preview settings: host-only cookies, SameSite=None, Secure (HTTPS only) for Vercel compatibility
@@ -60,7 +60,7 @@
   - Write tests to verify cookie settings across all environments, including *.vercel.app persistence testing
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 4.2 Implement CORS Handler with Multiple Origin Support
+- [x] 4.2 Implement CORS Handler with Multiple Origin Support
   - Create CORSHandler class with exact origin matching from FRONTEND_ORIGINS environment variable supporting multiple origins
   - Implement preflight request handling with proper credentials support and Vary: Origin header
   - Add CORS headers to all auth responses including HEAD method support
@@ -68,8 +68,8 @@
   - Write integration tests for CORS preflight requests with credentials on *.vercel.app domains
   - _Requirements: 4.3, 4.4, 4.5, 8.2, 9.3_
 
-- [ ] 5. Security Headers and Monitoring Implementation
-- [ ] 5.1 Implement Comprehensive Security Headers Middleware
+- [-] 5. Security Headers and Monitoring Implementation
+- [-] 5.1 Implement Comprehensive Security Headers Middleware
   - Create after_request middleware to add security headers: X-Frame-Options=DENY, X-Content-Type-Options=nosniff, Referrer-Policy=no-referrer
   - Add Cache-Control: no-store on all auth responses to prevent caching
   - Add mandatory Permissions-Policy: geolocation=(), microphone=(), camera=() for privacy protection

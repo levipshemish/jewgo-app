@@ -37,8 +37,8 @@ export default function SearchBar() {
 
   // Initialize search query from store
   useEffect(() => {
-    setQuery(filters.query || '');
-  }, [filters.query]);
+    setQuery(filters.q || '');
+  }, [filters.q]);
 
   // Initialize Google Places services
   useEffect(() => {

@@ -150,20 +150,21 @@ execute_on_server "
     echo 'Docker cleanup completed'
 " "Cleaning up old Docker resources"
 
-# Build new backend image
+# Build and restart backend via docker compose (ensures Nginx upstream 'backend' points to the new container)
 print_status "Building new backend Docker image..."
 execute_on_server "
-    cd $SERVER_PATH/backend && \
-    docker build -t jewgo-app-backend . && \
+    cd $SERVER_PATH && \
+    docker compose -f docker-compose.yml build backend && \
     echo 'Backend image built successfully'
 " "Building new backend Docker image"
 
-# Start the new backend container
-print_status "Starting new backend container..."
+print_status "Restarting backend service via docker compose..."
 execute_on_server "
     cd $SERVER_PATH && \
-    docker run -d --name jewgo_backend --network jewgo-app_default -p 5000:5000 --env-file .env jewgo-app-backend && \
-    echo 'Backend container started'
+    docker compose -f docker-compose.yml stop backend || true && \
+    docker compose -f docker-compose.yml rm -f backend || true && \
+    docker compose -f docker-compose.yml up -d backend && \
+    echo 'Backend service restarted'
 " "Starting new backend container"
 
 # Clear Redis cache
@@ -221,8 +222,8 @@ check_backend_health() {
     
     while [ $attempt -le $max_attempts ]; do
         print_status "Health check attempt $attempt/$max_attempts..."
-        
-        if curl -f -s http://$SERVER_HOST:5000/healthz > /dev/null 2>&1; then
+        # Hit through Nginx to ensure upstream routing works
+        if curl -f -s https://api.jewgo.app/healthz > /dev/null 2>&1; then
             print_success "Backend health check passed"
             return 0
         else
@@ -291,46 +292,90 @@ if ! check_backend_health; then
     rollback_deployment
 fi
 
-# Test V5 API endpoints
+# Test V5 API endpoints (via Nginx HTTPS)
 print_status "Testing V5 API endpoints..."
 
 # Test public health endpoints (no auth required)
-test_endpoint "http://$SERVER_HOST:5000/healthz" "Public healthz endpoint"
-test_endpoint "http://$SERVER_HOST:5000/readyz" "Public readyz endpoint"
-
-# Note: Entity API health endpoint doesn't exist
-# test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/health" "Entity API health endpoint"
+test_endpoint "https://api.jewgo.app/healthz" "Public healthz endpoint"
+test_endpoint "https://api.jewgo.app/readyz" "Public readyz endpoint"
 
 # Test Auth API health
-test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/health" "Auth API health endpoint"
-
+test_endpoint "https://api.jewgo.app/api/v5/auth/health" "Auth API health endpoint"
 
 # Test Metrics API health
-test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/health" "Metrics API health endpoint"
+test_endpoint "https://api.jewgo.app/api/v5/metrics/health" "Metrics API health endpoint"
 
 # Note: Monitoring API endpoints require authentication
 # test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health" "Monitoring API health endpoint (requires auth)"
 
-# Test core API endpoints (GET requests that should work without auth)
 print_status "Testing core API endpoints..."
 
-# Test restaurants endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants/?limit=1" "Restaurants API endpoint"
+# Test restaurants endpoint
+test_endpoint "https://api.jewgo.app/api/v5/restaurants?limit=1" "Restaurants API endpoint"
 
-# Test synagogues endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues/?limit=1" "Synagogues API endpoint"
+# Test synagogues endpoint
+test_endpoint "https://api.jewgo.app/api/v5/synagogues?limit=1" "Synagogues API endpoint"
 
-# Test mikvahs endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs/?limit=1" "Mikvahs API endpoint"
+# Test mikvahs endpoint
+test_endpoint "https://api.jewgo.app/api/v5/mikvahs?limit=1" "Mikvahs API endpoint"
 
-# Test stores endpoint (works - returns 200)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/stores/?limit=1" "Stores API endpoint"
+# Test stores endpoint
+test_endpoint "https://api.jewgo.app/api/v5/stores?limit=1" "Stores API endpoint"
 
-# Test search endpoint (returns 308 redirect without trailing slash, 200 with trailing slash)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/search/?q=test&limit=1" "Search API endpoint" 200
+# Test search endpoint
+test_endpoint "https://api.jewgo.app/api/v5/search/?q=test&limit=1" "Search API endpoint" 200
 
-# Test reviews endpoint (returns 308 redirect without trailing slash, 200 with trailing slash)
-test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews/?limit=1" "Reviews API endpoint" 200
+# Test reviews endpoint
+test_endpoint "https://api.jewgo.app/api/v5/reviews/?limit=1" "Reviews API endpoint" 200
+
+# Optional: Distance filtering smoke tests (disabled by default)
+# Enable by setting ENABLE_DISTANCE_SMOKE_TEST=true in your environment when running this script
+distance_smoke_check() {
+    local label="$1"
+    local lat="$2"
+    local lng="$3"
+    local radius_km="$4"
+    local tolerance_mi="${5:-0.3}"
+
+    local url="https://api.jewgo.app/api/v5/restaurants?latitude=${lat}&longitude=${lng}&radius=${radius_km}&limit=10"
+    print_status "Distance check (${label}): $url"
+
+    if ! command -v jq >/dev/null 2>&1; then
+        print_warning "jq not installed locally; skipping distance check for ${label}"
+        return 0
+    fi
+
+    local http_code
+    http_code=$(curl -s -o /tmp/distance_resp.json -w "%{http_code}" "$url" || true)
+    if [ "$http_code" != "200" ]; then
+        print_warning "Distance check (${label}) request failed (HTTP ${http_code})"
+        return 1
+    fi
+
+    local max_distance
+    max_distance=$(jq -r '[.data[]? | .distance] | max // 0' /tmp/distance_resp.json 2>/dev/null || echo "0")
+    local radius_mi
+    radius_mi=$(awk "BEGIN {printf %.3f, ${radius_km}*0.621371}")
+    local threshold
+    threshold=$(awk "BEGIN {printf %.3f, ${radius_mi}+${tolerance_mi}}")
+
+    if awk "BEGIN {exit !(${max_distance} <= ${threshold})}"; then
+        print_success "Distance check passed (${label}): max=${max_distance} mi <= threshold=${threshold} mi"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DIST_CHECK] PASS ${label} max=${max_distance} threshold=${threshold}" >> "$LOCAL_LOG_FILE"
+        return 0
+    else
+        print_warning "Distance check FAILED (${label}): max=${max_distance} mi > threshold=${threshold} mi"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DIST_CHECK] FAIL ${label} max=${max_distance} threshold=${threshold}" >> "$LOCAL_LOG_FILE"
+        # Do not fail deployment; this is a smoke check
+        return 0
+    fi
+}
+
+if [ "${ENABLE_DISTANCE_SMOKE_TEST:-false}" = "true" ]; then
+    print_status "Running distance smoke tests..."
+    distance_smoke_check "NYC 5km" 40.7128 -74.0060 5 0.3
+    distance_smoke_check "Florida 0.1km" 25.8 -80.1 0.1 0.2
+fi
 
 # Note: Monitoring health endpoints require authentication
 # test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/database" "Database health check (requires auth)"

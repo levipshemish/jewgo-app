@@ -90,7 +90,7 @@ export default function UnifiedLiveMapClient() {
     let filtered = allRestaurants;
 
     // Apply distance filter if user location and distance filter are set
-    if (userLocation && activeFilters.distanceMi && activeFilters.distanceMi > 0) {
+    if (userLocation && activeFilters.maxDistanceMi && activeFilters.maxDistanceMi > 0) {
       filtered = filtered.filter(restaurant => {
         if (!restaurant.latitude || !restaurant.longitude) return false;
         
@@ -101,14 +101,14 @@ export default function UnifiedLiveMapClient() {
           restaurant.longitude
         );
         
-        return distance <= activeFilters.distanceMi;
+        return distance <= activeFilters.maxDistanceMi!;
       });
     }
 
     // Apply other filters (kosher category, agency, etc.)
-    if (activeFilters.kosherCategory) {
+    if (activeFilters.category) {
       filtered = filtered.filter(restaurant => 
-        restaurant.kosher_category === activeFilters.kosherCategory
+        restaurant.kosher_category === activeFilters.category
       );
     }
 
@@ -121,48 +121,22 @@ export default function UnifiedLiveMapClient() {
     if (activeFilters.ratingMin && activeFilters.ratingMin > 0) {
       filtered = filtered.filter(restaurant => {
         const rating = restaurant.google_rating || restaurant.quality_rating || restaurant.rating;
-        return rating && rating >= activeFilters.ratingMin;
+        return rating && typeof rating === 'number' && rating >= activeFilters.ratingMin!;
       });
     }
 
     if (activeFilters.priceRange) {
-      filtered = filtered.filter(restaurant => 
-        restaurant.price_range === activeFilters.priceRange
-      );
-    }
-
-    if (activeFilters.listingType) {
-      filtered = filtered.filter(restaurant => 
-        restaurant.listing_type === activeFilters.listingType
-      );
-    }
-
-    if (activeFilters.city) {
-      filtered = filtered.filter(restaurant => 
-        restaurant.city?.toLowerCase().includes(activeFilters.city.toLowerCase())
-      );
-    }
-
-    if (activeFilters.state) {
-      filtered = filtered.filter(restaurant => 
-        restaurant.state?.toLowerCase().includes(activeFilters.state.toLowerCase())
-      );
-    }
-
-    if (activeFilters.kosherDetails) {
       filtered = filtered.filter(restaurant => {
-        switch (activeFilters.kosherDetails) {
-          case 'Cholov Yisroel':
-            return restaurant.is_cholov_yisroel === true;
-          case 'Pas Yisroel':
-            return restaurant.is_pas_yisroel === true;
-          case 'Cholov Stam':
-            return restaurant.cholov_stam === true;
-          default:
-            return true;
-        }
+        if (!restaurant.price_range) return false;
+        const [minPrice, maxPrice] = activeFilters.priceRange!;
+        const priceRange = typeof restaurant.price_range === 'string' ? parseInt(restaurant.price_range) : restaurant.price_range;
+        return priceRange >= minPrice && priceRange <= maxPrice;
       });
     }
+
+    // Note: listingType, city, state filters removed as they're not in AppliedFilters schema
+
+    // Note: kosherDetails filter removed as it's not in AppliedFilters schema
 
     return filtered;
   }, [allRestaurants, activeFilters, userLocation]);

@@ -54,7 +54,7 @@ export default function FilterPanel() {
 
   const handleApplyFilters = () => {
     setFilters(draftFilters);
-    onFiltersChanged();
+    onFiltersChanged(draftFilters);
     setIsOpen(false);
   };
 
@@ -62,7 +62,7 @@ export default function FilterPanel() {
     const clearedFilters = {};
     setDraftFilters(clearedFilters);
     setFilters(clearedFilters);
-    onFiltersChanged();
+    onFiltersChanged(clearedFilters);
   };
 
   const getActiveFilterCount = () => {

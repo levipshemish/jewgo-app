@@ -11,12 +11,15 @@ import React, { memo, useMemo, useEffect, useState, useCallback, useRef } from '
 import { useLivemapStore, sel } from '@/lib/stores/livemap-store';
 import GoogleMap from './vendors/GoogleMap';
 import Header from '@/components/layout/Header';
-import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
+import EateryFilterModal from '@/app/eatery/components/EateryFilterModal';
 import RestaurantDetails from './RestaurantDetails';
 import MapLegend from './MapLegend';
 import { onBoundsChanged, onBoundsChangedImmediate } from '@/services/triggers';
 import { loadRestaurantsInBounds } from '@/services/dataManager';
 import { runFilter } from '@/services/workerManager';
+import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
+import { useLocationData } from '@/hooks/useLocationData';
+import { ActiveFilterChips } from '@/components/filters/ActiveFilterChips';
 import type { Bounds } from '@/types/livemap';
 
 const MapEngine = () => {
@@ -24,26 +27,52 @@ const MapEngine = () => {
   const ids = useLivemapStore(sel.filteredIds);
   const restaurants = useLivemapStore(sel.restaurantsById);
   const selected = useLivemapStore(sel.selected);
-  const userLocation = useLivemapStore(sel.userLocation);
   const center = useLivemapStore((state) => sel.map(state).center);
   const zoom = useLivemapStore((state) => sel.map(state).zoom);
-  const filters = useLivemapStore(sel.filters);
-  const setFilters = useLivemapStore((state) => state.setFilters);
+  const select = useLivemapStore((state) => state.select);
+  
+  // Use the same filter system as eatery page
+  const {
+    activeFilters,
+    setFilter,
+    clearFilter,
+    clearAllFilters
+  } = useAdvancedFilters();
+  
+  // Use the same location system as eatery page
+  const {
+    userLocation,
+    isLoading: locationLoading,
+    requestLocation,
+    permissionStatus: _permissionStatus,
+  } = useLocationData({
+    fallbackText: 'Get Location'
+  });
   
   // Filter modal state
   const [showFilters, setShowFilters] = useState(false);
-  const select = useLivemapStore((state) => state.select);
+  const [filterOptions, setFilterOptions] = useState<any>(null);
   
   // Search handler
   const handleSearch = useCallback((query: string) => {
-    setFilters({ ...filters, q: query });
-  }, [filters, setFilters]);
+    setFilter('q', query);
+  }, [setFilter]);
   
   // Filter handlers
   const handleApplyFilters = (newFilters: any) => {
-    setFilters(newFilters);
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        setFilter(key as keyof typeof activeFilters, value);
+      } else {
+        setFilter(key as keyof typeof activeFilters, undefined);
+      }
+    });
     setShowFilters(false);
   };
+  
+  const handleRemoveFilter = useCallback((filterKey: string) => {
+    clearFilter(filterKey as keyof typeof activeFilters);
+  }, [clearFilter]);
 
   // Convert IDs to restaurant objects for rendering
   const filteredRestaurants = useMemo(() => {
@@ -60,7 +89,7 @@ const MapEngine = () => {
 
   // Handle bounds changes - trigger data loading and filtering
   const handleBoundsChange = (bounds: Bounds) => {
-    onBoundsChanged(bounds);
+    onBoundsChanged(bounds, activeFilters);
   };
 
   // Track if map has been initialized to prevent multiple calls
@@ -86,7 +115,7 @@ const MapEngine = () => {
         const currentBounds = useLivemapStore.getState().map.bounds;
         if (currentBounds) {
           // Use immediate loading for initial data load (no debounce, no rate limiting)
-          loadRestaurantsInBounds(currentBounds).then(() => {
+          loadRestaurantsInBounds(currentBounds, activeFilters).then(() => {
             runFilter(); // Apply current filters to loaded data
           });
         }
@@ -123,6 +152,21 @@ const MapEngine = () => {
           showBackButton={true}
           onBack={() => window.history.back()}
         />
+        
+        {/* Active Filter Chips - Same as eatery page */}
+        {Object.values(activeFilters).some(value => 
+          value !== undefined && value !== null && value !== ''
+        ) && (
+          <div className="px-4 py-2 border-b border-border/30 bg-background/95 backdrop-blur-sm">
+            <ActiveFilterChips
+              filters={activeFilters}
+              onRemoveFilter={handleRemoveFilter}
+              onClearAll={clearAllFilters}
+              variant="full"
+              className="min-h-[32px]"
+            />
+          </div>
+        )}
         </div>
 
 
@@ -131,7 +175,7 @@ const MapEngine = () => {
         zoom={zoom}
         restaurants={filteredRestaurants}
         selectedId={selected?.id ?? null}
-        userLocation={userLocation}
+        userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
         onBoundsChange={handleBoundsChange}
         onSelect={handleSelect}
         onMapReady={handleMapReady}
@@ -220,17 +264,16 @@ const MapEngine = () => {
       
       <RestaurantDetails />
       
-      {/* Filter Modal */}
-      <ModernFilterPopup
+      {/* Filter Modal - Same as eatery page */}
+      <EateryFilterModal
         isOpen={showFilters}
         onClose={() => setShowFilters(false)}
         onApplyFilters={handleApplyFilters}
-        initialFilters={filters}
-        userLocation={userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : null}
-        locationLoading={false}
-        onRequestLocation={() => {
-          // Handle location request if needed
-        }}
+        initialFilters={activeFilters}
+        userLocation={userLocation}
+        locationLoading={locationLoading}
+        onRequestLocation={requestLocation}
+        preloadedFilterOptions={filterOptions}
       />
     </div>
   );
