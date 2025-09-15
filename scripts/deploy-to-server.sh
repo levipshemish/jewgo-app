@@ -409,9 +409,9 @@ distance_smoke_check() {
     local max_distance
     max_distance=$(jq -r '[.data[]? | .distance] | max // 0' /tmp/distance_resp.json 2>/dev/null || echo "0")
     local radius_mi
-    radius_mi=$(awk "BEGIN {printf %.3f, ${radius_km}*0.621371}")
+    radius_mi=$(awk "BEGIN {printf \"%.3f\", ${radius_km}*0.621371}")
     local threshold
-    threshold=$(awk "BEGIN {printf %.3f, ${radius_mi}+${tolerance_mi}}")
+    threshold=$(awk "BEGIN {printf \"%.3f\", ${radius_mi}+${tolerance_mi}}")
 
     if awk "BEGIN {exit !(${max_distance} <= ${threshold})}"; then
         print_success "Distance check passed (${label}): max=${max_distance} mi <= threshold=${threshold} mi"
