@@ -10,6 +10,7 @@ interface UserData {
     id: string;
     email: string;
     role?: string;
+    auth_time?: number;
     [key: string]: unknown;
   };
 }
@@ -20,11 +21,19 @@ interface AuthError extends Error {
 }
 
 // Enhanced middleware with security hardening and admin route protection
+// Apply middleware only to protected routes for performance optimization
 export const config = {
   matcher: [
-    // Admin routes only - exclude auth routes to prevent redirect loops
+    // Protected routes that require authentication
     '/admin/:path*',
     '/api/admin/:path*',
+    '/dashboard/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
+    '/favorites/:path*',
+    '/account/:path*',
+    // Exclude auth routes to prevent redirect loops
+    '/((?!auth|_next|static|api/auth|favicon.ico).*)',
   ]
 };
 

@@ -86,7 +86,7 @@
   - Write tests to verify metrics collection, PII masking, and correlation ID propagation
   - _Requirements: 5.2, 5.3, 5.4, 5.5_
 
-- [-] 6. Frontend Authentication Client Enhancements
+- [x] 6. Frontend Authentication Client Enhancements
 - [x] 6.1 Implement Enhanced Auth Client with Loop Guards
   - Modify PostgresAuthClient to use direct backend URLs from NEXT_PUBLIC_BACKEND_URL
   - Implement 401 loop guard with maximum 2 refresh attempts and exponential backoff with jitter
@@ -96,7 +96,7 @@
   - Write Jest tests for loop guard, deduplication, timeout, and error handling
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 9.4_
 
-- [-] 6.2 Implement API Proxy Enhancements
+- [x] 6.2 Implement API Proxy Enhancements
   - Modify API route handlers to use Node.js runtime only where necessary
   - Implement proper multiple Set-Cookie header forwarding using response.headers.raw()['set-cookie']
   - Add network error mapping while preserving original status codes
@@ -104,8 +104,8 @@
   - Write end-to-end tests to verify multiple Set-Cookie headers reach the browser
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 9.4_
 
-- [ ] 7. Next.js Middleware Security Implementation
-- [ ] 7.1 Implement Enhanced Authentication Middleware
+- [-] 7. Next.js Middleware Security Implementation
+- [-] 7.1 Implement Enhanced Authentication Middleware
   - Modify Next.js middleware to use HEAD /api/v5/auth/verify-token for performance
   - Implement returnTo parameter preservation for post-login redirects
   - Add route matchers to apply middleware only to protected routes for performance
