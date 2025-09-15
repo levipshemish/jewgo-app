@@ -124,7 +124,9 @@ class ApiClient {
 }
 
 // Create singleton instance
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+// Use relative URLs to leverage Next.js proxy in development
+const isDevelopment = process.env.NODE_ENV === 'development';
+const backendUrl = isDevelopment ? '' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app');
 export const apiClient = new ApiClient({ baseUrl: backendUrl });
 
 // Export the class for testing

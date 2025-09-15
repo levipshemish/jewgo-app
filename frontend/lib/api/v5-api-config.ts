@@ -7,8 +7,9 @@
 
 import { getApiBaseUrl } from '../api-config';
 
-// V5 API Base URL
-export const V5_API_BASE_URL = getApiBaseUrl();
+// V5 API Base URL - use relative URLs in development to leverage Next.js proxy
+const isDevelopment = process.env.NODE_ENV === 'development';
+export const V5_API_BASE_URL = isDevelopment ? '' : getApiBaseUrl();
 
 // V5 API Endpoints
 export const V5_API_ENDPOINTS = {

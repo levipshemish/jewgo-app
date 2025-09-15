@@ -82,6 +82,11 @@ class CORSMiddleware:
     
     def _add_cors_headers(self, response, origin: Optional[str] = None):
         """Add CORS headers to response."""
+        # Check if Nginx is already handling CORS (avoid duplicates)
+        if 'Access-Control-Allow-Origin' in response.headers:
+            logger.debug("Nginx already handling CORS, skipping Flask CORS headers")
+            return response
+        
         if origin and self._is_origin_allowed(origin):
             response.headers['Access-Control-Allow-Origin'] = origin
             response.headers['Access-Control-Allow-Credentials'] = 'true'
@@ -105,7 +110,9 @@ class CORSMiddleware:
             if request.method == 'OPTIONS':
                 origin = request.headers.get('Origin')
                 response = make_response('', 204)
-                response = self._add_cors_headers(response, origin)
+                # Only add CORS headers if Nginx isn't already handling them
+                if 'Access-Control-Allow-Origin' not in response.headers:
+                    response = self._add_cors_headers(response, origin)
                 return response
         
         @app.after_request

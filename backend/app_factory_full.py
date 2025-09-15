@@ -261,45 +261,51 @@ def create_app(config_class=None):
         
     logger.info("Final CORS origins configuration", cors_origins=cors_origins)
     
-    # Configure CORS - Use custom middleware as fallback to Nginx
-    try:
-        from middleware.cors_middleware import create_cors_middleware
-        cors_middleware = create_cors_middleware(app)
-        logger.info("CORS middleware registered as fallback")
-    except Exception as e:
-        logger.warning(f"Could not register CORS middleware: {e}")
-        # Fallback to Flask-CORS if custom middleware fails
+    # Configure CORS - Nginx handles CORS in production, disable Flask CORS to avoid duplicates
+    nginx_handles_cors = os.environ.get("NGINX_HANDLES_CORS", "true").lower() == "true"
+    
+    if not nginx_handles_cors:
+        logger.info("Nginx CORS disabled, using Flask CORS middleware")
         try:
-            from flask_cors import CORS
-            CORS(
-                app,
-                origins=cors_origins,
-                methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                allow_headers=[
-                    "Content-Type",
-                    "Authorization",
-                    "Accept",
-                    "Origin",
-                    "X-Requested-With",
-                    "X-Forwarded-For",
-                    "X-Real-IP",
-                    "Cache-Control",
-                    "Pragma",
-                    "X-CSRF-Token",
-                ],
-                expose_headers=[
-                    "Content-Type",
-                    "Content-Length",
-                    "Cache-Control",
-                    "Pragma",
-                ],
-                supports_credentials=True,
-                max_age=86400,  # Cache preflight for 24 hours
-                send_wildcard=False,  # Don't send wildcard, send specific origin
-            )
-            logger.info("Flask-CORS registered as fallback")
-        except Exception as e2:
-            logger.error(f"Could not register any CORS middleware: {e2}")
+            from middleware.cors_middleware import create_cors_middleware
+            cors_middleware = create_cors_middleware(app)
+            logger.info("CORS middleware registered")
+        except Exception as e:
+            logger.warning(f"Could not register CORS middleware: {e}")
+            # Fallback to Flask-CORS if custom middleware fails
+            try:
+                from flask_cors import CORS
+                CORS(
+                    app,
+                    origins=cors_origins,
+                    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                    allow_headers=[
+                        "Content-Type",
+                        "Authorization",
+                        "Accept",
+                        "Origin",
+                        "X-Requested-With",
+                        "X-Forwarded-For",
+                        "X-Real-IP",
+                        "Cache-Control",
+                        "Pragma",
+                        "X-CSRF-Token",
+                    ],
+                    expose_headers=[
+                        "Content-Type",
+                        "Content-Length",
+                        "Cache-Control",
+                        "Pragma",
+                    ],
+                    supports_credentials=True,
+                    max_age=86400,  # Cache preflight for 24 hours
+                    send_wildcard=False,  # Don't send wildcard, send specific origin
+                )
+                logger.info("Flask-CORS registered as fallback")
+            except Exception as e2:
+                logger.error(f"Could not register any CORS middleware: {e2}")
+    else:
+        logger.info("Nginx handles CORS, Flask CORS middleware disabled to avoid duplicates")
     
     # Attach minimal redaction filter to prevent sensitive values in logs
     try:
