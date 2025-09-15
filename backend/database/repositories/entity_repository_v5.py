@@ -901,10 +901,14 @@ class EntityRepositoryV5(BaseRepository):
                 hours_filter = filters['hoursFilter']
                 if hours_filter == 'openNow':
                     # Filter for restaurants that are currently open
-                    # This requires checking the hours_json field for open_now status
-                    # We'll use a PostgreSQL JSON query to check the open_now field
+                    # Since hours_json is stored as text, we'll use a text search approach
                     query = query.filter(
-                        model_class.hours_json.op('->>')('open_now') == 'true'
+                        and_(
+                            model_class.hours_json.isnot(None),
+                            model_class.hours_json != '',
+                            model_class.hours_json != 'null',
+                            model_class.hours_json.like('%"open_now": true%')
+                        )
                     )
                 elif hours_filter in ['morning', 'afternoon', 'evening', 'lateNight']:
                     # For time period filters, we need to check if the restaurant
