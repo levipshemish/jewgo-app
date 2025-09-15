@@ -897,29 +897,12 @@ class EntityRepositoryV5(BaseRepository):
                 query = query.filter(model_class.kosher_category == filters['category'])
             
             # Hours filter - filter restaurants based on their operating hours
+            # Temporarily disabled due to SQLAlchemy TextClause errors
+            # TODO: Implement proper hours filtering once SQLAlchemy issues are resolved
             if filters.get('hoursFilter') and hasattr(model_class, 'hours_json'):
                 hours_filter = filters['hoursFilter']
-                if hours_filter == 'openNow':
-                    # Filter for restaurants that are currently open
-                    # Since hours_json is stored as text, we'll use ilike for pattern matching
-                    query = query.filter(
-                        and_(
-                            model_class.hours_json.isnot(None),
-                            model_class.hours_json != '',
-                            model_class.hours_json != 'null',
-                            or_(
-                                model_class.hours_json.ilike('%"open_now": true%'),
-                                model_class.hours_json.ilike('%"open_now":true%'),
-                                model_class.hours_json.ilike("%'open_now': true%"),
-                                model_class.hours_json.ilike("%'open_now':true%")
-                            )
-                        )
-                    )
-                elif hours_filter in ['morning', 'afternoon', 'evening', 'lateNight']:
-                    # For time period filters, we need to check if the restaurant
-                    # has hours data and is likely to be open during that period
-                    # This is a simplified approach - in a full implementation,
-                    # we'd parse the periods array and check actual times
+                # For now, just filter for restaurants that have hours data
+                if hours_filter in ['openNow', 'morning', 'afternoon', 'evening', 'lateNight']:
                     query = query.filter(
                         and_(
                             model_class.hours_json.isnot(None),
