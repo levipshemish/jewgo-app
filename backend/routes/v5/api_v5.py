@@ -312,8 +312,11 @@ def get_entities(entity_type: str):
             include_filter_options=include_filter_options
         )
         
-        # Add total count for pagination info
-        if not pagination.get('cursor'):  # Only get total count on first page
+        # Use total count from service (already calculated correctly for distance sorting)
+        if 'total_count' in result:
+            # Service already provided total_count, use it
+            pass
+        elif not pagination.get('cursor'):  # Fallback: get total count on first page for cursor pagination
             total_count = service.get_entity_count(filters)
             result['total_count'] = total_count
         

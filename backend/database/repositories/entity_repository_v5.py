@@ -250,13 +250,13 @@ class EntityRepositoryV5(BaseRepository):
                     prev_cursor = f"page_{page - 1}"
                 
                 
-                logger.info(f"Distance pagination: Page {page}, offset {offset}-{end_offset}, returned {len(page_entities)} entities")
+                logger.info(f"Distance pagination: Page {page}, offset {offset}-{end_offset}, returned {len(page_entities)} entities, total: {total_count}")
                 
-                return page_entities, next_cursor, prev_cursor
+                return page_entities, next_cursor, prev_cursor, total_count
                 
         except Exception as e:
             logger.error(f"Error getting {entity_type} with distance pagination: {e}")
-            return [], None, None
+            return [], None, None, 0
     
     def _get_entities_with_page_pagination(
         self,
@@ -356,11 +356,11 @@ class EntityRepositoryV5(BaseRepository):
                 
                 logger.info(f"Page pagination: Page {page}, offset {offset}-{offset + len(result_entities)}, returned {len(result_entities)} entities, total: {total_count}")
                 
-                return result_entities, next_cursor, prev_cursor
+                return result_entities, next_cursor, prev_cursor, total_count
                 
         except Exception as e:
             logger.error(f"Error getting {entity_type} with page pagination: {e}")
-            return [], None, None
+            return [], None, None, 0
     
     def get_entities_with_cursor(
         self,
@@ -372,7 +372,7 @@ class EntityRepositoryV5(BaseRepository):
         filters: Optional[Dict[str, Any]] = None,
         include_relations: bool = False,
         user_context: Optional[Dict[str, Any]] = None
-    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
+    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str], int]:
         """
         Get entities with enhanced cursor pagination.
         
@@ -387,7 +387,7 @@ class EntityRepositoryV5(BaseRepository):
             user_context: User context for personalization
             
         Returns:
-            Tuple of (entities, next_cursor, prev_cursor)
+            Tuple of (entities, next_cursor, prev_cursor, total_count)
         """
         try:
             
@@ -405,13 +405,13 @@ class EntityRepositoryV5(BaseRepository):
             model_class = self.get_model_class(entity_type)
             if not model_class:
                 logger.error(f"Unknown entity type: {entity_type}")
-                return [], None, None
+                return [], None, None, 0
             
             mapping = self.get_entity_mapping(entity_type)
             logger.info(f"Processing {entity_type} with model: {model_class.__name__}, mapping: {mapping}")
             if not mapping:
                 logger.error(f"No mapping for entity type: {entity_type}")
-                return [], None, None
+                return [], None, None, 0
             
             with self.connection_manager.session_scope() as session:
                 # Build base query
@@ -521,11 +521,11 @@ class EntityRepositoryV5(BaseRepository):
                 else:
                     logger.info(f"DEBUG CURSOR: No cursors generated because result_entities is empty")
                 
-                return result_entities, next_cursor, prev_cursor
+                return result_entities, next_cursor, prev_cursor, 0  # Cursor pagination doesn't provide total count
                 
         except Exception as e:
             logger.error(f"Error getting {entity_type} with cursor: {e}")
-            return [], None, None
+            return [], None, None, 0
     
     def get_entity_by_id(
         self,

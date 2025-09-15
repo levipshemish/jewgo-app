@@ -117,7 +117,7 @@ class EnhancedAuthService {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers
+      ...(options.headers as Record<string, string>)
     };
 
     if (requiresAuth && this.accessToken) {
@@ -540,4 +540,3 @@ export class AuthError extends Error {
 // Export singleton instance
 export const enhancedAuthService = new EnhancedAuthService();
 export { EnhancedAuthService };
-export type { AuthServiceConfig, StepUpChallenge, WebAuthnCredential };

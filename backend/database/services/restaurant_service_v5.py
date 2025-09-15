@@ -202,7 +202,7 @@ class RestaurantServiceV5:
         This method provides a unified interface for the entity API routes.
         """
         try:
-            restaurants, next_cursor, prev_cursor = self.get_restaurants(
+            restaurants, next_cursor, prev_cursor, total_count = self.get_restaurants(
                 cursor=cursor,
                 page=page,
                 limit=limit,
@@ -216,7 +216,8 @@ class RestaurantServiceV5:
             result = {
                 'data': restaurants,
                 'next_cursor': next_cursor,
-                'prev_cursor': prev_cursor
+                'prev_cursor': prev_cursor,
+                'total_count': total_count
             }
             
             # Include filter options if requested (typically on first page)
@@ -243,7 +244,7 @@ class RestaurantServiceV5:
         include_relations: bool = False,
         user_context: Optional[Dict[str, Any]] = None,
         use_cache: bool = True
-    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
+    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str], int]:
         """
         Get restaurants with enhanced filtering and pagination.
         
@@ -257,7 +258,7 @@ class RestaurantServiceV5:
             use_cache: Whether to use caching
             
         Returns:
-            Tuple of (restaurants, next_cursor, prev_cursor)
+            Tuple of (restaurants, next_cursor, prev_cursor, total_count)
         """
         try:
             # Check cache first if enabled
@@ -282,7 +283,7 @@ class RestaurantServiceV5:
             processed_filters = self._process_filters(filters)
             
             # Get restaurants from repository
-            restaurants, next_cursor, prev_cursor = self.repository.get_entities_with_cursor(
+            restaurants, next_cursor, prev_cursor, total_count = self.repository.get_entities_with_cursor(
                 entity_type='restaurants',
                 cursor=cursor,
                 page=page,
@@ -299,7 +300,7 @@ class RestaurantServiceV5:
                 enhanced = self._enhance_restaurant_data(restaurant, user_context)
                 enhanced_restaurants.append(enhanced)
             
-            result = (enhanced_restaurants, next_cursor, prev_cursor)
+            result = (enhanced_restaurants, next_cursor, prev_cursor, total_count)
             
             # Cache result
             if use_cache and cache_key:
@@ -310,12 +311,12 @@ class RestaurantServiceV5:
                     prefix='cache'
                 )
             
-            logger.info(f"Retrieved {len(enhanced_restaurants)} restaurants")
+            logger.info(f"Retrieved {len(enhanced_restaurants)} restaurants, total: {total_count}")
             return result
             
         except Exception as e:
             logger.error(f"Error getting restaurants: {e}")
-            return [], None, None
+            return [], None, None, 0
     
     def get_entity(self, entity_id: int) -> Optional[Dict[str, Any]]:
         """

@@ -509,6 +509,26 @@ print_status "Testing admin endpoints (expected to fail without auth)..."
 test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/health/system" "Admin system health" "401"
 test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/analytics/dashboard" "Admin analytics dashboard" "401"
 
+# Deploy security hardening (if requested)
+if [ "${DEPLOY_SECURITY_HARDENING:-false}" = "true" ]; then
+    print_status "Deploying security hardening components..."
+    
+    # Copy security hardening script to server
+    scp -i "$SSH_KEY" "$SERVER_PATH/backend/scripts/deploy-security-hardening.sh" $SERVER_USER@$SERVER_HOST:/tmp/
+    
+    # Make it executable and run it
+    execute_on_server "
+        chmod +x /tmp/deploy-security-hardening.sh && \
+        cd $SERVER_PATH && \
+        sudo /tmp/deploy-security-hardening.sh --backend-only && \
+        rm /tmp/deploy-security-hardening.sh
+    " "Deploying security hardening"
+    
+    print_success "Security hardening deployed"
+else
+    print_status "Skipping security hardening (set DEPLOY_SECURITY_HARDENING=true to enable)"
+fi
+
 # Final verification
 print_status "Performing final deployment verification..."
 execute_on_server "
@@ -517,7 +537,10 @@ execute_on_server "
     echo '=== Docker Storage Usage ===' && \
     docker system df && \
     echo '=== Backend Logs (last 10 lines) ===' && \
-    docker logs --tail 10 jewgo_backend
+    docker logs --tail 10 jewgo_backend && \
+    echo '=== Security Services Status ===' && \
+    systemctl is-active jewgo-key-rotation.service 2>/dev/null || echo 'Key rotation service not installed' && \
+    nginx -t 2>/dev/null || echo 'Nginx config not updated'
 " "Final deployment verification"
 
 # Capture final server logs to local file

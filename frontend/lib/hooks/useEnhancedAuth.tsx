@@ -384,7 +384,7 @@ export function useAuthenticatedRequest() {
       
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers
+        ...(options.headers as Record<string, string>)
       };
 
       if (token) {
@@ -408,7 +408,7 @@ export function useAuthenticatedRequest() {
         const errorData = await response.json().catch(() => ({}));
         if (errorData.code === 'STEP_UP_REQUIRED') {
           const error = new AuthError(errorData.error, errorData.code, errorData.message);
-          error.stepUpChallenge = errorData.step_up_challenge;
+          error.step_up_challenge = errorData.step_up_challenge;
           throw error;
         }
       }
@@ -417,7 +417,7 @@ export function useAuthenticatedRequest() {
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
         const error = new AuthError('Rate limit exceeded', 'RATE_LIMIT_EXCEEDED');
-        error.retryAfter = retryAfter ? parseInt(retryAfter) : 60;
+        error.retry_after = retryAfter ? parseInt(retryAfter) : 60;
         throw error;
       }
 
@@ -443,14 +443,14 @@ export function useAuthError() {
       setError(error);
 
       // Handle step-up authentication automatically
-      if (error.code === 'STEP_UP_REQUIRED' && error.stepUpChallenge) {
+      if (error.code === 'STEP_UP_REQUIRED' && error.step_up_challenge) {
         // You might want to show a step-up modal here
-        console.log('Step-up authentication required:', error.stepUpChallenge);
+        console.log('Step-up authentication required:', error.step_up_challenge);
       }
 
       // Handle rate limiting
       if (error.code === 'RATE_LIMIT_EXCEEDED') {
-        console.log('Rate limit exceeded, retry after:', error.retryAfter);
+        console.log('Rate limit exceeded, retry after:', error.retry_after);
       }
     } else {
       setError(new AuthError('Unknown error', 'UNKNOWN_ERROR', error instanceof Error ? error.message : String(error)));

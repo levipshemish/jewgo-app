@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { validateRedirectUrl } from '@/lib/utils/auth-utils';
 import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
+import { AuthError } from '@/lib/auth/enhanced-auth-service';
 
 // Type definitions for better type safety
 interface UserData {
@@ -15,10 +16,6 @@ interface UserData {
   };
 }
 
-interface AuthError extends Error {
-  message: string;
-  code?: string;
-}
 
 // Enhanced middleware with security hardening and admin route protection
 // Apply middleware only to protected routes for performance optimization
@@ -112,7 +109,7 @@ export async function middleware(request: NextRequest) {
       }
 
       if (!verifyResponse.ok) {
-        return handleAuthError(request, isApi, new AuthError(`Auth verification failed: ${verifyResponse.status}`));
+        return handleAuthError(request, isApi, new AuthError(`Auth verification failed: ${verifyResponse.status}`, 'AUTH_VERIFICATION_FAILED'));
       }
 
       // Extract user info from response headers if available
