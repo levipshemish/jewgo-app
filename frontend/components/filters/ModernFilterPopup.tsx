@@ -75,12 +75,14 @@ export function ModernFilterPopup({
   // Conditionally trigger filter options load when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Only load filter options if we don't have preloaded ones
-      if (!preloadedFilterOptions) {
+      // Only load filter options if we don't have preloaded ones and haven't triggered yet
+      if (!preloadedFilterOptions && !fetchedFilterOptions) {
+        // Note: This fallback should rarely be needed since filter options should come from main API
+        console.warn('No preloaded filter options available, falling back to separate API call');
         loadFilterOptions(); // Lazy load filter options only when needed
       }
     }
-  }, [isOpen, loadFilterOptions, preloadedFilterOptions]); // Now safe to include since loadFilterOptions is memoized
+  }, [isOpen, loadFilterOptions, preloadedFilterOptions, fetchedFilterOptions]); // Now safe to include since loadFilterOptions is memoized
 
 
 

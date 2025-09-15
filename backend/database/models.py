@@ -16,7 +16,6 @@ from sqlalchemy import (
     ARRAY,
     Numeric,
 )
-from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 # SQLAlchemy Base
@@ -524,8 +523,8 @@ class Mikvah(Base):
     is_verified = Column(Boolean, default=False)
     
     # Search and metadata
-    search_vector = Column(TSVECTOR)  # tsvector type
-    tags = Column(ARRAY(Text))  # text[] type
+    search_vector = Column(Text)  # tsvector type - using Text for compatibility
+    tags = Column(Text)  # text[] type - using Text for compatibility
     admin_notes = Column(Text)
     specials = Column(Text)
     listing_type = Column(String(100), default='mikvah')

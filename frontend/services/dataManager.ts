@@ -12,10 +12,19 @@ import type { Restaurant, Bounds } from "@/types/livemap";
 const cache = new Map<string, { ts: number; data: Restaurant[] }>();
 const TTL = 5 * 60 * 1000; // 5 minutes
 
-// Generate cache key from bounds
+// Generate cache key from bounds with quantization for better caching
 function hashBounds(bounds: Bounds): string {
   const { ne, sw } = bounds;
-  return `${ne.lat.toFixed(4)},${ne.lng.toFixed(4)}-${sw.lat.toFixed(4)},${sw.lng.toFixed(4)}`;
+  
+  // Quantize bounds to 0.01 degree grid (~1km) for better cache hits
+  const quantize = (coord: number) => Math.round(coord * 100) / 100;
+  
+  const neLat = quantize(ne.lat);
+  const neLng = quantize(ne.lng);
+  const swLat = quantize(sw.lat);
+  const swLng = quantize(sw.lng);
+  
+  return `${neLat},${neLng}-${swLat},${swLng}`;
 }
 
 // Performance monitoring
@@ -50,7 +59,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     
     // Fetch from direct backend API (same as eatery page) with bounds parameter
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-    const response = await fetch(`${backendUrl}/api/restaurants?bounds=${encodeURIComponent(key)}&limit=100`);
+    const response = await fetch(`${backendUrl}/api/v5/restaurants?bounds=${encodeURIComponent(key)}&limit=100`);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -99,6 +108,10 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     useLivemapStore.setState((s) => ({ 
       loading: { ...s.loading, restaurants: "success" } 
     }));
+    
+    // Trigger filtering after data is loaded
+    const { runFilter } = await import('./workerManager');
+    runFilter();
 
     if (process.env.NODE_ENV === 'development') {
       console.log(`🗺️ Loaded ${data?.length || 0} restaurants in ${fetchTime.toFixed(1)}ms (cache miss)`);

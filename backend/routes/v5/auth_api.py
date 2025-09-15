@@ -526,14 +526,25 @@ def verify_token():
 def csrf_token():
     """Issue CSRF token and set secure cookie."""
     try:
-        # Get session ID for CSRF token generation
+        # Get session ID for CSRF token generation (must match middleware logic)
+        def get_client_ip():
+            # Check X-Forwarded-For header
+            xff = request.headers.get('X-Forwarded-For')
+            if xff:
+                return xff.split(',')[0].strip()
+            # Check X-Real-IP header
+            real_ip = request.headers.get('X-Real-IP')
+            if real_ip:
+                return real_ip
+            # Fallback to remote_addr
+            return request.remote_addr or 'unknown'
+        
         if hasattr(g, 'user') and g.user:
             user_id = g.user.get('user_id')
-            session_id = f"user:{user_id}" if user_id else f"anon:{request.remote_addr}"
+            session_id = f"user:{user_id}" if user_id else f"anon:{get_client_ip()}"
         else:
             # For unauthenticated requests, use IP-based session
-            client_ip = request.remote_addr or 'unknown'
-            session_id = f"anon:{client_ip}"
+            session_id = f"anon:{get_client_ip()}"
         
         # Generate CSRF token
         user_agent = request.headers.get('User-Agent', '')

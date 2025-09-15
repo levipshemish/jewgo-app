@@ -162,6 +162,22 @@ def parse_filters(request_args: Dict[str, Any]) -> Dict[str, Any]:
         except (ValueError, TypeError):
             pass  # Invalid location data, skip
     
+    # Bounds filter for map viewport
+    if request_args.get('bounds'):
+        try:
+            bounds_str = request_args.get('bounds')
+            # Parse bounds format: "ne_lat,ne_lng-sw_lat,sw_lng"
+            if '-' in bounds_str:
+                ne_str, sw_str = bounds_str.split('-')
+                ne_lat, ne_lng = map(float, ne_str.split(','))
+                sw_lat, sw_lng = map(float, sw_str.split(','))
+                filters['bounds'] = {
+                    'ne': {'lat': ne_lat, 'lng': ne_lng},
+                    'sw': {'lat': sw_lat, 'lng': sw_lng}
+                }
+        except (ValueError, TypeError, AttributeError):
+            pass  # Invalid bounds data, skip
+    
     # Date filters
     if request_args.get('created_after'):
         filters['created_after'] = request_args.get('created_after')

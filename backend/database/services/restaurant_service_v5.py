@@ -132,6 +132,9 @@ class RestaurantServiceV5:
                 if restaurant.get('listing_type'):
                     listing_types.add(restaurant['listing_type'])
             
+            # Debug logging to see what data we're getting
+            logger.info(f"Filter options extracted: kosher_categories={len(kosher_categories)}, agencies={len(certifying_agencies)}, price_ranges={len(price_ranges)}, cities={len(cities)}, states={len(states)}, listing_types={len(listing_types)}")
+            
             # Convert to sorted lists
             filter_options = {
                 'kosherCategories': sorted(list(kosher_categories)),
@@ -644,6 +647,16 @@ class RestaurantServiceV5:
         if processed.get('business_types'):
             if isinstance(processed['business_types'], str):
                 processed['business_types'] = [processed['business_types']]
+        
+        # Process bounds filter for map viewport
+        if processed.get('bounds'):
+            bounds = processed['bounds']
+            if isinstance(bounds, dict) and 'ne' in bounds and 'sw' in bounds:
+                # Bounds are already parsed correctly
+                pass
+            else:
+                # Remove invalid bounds
+                processed.pop('bounds', None)
         
         return processed
     

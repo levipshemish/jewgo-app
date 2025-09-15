@@ -149,7 +149,10 @@ export default function EateryGrid({
       
       // Handle filter options if included in response (first page only)
       if (page === 1 && response.filterOptions && onFilterOptionsReceived) {
+        console.log('Received filter options from API:', response.filterOptions)
         onFilterOptionsReceived(response.filterOptions)
+      } else if (page === 1) {
+        console.log('No filter options received from API response:', response)
       }
       
       // Handle pagination based on sorting type

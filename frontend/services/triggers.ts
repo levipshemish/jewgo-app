@@ -10,14 +10,15 @@ import { loadRestaurantsInBounds } from "./dataManager";
 import { runFilter } from "./workerManager";
 import type { Bounds } from "@/types/livemap";
 
-// Performance limits
-const BOUNDS_DEBOUNCE_MS = 250;
-const FILTER_DEBOUNCE_MS = 150;
+// Performance limits - increased debounce times to reduce API calls
+const BOUNDS_DEBOUNCE_MS = 1000; // Increased from 250ms to 1s
+const FILTER_DEBOUNCE_MS = 300;  // Increased from 150ms to 300ms
 
 // Debounced bounds change handler
 export const onBoundsChanged = debounce((bounds: Bounds) => {
   useLivemapStore.getState().setMap({ bounds });
-  loadRestaurantsInBounds(bounds).then(() => runFilter());
+  // Load restaurants for new bounds - filtering will be handled by the data loading
+  loadRestaurantsInBounds(bounds);
 }, BOUNDS_DEBOUNCE_MS);
 
 // Debounced filter change handler

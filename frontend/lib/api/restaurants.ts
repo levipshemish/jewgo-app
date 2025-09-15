@@ -90,6 +90,7 @@ export async function fetchRestaurants({
       next_cursor: response.next_cursor,
       prev_cursor: response.prev_cursor,
       total_count: response.total_count,
+      filterOptions: response.filterOptions, // Pass through filter options from API response
     };
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);
@@ -114,6 +115,11 @@ export async function fetchRestaurants({
     if (location) {
       searchParams.set('lat', String(location.latitude));
       searchParams.set('lng', String(location.longitude));
+    }
+    
+    // Add filter options request if needed
+    if (includeFilterOptions) {
+      searchParams.set('include_filter_options', 'true');
     }
     
     u.search = searchParams.toString();
@@ -155,6 +161,7 @@ export async function fetchRestaurants({
         totalRestaurants: total,
         page,
         limit: safeLimit,
+        filterOptions: json.filterOptions, // Pass through filter options from fallback response
       };
     }
     

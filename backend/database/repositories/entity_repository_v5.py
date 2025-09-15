@@ -836,39 +836,81 @@ class EntityRepositoryV5(BaseRepository):
     def _apply_geospatial_filter(self, query, model_class, filters: Dict[str, Any]):
         """Apply geospatial filtering for location-based queries."""
         try:
-            lat = float(filters['latitude'])
-            lng = float(filters['longitude'])
-            radius_km = float(filters.get('radius', 10))  # Default 10km radius
+            # Handle bounds filtering (for map viewport)
+            if 'bounds' in filters:
+                bounds = filters['bounds']
+                if isinstance(bounds, dict) and 'ne' in bounds and 'sw' in bounds:
+                    ne_lat = float(bounds['ne']['lat'])
+                    ne_lng = float(bounds['ne']['lng'])
+                    sw_lat = float(bounds['sw']['lat'])
+                    sw_lng = float(bounds['sw']['lng'])
+                    
+                    # Use PostGIS ST_MakeEnvelope for bounds filtering
+                    if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                        # Use traditional latitude/longitude columns (most common case)
+                        query = query.filter(
+                            func.ST_Within(
+                                func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
+                                func.ST_MakeEnvelope(sw_lng, sw_lat, ne_lng, ne_lat, 4326)
+                            )
+                        )
+                    elif hasattr(model_class, 'geom'):
+                        # Use geom column (PostGIS geometry column)
+                        query = query.filter(
+                            func.ST_Within(
+                                model_class.geom,
+                                func.ST_MakeEnvelope(sw_lng, sw_lat, ne_lng, ne_lat, 4326)
+                            )
+                        )
+                    elif hasattr(model_class, 'location'):
+                        # Use location column (PostGIS point stored as text)
+                        query = query.filter(
+                            func.ST_Within(
+                                func.ST_GeogFromText(model_class.location),
+                                func.ST_MakeEnvelope(sw_lng, sw_lat, ne_lng, ne_lat, 4326)
+                            )
+                        )
+                    
+                    logger.debug(f"Applied bounds filter: ne=({ne_lat}, {ne_lng}), sw=({sw_lat}, {sw_lng})")
+                    return query
             
-            # Use PostGIS ST_DWithin for efficient spatial queries
-            if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
-                # Use traditional latitude/longitude columns (most common case)
-                query = query.filter(
-                    func.ST_DWithin(
-                        func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
-                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                        radius_km * 1000  # Convert km to meters
+            # Handle radius-based filtering (for location-based search)
+            if 'latitude' in filters and 'longitude' in filters:
+                lat = float(filters['latitude'])
+                lng = float(filters['longitude'])
+                radius_km = float(filters.get('radius', 10))  # Default 10km radius
+                
+                # Use PostGIS ST_DWithin for efficient spatial queries
+                if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                    # Use traditional latitude/longitude columns (most common case)
+                    query = query.filter(
+                        func.ST_DWithin(
+                            func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
+                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                            radius_km * 1000  # Convert km to meters
+                        )
                     )
-                )
-            elif hasattr(model_class, 'geom'):
-                # Use geom column (PostGIS geometry column)
-                query = query.filter(
-                    func.ST_DWithin(
-                        model_class.geom,
-                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                        radius_km * 1000  # Convert km to meters
+                elif hasattr(model_class, 'geom'):
+                    # Use geom column (PostGIS geometry column)
+                    query = query.filter(
+                        func.ST_DWithin(
+                            model_class.geom,
+                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                            radius_km * 1000  # Convert km to meters
+                        )
                     )
-                )
-            elif hasattr(model_class, 'location'):
-                # Use location column (PostGIS point stored as text)
-                # Cast the location text to geometry and then to geography for distance calculation
-                query = query.filter(
-                    func.ST_DWithin(
-                        func.ST_GeogFromText(model_class.location),
-                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                        radius_km * 1000  # Convert km to meters
+                elif hasattr(model_class, 'location'):
+                    # Use location column (PostGIS point stored as text)
+                    # Cast the location text to geometry and then to geography for distance calculation
+                    query = query.filter(
+                        func.ST_DWithin(
+                            func.ST_GeogFromText(model_class.location),
+                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                            radius_km * 1000  # Convert km to meters
+                        )
                     )
-                )
+                
+                logger.debug(f"Applied geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
             
             return query
             

@@ -86,10 +86,11 @@ const MapEngine = () => {
     // initializeURLSync();
   }, []);
 
-  // Auto-filter when restaurants change
+  // Auto-filter when restaurants change (but avoid infinite loops)
   useEffect(() => {
     const state = useLivemapStore.getState();
-    if (state.restaurants.length > 0) {
+    if (state.restaurants.length > 0 && state.filtered.length === 0) {
+      // Only run filter if we have restaurants but no filtered results yet
       runFilter();
     }
   }, [restaurants.length]);
