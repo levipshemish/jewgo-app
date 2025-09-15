@@ -31,6 +31,8 @@ class TokenManagerV5:
         self.leeway = leeway
         self.default_access_ttl = int(os.getenv('ACCESS_TTL_SECONDS', '3600'))  # 1 hour
         self.default_refresh_ttl = int(os.getenv('REFRESH_TTL_SECONDS', '2592000'))  # 30 days
+        self.issuer = os.getenv('JWT_ISSUER', 'jewgo.app')
+        self.audience = os.getenv('JWT_AUDIENCE', 'jewgo.app')
         
         logger.info(f"TokenManagerV5 initialized with {leeway}s leeway")
     
@@ -66,12 +68,18 @@ class TokenManagerV5:
                 self.secret,
                 algorithms=[self.algorithm],
                 leeway=timedelta(seconds=effective_leeway),
+                audience=self.audience,
+                issuer=self.issuer,
                 options={
                     'verify_signature': True,
                     'verify_exp': True,
                     'verify_iat': True,
+                    'verify_aud': True,
+                    'verify_iss': True,
                     'require_exp': True,
-                    'require_iat': True
+                    'require_iat': True,
+                    'require_aud': True,
+                    'require_iss': True
                 }
             )
             
@@ -127,8 +135,8 @@ class TokenManagerV5:
                 'iat': int(now.timestamp()),
                 'exp': int(exp_time.timestamp()),
                 'jti': secrets.token_hex(16),  # JWT ID for tracking
-                'iss': os.getenv('JWT_ISSUER', 'jewgo.app'),
-                'aud': os.getenv('JWT_AUDIENCE', 'jewgo.app')
+                'iss': self.issuer,
+                'aud': self.audience
             }
             
             # Add roles if provided
@@ -175,8 +183,8 @@ class TokenManagerV5:
                 'iat': int(now.timestamp()),
                 'exp': int(exp_time.timestamp()),
                 'jti': secrets.token_hex(16),
-                'iss': os.getenv('JWT_ISSUER', 'jewgo.app'),
-                'aud': os.getenv('JWT_AUDIENCE', 'jewgo.app')
+                'iss': self.issuer,
+                'aud': self.audience
             }
             
             token = jwt.encode(payload, self.secret, algorithm=self.algorithm)
@@ -310,7 +318,7 @@ class TokenManagerV5:
                 'leeway_seconds': self.leeway,
                 'default_access_ttl': self.default_access_ttl,
                 'default_refresh_ttl': self.default_refresh_ttl,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': self._now_utc().isoformat()
             }
             
         except Exception as e:
@@ -318,5 +326,5 @@ class TokenManagerV5:
             return {
                 'status': 'unhealthy',
                 'error': str(e),
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': self._now_utc().isoformat()
             }

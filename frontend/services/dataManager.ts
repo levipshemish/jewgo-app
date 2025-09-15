@@ -15,10 +15,10 @@ const TTL = 5 * 60 * 1000; // 5 minutes
 // Track loaded restaurants to prevent duplicate API calls (with size limits)
 const loadedRestaurants = new Set<string>(); // Set of restaurant IDs
 const restaurantCache = new Map<string, Restaurant>(); // Individual restaurant cache
-const MAX_RESTAURANT_CACHE_SIZE = 2000; // Limit restaurant cache size
+const MAX_RESTAURANT_CACHE_SIZE = 5000; // Increased limit for better coverage
 
 // Maximum bounds size to prevent excessive API calls
-const MAX_BOUNDS_DEGREES = 10.0; // ~1000km max bounds (increased from 2.0)
+const MAX_BOUNDS_DEGREES = 15.0; // ~1500km max bounds (increased for better coverage)
 const EXTREME_BOUNDS_DEGREES = 50.0; // ~5000km - truly extreme bounds
 
 // Check if bounds are too large for normal API calls
@@ -67,8 +67,8 @@ function getCachedRestaurant(restaurantId: string): Restaurant | null {
 
 // Get restaurants from cache that are within the bounds (optimized)
 function getCachedRestaurantsInBounds(bounds: Bounds): Restaurant[] {
-  // Only check if we have a small number of cached restaurants for performance
-  if (restaurantCache.size > 200) {
+  // Only check if we have a reasonable number of cached restaurants for performance
+  if (restaurantCache.size > 1000) {
     // Too many restaurants to check efficiently, skip this optimization
     return [];
   }
@@ -107,7 +107,9 @@ let cacheHits = 0;
 // Rate limiting state
 let lastRequestTime = 0;
 let consecutiveFailures = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 second minimum between requests
+let isInitialLoad = true; // Track if this is the initial load
+const MIN_REQUEST_INTERVAL = 500; // 500ms minimum between requests (reduced for better scrolling)
+const INITIAL_LOAD_INTERVAL = 100; // Much shorter interval for initial load
 const MAX_BACKOFF_MS = 10000; // 10 seconds max backoff
 
 // Find overlapping cached data that covers the requested bounds
@@ -190,8 +192,8 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
   }
 
   // Check if we already have restaurants in these bounds from previous loads
-  // Only do this check for very small cache sizes to avoid performance issues
-  if (restaurantCache.size < 100) {
+  // Only do this check for reasonable cache sizes to avoid performance issues
+  if (restaurantCache.size < 500) {
     const cachedRestaurantsInBounds = getCachedRestaurantsInBounds(bounds);
     if (cachedRestaurantsInBounds.length > 0) {
       cacheHits++;
@@ -223,18 +225,22 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
   }));
 
   try {
-    // Rate limiting: check if we need to wait
+    // Rate limiting: check if we need to wait (shorter interval for initial load)
     const currentTime = Date.now();
     const timeSinceLastRequest = currentTime - lastRequestTime;
     const backoffMs = Math.min(consecutiveFailures * 1000, MAX_BACKOFF_MS);
+    const requestInterval = isInitialLoad ? INITIAL_LOAD_INTERVAL : MIN_REQUEST_INTERVAL;
     
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL + backoffMs) {
-      const waitTime = MIN_REQUEST_INTERVAL + backoffMs - timeSinceLastRequest;
+    if (timeSinceLastRequest < requestInterval + backoffMs) {
+      const waitTime = requestInterval + backoffMs - timeSinceLastRequest;
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🗺️ Rate limiting: waiting ${waitTime}ms before next request`);
+        console.log(`🗺️ Rate limiting: waiting ${waitTime}ms before next request (initial: ${isInitialLoad})`);
       }
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
+    
+    // Mark that initial load is complete after first successful request
+    // Don't reset on rate limiting or errors
 
     fetchCount++;
     const startTime = performance.now();
@@ -334,6 +340,11 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     // Reset failure count on success
     consecutiveFailures = 0;
     
+    // Mark that initial load is complete after first successful request
+    if (isInitialLoad) {
+      isInitialLoad = false;
+    }
+    
   } catch (error: any) {
     // Increment failure count for rate limiting
     consecutiveFailures++;
@@ -360,6 +371,11 @@ export function clearCache(): void {
 export function clearRestaurantCache(): void {
   loadedRestaurants.clear();
   restaurantCache.clear();
+}
+
+// Reset initial load flag (useful for testing or manual resets)
+export function resetInitialLoad(): void {
+  isInitialLoad = true;
 }
 
 // Check if a specific restaurant is already loaded

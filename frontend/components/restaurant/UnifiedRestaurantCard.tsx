@@ -56,7 +56,7 @@ export default function UnifiedRestaurantCard({
   priority = false
 }: UnifiedRestaurantCardProps) {
   const router = useRouter();
-  const { isFavorite } = useFavorites();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [imageLoading, setImageLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const { handleImmediateTouch } = useMobileTouch();
@@ -82,6 +82,10 @@ export default function UnifiedRestaurantCard({
     e.stopPropagation();
     const newLikeState = !isLiked;
     setIsLiked(newLikeState);
+    
+    // Update favorites manager
+    toggleFavorite({ id: restaurant.id.toString(), name: restaurant.name });
+    
     if (onLike) {
       onLike(restaurant);
     }

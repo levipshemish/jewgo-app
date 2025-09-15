@@ -83,7 +83,8 @@ class TestTokenManagerV5:
         
         token, ttl = token_manager.mint_access_token(user_id, email, auth_time=auth_time)
         
-        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'])
+        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'], 
+                           audience='test.jewgo.app')
         assert payload['auth_time'] == int(auth_time.timestamp())
     
     def test_mint_access_token_custom_ttl(self, token_manager):
@@ -96,7 +97,8 @@ class TestTokenManagerV5:
         
         assert ttl == custom_ttl
         
-        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'])
+        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'], 
+                           audience='test.jewgo.app')
         expected_exp = int((datetime.now(timezone.utc) + timedelta(seconds=custom_ttl)).timestamp())
         # Allow 5 second tolerance for test execution time
         assert abs(payload['exp'] - expected_exp) <= 5
@@ -112,7 +114,8 @@ class TestTokenManagerV5:
         assert isinstance(token, str)
         assert ttl == 2592000
         
-        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'])
+        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'], 
+                           audience='test.jewgo.app')
         assert payload['type'] == 'refresh'
         assert payload['uid'] == user_id
         assert payload['sid'] == session_id
@@ -226,7 +229,8 @@ class TestTokenManagerV5:
         assert len(jti) == 32  # 16 bytes hex = 32 chars
         
         # Verify it matches the token's JTI
-        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'])
+        payload = jwt.decode(token, 'test_secret_key_12345', algorithms=['HS256'], 
+                           audience='test.jewgo.app')
         assert jti == payload['jti']
     
     def test_extract_jti_invalid_token(self, token_manager):
@@ -399,11 +403,11 @@ class TestTokenManagerV5:
     
     def test_error_handling_in_minting(self, token_manager):
         """Test error handling during token minting."""
-        # Test with invalid parameters
-        with pytest.raises(Exception):
+        # Test with invalid parameters - these should raise exceptions during JWT encoding
+        with pytest.raises((TypeError, ValueError, Exception)):
             token_manager.mint_access_token(None, None)
         
-        with pytest.raises(Exception):
+        with pytest.raises((TypeError, ValueError, Exception)):
             token_manager.mint_refresh_token(None, None, None)
     
     @patch('services.auth.token_manager_v5.logger')

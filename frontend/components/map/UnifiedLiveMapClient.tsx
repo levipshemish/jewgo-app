@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition
 
 import { InteractiveRestaurantMap } from '@/components/map/InteractiveRestaurantMap';
 import MapErrorBoundary from '@/components/map/MapErrorBoundary';
-import AdvancedFilters from '@/components/search/AdvancedFilters';
+import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
 import Card from '@/components/core/cards/Card';
 // Remove old fetchRestaurants import - we'll use unified API directly
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
@@ -17,6 +17,7 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useMemoryMonitoring } from '@/lib/hooks/useMemoryMonitoring';
 import { usePerformanceMonitoring } from '@/lib/hooks/usePerformanceMonitoring';
 import { favoritesManager } from '@/lib/utils/favorites';
+import { calculateDistance } from '@/lib/utils/geolocation';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
@@ -79,6 +80,96 @@ export default function UnifiedLiveMapClient() {
     setFilter,
     clearAllFilters
   } = useAdvancedFilters();
+
+  // State for filter options from restaurants API
+  const [filterOptions, setFilterOptions] = useState<any>(null);
+
+  // Filter restaurants based on active filters
+  const filteredRestaurants = useMemo(() => {
+    let filtered = allRestaurants;
+
+    // Apply distance filter if user location and distance filter are set
+    if (userLocation && activeFilters.distanceMi && activeFilters.distanceMi > 0) {
+      filtered = filtered.filter(restaurant => {
+        if (!restaurant.latitude || !restaurant.longitude) return false;
+        
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          restaurant.latitude,
+          restaurant.longitude
+        );
+        
+        return distance <= activeFilters.distanceMi;
+      });
+    }
+
+    // Apply other filters (kosher category, agency, etc.)
+    if (activeFilters.kosherCategory) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.kosher_category === activeFilters.kosherCategory
+      );
+    }
+
+    if (activeFilters.agency) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.certifying_agency === activeFilters.agency
+      );
+    }
+
+    if (activeFilters.ratingMin && activeFilters.ratingMin > 0) {
+      filtered = filtered.filter(restaurant => {
+        const rating = restaurant.google_rating || restaurant.quality_rating || restaurant.rating;
+        return rating && rating >= activeFilters.ratingMin;
+      });
+    }
+
+    if (activeFilters.priceRange) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.price_range === activeFilters.priceRange
+      );
+    }
+
+    if (activeFilters.listingType) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.listing_type === activeFilters.listingType
+      );
+    }
+
+    if (activeFilters.city) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.city?.toLowerCase().includes(activeFilters.city.toLowerCase())
+      );
+    }
+
+    if (activeFilters.state) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.state?.toLowerCase().includes(activeFilters.state.toLowerCase())
+      );
+    }
+
+    if (activeFilters.kosherDetails) {
+      filtered = filtered.filter(restaurant => {
+        switch (activeFilters.kosherDetails) {
+          case 'Cholov Yisroel':
+            return restaurant.is_cholov_yisroel === true;
+          case 'Pas Yisroel':
+            return restaurant.is_pas_yisroel === true;
+          case 'Cholov Stam':
+            return restaurant.cholov_stam === true;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filtered;
+  }, [allRestaurants, activeFilters, userLocation]);
+
+  // Update displayed restaurants when filtered restaurants change
+  useEffect(() => {
+    setDisplayedRestaurants(filteredRestaurants);
+  }, [filteredRestaurants]);
 
   // Memory monitoring to prevent WebAssembly allocation issues
   const memoryMonitoringOptions = useMemo(() => ({
@@ -683,6 +774,7 @@ export default function UnifiedLiveMapClient() {
       if (type === 'FILTER_RESTAURANTS_RESULT') {
         startTransition(() => {
           const newRestaurants = payload.restaurants || [];
+          setAllRestaurants(newRestaurants);
           setDisplayedRestaurants(newRestaurants);
         });
       }
@@ -903,6 +995,10 @@ export default function UnifiedLiveMapClient() {
     setShowFilters(false);
   }, []);
 
+  const handleFilterOptionsReceived = useCallback((options: any) => {
+    setFilterOptions(options);
+  }, []);
+
   // Removed handleTabChange since we're only showing map view
 
 
@@ -1039,7 +1135,7 @@ export default function UnifiedLiveMapClient() {
             }}
           >
             <InteractiveRestaurantMap
-              restaurants={displayedRestaurants}
+              restaurants={filteredRestaurants}
               userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
               selectedRestaurantId={selectedRestaurant?.id ? Number(selectedRestaurant.id) : null}
               onRestaurantSelect={handleRestaurantSelectCallback}
@@ -1131,42 +1227,27 @@ export default function UnifiedLiveMapClient() {
         </button>
       </div>
 
-      {/* Filters Modal */}
-      {showFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Filters</h3>
-                <button
-                  onClick={handleCloseFilters}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="p-4">
-              <AdvancedFilters
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onToggleFilter={handleToggleFilter}
-                onClearAll={handleClearAll}
-                userLocation={userLocation}
-                locationLoading={locationLoading}
-              />
-            </div>
-            <div className="p-4 border-t border-gray-200">
-              <button
-                onClick={handleCloseFilters}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors"
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Filter Modal */}
+      <ModernFilterPopup
+        isOpen={showFilters}
+        onClose={handleCloseFilters}
+        onApplyFilters={(filters) => {
+          // Apply filters to the active filters state
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+              setFilter(key as keyof typeof activeFilters, value);
+            } else {
+              setFilter(key as keyof typeof activeFilters, undefined);
+            }
+          });
+          handleCloseFilters();
+        }}
+        initialFilters={activeFilters}
+        userLocation={userLocation}
+        locationLoading={locationLoading}
+        onRequestLocation={requestLocation}
+        preloadedFilterOptions={filterOptions}
+      />
 
       {/* Location Permission Prompt */}
       {showLocationPrompt && permissionStatus === 'prompt' && (

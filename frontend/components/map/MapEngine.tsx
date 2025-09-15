@@ -7,13 +7,13 @@
 
 'use client';
 
-import React, { memo, useMemo, useEffect, useState, useCallback } from 'react';
+import React, { memo, useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import { useLivemapStore, sel } from '@/lib/stores/livemap-store';
 import GoogleMap from './vendors/GoogleMap';
 import Header from '@/components/layout/Header';
 import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
 import RestaurantDetails from './RestaurantDetails';
-import { onBoundsChanged } from '@/services/triggers';
+import { onBoundsChanged, onBoundsChangedImmediate } from '@/services/triggers';
 import { loadRestaurantsInBounds } from '@/services/dataManager';
 import { runFilter } from '@/services/workerManager';
 import type { Bounds } from '@/types/livemap';
@@ -62,14 +62,29 @@ const MapEngine = () => {
     onBoundsChanged(bounds);
   };
 
+  // Track if map has been initialized to prevent multiple calls
+  const mapInitializedRef = useRef(false);
+
   // Initial data load when map is ready
   const handleMapReady = () => {
-    if (process.env.NODE_ENV === 'development') {
+    // Prevent multiple initialization calls
+    if (mapInitializedRef.current) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🗺️ Map already initialized, skipping...');
+      }
+      return;
     }
     
-    // Load initial data if we have bounds
+    mapInitializedRef.current = true;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🗺️ Map ready, loading initial data...');
+    }
+    
+    // Load initial data if we have bounds - use immediate loading for faster initial load
     const currentBounds = useLivemapStore.getState().map.bounds;
     if (currentBounds) {
+      // Use immediate loading for initial data load (no debounce)
       loadRestaurantsInBounds(currentBounds).then(() => {
         runFilter(); // Apply current filters to loaded data
       });

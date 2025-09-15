@@ -42,10 +42,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only check auth once on mount to prevent rate limiting (including React Strict Mode)
     if (!authChecked && !hasRunRef.current) {
       hasRunRef.current = true;
-      checkAuth();
       setAuthChecked(true);
+      
+      // Call checkAuth directly without dependency
+      const performAuthCheck = async () => {
+        try {
+          // Probe backend profile; 200 => authenticated, 401 => not
+          const currentUser = await postgresAuth.getProfile();
+          setUser(currentUser);
+        } catch (error) {
+          // Handle rate limiting gracefully
+          if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+            console.warn('Auth rate limit exceeded, treating as unauthenticated');
+          }
+          // Treat any failure as unauthenticated for client UX
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      performAuthCheck();
     }
-  }, [authChecked, checkAuth]);
+  }, [authChecked]); // Only depend on authChecked
 
   const login = async (email: string, password: string) => {
     try {

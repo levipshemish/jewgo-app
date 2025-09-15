@@ -12,6 +12,7 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import LocationAwarePage from '@/components/LocationAwarePage'
 import { deduplicatedFetch } from '@/lib/utils/request-deduplication'
 import { getRestaurant } from '@/lib/api/restaurants'
+import { useFavorites } from '@/lib/utils/favorites'
 
 /**
  * Parse hours from the backend JSON format into EateryDB format
@@ -158,6 +159,9 @@ function EateryIdPageContent() {
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewsPagination, setReviewsPagination] = useState<any>(null)
   const isFetchingRef = useRef(false)
+  
+  // Use favorites hook to get reactive favorite state
+  const { isFavorite, toggleFavorite } = useFavorites()
 
   // Use the new location utility system
   const {
@@ -477,7 +481,19 @@ function EateryIdPageContent() {
     if (!eatery) return null
     
     try {
-      return mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
+      const listingData = mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
+      
+      // Override the favorite state and handler with reactive versions
+      if (listingData.header) {
+        listingData.header.isFavorited = isFavorite(eatery.id)
+        listingData.header.onFavorite = () => {
+          if (eatery) {
+            toggleFavorite({ id: eatery.id, name: eatery.name })
+          }
+        }
+      }
+      
+      return listingData
     } catch (err) {
       // Log error in development only
       if (process.env.NODE_ENV === 'development') {
@@ -485,7 +501,7 @@ function EateryIdPageContent() {
       }
       return null
     }
-  }, [eatery, legacyUserLocation, reviews, requestLocation, permissionStatus])
+  }, [eatery, legacyUserLocation, reviews, requestLocation, permissionStatus, isFavorite, toggleFavorite])
 
   // Render loading state
   if (loading) {

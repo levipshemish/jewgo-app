@@ -51,7 +51,19 @@ export function ModernFilterPopup({
     applyFilters,
     isApplying,
     clearAllDraftFilters,
+    resetDraftFilters,
   } = useLocalFilters(initialFilters);
+
+  // Sync draft filters with initial filters when they change (e.g., when filters are removed from chips)
+  useEffect(() => {
+    if (initialFilters && Object.keys(initialFilters).length === 0) {
+      // If initialFilters is empty, clear draft filters
+      resetDraftFilters({});
+    } else {
+      // Otherwise, reset draft filters to match initial filters
+      resetDraftFilters(initialFilters);
+    }
+  }, [initialFilters, resetDraftFilters]);
 
   // Use preloaded filter options if available, otherwise lazy load
   const { filterOptions: fetchedFilterOptions, loading: filterOptionsLoading, trigger: loadFilterOptions } = useLazyFilterOptions();
@@ -235,6 +247,12 @@ export function ModernFilterPopup({
                   <p className="text-sm text-gray-500 mb-3">
                     {locationLoading ? 'Getting your location...' : 'Enable location to filter by distance'}
                   </p>
+                  {/* Debug info in development */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="text-xs text-gray-400 mb-2">
+                      Debug: userLocation={userLocation ? 'Available' : 'null'}, loading={locationLoading ? 'true' : 'false'}
+                    </p>
+                  )}
                   {!locationLoading && onRequestLocation && (
                     <button
                       onClick={onRequestLocation}

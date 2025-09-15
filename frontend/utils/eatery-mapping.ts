@@ -1,4 +1,5 @@
 import { EateryDB, UserLocation, ListingData } from "@/types/listing"
+import { favoritesManager } from "@/lib/utils/favorites"
 
 // Helper function to calculate distance using Haversine formula
 // This will be replaced by the centralized hook in components
@@ -37,9 +38,14 @@ function handleOrder(orderUrl?: string) {
   }
 }
 
-function handleFavorite(_eateryId: string) {
-  // This would handle favorite functionality
-  // TODO: Implement favorite functionality
+function handleFavorite(eateryId: string, eateryName: string) {
+  // Toggle favorite status using the favorites manager
+  try {
+    const restaurant = { id: eateryId, name: eateryName };
+    favoritesManager.toggleFavorite(restaurant);
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+  }
 }
 
 function _handleShare() {
@@ -105,8 +111,8 @@ export function mapEateryToListingData(
           window.history.back()
         }
       },
-      isFavorited: false, // TODO: Connect to user favorites
-      onFavorite: () => handleFavorite(eatery.id),
+      isFavorited: favoritesManager.isFavorite(eatery.id),
+      onFavorite: () => handleFavorite(eatery.id, eatery.name),
     },
 
     // Image Section
