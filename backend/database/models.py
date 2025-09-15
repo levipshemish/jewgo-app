@@ -457,53 +457,78 @@ class Mikvah(Base):
     
     # Basic information
     name = Column(String(255), nullable=False)
-    address = Column(String(500), nullable=False)
-    city = Column(String(100), nullable=False)
-    state = Column(String(50), nullable=False)
-    zip_code = Column(String(20), nullable=False)
+    description = Column(Text)
+    address = Column(Text)
+    city = Column(String(100))
+    state = Column(String(50))
+    zip_code = Column(String(20))
+    country = Column(String(50), default='USA')
     phone_number = Column(String(50))
     website = Column(String(500))
     email = Column(String(255))
     
     # Location data
-    latitude = Column(Float)
-    longitude = Column(Float)
+    latitude = Column(Numeric(10, 8))
+    longitude = Column(Numeric(11, 8))
     
     # Mikvah details
-    mikvah_type = Column(String(100))  # Women's, Men's, Both
-    appointment_required = Column(Boolean, default=False)
+    mikvah_type = Column(String(100))
+    mikvah_category = Column(String(100))
+    business_hours = Column(Text)
+    hours_parsed = Column(Boolean, default=False)
+    timezone = Column(String(50))
+    requires_appointment = Column(Boolean, default=False)
+    appointment_phone = Column(String(50))
+    appointment_website = Column(String(500))
+    walk_in_available = Column(Boolean, default=False)
+    advance_booking_days = Column(Integer, default=0)
     
-    # Hours (using actual database column names)
-    hours_monday = Column(String(100))
-    hours_tuesday = Column(String(100))
-    hours_wednesday = Column(String(100))
-    hours_thursday = Column(String(100))
-    hours_friday = Column(String(100))
-    hours_saturday = Column(String(100))
-    hours_sunday = Column(String(100))
+    # Distance and rating
+    distance = Column(String(50))
+    distance_miles = Column(Numeric(8, 2))
+    rating = Column(Numeric(3, 2))
+    review_count = Column(Integer, default=0)
+    star_rating = Column(Numeric(3, 2))
+    google_rating = Column(Numeric(3, 2))
     
-    # Accessibility and amenities (using actual database column names)
-    accessibility_features = Column(Text)
-    parking_available = Column(Boolean, default=False)
+    # Images
+    image_url = Column(Text)
+    logo_url = Column(Text)
     
-    # Hours and schedule (using actual database column names)
-    business_hours = Column(Text)  # Operating hours as text
+    # Amenities
+    has_changing_rooms = Column(Boolean, default=True)
+    has_shower_facilities = Column(Boolean, default=True)
+    has_towels_provided = Column(Boolean, default=False)
+    has_soap_provided = Column(Boolean, default=False)
+    has_hair_dryers = Column(Boolean, default=False)
+    has_private_entrance = Column(Boolean, default=False)
+    has_disabled_access = Column(Boolean, default=False)
+    has_parking = Column(Boolean, default=False)
     
-    # Pricing and policies (using actual database column names)
-    fee_amount = Column(Numeric(10, 2))  # Fee amount
-    fee_currency = Column(String(3), default='USD')  # Currency
+    # Religious and community
+    rabbinical_supervision = Column(String(255))
+    kosher_certification = Column(String(255))
+    community_affiliation = Column(String(255))
+    religious_authority = Column(String(255))
+    
+    # Pricing and payment
+    fee_amount = Column(Numeric(10, 2))
+    fee_currency = Column(String(3), default='USD')
     accepts_credit_cards = Column(Boolean, default=False)
     accepts_cash = Column(Boolean, default=True)
     accepts_checks = Column(Boolean, default=False)
     
-    # Additional information
-    description = Column(Text)
-    image_url = Column(String(2000))
+    # Status and verification
+    is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
     
-    # Audit fields (commented out - don't exist in actual database)
-    # created_by = Column(String(255))
-    # updated_by = Column(String(255))
-    # deleted_at = Column(DateTime)
+    # Search and metadata
+    search_vector = Column(Text)  # tsvector type
+    tags = Column(Text)  # text[] type
+    admin_notes = Column(Text)
+    specials = Column(Text)
+    listing_type = Column(String(100), default='mikvah')
+    status = Column(String(50), default='active')
     
     def __repr__(self):
         return f"<Mikvah(id={self.id}, name='{self.name}', city='{self.city}')>"

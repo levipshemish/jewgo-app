@@ -59,7 +59,7 @@ class EntityRepositoryV5(BaseRepository):
             'primary_key': 'id',
             'default_sort': 'created_at',
             'searchable_fields': ['name', 'description', 'address'],
-            'filterable_fields': ['accessibility', 'appointment_required'],
+            'filterable_fields': ['status', 'mikvah_type', 'requires_appointment', 'is_active'],
             'relations': ['hours'],
             'geospatial': True,
             'supports_reviews': False

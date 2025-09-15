@@ -162,6 +162,7 @@ class TestCSRFMiddleware:
     
     def test_csrf_token_in_cookie(self, client, csrf_token):
         """Test CSRF token extraction from cookie (double-submit pattern)."""
+        # Set cookie using the test client's cookie jar
         client.set_cookie('localhost', '_csrf_token', csrf_token)
         
         response = client.post('/api/test')
@@ -404,8 +405,9 @@ class TestCSRFMiddlewareIntegration:
         assert data['success'] is True
         assert 'csrf_token' in data['data']
         
-        # Check that cookie was set
-        assert '_csrf_token' in [cookie.name for cookie in response.cookies]
+        # Check that cookie was set in headers
+        set_cookie_header = response.headers.get('Set-Cookie', '')
+        assert '_csrf_token=' in set_cookie_header
     
     def test_auth_endpoint_csrf_protection(self, client_with_auth):
         """Test that auth endpoints are protected by CSRF."""
@@ -432,14 +434,9 @@ class TestCSRFMiddlewareIntegration:
             response = client_with_auth.get('/api/v5/auth/csrf')
             assert response.status_code == 200
             
-            # Check cookie attributes
-            csrf_cookie = None
-            for cookie in response.cookies:
-                if cookie.name == '_csrf_token':
-                    csrf_cookie = cookie
-                    break
-            
-            assert csrf_cookie is not None
+            # Check cookie attributes in Set-Cookie header
+            set_cookie_header = response.headers.get('Set-Cookie', '')
+            assert '_csrf_token=' in set_cookie_header
             # Note: In testing, some cookie attributes might not be fully testable
     
     def test_error_handling_in_csrf_middleware(self, client_with_auth):

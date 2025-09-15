@@ -116,11 +116,19 @@ class CSRFManager:
             
             # Parse token components
             token_parts = decoded_token.split(':')
-            if len(token_parts) != 4:
+            if len(token_parts) < 4:
                 logger.warning("Invalid CSRF token format")
                 return False
             
-            token_session_id, token_user_agent_hash, token_day_bucket, token_signature = token_parts
+            # Handle case where session_id might contain colons (e.g., "anon:127.0.0.1")
+            if len(token_parts) == 4:
+                token_session_id, token_user_agent_hash, token_day_bucket, token_signature = token_parts
+            else:
+                # Reconstruct session_id from multiple parts
+                token_signature = token_parts[-1]
+                token_day_bucket = token_parts[-2]
+                token_user_agent_hash = token_parts[-3]
+                token_session_id = ':'.join(token_parts[:-3])
             
             # Use provided user_agent or get from request
             if user_agent is None:

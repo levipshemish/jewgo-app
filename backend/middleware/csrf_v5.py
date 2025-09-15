@@ -69,6 +69,10 @@ class CSRFMiddleware:
         if request.endpoint in self.EXEMPT_ENDPOINTS:
             return
         
+        # Skip if route is marked as CSRF exempt
+        if self._is_csrf_exempt():
+            return
+        
         # Skip non-API endpoints (only protect /api/ routes)
         if not request.path.startswith('/api/'):
             return
@@ -213,6 +217,18 @@ class CSRFMiddleware:
         """Get current timestamp in ISO format."""
         from datetime import datetime, timezone
         return datetime.now(timezone.utc).isoformat()
+    
+    def _is_csrf_exempt(self) -> bool:
+        """Check if the current route is exempt from CSRF protection."""
+        try:
+            # Get the view function for the current endpoint
+            if request.endpoint:
+                view_func = self.app.view_functions.get(request.endpoint)
+                if view_func and hasattr(view_func, '_csrf_exempt'):
+                    return view_func._csrf_exempt
+            return False
+        except Exception:
+            return False
 
 
 def register_csrf_middleware(app) -> None:
@@ -324,9 +340,10 @@ def csrf_exempt(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        g.csrf_exempt = True
         return f(*args, **kwargs)
     
+    # Mark the function as CSRF exempt
+    decorated_function._csrf_exempt = True
     return decorated_function
 
 

@@ -16,12 +16,7 @@ INSERT INTO mikvah (
     website,
     email,
     mikvah_type,
-    rabbinical_supervision,
-    requires_appointment,
-    walk_in_available,
-    country,
-    is_active,
-    is_verified,
+    appointment_required,
     created_at,
     updated_at
 ) VALUES 
@@ -33,14 +28,9 @@ INSERT INTO mikvah (
     '33180',
     '954-258-5611',
     'kosherderech.com',
-    NULL,
+    
     'Women''s',
-    NULL,
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -51,15 +41,15 @@ INSERT INTO mikvah (
     'FL',
     '33312',
     '850-586-1571',
-    NULL,
+    
     'mikveh@mybnai.com',
     'Women''s',
-    NULL,
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -70,15 +60,15 @@ INSERT INTO mikvah (
     'FL',
     '33319',
     '954-777-9906',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
     'Rabbi Aron Lieberman',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -90,14 +80,14 @@ INSERT INTO mikvah (
     '33065',
     '754-368-1050',
     'coralspringschabad.org',
-    NULL,
+    
     'Women''s',
     'Rabbi Yossi Denburg',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -108,15 +98,15 @@ INSERT INTO mikvah (
     'FL',
     '33180',
     '305-937-4313',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
-    NULL,
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -127,15 +117,15 @@ INSERT INTO mikvah (
     'FL',
     '33009',
     '954-851-6286',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
     'Rabbi Raphael Tennenhaus - Chabad of Hallandale Beach',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -147,14 +137,14 @@ INSERT INTO mikvah (
     '33140',
     '305-672-3500',
     'mikvahmiamibeach.com',
-    NULL,
+    
     'Women''s',
-    NULL,
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -169,11 +159,11 @@ INSERT INTO mikvah (
     'Natalierazla@gmail.com',
     'Women''s',
     'Rabbi Nachom Rosenberg - Bet Midrash Ohr Hachayim Hakadosh',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -184,15 +174,15 @@ INSERT INTO mikvah (
     'FL',
     '33180',
     '786-277-0336',
-    NULL,
+    
     'laivi@chabadfl.org',
     'Women''s',
     'Aventura Chabad',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -204,14 +194,14 @@ INSERT INTO mikvah (
     '33496',
     '561-674-0877',
     'chabadcentralboca.com',
-    NULL,
+    
     'Women''s',
     'Rabbi Moshe Denburg (entrance on south side)',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -226,11 +216,11 @@ INSERT INTO mikvah (
     'rsezagui@aol.com',
     'Women''s',
     'Rabbi Shlomo Ezagui',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -241,15 +231,15 @@ INSERT INTO mikvah (
     'FL',
     '33326',
     '954-349-6565',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
     'Rabbi Yisroel Spalter',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -260,15 +250,15 @@ INSERT INTO mikvah (
     'FL',
     '33433',
     '561-394-5854',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
     'Rabbi Efrem Goldberg',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -279,15 +269,15 @@ INSERT INTO mikvah (
     'FL',
     '33308',
     '954-568-1190 ext 7',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
     'Rebbetzin Lipszyc (mikvah cost $35)',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -298,15 +288,15 @@ INSERT INTO mikvah (
     'FL',
     '33156',
     '305-232-6833',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
-    NULL,
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -321,11 +311,11 @@ INSERT INTO mikvah (
     'mcposner@comcast.net',
     'Women''s',
     'Rabbi Mendy Posner',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -337,14 +327,14 @@ INSERT INTO mikvah (
     '33312',
     '954-963-3952',
     'yih.org',
-    NULL,
+    
     'Women''s',
     'Rabbi Edward Davis (mikvah located in rear)',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -355,15 +345,15 @@ INSERT INTO mikvah (
     'FL',
     '33179',
     '305-949-9650',
-    NULL,
-    NULL,
+    
+    
     'Women''s',
-    NULL,
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -375,14 +365,14 @@ INSERT INTO mikvah (
     '33154',
     '305-866-1492',
     'theshul.org',
-    NULL,
+    
     'Women''s',
-    NULL,
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -397,11 +387,11 @@ INSERT INTO mikvah (
     'rabbi@chabadboynton.com',
     'Women''s',
     'Rabbis Sholom Ciment, Avroham Korf & Gerson Grossbaum',
-    true,
-    false,
-    'USA',
-    true,
-    true,
+    
+    
+    
+    
+    
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 );
