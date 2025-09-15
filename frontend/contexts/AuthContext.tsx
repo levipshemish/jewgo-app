@@ -43,10 +43,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // NUCLEAR OPTION: Disable auth checks entirely to prevent rate limiting
-    // Just set loading to false and user to null
-    setLoading(false);
-    setUser(null);
+    const checkAuth = async () => {
+      try {
+        // Probe backend profile; 200 => authenticated, 401 => not
+        const currentUser = await postgresAuth.getProfile();
+        setUser(currentUser);
+      } catch (error) {
+        // Handle rate limiting gracefully
+        if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+          console.warn('Auth rate limit exceeded, treating as unauthenticated');
+        }
+        // Treat any failure as unauthenticated for client UX
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []); // Empty dependency array - only run once on mount
 
   const login = async (email: string, password: string) => {
