@@ -72,7 +72,7 @@ class MikvahServiceV5:
         This method provides a unified interface for the entity API routes.
         """
         try:
-            mikvahs, next_cursor, prev_cursor = self.get_mikvahs(
+            mikvahs, next_cursor, prev_cursor, total_count = self.get_mikvahs(
                 filters=filters,
                 cursor=cursor,
                 page=page,
@@ -90,7 +90,7 @@ class MikvahServiceV5:
                     'has_more': next_cursor is not None
                 },
                 'meta': {
-                    'total_count': len(mikvahs),
+                    'total_count': total_count,
                     'entity_type': 'mikvahs'
                 }
             }

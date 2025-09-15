@@ -98,7 +98,7 @@ class StoreServiceV5:
         This method provides a unified interface for the entity API routes.
         """
         try:
-            stores, next_cursor, prev_cursor = self.get_stores(
+            stores, next_cursor, prev_cursor, total_count = self.get_stores(
                 filters=filters,
                 cursor=cursor,
                 page=page,
@@ -116,7 +116,7 @@ class StoreServiceV5:
                     'has_more': next_cursor is not None
                 },
                 'meta': {
-                    'total_count': len(stores),
+                    'total_count': total_count,
                     'entity_type': 'stores'
                 }
             }

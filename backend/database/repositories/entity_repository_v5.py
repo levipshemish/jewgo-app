@@ -904,7 +904,7 @@ class EntityRepositoryV5(BaseRepository):
                     # This requires checking the hours_json field for open_now status
                     # We'll use a PostgreSQL JSON query to check the open_now field
                     query = query.filter(
-                        func.cast(model_class.hours_json, text('jsonb'))['open_now'].astext == 'true'
+                        model_class.hours_json.op('->>')('open_now') == 'true'
                     )
                 elif hours_filter in ['morning', 'afternoon', 'evening', 'lateNight']:
                     # For time period filters, we need to check if the restaurant

@@ -339,21 +339,21 @@ print_status "Testing V5 API endpoints..."
 # Test public health endpoints (no auth required)
 test_endpoint "https://api.jewgo.app/healthz" "Public healthz endpoint"
 # Optional readyz check: enable with ENABLE_READYZ_CHECK=true to enforce DB/Redis readiness
-if [ "${ENABLE_READYZ_CHECK:-false}" = "true" ]; then
+if [ "${ENABLE_READYZ_CHECK:-true}" = "true" ]; then
   test_endpoint "https://api.jewgo.app/readyz" "Public readyz endpoint"
 else
   print_status "Skipping readyz check (set ENABLE_READYZ_CHECK=true to enable)"
 fi
 
 # Test Auth API health (optional due to Redis/DB dependencies)
-if [ "${ENABLE_AUTH_HEALTH_CHECK:-false}" = "true" ]; then
+if [ "${ENABLE_AUTH_HEALTH_CHECK:-true}" = "true" ]; then
   test_endpoint "https://api.jewgo.app/api/v5/auth/health" "Auth API health endpoint"
 else
   print_status "Skipping auth health check (set ENABLE_AUTH_HEALTH_CHECK=true to enable)"
 fi
 
 # Test Metrics API health (optional due to Redis/DB dependencies)
-if [ "${ENABLE_METRICS_HEALTH_CHECK:-false}" = "true" ]; then
+if [ "${ENABLE_METRICS_HEALTH_CHECK:-true}" = "true" ]; then
   test_endpoint "https://api.jewgo.app/api/v5/metrics/health" "Metrics API health endpoint" || true
 else
   print_status "Skipping metrics health check (set ENABLE_METRICS_HEALTH_CHECK=true to enable)"
@@ -425,7 +425,7 @@ distance_smoke_check() {
     fi
 }
 
-if [ "${ENABLE_DISTANCE_SMOKE_TEST:-false}" = "true" ]; then
+if [ "${ENABLE_DISTANCE_SMOKE_TEST:-true}" = "true" ]; then
     print_status "Running distance smoke tests..."
     distance_smoke_check "NYC 5km" 40.7128 -74.0060 5 0.3
     distance_smoke_check "Florida 0.1km" 25.8 -80.1 0.1 0.2

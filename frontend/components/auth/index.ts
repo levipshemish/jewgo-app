@@ -6,3 +6,4 @@ export { default as AuthLoadingSpinner } from './AuthLoadingSpinner';
 export { default as AuthFormField } from './AuthFormField';
 export { default as AuthNotification } from './AuthNotification';
 export { default as PasswordStrengthIndicator } from './PasswordStrengthIndicator';
+export { default as AuthCard } from './AuthCard';

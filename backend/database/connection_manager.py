@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 from urllib.parse import urlparse
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -200,67 +201,88 @@ class DatabaseConnectionManager:
         """Create SQLAlchemy engine with optimized settings."""
         # Parse database URL
         parsed_url = urlparse(self.database_url)
-        # Build connection arguments with optimized timeouts for startup
-        connect_args = {
-            "connect_timeout": 5,  # Reduced from 10 for faster startup
-            "application_name": "jewgo_app",
-        }
-        # Check if using provider pooled connection (which may not support statement_timeout)
-        is_api_pooler = (
-            "pooler" in parsed_url.hostname if parsed_url.hostname else False
-        )
-        if not is_api_pooler:
-            # Only add statement_timeout for non-pooled connections
-            connect_args["options"] = (
-                f"-c statement_timeout={ConfigManager.get_pg_statement_timeout()}"
-                f" -c idle_in_transaction_session_timeout={ConfigManager.get_pg_idle_tx_timeout()}"
-            )
-        else:
-            logger.info(
-                "Using api.jewgo.app pooled connection - skipping statement_timeout parameter"
-            )
-        # Add SSL configuration if specified
-        if ConfigManager.get_pg_sslmode():
-            connect_args["sslmode"] = ConfigManager.get_pg_sslmode()
-            if ConfigManager.get_pg_sslrootcert():
-                connect_args["sslrootcert"] = ConfigManager.get_pg_sslrootcert()
-        # Add TCP keepalive settings
-        connect_args.update(
-            {
-                "keepalives_idle": ConfigManager.get_pg_keepalives_idle(),
-                "keepalives_interval": ConfigManager.get_pg_keepalives_interval(),
-                "keepalives_count": ConfigManager.get_pg_keepalives_count(),
+        
+        # Check if using SQLite
+        if parsed_url.scheme == 'sqlite':
+            # SQLite-specific connection arguments
+            connect_args = {
+                "timeout": 20,  # SQLite timeout in seconds
             }
-        )
+        else:
+            # PostgreSQL-specific connection arguments
+            connect_args = {
+                "connect_timeout": 5,  # Reduced from 10 for faster startup
+                "application_name": "jewgo_app",
+            }
+        # Only apply PostgreSQL-specific settings for PostgreSQL databases
+        if parsed_url.scheme != 'sqlite':
+            # Check if using provider pooled connection (which may not support statement_timeout)
+            is_api_pooler = (
+                "pooler" in parsed_url.hostname if parsed_url.hostname else False
+            )
+            if not is_api_pooler:
+                # Only add statement_timeout for non-pooled connections
+                connect_args["options"] = (
+                    f"-c statement_timeout={ConfigManager.get_pg_statement_timeout()}"
+                    f" -c idle_in_transaction_session_timeout={ConfigManager.get_pg_idle_tx_timeout()}"
+                )
+            else:
+                logger.info(
+                    "Using api.jewgo.app pooled connection - skipping statement_timeout parameter"
+                )
+            # Add SSL configuration if specified
+            if ConfigManager.get_pg_sslmode():
+                connect_args["sslmode"] = ConfigManager.get_pg_sslmode()
+                if ConfigManager.get_pg_sslrootcert():
+                    connect_args["sslrootcert"] = ConfigManager.get_pg_sslrootcert()
+            # Add TCP keepalive settings
+            connect_args.update(
+                {
+                    "keepalives_idle": ConfigManager.get_pg_keepalives_idle(),
+                    "keepalives_interval": ConfigManager.get_pg_keepalives_interval(),
+                    "keepalives_count": ConfigManager.get_pg_keepalives_count(),
+                }
+            )
         # Determine if this is startup phase or runtime
         is_startup = not hasattr(self, '_startup_complete')
         
-        if is_startup:
-            # Conservative settings for startup
-            pool_size = min(ConfigManager.get_db_pool_size(), 3)
-            max_overflow = min(ConfigManager.get_db_max_overflow(), 5)
-            pool_timeout = min(ConfigManager.get_db_pool_timeout(), 10)
-            logger.info("Using startup connection pool settings", 
-                       pool_size=pool_size, max_overflow=max_overflow)
+        if parsed_url.scheme == 'sqlite':
+            # SQLite-specific settings (no connection pooling)
+            engine = create_engine(
+                self.database_url,
+                poolclass=StaticPool,  # Use StaticPool for SQLite
+                connect_args=connect_args,
+                echo=False,  # Set to True for SQL debugging
+            )
+            logger.info("Using SQLite database with StaticPool")
         else:
-            # Full settings for runtime
-            pool_size = ConfigManager.get_db_pool_size()
-            max_overflow = ConfigManager.get_db_max_overflow()
-            pool_timeout = ConfigManager.get_db_pool_timeout()
-            logger.info("Using runtime connection pool settings", 
-                       pool_size=pool_size, max_overflow=max_overflow)
-        
-        # Create engine with appropriate connection pooling
-        engine = create_engine(
-            self.database_url,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-            pool_timeout=pool_timeout,
-            pool_recycle=ConfigManager.get_db_pool_recycle(),
-            pool_pre_ping=True,
-            echo=False,  # Set to True for SQL debugging
-            connect_args=connect_args,
-        )
+            # PostgreSQL-specific settings
+            if is_startup:
+                # Conservative settings for startup
+                pool_size = min(ConfigManager.get_db_pool_size(), 3)
+                max_overflow = min(ConfigManager.get_db_max_overflow(), 5)
+                pool_timeout = min(ConfigManager.get_db_pool_timeout(), 10)
+                logger.info("Using startup connection pool settings", 
+                           pool_size=pool_size, max_overflow=max_overflow)
+            else:
+                # Full settings for runtime
+                pool_size = ConfigManager.get_db_pool_size()
+                max_overflow = ConfigManager.get_db_max_overflow()
+                pool_timeout = ConfigManager.get_db_pool_timeout()
+                logger.info("Using runtime connection pool settings", 
+                           pool_size=pool_size, max_overflow=max_overflow)
+            
+            # Create engine with appropriate connection pooling
+            engine = create_engine(
+                self.database_url,
+                pool_size=pool_size,
+                max_overflow=max_overflow,
+                pool_timeout=pool_timeout,
+                pool_recycle=ConfigManager.get_db_pool_recycle(),
+                pool_pre_ping=True,
+                echo=False,  # Set to True for SQL debugging
+                connect_args=connect_args,
+            )
         # Add connection event listeners
         self._setup_connection_events(engine)
         return engine
