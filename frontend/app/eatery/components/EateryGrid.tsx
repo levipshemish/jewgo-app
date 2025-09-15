@@ -230,13 +230,13 @@ export default function EateryGrid({
       }
       
       if (activeFilters.agency) {
-        params.set('certifying_agency', activeFilters.agency)
+        params.set('agency', activeFilters.agency)
       }
       
       if (activeFilters.distanceMi) {
-        // Convert miles to meters for backend
-        const radiusMeters = activeFilters.distanceMi * 1609.34
-        params.set('radius_m', radiusMeters.toString())
+        // Convert miles to km for backend (backend expects radius in km)
+        const radiusKm = activeFilters.distanceMi * 1.60934
+        params.set('radius', radiusKm.toString())
       }
       
       if (activeFilters.priceRange && Array.isArray(activeFilters.priceRange)) {
@@ -246,15 +246,19 @@ export default function EateryGrid({
       }
       
       if (activeFilters.ratingMin) {
-        params.set('min_rating', activeFilters.ratingMin.toString())
+        params.set('ratingMin', activeFilters.ratingMin.toString())
       }
       
       if (activeFilters.hoursFilter) {
-        params.set('hours_filter', activeFilters.hoursFilter)
+        params.set('hoursFilter', activeFilters.hoursFilter)
       }
       
       if (activeFilters.openNow) {
-        params.set('open_now', 'true')
+        params.set('openNow', 'true')
+      }
+      
+      if (activeFilters.kosherDetails) {
+        params.set('kosherDetails', activeFilters.kosherDetails)
       }
     }
     

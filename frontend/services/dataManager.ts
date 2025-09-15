@@ -12,9 +12,10 @@ import type { Restaurant, Bounds } from "@/types/livemap";
 const cache = new Map<string, { ts: number; data: Restaurant[] }>();
 const TTL = 5 * 60 * 1000; // 5 minutes
 
-// Track loaded restaurants to prevent duplicate API calls
+// Track loaded restaurants to prevent duplicate API calls (with size limits)
 const loadedRestaurants = new Set<string>(); // Set of restaurant IDs
 const restaurantCache = new Map<string, Restaurant>(); // Individual restaurant cache
+const MAX_RESTAURANT_CACHE_SIZE = 2000; // Limit restaurant cache size
 
 // Maximum bounds size to prevent excessive API calls
 const MAX_BOUNDS_DEGREES = 10.0; // ~1000km max bounds (increased from 2.0)
@@ -41,10 +42,21 @@ function isRestaurantLoaded(restaurantId: string): boolean {
   return loadedRestaurants.has(restaurantId);
 }
 
-// Add restaurant to loaded set and cache
+// Add restaurant to loaded set and cache (with size limits)
 function addLoadedRestaurant(restaurant: Restaurant): void {
   loadedRestaurants.add(restaurant.id);
-  restaurantCache.set(restaurant.id, restaurant);
+  
+  // Only cache if we haven't exceeded the limit
+  if (restaurantCache.size < MAX_RESTAURANT_CACHE_SIZE) {
+    restaurantCache.set(restaurant.id, restaurant);
+  } else {
+    // If cache is full, remove oldest entries (simple FIFO)
+    const firstKey = restaurantCache.keys().next().value;
+    if (firstKey) {
+      restaurantCache.delete(firstKey);
+      restaurantCache.set(restaurant.id, restaurant);
+    }
+  }
 }
 
 // Get restaurant from cache if available
@@ -53,8 +65,14 @@ function getCachedRestaurant(restaurantId: string): Restaurant | null {
 }
 
 
-// Get restaurants from cache that are within the bounds
+// Get restaurants from cache that are within the bounds (optimized)
 function getCachedRestaurantsInBounds(bounds: Bounds): Restaurant[] {
+  // Only check if we have a small number of cached restaurants for performance
+  if (restaurantCache.size > 200) {
+    // Too many restaurants to check efficiently, skip this optimization
+    return [];
+  }
+  
   const restaurants: Restaurant[] = [];
   for (const restaurant of restaurantCache.values()) {
     const lat = restaurant.pos.lat;
@@ -172,15 +190,18 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
   }
 
   // Check if we already have restaurants in these bounds from previous loads
-  const cachedRestaurantsInBounds = getCachedRestaurantsInBounds(bounds);
-  if (cachedRestaurantsInBounds.length > 0) {
-    cacheHits++;
-    useLivemapStore.getState().setRestaurants(cachedRestaurantsInBounds);
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🗺️ Using cached restaurants for bounds ${key} (${cachedRestaurantsInBounds.length} restaurants, ${cacheHits}/${fetchCount + cacheHits})`);
+  // Only do this check for very small cache sizes to avoid performance issues
+  if (restaurantCache.size < 100) {
+    const cachedRestaurantsInBounds = getCachedRestaurantsInBounds(bounds);
+    if (cachedRestaurantsInBounds.length > 0) {
+      cacheHits++;
+      useLivemapStore.getState().setRestaurants(cachedRestaurantsInBounds);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🗺️ Using cached restaurants for bounds ${key} (${cachedRestaurantsInBounds.length} restaurants, ${cacheHits}/${fetchCount + cacheHits})`);
+      }
+      return;
     }
-    return;
   }
 
   // Check if we have overlapping cached data that covers the requested bounds

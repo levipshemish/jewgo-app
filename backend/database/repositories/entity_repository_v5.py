@@ -35,7 +35,19 @@ class EntityRepositoryV5(BaseRepository):
             'primary_key': 'id',
             'default_sort': 'created_at',
             'searchable_fields': ['name', 'short_description', 'address'],
-            'filterable_fields': ['status', 'kosher_category', 'certifying_agency'],
+            'filterable_fields': [
+                'status', 
+                'kosher_category', 
+                'certifying_agency',
+                'agency',  # Alias for certifying_agency
+                'listing_type',
+                'price_range',
+                'city',
+                'state',
+                'is_cholov_yisroel',
+                'is_pas_yisroel',
+                'cholov_stam'
+            ],
             'relations': ['restaurant_images'],
             'geospatial': True,
             'supports_reviews': True,
@@ -805,7 +817,34 @@ class EntityRepositoryV5(BaseRepository):
                 if search_conditions:
                     query = query.filter(or_(*search_conditions))
             
-            # Exact field filters
+            # Handle special filters that need custom logic
+            # Rating filter (minimum rating)
+            if filters.get('ratingMin') and hasattr(model_class, 'google_rating'):
+                try:
+                    min_rating = float(filters['ratingMin'])
+                    query = query.filter(model_class.google_rating >= min_rating)
+                except (ValueError, TypeError):
+                    pass
+            
+            # Kosher details filter
+            if filters.get('kosherDetails') and hasattr(model_class, 'is_cholov_yisroel'):
+                kosher_detail = filters['kosherDetails']
+                if kosher_detail == 'Cholov Yisroel':
+                    query = query.filter(model_class.is_cholov_yisroel == True)
+                elif kosher_detail == 'Pas Yisroel':
+                    query = query.filter(model_class.is_pas_yisroel == True)
+                elif kosher_detail == 'Cholov Stam':
+                    query = query.filter(model_class.cholov_stam == True)
+            
+            # Handle agency filter (alias for certifying_agency)
+            if filters.get('agency') and hasattr(model_class, 'certifying_agency'):
+                query = query.filter(model_class.certifying_agency == filters['agency'])
+            
+            # Handle category filter (alias for kosher_category)
+            if filters.get('category') and hasattr(model_class, 'kosher_category'):
+                query = query.filter(model_class.kosher_category == filters['category'])
+            
+            # Exact field filters for remaining fields
             filterable_fields = mapping.get('filterable_fields', [])
             for field in filterable_fields:
                 if field in filters and hasattr(model_class, field):

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 interface AuthContextType {
@@ -21,16 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authChecked, setAuthChecked] = useState(false);
   const hasRunRef = useRef(false);
 
-  useEffect(() => {
-    // Only check auth once on mount to prevent rate limiting (including React Strict Mode)
-    if (!authChecked && !hasRunRef.current) {
-      hasRunRef.current = true;
-      checkAuth();
-      setAuthChecked(true);
-    }
-  }, [authChecked]);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       // Probe backend profile; 200 => authenticated, 401 => not
       const currentUser = await postgresAuth.getProfile();
@@ -45,7 +36,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Only check auth once on mount to prevent rate limiting (including React Strict Mode)
+    if (!authChecked && !hasRunRef.current) {
+      hasRunRef.current = true;
+      checkAuth();
+      setAuthChecked(true);
+    }
+  }, [authChecked, checkAuth]);
 
   const login = async (email: string, password: string) => {
     try {

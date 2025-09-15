@@ -192,7 +192,7 @@ class MikvahServiceV5:
             return None
 
     def get_mikvahs(self, filters: Optional[Dict[str, Any]] = None, cursor: Optional[str] = None,
-                   page: Optional[int] = None, limit: int = 20, sort_key: str = 'name_asc') -> Dict[str, Any]:
+                   page: Optional[int] = None, limit: int = 20, sort_key: str = 'created_at_desc') -> Dict[str, Any]:
         """Get mikvahs with filtering and pagination.
         
         Args:
@@ -260,6 +260,51 @@ class MikvahServiceV5:
         except Exception as e:
             self.logger.exception("Failed to get mikvahs", error=str(e))
             return ([], None, None)
+
+    # --- Generic API wrappers for parity with other services ---
+    def create_entity(self, data: Dict[str, Any], user_context: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Create a mikvah (generic API wrapper).
+
+        Returns the created entity dictionary on success, or None on failure.
+        """
+        try:
+            # Normalize operating hours if present
+            if 'operating_hours' in data and isinstance(data['operating_hours'], dict):
+                data['operating_hours'] = self._validate_operating_hours(data['operating_hours'])
+
+            # Remove obviously non-model fields that could cause SQLAlchemy errors
+            data.pop('entity_type', None)
+
+            created = self.repository.create_entity('mikvahs', data, user_context=user_context)
+            if created:
+                self._invalidate_mikvah_caches()
+                self.logger.info("Created mikvah via wrapper", mikvah_id=created.get('id'))
+            return created
+        except Exception as e:
+            self.logger.exception("Failed to create mikvah via wrapper", error=str(e))
+            return None
+
+    def update_entity(self, entity_id: int, data: Dict[str, Any], user_context: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Update a mikvah (generic API wrapper).
+
+        Returns the updated entity dictionary on success, or None on failure.
+        """
+        try:
+            # Normalize operating hours if present
+            if 'operating_hours' in data and isinstance(data['operating_hours'], dict):
+                data['operating_hours'] = self._validate_operating_hours(data['operating_hours'])
+
+            # Ensure timestamp update
+            data['updated_at'] = datetime.utcnow()
+
+            updated = self.repository.update_entity('mikvahs', entity_id, data, user_context=user_context)
+            if updated:
+                self._invalidate_mikvah_caches(entity_id)
+                self.logger.info("Updated mikvah via wrapper", mikvah_id=entity_id)
+            return updated
+        except Exception as e:
+            self.logger.exception("Failed to update mikvah via wrapper", mikvah_id=entity_id, error=str(e))
+            return None
 
     def _process_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Process and normalize filter parameters for mikvah queries."""

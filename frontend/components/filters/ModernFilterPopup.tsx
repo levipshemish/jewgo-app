@@ -74,9 +74,11 @@ export function ModernFilterPopup({
   }, [draftFilters, userLocation]);
 
 
-  // Debug: Log when preloadedFilterOptions changes
+  // Debug: Log when preloadedFilterOptions changes (only in development and when not undefined)
   useEffect(() => {
-    console.log('ModernFilterPopup preloadedFilterOptions changed:', preloadedFilterOptions);
+    if (process.env.NODE_ENV === 'development' && preloadedFilterOptions !== undefined) {
+      console.log('ModernFilterPopup preloadedFilterOptions changed:', preloadedFilterOptions);
+    }
   }, [preloadedFilterOptions]);
 
   // Conditionally trigger filter options load when modal opens
