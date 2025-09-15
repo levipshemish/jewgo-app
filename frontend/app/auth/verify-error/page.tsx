@@ -5,8 +5,9 @@ import Header from '@/components/layout/Header'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { AuthCard } from '@/components/auth'
+import { Suspense } from 'react'
 
-export default function VerifyErrorPage() {
+function VerifyErrorContent() {
   const params = useSearchParams()
   const code = params.get('code') || 'UNKNOWN'
 
@@ -22,20 +23,41 @@ export default function VerifyErrorPage() {
   })()
 
   return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <AuthCard
+        variant="error"
+        title="Verification error"
+        description={`${message} Code: ${code}`}
+        actions={
+          <Button asChild variant="link">
+            <Link href="/login">Back to login</Link>
+          </Button>
+        }
+      />
+    </div>
+  )
+}
+
+export default function VerifyErrorPage() {
+  return (
     <main>
       <Header />
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <AuthCard
-          variant="error"
-          title="Verification error"
-          description={`${message} Code: ${code}`}
-          actions={
-            <Button asChild variant="link">
-              <Link href="/login">Back to login</Link>
-            </Button>
-          }
-        />
-      </div>
+      <Suspense fallback={
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <AuthCard
+            variant="error"
+            title="Verification error"
+            description="Loading..."
+            actions={
+              <Button asChild variant="link">
+                <Link href="/login">Back to login</Link>
+              </Button>
+            }
+          />
+        </div>
+      }>
+        <VerifyErrorContent />
+      </Suspense>
     </main>
   )
 }
