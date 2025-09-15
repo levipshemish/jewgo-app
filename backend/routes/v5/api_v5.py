@@ -317,7 +317,31 @@ def get_entities(entity_type: str):
             cursor_token=pagination.get('cursor')
         )
         
+        # Optional geospatial debug header
         response = jsonify(result)
+        if request.args.get('debug_geo', 'false').lower() == 'true':
+            try:
+                repo = getattr(service, 'repository', None)
+                postgis_available = getattr(repo, '_postgis_available', None)
+                lat = request.args.get('latitude') or request.args.get('lat')
+                lng = request.args.get('longitude') or request.args.get('lng')
+                radius = request.args.get('radius')
+                distances = []
+                for item in result.get('data', [])[:5]:
+                    d = item.get('distance')
+                    if d is not None:
+                        distances.append(round(float(d), 2))
+                debug_obj = {
+                    'postgis_available': postgis_available,
+                    'lat': lat,
+                    'lng': lng,
+                    'radius_km': radius,
+                    'returned': len(result.get('data', [])),
+                    'distances_sample_mi': distances,
+                }
+                response.headers['X-Geo-Debug'] = json.dumps(debug_obj)
+            except Exception:
+                pass
         response.headers['ETag'] = etag
         
         return response

@@ -105,7 +105,7 @@
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 9.4_
 
 - [-] 7. Next.js Middleware Security Implementation
-- [-] 7.1 Implement Enhanced Authentication Middleware
+- [ ] 7.1 Implement Enhanced Authentication Middleware
   - Modify Next.js middleware to use HEAD /api/v5/auth/verify-token for performance
   - Implement returnTo parameter preservation for post-login redirects
   - Add route matchers to apply middleware only to protected routes for performance

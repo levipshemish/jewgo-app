@@ -88,6 +88,7 @@ class StoreServiceV5:
         limit: int = 20,
         sort: str = 'created_at_desc',
         include_relations: bool = False,
+        include_filter_options: bool = False,
         user_context: Optional[Dict[str, Any]] = None,
         use_cache: bool = True
     ) -> Dict[str, Any]:
@@ -105,7 +106,7 @@ class StoreServiceV5:
                 sort_key=sort
             )
             
-            return {
+            response = {
                 'success': True,
                 'data': stores,
                 'pagination': {
@@ -119,6 +120,9 @@ class StoreServiceV5:
                     'entity_type': 'stores'
                 }
             }
+            if include_filter_options and (page is None or page == 1):
+                response['filter_options'] = self._get_filter_options()
+            return response
         except Exception as e:
             logger.error(f"Failed to get stores: {str(e)}", exc_info=True)
             return {
@@ -136,6 +140,17 @@ class StoreServiceV5:
                     'entity_type': 'stores'
                 }
             }
+
+    def _get_filter_options(self) -> Dict[str, Any]:
+        """Return filter options metadata for stores."""
+        try:
+            return {
+                'categories': list(self.product_categories.keys()),
+                'status': ['active', 'pending', 'closed'],
+                'delivery': ['delivery_available'],
+            }
+        except Exception:
+            return {}
 
     def get_entity_count(
         self,

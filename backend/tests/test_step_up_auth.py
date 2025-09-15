@@ -230,7 +230,7 @@ class TestStepUpAuthEndpoints:
             assert data['challenge']['challenge_id'] == 'test-challenge-123'
             assert data['challenge']['required_method'] == 'fresh_session'
 
-    def test_step_up_challenge_webauthn_user(self, authenticated_client):
+    def test_step_up_challenge_webauthn_user(self, client):
         """Test step-up challenge for user with WebAuthn."""
         with patch('routes.v5.auth_api.auth_service') as mock_service:
             mock_service.create_step_up_challenge.return_value = 'test-challenge-123'
@@ -241,14 +241,14 @@ class TestStepUpAuthEndpoints:
                 mock_g.user_id = 'test-user-123'
                 mock_g.auth_time = int(time.time()) - 100  # 100 seconds ago
                 
-                response = authenticated_client.post('/api/v5/auth/step-up/challenge', 
+                response = client.post('/api/v5/auth/step-up/challenge', 
                     json={'return_to': '/admin/api-keys'})
                 
                 assert response.status_code == 200
                 data = json.loads(response.data)
                 assert data['challenge']['required_method'] == 'webauthn'
 
-    def test_webauthn_challenge_endpoint(self, authenticated_client):
+    def test_webauthn_challenge_endpoint(self, client):
         """Test WebAuthn challenge creation endpoint."""
         challenge_data = {
             'challenge_id': 'test-challenge-123',
@@ -274,7 +274,7 @@ class TestStepUpAuthEndpoints:
             mock_service.get_user_webauthn_credentials.return_value = credentials
             mock_service.store_webauthn_challenge = Mock()
             
-            response = authenticated_client.post('/api/v5/auth/step-up/webauthn/challenge',
+            response = client.post('/api/v5/auth/step-up/webauthn/challenge',
                 json={'challenge_id': 'test-challenge-123'})
             
             assert response.status_code == 200
@@ -284,12 +284,12 @@ class TestStepUpAuthEndpoints:
             assert data['options']['challenge'] == 'mock-webauthn-challenge'
             assert len(data['options']['allowCredentials']) == 1
 
-    def test_webauthn_challenge_invalid_challenge(self, authenticated_client):
+    def test_webauthn_challenge_invalid_challenge(self, client):
         """Test WebAuthn challenge with invalid challenge ID."""
         with patch('routes.v5.auth_api.auth_service') as mock_service:
             mock_service.get_step_up_challenge.return_value = None
             
-            response = authenticated_client.post('/api/v5/auth/step-up/webauthn/challenge',
+            response = client.post('/api/v5/auth/step-up/webauthn/challenge',
                 json={'challenge_id': 'invalid-challenge'})
             
             assert response.status_code == 400
@@ -297,7 +297,7 @@ class TestStepUpAuthEndpoints:
             assert data['success'] is False
             assert 'Invalid challenge' in data['error']
 
-    def test_webauthn_verify_endpoint(self, authenticated_client):
+    def test_webauthn_verify_endpoint(self, client):
         """Test WebAuthn assertion verification endpoint."""
         challenge_data = {
             'challenge_id': 'test-challenge-123',
@@ -325,7 +325,7 @@ class TestStepUpAuthEndpoints:
             mock_service.complete_step_up_challenge = Mock()
             mock_service.mark_session_step_up_complete = Mock()
             
-            response = authenticated_client.post('/api/v5/auth/step-up/webauthn/verify',
+            response = client.post('/api/v5/auth/step-up/webauthn/verify',
                 json={
                     'challenge_id': 'test-challenge-123',
                     'assertion': assertion
@@ -339,7 +339,7 @@ class TestStepUpAuthEndpoints:
             mock_service.complete_step_up_challenge.assert_called_once_with('test-challenge-123')
             mock_service.mark_session_step_up_complete.assert_called_once()
 
-    def test_webauthn_verify_failed(self, authenticated_client):
+    def test_webauthn_verify_failed(self, client):
         """Test WebAuthn verification failure."""
         challenge_data = {
             'challenge_id': 'test-challenge-123',
@@ -356,7 +356,7 @@ class TestStepUpAuthEndpoints:
             mock_service.get_step_up_challenge.return_value = challenge_data
             mock_service.verify_webauthn_assertion.return_value = verification_result
             
-            response = authenticated_client.post('/api/v5/auth/step-up/webauthn/verify',
+            response = client.post('/api/v5/auth/step-up/webauthn/verify',
                 json={
                     'challenge_id': 'test-challenge-123',
                     'assertion': {'id': 'mock-credential'}
@@ -367,7 +367,7 @@ class TestStepUpAuthEndpoints:
             assert data['success'] is False
             assert 'WebAuthn verification failed' in data['error']
 
-    def test_verify_step_up_endpoint(self, authenticated_client):
+    def test_verify_step_up_endpoint(self, client):
         """Test step-up verification status endpoint."""
         with patch('routes.v5.auth_api.auth_service') as mock_service:
             mock_service.session_has_step_up.return_value = True
@@ -376,7 +376,7 @@ class TestStepUpAuthEndpoints:
                 mock_g.session_id = 'test-session-456'
                 mock_g.auth_time = int(time.time()) - 100  # 100 seconds ago
                 
-                response = authenticated_client.post('/api/v5/auth/step-up/verify')
+                response = client.post('/api/v5/auth/step-up/verify')
                 
                 assert response.status_code == 200
                 data = json.loads(response.data)
@@ -385,7 +385,7 @@ class TestStepUpAuthEndpoints:
                 assert data['fresh_session'] is True
                 assert data['session_age'] == 100
 
-    def test_verify_step_up_no_step_up(self, authenticated_client):
+    def test_verify_step_up_no_step_up(self, client):
         """Test step-up verification when no step-up completed."""
         with patch('routes.v5.auth_api.auth_service') as mock_service:
             mock_service.session_has_step_up.return_value = False
@@ -394,7 +394,7 @@ class TestStepUpAuthEndpoints:
                 mock_g.session_id = 'test-session-456'
                 mock_g.auth_time = int(time.time()) - 400  # 400 seconds ago (old session)
                 
-                response = authenticated_client.post('/api/v5/auth/step-up/verify')
+                response = client.post('/api/v5/auth/step-up/verify')
                 
                 assert response.status_code == 200
                 data = json.loads(response.data)
@@ -403,26 +403,26 @@ class TestStepUpAuthEndpoints:
                 assert data['fresh_session'] is False
                 assert data['session_age'] == 400
 
-    def test_step_up_challenge_missing_data(self, authenticated_client):
+    def test_step_up_challenge_missing_data(self, client):
         """Test step-up challenge with missing data."""
-        response = authenticated_client.post('/api/v5/auth/step-up/challenge', json={})
+        response = client.post('/api/v5/auth/step-up/challenge', json={})
         
         assert response.status_code == 200  # Should still work with default return_to
         data = json.loads(response.data)
         assert data['success'] is True
 
-    def test_webauthn_challenge_missing_challenge_id(self, authenticated_client):
+    def test_webauthn_challenge_missing_challenge_id(self, client):
         """Test WebAuthn challenge without challenge ID."""
-        response = authenticated_client.post('/api/v5/auth/step-up/webauthn/challenge', json={})
+        response = client.post('/api/v5/auth/step-up/webauthn/challenge', json={})
         
         assert response.status_code == 400
         data = json.loads(response.data)
         assert data['success'] is False
         assert 'Challenge ID required' in data['error']
 
-    def test_webauthn_verify_missing_data(self, authenticated_client):
+    def test_webauthn_verify_missing_data(self, client):
         """Test WebAuthn verify without required data."""
-        response = authenticated_client.post('/api/v5/auth/step-up/webauthn/verify', json={})
+        response = client.post('/api/v5/auth/step-up/webauthn/verify', json={})
         
         assert response.status_code == 400
         data = json.loads(response.data)
