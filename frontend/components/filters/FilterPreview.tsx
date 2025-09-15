@@ -41,7 +41,6 @@ export function FilterPreview({
 
   // Normalize filters once and create a stable signature to trigger preview updates
   const normalizedFilters = useMemo(() => normalizeFilters(filters as any), [filters]);
-  const normalizedSignature = useMemo(() => JSON.stringify(normalizedFilters), [normalizedFilters]);
   
   // Memoize hasActiveFilters calculation
   const hasActiveFilters = useMemo(() => 

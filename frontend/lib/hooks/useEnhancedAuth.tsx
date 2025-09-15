@@ -68,9 +68,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const register = useCallback(async (data: any) => {
     try {
-      const user = await enhancedAuthService.register(data);
+      const newUser = await enhancedAuthService.register(data);
       // Note: User might need email verification before being fully authenticated
-      return user;
+      return newUser;
     } catch (error) {
       throw error;
     }
@@ -436,26 +436,24 @@ export function useAuthenticatedRequest() {
 // Error Handling Hook
 export function useAuthError() {
   const [error, setError] = useState<AuthError | null>(null);
-  const { createStepUpChallenge } = useStepUpAuth();
-
-  const handleError = useCallback(async (error: any) => {
-    if (error instanceof AuthError) {
-      setError(error);
+  const handleError = useCallback(async (authError: any) => {
+    if (authError instanceof AuthError) {
+      setError(authError);
 
       // Handle step-up authentication automatically
-      if (error.code === 'STEP_UP_REQUIRED' && error.step_up_challenge) {
+      if (authError.code === 'STEP_UP_REQUIRED' && authError.step_up_challenge) {
         // You might want to show a step-up modal here
-        console.log('Step-up authentication required:', error.step_up_challenge);
+        console.log('Step-up authentication required:', authError.step_up_challenge);
       }
 
       // Handle rate limiting
-      if (error.code === 'RATE_LIMIT_EXCEEDED') {
-        console.log('Rate limit exceeded, retry after:', error.retry_after);
+      if (authError.code === 'RATE_LIMIT_EXCEEDED') {
+        console.log('Rate limit exceeded, retry after:', authError.retry_after);
       }
     } else {
-      setError(new AuthError('Unknown error', 'UNKNOWN_ERROR', error instanceof Error ? error.message : String(error)));
+      setError(new AuthError('Unknown error', 'UNKNOWN_ERROR', authError instanceof Error ? authError.message : String(authError)));
     }
-  }, []);
+  }, [setError]);
 
   const clearError = useCallback(() => {
     setError(null);

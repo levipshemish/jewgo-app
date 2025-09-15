@@ -29,7 +29,7 @@ export function StepUpAuthModal({
   const [error, setError] = useState<string | null>(null);
   
   const { verifyStepUp } = useStepUpAuth();
-  const { authenticateWithWebAuthn, isSupported: isWebAuthnSupported } = useWebAuthn();
+  const { isSupported: isWebAuthnSupported } = useWebAuthn();
   const { handleError } = useAuthError();
 
   // Reset state when modal opens/closes

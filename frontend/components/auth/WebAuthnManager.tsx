@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useWebAuthn, useAuthError } from '../../lib/hooks/useEnhancedAuth';
-import { AuthError, WebAuthnCredential } from '../../lib/auth/enhanced-auth-service';
+import { AuthError } from '../../lib/auth/enhanced-auth-service';
 
 interface WebAuthnManagerProps {
   className?: string;
@@ -59,8 +59,8 @@ export function WebAuthnManager({ className = '' }: WebAuthnManagerProps) {
     }
   };
 
-  const handleRevokeCredential = async (credentialId: string, deviceName: string) => {
-    if (!confirm(`Are you sure you want to remove "${deviceName}"? This action cannot be undone.`)) {
+  const handleRevokeCredential = async (credentialId: string, credentialDeviceName: string) => {
+    if (!confirm(`Are you sure you want to remove "${credentialDeviceName}"? This action cannot be undone.`)) {
       return;
     }
 
@@ -96,7 +96,7 @@ export function WebAuthnManager({ className = '' }: WebAuthnManagerProps) {
               WebAuthn Not Supported
             </h3>
             <p className="mt-1 text-sm text-yellow-700">
-              Your browser doesn't support WebAuthn security keys. Please use a modern browser like Chrome, Firefox, or Safari.
+              Your browser doesn&apos;t support WebAuthn security keys. Please use a modern browser like Chrome, Firefox, or Safari.
             </p>
           </div>
         </div>
@@ -269,7 +269,7 @@ export function WebAuthnManager({ className = '' }: WebAuthnManagerProps) {
 
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500">
-                  After clicking "Register Security Key", you'll be prompted to use your security key or biometric authentication.
+                  After clicking &quot;Register Security Key&quot;, you&apos;ll be prompted to use your security key or biometric authentication.
                 </p>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
 import { AuthError } from '@/lib/auth/enhanced-auth-service';
 
 // Type definitions for better type safety
-interface UserData {
+interface _UserData {
   success: boolean;
   data?: {
     id: string;

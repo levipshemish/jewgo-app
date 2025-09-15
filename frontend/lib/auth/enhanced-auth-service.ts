@@ -321,7 +321,7 @@ class EnhancedAuthService {
       }, true);
 
       return response.ok;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
