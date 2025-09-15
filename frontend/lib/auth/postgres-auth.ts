@@ -96,9 +96,12 @@ class PostgresAuthClient {
     const isDirectBackend = this.baseUrl !== (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
     const url = isDirectBackend ? `${this.baseUrl}/api/v5/auth${endpoint}` : `${this.baseUrl}/api/v5/auth${endpoint}`;
     
-    const defaultHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    const defaultHeaders: Record<string, string> = {};
+    
+    // Only set Content-Type for requests with a body
+    if (options.body) {
+      defaultHeaders['Content-Type'] = 'application/json';
+    }
 
     // Cookie-mode: do not attach Authorization; rely on HttpOnly cookies
 
@@ -150,7 +153,8 @@ class PostgresAuthClient {
 
       // Handle 413 responses with user-friendly guidance
       if (response.status === 413) {
-        const hint = 'Request headers too large. This often happens when too many or oversized cookies are sent to the API domain. Try clearing cookies for api.jewgo.app (and jewgo.app if needed), then retry.';
+        const visibleCookies = this.getVisibleCookieNames();
+        const hint = `Request headers too large (413). This often happens when too many or oversized cookies are sent to the API domain. Visible cookies: [${visibleCookies.join(', ')}]. Try clearing cookies for api.jewgo.app (and jewgo.app if needed), then retry.`;
         throw new PostgresAuthError(hint, 'REQUEST_HEADERS_TOO_LARGE', 413);
       }
 
@@ -315,7 +319,7 @@ class PostgresAuthClient {
 
   /**
    * Debug: list cookie names visible to JS on this origin.
-   * Note: HttpOnly cookies (like auth cookies) won’t appear here.
+   * Note: HttpOnly cookies (like auth cookies) won't appear here.
    */
   public getVisibleCookieNames(): string[] {
     if (typeof document === 'undefined') return [];
@@ -327,6 +331,24 @@ class PostgresAuthClient {
         .map((c) => c.split('=')[0]);
     } catch {
       return [];
+    }
+  }
+
+  /**
+   * Debug: get total cookie size for troubleshooting 413 errors
+   */
+  public getCookieSizeInfo(): { totalSize: number; cookieCount: number; cookies: string[] } {
+    if (typeof document === 'undefined') return { totalSize: 0, cookieCount: 0, cookies: [] };
+    try {
+      const cookieString = document.cookie;
+      const cookies = cookieString.split(';').map((c) => c.trim()).filter(Boolean);
+      return {
+        totalSize: cookieString.length,
+        cookieCount: cookies.length,
+        cookies: cookies.map((c) => c.split('=')[0])
+      };
+    } catch {
+      return { totalSize: 0, cookieCount: 0, cookies: [] };
     }
   }
 
@@ -407,9 +429,14 @@ class PostgresAuthClient {
       return result.user;
     } catch (err) {
       if (err instanceof PostgresAuthError && err.status === 413) {
-        // Log a concise hint plus visible cookies to aid cleanup
-        const cookies = this.getVisibleCookieNames();
-        console.error('[Auth] Profile fetch failed: 413 Request Too Large. Tip: clear cookies for api.jewgo.app. Visible cookies:', cookies);
+        // Log detailed cookie information to aid debugging
+        const cookieInfo = this.getCookieSizeInfo();
+        console.error('[Auth] Profile fetch failed: 413 Request Too Large. Cookie info:', {
+          totalSize: cookieInfo.totalSize,
+          cookieCount: cookieInfo.cookieCount,
+          cookies: cookieInfo.cookies
+        });
+        console.error('[Auth] Tip: clear cookies for api.jewgo.app if total size > 4KB');
       }
       throw err;
     }

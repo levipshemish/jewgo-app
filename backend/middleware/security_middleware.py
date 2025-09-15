@@ -184,11 +184,12 @@ class SecurityMiddleware:
     
     def _validate_request_size(self) -> bool:
         """Validate request size limits."""
+        # Only validate content length for requests that have a body
         if request.content_length and request.content_length > self.max_content_length:
             return False
         
-        # Check JSON size if present
-        if request.is_json:
+        # Check JSON size if present (only for requests with JSON body)
+        if request.is_json and request.method in ['POST', 'PUT', 'PATCH']:
             try:
                 json_data = request.get_json()
                 if json_data and len(json.dumps(json_data)) > self.max_json_size:
