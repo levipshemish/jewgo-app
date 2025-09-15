@@ -196,7 +196,10 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             willChange: 'scroll-position', // Optimize for scrolling
             transform: 'translateZ(0)', // Force hardware acceleration
             backfaceVisibility: 'hidden', // Prevent flickering on transforms
-            perspective: '1000px' // Enable 3D transforms
+            perspective: '1000px', // Enable 3D transforms
+            scrollSnapType: 'x mandatory', // Enable horizontal scroll snapping
+            scrollPaddingLeft: '0px',
+            scrollPaddingRight: '0px'
           }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -213,7 +216,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
               style={{ 
                 minWidth: '100%',
                 willChange: 'transform', // Optimize for transforms
-                backfaceVisibility: 'hidden' // Prevent flickering on transforms
+                backfaceVisibility: 'hidden', // Prevent flickering on transforms
+                scrollSnapAlign: 'start', // Snap to the start of each image
+                scrollSnapStop: 'always' // Always stop at each snap point
               }}
             >
               {/* Image with loading state */}

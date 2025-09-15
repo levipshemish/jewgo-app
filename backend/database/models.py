@@ -448,7 +448,7 @@ class Mikvah(Base):
     """Mikvah model for Jewish ritual baths.
     This model represents mikvahs with specialized religious requirements.
     """
-    __tablename__ = "mikvahs"
+    __tablename__ = "mikvah"
     
     # System fields
     id = Column(Integer, primary_key=True)

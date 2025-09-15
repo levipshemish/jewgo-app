@@ -14,6 +14,9 @@
 .scrollContainer {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 0px;
+  scroll-padding-right: 0px;
 }
 
 /* Ensure proper touch behavior */
@@ -21,6 +24,12 @@
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+}
+
+/* Individual image container snap behavior */
+.imageContainer {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 /* Custom range slider styles */

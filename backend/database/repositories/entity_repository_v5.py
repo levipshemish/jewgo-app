@@ -55,11 +55,11 @@ class EntityRepositoryV5(BaseRepository):
         },
         'mikvahs': {
             'model_name': 'Mikvah',
-            'table_name': 'mikvahs',
+            'table_name': 'mikvah',
             'primary_key': 'id',
             'default_sort': 'created_at',
             'searchable_fields': ['name', 'description', 'address'],
-            'filterable_fields': ['status', 'accessibility', 'appointment_required'],
+            'filterable_fields': ['accessibility', 'appointment_required'],
             'relations': ['hours'],
             'geospatial': True,
             'supports_reviews': False
