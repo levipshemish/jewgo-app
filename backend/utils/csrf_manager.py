@@ -308,3 +308,13 @@ class CSRFManager:
 
 # Global CSRF manager instance
 csrf_manager = CSRFManager()
+
+
+def get_csrf_manager() -> CSRFManager:
+    """
+    Get the global CSRF manager instance.
+    
+    Returns:
+        CSRFManager instance
+    """
+    return csrf_manager

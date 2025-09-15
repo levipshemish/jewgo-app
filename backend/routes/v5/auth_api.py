@@ -23,7 +23,7 @@ from services.auth.token_manager_v5 import TokenManagerV5
 from services.auth.jwks_manager import JWKSManager
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5
-from utils.csrf_manager import get_csrf_manager
+# CSRF manager import moved to function level to avoid circular imports
 
 logger = get_logger(__name__)
 
@@ -39,8 +39,12 @@ jwks_manager = JWKSManager()
 
 # Get CSRF manager (will be initialized by middleware)
 def get_csrf_manager_for_auth():
-    from utils.csrf_manager import get_csrf_manager
-    return get_csrf_manager()
+    try:
+        from utils.csrf_manager import get_csrf_manager
+        return get_csrf_manager()
+    except ImportError as e:
+        logger.warning(f"Could not import CSRF manager: {e}")
+        return None
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -589,6 +593,11 @@ def csrf_token():
         # Generate CSRF token
         user_agent = request.headers.get('User-Agent', '')
         csrf_manager = get_csrf_manager_for_auth()
+        if not csrf_manager:
+            return jsonify({
+                'success': False,
+                'error': 'CSRF manager not available'
+            }), 503
         csrf_token = csrf_manager.generate_token(session_id, user_agent)
         
         # Create response
