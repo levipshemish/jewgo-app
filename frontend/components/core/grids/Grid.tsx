@@ -254,7 +254,7 @@ export default function Grid({
     try {
       if (useRealData && !backendError) {
         // Try real API first - use cursor-based pagination
-        const response = await fetchItems(24, nextCursor, buildSearchParams());
+        const response = await fetchItems(24, nextCursor ?? undefined, buildSearchParams());
         setItems((prev) => {
           // Deduplicate items by ID to prevent duplicates
           const existingIds = new Set(prev.map(item => item.id));

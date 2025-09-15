@@ -9,14 +9,14 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
 - [-] 2. CSRF Protection System Implementation
-- [-] 2.1 Create CSRF Manager Core Module
+- [x] 2.1 Create CSRF Manager Core Module
   - Implement CSRFManager class with HMAC-based token generation using session_id, user_agent, and day bucket
   - Add token validation with timing attack protection using constant-time comparison
   - Create environment-aware cookie configuration method
   - Write unit tests for CSRF token generation, validation, and timing attack resistance
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 2.2 Implement CSRF Middleware Integration
+- [-] 2.2 Implement CSRF Middleware Integration
   - Add blueprint-wide before_request hook for mutating HTTP methods (POST, PUT, PATCH, DELETE)
   - Create GET /api/v5/auth/csrf endpoint to issue CSRF tokens and set secure cookies
   - Implement 403 Forbidden responses for missing or invalid CSRF tokens

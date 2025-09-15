@@ -54,8 +54,8 @@ export default function EateryGridWithLocation({
   const {
     userLocation,
     permissionStatus,
-    isLoading: locationLoading,
-    error: locationError,
+    isLoading: _locationLoading,
+    error: _locationError,
     requestLocation: _requestLocation,
     transformItems,
     sortItems,
@@ -151,7 +151,7 @@ export default function EateryGridWithLocation({
     const sorted = sortItems(transformed);
     
     return sorted;
-  }, [restaurants, transformItems, sortItems, userLocation]);
+  }, [restaurants, transformItems, sortItems]);
 
   // Filter restaurants based on category and search
   const filteredRestaurants = useMemo(() => {

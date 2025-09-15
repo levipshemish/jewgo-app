@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     // Parse search parameters
-    const searchParams = request.nextUrl.searchParams;
+    // Note: Using request.nextUrl.searchParams directly below
 
     // Call backend directly
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';

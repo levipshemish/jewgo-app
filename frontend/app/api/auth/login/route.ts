@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // For now, return a proper error response instead of causing 500 errors
     // TODO: Implement proper authentication when backend auth system is ready

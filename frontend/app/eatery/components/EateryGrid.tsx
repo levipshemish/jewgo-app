@@ -41,7 +41,7 @@ export default function EateryGrid({
   const [restaurants, setRestaurants] = useState<LightRestaurant[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [_nextCursor, setNextCursor] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState<number | null>(null)
   const [backendError, setBackendError] = useState(false)
@@ -91,7 +91,7 @@ export default function EateryGrid({
 
     return {
       ...restaurant,
-      distance: distance,
+      distance,
       // Store formatted distance separately for display
       formattedDistance: finalDistance
     }
@@ -165,7 +165,7 @@ export default function EateryGrid({
         restaurants: responseRestaurants,
         hasMore: hasMoreData,
         nextCursor: newNextCursor,
-        nextPage: nextPage,
+        nextPage,
         limit: response.limit || limit,
         totalCount: response.total_count || null
       }
@@ -369,7 +369,7 @@ export default function EateryGrid({
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, useRealData, backendError, fetchRestaurants, buildSearchParams, restaurants.length, nextCursor, currentPage]);
+  }, [loading, hasMore, useRealData, backendError, fetchRestaurants, buildSearchParams, restaurants.length, currentPage]);
 
   // Unified effect for all data loading - prevents duplicate API calls
   useEffect(() => {

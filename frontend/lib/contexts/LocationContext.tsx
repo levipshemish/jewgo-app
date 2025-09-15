@@ -179,7 +179,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         setError(errorMessage);
       }
     })();
-  }, [isLoading, lastRequestTime]);
+  }, [isLoading, lastRequestTime, retryCount]);
 
   // Load location data and popup state from localStorage on mount and check actual browser permissions
   useEffect(() => {

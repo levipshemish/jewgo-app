@@ -146,7 +146,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     }
   }, [allImages, onImagesProcessed]);
 
-  const handleImageError = (index: number) => {
+  const _handleImageError = (index: number) => {
     setImageStates(prev => {
       const newStates = new Map(prev);
       newStates.set(index, 'error');
@@ -154,7 +154,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     });
   };
 
-  const handleImageLoad = (index: number) => {
+  const _handleImageLoad = (index: number) => {
     setImageStates(prev => {
       const newStates = new Map(prev);
       newStates.set(index, 'loaded');

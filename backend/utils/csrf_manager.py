@@ -9,7 +9,7 @@ import hmac
 import hashlib
 import secrets
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 import os
 from flask import request
@@ -57,7 +57,7 @@ class CSRFManager:
         """
         try:
             # Get current day bucket (YYYY-MM-DD format)
-            day_bucket = datetime.utcnow().strftime('%Y-%m-%d')
+            day_bucket = datetime.now(timezone.utc).strftime('%Y-%m-%d')
             
             # Use provided user_agent or get from request
             if user_agent is None:
@@ -140,8 +140,8 @@ class CSRFManager:
                 return False
             
             # Validate day bucket (current day or previous day for clock skew)
-            current_day = datetime.utcnow().strftime('%Y-%m-%d')
-            previous_day = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
+            current_day = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+            previous_day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
             
             if token_day_bucket not in [current_day, previous_day]:
                 logger.warning(f"CSRF token expired: {token_day_bucket}")

@@ -96,7 +96,7 @@ export default function ShulCard({
     return ""
   }
 
-  const handleCardClick = (data: CardData) => {
+  const handleCardClick = (_data: CardData) => {
     // Navigate to ID-based shul detail page
     if (typeof window !== 'undefined') {
       window.location.href = `/shuls/${shul.id}`
