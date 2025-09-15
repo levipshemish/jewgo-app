@@ -570,7 +570,7 @@ def create_app(config_class=None):
                 logger.warning(f"Could not import v5 reviews API blueprint: {e}")
             except Exception as e:
                 logger.warning(f"Could not register v5 reviews API blueprint: {e}")
-        
+    
     # Register v5 optimization API
     if feature_flags_v5.is_enabled('optimization_api_v5', default=True):
         try:
