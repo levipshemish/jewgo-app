@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { postgresAuth } from '@/lib/auth/postgres-auth';
 import { 
-  DeviceMobileIcon, 
+  DevicePhoneMobileIcon, 
   ComputerDesktopIcon, 
   GlobeAltIcon,
   ClockIcon,
@@ -36,7 +36,7 @@ interface SessionData {
 }
 
 interface SessionListProps {
-  onSessionRevoked?: (sessionId: string) => void;
+  onSessionRevoked?: (sessionId: string, sessionName?: string) => void;
   onAllSessionsRevoked?: () => void;
 }
 
@@ -97,9 +97,13 @@ export default function SessionList({ onSessionRevoked, onAllSessionsRevoked }: 
         throw new Error(`Failed to revoke session: ${response.statusText}`);
       }
 
+      // Get session name before removing from list
+      const sessionToRevoke = sessions.find(s => s.id === sessionId);
+      const sessionName = sessionToRevoke?.device_info?.user_agent || 'Unknown Device';
+      
       // Remove session from list
       setSessions(prev => prev.filter(session => session.id !== sessionId));
-      onSessionRevoked?.(sessionId);
+      onSessionRevoked?.(sessionId, sessionName);
 
       // If current session was revoked, redirect to login
       const currentSession = sessions.find(s => s.id === sessionId);
@@ -151,12 +155,12 @@ export default function SessionList({ onSessionRevoked, onAllSessionsRevoked }: 
 
   const getDeviceIcon = (deviceType: string) => {
     switch (deviceType) {
-      case 'mobile':
-        return <DeviceMobileIcon className="h-5 w-5" />;
+        case 'mobile':
+          return <DevicePhoneMobileIcon className="h-5 w-5" />;
       case 'desktop':
         return <ComputerDesktopIcon className="h-5 w-5" />;
       case 'tablet':
-        return <DeviceMobileIcon className="h-5 w-5" />;
+        return <DevicePhoneMobileIcon className="h-5 w-5" />;
       default:
         return <GlobeAltIcon className="h-5 w-5" />;
     }
@@ -271,7 +275,7 @@ export default function SessionList({ onSessionRevoked, onAllSessionsRevoked }: 
           <GlobeAltIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No active sessions</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have any active sessions at the moment.
+            You don&apos;t have any active sessions at the moment.
           </p>
         </div>
       ) : (

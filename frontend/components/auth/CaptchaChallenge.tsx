@@ -22,7 +22,7 @@ interface CaptchaChallengeProps {
   className?: string;
 }
 
-interface CaptchaWidget {
+interface _CaptchaWidget {
   reset: () => void;
   getResponse: () => string;
   execute: () => void;
@@ -101,15 +101,15 @@ export default function CaptchaChallenge({
     try {
       const id = (window as any).turnstile.render(widgetRef.current, {
         sitekey: siteKey,
-        theme: theme,
-        size: size,
+        theme,
+        size,
         callback: (token: string) => {
           setIsVerifying(true);
           onVerify(token);
         },
-        'error-callback': (error: string) => {
-          setError(`Turnstile error: ${error}`);
-          onError?.(error);
+        'error-callback': (turnstileError: string) => {
+          setError(`Turnstile error: ${turnstileError}`);
+          onError?.(turnstileError);
         },
         'expired-callback': () => {
           setError('CAPTCHA expired. Please try again.');
@@ -121,7 +121,7 @@ export default function CaptchaChallenge({
         }
       });
       setWidgetId(id);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to render Turnstile widget');
       onError?.('Failed to render Turnstile widget');
     }
@@ -133,8 +133,8 @@ export default function CaptchaChallenge({
     try {
       const id = (window as any).grecaptcha.render(widgetRef.current, {
         sitekey: siteKey,
-        theme: theme,
-        size: size,
+        theme,
+        size,
         callback: (token: string) => {
           setIsVerifying(true);
           onVerify(token);
@@ -149,7 +149,7 @@ export default function CaptchaChallenge({
         }
       });
       setWidgetId(id);
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to render reCAPTCHA widget');
       onError?.('Failed to render reCAPTCHA widget');
     }
@@ -192,7 +192,7 @@ export default function CaptchaChallenge({
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <Alert variant="destructive">
+          <Alert className="border-red-200 bg-red-50 text-red-800">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}

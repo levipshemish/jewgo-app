@@ -4,8 +4,8 @@ import React, { createContext, useContext, useEffect, useState, useRef, useCallb
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 // Global flag to prevent multiple auth checks across all instances
-let globalAuthCheckDone = false;
-let globalAuthCheckPromise: Promise<void> | null = null;
+const _globalAuthCheckDone = false;
+const _globalAuthCheckPromise: Promise<void> | null = null;
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -22,10 +22,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
-  const hasRunRef = useRef(false);
+  const [_authChecked, _setAuthChecked] = useState(false);
+  const _hasRunRef = useRef(false);
 
-  const checkAuth = useCallback(async () => {
+  const _checkAuth = useCallback(async () => {
     try {
       // Probe backend profile; 200 => authenticated, 401 => not
       const currentUser = await postgresAuth.getProfile();

@@ -129,7 +129,7 @@ export async function proxyToBackend(
     setCookieHeaders.forEach(cookieValue => {
       try {
         nextResponse.headers.append('Set-Cookie', cookieValue);
-      } catch (error) {
+      } catch (_error) {
         // Fallback for test environments where append might not be available
         nextResponse.headers.set('Set-Cookie', cookieValue);
       }

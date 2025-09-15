@@ -62,75 +62,31 @@ export function FilterPreview({
     setPreview(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Use the restaurants API module
-      const filterParams: Record<string, any> = {};
-      
       // Normalize filters to use standard field names
-      const normalizedFilters = normalizeFilters(filterParams);
-      
-      // Build query parameters
-      const params = new URLSearchParams();
-      params.set('limit', '1'); // Only need count, not actual data
-      
-      // Add filter parameters
-      Object.entries(normalizedFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          if (Array.isArray(value)) {
-            if (value.length > 0) {
-              params.set(key, JSON.stringify(value));
-            }
-          } else {
-            // Special handling for distance: convert miles to meters and use radius_m parameter
-            if (key === 'distanceMi' && typeof value === 'number') {
-              const radiusMeters = value * 1609.34; // Convert miles to meters
-              params.set('radius_m', radiusMeters.toString());
-            } else {
-              params.set(key, String(value));
-            }
-          }
-        }
-      });
+      const normalizedFilters = normalizeFilters(filters as any);
 
-      // Add location if available
-      if (userLocation) {
-        params.set('lat', userLocation.latitude.toString());
-        params.set('lng', userLocation.longitude.toString());
-      }
-      for (const [key, value] of params.entries()) {
-        if (key !== 'lat' && key !== 'lng') {
-          filterParams[key] = value;
-        }
-      }
-      
-      const location = userLocation ? {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude
-      } : undefined;
-      
+      // Build location payload (fetchRestaurants will attach radius if present)
+      const location = userLocation
+        ? { latitude: userLocation.latitude, longitude: userLocation.longitude }
+        : undefined;
+
+      // Ask backend for count by requesting minimal page
       const response = await fetchRestaurants({
         page: 1,
-        limit: 50,
-        filters: filterParams,
-        location
+        limit: 1, // Only need count; backend returns total_count
+        filters: normalizedFilters as any,
+        location,
+        includeFilterOptions: false,
       });
       
       // Debug: Log the response structure to understand what we're getting - removed
       
       // Handle different response structures
-      let items: any[] = [];
-      if (response.success && Array.isArray(response.restaurants)) {
-        // Direct response format
-        items = response.restaurants;
-      } else if (Array.isArray(response)) {
-        // Array response format
-        items = response;
-      } else {
-        console.error('Unexpected response format:', response);
-        throw new Error('Invalid response format');
-      }
-      
+      // Prefer backend-provided total_count when available
+      const total = (response as any).total_count ?? (response as any).totalRestaurants ?? (response.restaurants?.length || 0);
+
       setPreview({
-        count: items.length,
+        count: Number(total) || 0,
         loading: false,
         error: null,
         hasValidationErrors: false

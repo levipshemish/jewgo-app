@@ -30,6 +30,15 @@ export function runFilter(maxVisible: number = MAX_VISIBLE): void {
   const startTime = performance.now();
   filterCount++;
 
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 runFilter called with:', {
+      restaurantCount: state.restaurants.length,
+      filters: state.filters,
+      userLoc: state.userLoc
+    });
+  }
+
   try {
     const filteredIds = performSynchronousFilter(
       state.restaurants,
@@ -66,6 +75,13 @@ function performSynchronousFilter(
   }
 
   let filtered = restaurants.filter(restaurant => {
+    // Debug: Log first restaurant to see its structure
+    if (process.env.NODE_ENV === 'development' && restaurants.indexOf(restaurant) === 0) {
+      console.log('🔍 First restaurant structure:', restaurant);
+      console.log('🔍 Filters being applied:', filters);
+      console.log('🔍 User location:', userLoc);
+    }
+
     // Search query filter (q) - comprehensive search across multiple fields
     if (filters.q) {
       const query = filters.q.toLowerCase().trim();
@@ -130,8 +146,8 @@ function performSynchronousFilter(
     }
     
     // Open now filter
-    if (filters.openNow && restaurant.is_open !== undefined) {
-      if (!restaurant.is_open) {
+    if (filters.openNow && restaurant.openNow !== undefined) {
+      if (!restaurant.openNow) {
         return false;
       }
     }
@@ -143,7 +159,7 @@ function performSynchronousFilter(
       
       switch (filters.hoursFilter) {
         case 'openNow':
-          if (restaurant.is_open !== undefined && !restaurant.is_open) {
+          if (restaurant.openNow !== undefined && !restaurant.openNow) {
             return false;
           }
           break;
@@ -199,8 +215,17 @@ function performSynchronousFilter(
     if (distanceMi && userLoc) {
       const distance = calculateDistance(userLoc, restaurant.pos);
       if (distance > distanceMi) {
+        // Debug: Log why restaurant was filtered out by distance
+        if (process.env.NODE_ENV === 'development' && restaurants.indexOf(restaurant) < 3) {
+          console.log(`🔍 Restaurant ${restaurant.name} filtered by distance: ${distance.toFixed(2)}mi > ${distanceMi}mi`);
+        }
         return false;
       }
+    }
+    
+    // Debug: Log successful restaurant
+    if (process.env.NODE_ENV === 'development' && restaurants.indexOf(restaurant) < 3) {
+      console.log(`✅ Restaurant ${restaurant.name} passed all filters`);
     }
     
     return true;

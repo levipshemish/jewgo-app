@@ -31,13 +31,13 @@ export default function SessionManager({ className = '' }: SessionManagerProps) 
     sessionName?: string;
   } | null>(null);
 
-  const showNotification = useCallback((notification: NotificationState) => {
-    setNotification(notification);
+  const showNotification = useCallback((notificationState: NotificationState) => {
+    setNotification(notificationState);
     // Auto-hide after 5 seconds
     setTimeout(() => setNotification(null), 5000);
   }, []);
 
-  const handleSessionRevoked = useCallback((sessionId: string) => {
+  const handleSessionRevoked = useCallback((_sessionId: string) => {
     showNotification({
       type: 'success',
       message: 'Session revoked successfully',
@@ -165,8 +165,8 @@ export default function SessionManager({ className = '' }: SessionManagerProps) 
       {/* Session List */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <SessionList
-          onSessionRevoked={handleSessionRevoked}
-          onAllSessionsRevoked={handleAllSessionsRevoked}
+          onSessionRevoked={(sessionId) => confirmRevokeSession(sessionId, 'Session')}
+          onAllSessionsRevoked={confirmRevokeAllSessions}
         />
       </div>
 
@@ -276,7 +276,7 @@ export default function SessionManager({ className = '' }: SessionManagerProps) 
                   {showConfirmation.type === 'all' ? (
                     <>
                       Are you sure you want to revoke all active sessions? This will log you out 
-                      from all devices and you'll need to sign in again.
+                      from all devices and you&apos;ll need to sign in again.
                     </>
                   ) : (
                     <>

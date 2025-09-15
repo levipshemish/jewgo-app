@@ -155,7 +155,7 @@ class PostgresAuthClient {
       }
       
       // Handle timeout errors
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new PostgresAuthError(
           'Request timeout - please try again',
           'REQUEST_TIMEOUT',
@@ -543,7 +543,7 @@ class PostgresAuthClient {
           await this.refreshAccessToken();
           // Retry the original call
           return await apiCall();
-        } catch (refreshError) {
+        } catch (_refreshError) {
           // Refresh failed, clear tokens and throw original error
           this.clearTokens();
           throw error;

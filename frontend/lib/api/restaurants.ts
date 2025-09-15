@@ -59,7 +59,7 @@ export async function fetchRestaurants({
 }): Promise<RestaurantsResponse> {
   try {
     // Normalize distance: if distanceMi/maxDistanceMi present and location provided, attach radius (km)
-    let normalizedFilters = { ...filters } as Record<string, any>;
+    const normalizedFilters = { ...filters } as Record<string, any>;
     let locationPayload = location as any;
     const distanceMi = (filters as any).distanceMi ?? (filters as any).maxDistanceMi ?? undefined;
     if (location && distanceMi) {
@@ -73,7 +73,7 @@ export async function fetchRestaurants({
       page: page || undefined, // Only pass page if it's provided
       limit,
       filters: normalizedFilters,
-      location: locationPayload ? {
+      location: locationPayload && location ? {
         lat: location.latitude,
         lng: location.longitude,
         radius: locationPayload.radius,

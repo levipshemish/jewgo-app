@@ -284,6 +284,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
       rating: restaurant.google_rating || restaurant.rating,
       kosher: restaurant.kosher_category?.toUpperCase() as "MEAT" | "DAIRY" | "PAREVE" || "PAREVE",
       openNow: restaurant.status === 'active',
+      is_open: restaurant.is_open,
       agencies: restaurant.certifying_agency ? [restaurant.certifying_agency] : [],
       // Include additional fields for Card component
       image_url: restaurant.image_url,
@@ -296,7 +297,6 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
       listing_type: restaurant.listing_type,
       certifying_agency: restaurant.certifying_agency,
       kosher_category: restaurant.kosher_category,
-      is_open: restaurant.is_open,
       kosher_details: restaurant.kosher_details,
       google_rating: restaurant.google_rating,
       quality_rating: restaurant.quality_rating
