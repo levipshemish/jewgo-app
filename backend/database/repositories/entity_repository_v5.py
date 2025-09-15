@@ -521,7 +521,11 @@ class EntityRepositoryV5(BaseRepository):
                 else:
                     logger.info(f"DEBUG CURSOR: No cursors generated because result_entities is empty")
                 
-                return result_entities, next_cursor, prev_cursor, 0  # Cursor pagination doesn't provide total count
+                # Get total count for cursor pagination
+                total_count = self.get_entity_count(entity_type, filters)
+                logger.info(f"Total count for {entity_type}: {total_count}")
+                
+                return result_entities, next_cursor, prev_cursor, total_count
                 
         except Exception as e:
             logger.error(f"Error getting {entity_type} with cursor: {e}")
