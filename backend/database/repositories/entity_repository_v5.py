@@ -896,13 +896,20 @@ class EntityRepositoryV5(BaseRepository):
             if filters.get('category') and hasattr(model_class, 'kosher_category'):
                 query = query.filter(model_class.kosher_category == filters['category'])
             
-        # Hours filter - completely disabled due to SQLAlchemy TextClause errors
-        # TODO: Implement proper hours filtering once SQLAlchemy issues are resolved
-        # The hours_json field is causing SQLAlchemy errors when performing any text operations
-        # This needs to be investigated and fixed at the database schema level
-        # Completely removed conditional check to avoid any SQLAlchemy issues
-        # if filters.get('hoursFilter') and hasattr(model_class, 'hours_json'):
-        #     pass
+        # Hours filter - simplified implementation using basic text matching
+        if filters.get('hoursFilter') and hasattr(model_class, 'hours_json'):
+            hours_filter = filters.get('hoursFilter')
+            if hours_filter == 'openNow':
+                # Simple text search for open_now: true (works with Text field)
+                query = query.filter(
+                    model_class.hours_json.contains('"open_now": true')
+                )
+            elif hours_filter in ['morning', 'afternoon', 'evening', 'lateNight']:
+                # For time periods, just ensure hours_json exists and is not empty
+                query = query.filter(
+                    model_class.hours_json.isnot(None),
+                    model_class.hours_json != ''
+                )
             
             # Exact field filters for remaining fields
             filterable_fields = mapping.get('filterable_fields', [])

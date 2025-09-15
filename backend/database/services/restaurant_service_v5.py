@@ -216,21 +216,26 @@ class RestaurantServiceV5:
                 
                 filter_options['kosherDetails'] = sorted(list(kosher_details))
                 
-                # Get hours options based on actual restaurant data
-                # Count restaurants with hours data
-                # Temporarily disabled due to SQLAlchemy TextClause errors
-                # TODO: Implement proper hours data counting once SQLAlchemy issues are resolved
-                restaurants_with_hours = 0  # For now, assume no restaurants have hours data
-                
-                logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
-                
-        # Count restaurants currently open (based on open_now field in hours_json)
-        # Temporarily disabled due to SQLAlchemy TextClause errors
-        # TODO: Implement proper open_now detection once SQLAlchemy issues are resolved
-        # The hours_json field is causing SQLAlchemy errors when performing any text operations
-        restaurants_open_now = 0  # For now, assume no restaurants are open
-                
-                logger.info(f"Restaurants currently open: {restaurants_open_now}")
+        # Get hours options based on actual restaurant data
+        # Count restaurants with hours data using simple text checks
+        try:
+            restaurants_with_hours = session.query(Restaurant).filter(
+                Restaurant.hours_json.isnot(None),
+                Restaurant.hours_json != ''
+            ).count()
+            
+            logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
+            
+            # Count restaurants currently open using simple text search
+            restaurants_open_now = session.query(Restaurant).filter(
+                Restaurant.hours_json.contains('"open_now": true')
+            ).count()
+                    
+            logger.info(f"Restaurants currently open: {restaurants_open_now}")
+        except Exception as e:
+            logger.error(f"Error counting restaurants with hours: {e}")
+            restaurants_with_hours = 0
+            restaurants_open_now = 0
                 
                 # Build hours options based on actual data availability
                 hours_options = []
