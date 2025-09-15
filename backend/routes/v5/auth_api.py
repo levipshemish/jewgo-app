@@ -273,7 +273,7 @@ def logout():
 
 
 @auth_bp.route('/refresh', methods=['POST'])
-@rate_limit_by_user(max_requests=30, window_minutes=60)  # Allow frequent token refresh
+@rate_limit_by_user(max_requests=100, window_minutes=60)  # Allow frequent token refresh
 def refresh_token():
     """Refresh access token using refresh token."""
     try:
@@ -326,7 +326,7 @@ def refresh_token():
 
 @auth_bp.route('/profile', methods=['GET'])
 @auth_required
-@rate_limit_by_user(max_requests=100, window_minutes=60)
+@rate_limit_by_user(max_requests=300, window_minutes=60)  # More lenient for passive auth checks
 def get_profile():
     """Get current user profile."""
     try:

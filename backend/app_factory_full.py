@@ -261,32 +261,45 @@ def create_app(config_class=None):
         
     logger.info("Final CORS origins configuration", cors_origins=cors_origins)
     
-    # Configure CORS - Disabled since nginx handles CORS
-    # CORS(
-    #     app,
-    #     origins=cors_origins,
-    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    #     allow_headers=[
-    #         "Content-Type",
-    #         "Authorization",
-    #         "Accept",
-    #         "Origin",
-    #         "X-Requested-With",
-    #         "X-Forwarded-For",
-    #         "X-Real-IP",
-    #         "Cache-Control",
-    #         "Pragma",
-    #     ],
-    #     expose_headers=[
-    #         "Content-Type",
-    #         "Content-Length",
-    #         "Cache-Control",
-    #         "Pragma",
-    #     ],
-    #     supports_credentials=True,
-    #     max_age=86400,  # Cache preflight for 24 hours
-    #     send_wildcard=False,  # Don't send wildcard, send specific origin
-    # )
+    # Configure CORS - Use custom middleware as fallback to Nginx
+    try:
+        from middleware.cors_middleware import create_cors_middleware
+        cors_middleware = create_cors_middleware(app)
+        logger.info("CORS middleware registered as fallback")
+    except Exception as e:
+        logger.warning(f"Could not register CORS middleware: {e}")
+        # Fallback to Flask-CORS if custom middleware fails
+        try:
+            from flask_cors import CORS
+            CORS(
+                app,
+                origins=cors_origins,
+                methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                allow_headers=[
+                    "Content-Type",
+                    "Authorization",
+                    "Accept",
+                    "Origin",
+                    "X-Requested-With",
+                    "X-Forwarded-For",
+                    "X-Real-IP",
+                    "Cache-Control",
+                    "Pragma",
+                    "X-CSRF-Token",
+                ],
+                expose_headers=[
+                    "Content-Type",
+                    "Content-Length",
+                    "Cache-Control",
+                    "Pragma",
+                ],
+                supports_credentials=True,
+                max_age=86400,  # Cache preflight for 24 hours
+                send_wildcard=False,  # Don't send wildcard, send specific origin
+            )
+            logger.info("Flask-CORS registered as fallback")
+        except Exception as e2:
+            logger.error(f"Could not register any CORS middleware: {e2}")
     
     # Attach minimal redaction filter to prevent sensitive values in logs
     try:
@@ -467,6 +480,14 @@ def create_app(config_class=None):
         logger.warning(f"Could not import v5 middleware: {e}")
     except Exception as e:
         logger.error(f"Error registering v5 middleware: {e}")
+    
+    # Register CSRF middleware
+    try:
+        from middleware.csrf_v5 import register_csrf_middleware
+        register_csrf_middleware(app)
+        logger.info("CSRF middleware registered successfully")
+    except Exception as e:
+        logger.warning(f"Could not register CSRF middleware: {e}")
     
     # Register v5 API blueprints with feature flag controls
     try:

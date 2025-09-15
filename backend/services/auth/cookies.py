@@ -187,7 +187,11 @@ def _cookie_security() -> Tuple[bool, str, str | None]:
 def set_auth(response, access_token: str, refresh_token: str, access_expires_in: int) -> None:
     """Set HttpOnly auth cookies on a Flask response object."""
     secure, samesite, domain = _cookie_security()
-    refresh_ttl = int(os.getenv("REFRESH_TTL_SECONDS", str(45 * 24 * 3600)))
+    refresh_ttl = int(os.getenv("REFRESH_TTL_SECONDS", str(30 * 24 * 3600)))  # 30 days default
+
+    # Ensure access token expiry is reasonable (max 15 minutes for security)
+    max_access_ttl = 15 * 60  # 15 minutes
+    actual_access_ttl = min(int(access_expires_in), max_access_ttl)
 
     response.set_cookie(
         "access_token",
@@ -195,7 +199,7 @@ def set_auth(response, access_token: str, refresh_token: str, access_expires_in:
         httponly=True,
         secure=secure,
         samesite=samesite,
-        max_age=int(access_expires_in),
+        max_age=actual_access_ttl,
         domain=domain,
     )
     response.set_cookie(

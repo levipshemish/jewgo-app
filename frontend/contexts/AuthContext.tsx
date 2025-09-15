@@ -4,8 +4,9 @@ import React, { createContext, useContext, useEffect, useState, useRef, useCallb
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 // Global flag to prevent multiple auth checks across all instances
-const _globalAuthCheckDone = false;
-const _globalAuthCheckPromise: Promise<void> | null = null;
+// Note: These are currently unused but kept for future optimization
+// const _globalAuthCheckDone = false;
+// const _globalAuthCheckPromise: Promise<void> | null = null;
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -22,25 +23,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [_authChecked, _setAuthChecked] = useState(false);
-  const _hasRunRef = useRef(false);
-
-  const _checkAuth = useCallback(async () => {
-    try {
-      // Probe backend profile; 200 => authenticated, 401 => not
-      const currentUser = await postgresAuth.getProfile();
-      setUser(currentUser);
-    } catch (error) {
-      // Handle rate limiting gracefully
-      if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
-        console.warn('Auth rate limit exceeded, treating as unauthenticated');
-      }
-      // Treat any failure as unauthenticated for client UX
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Note: These variables are currently unused but kept for future optimization
+  // const [_authChecked, _setAuthChecked] = useState(false);
+  // const _hasRunRef = useRef(false);
+  // const _checkAuth = useCallback(async () => { ... }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -75,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: { email: string; password: string; name?: string }) => {
     try {
-      const _result = await postgresAuth.register(data);
+      await postgresAuth.register(data);
       // After registration, log the user in
       await login(data.email, data.password);
     } catch (error) {
@@ -97,7 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const currentUser = await postgresAuth.getProfile();
       setUser(currentUser);
-    } catch (_error) {
+    } catch (error) {
+      // Silently handle auth errors during refresh
       setUser(null);
     }
   };

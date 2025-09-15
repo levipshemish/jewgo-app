@@ -92,7 +92,7 @@ class TokenManager:
             raise ValueError("JWT_SECRET_KEY environment variable is required")
         
         self.algorithm = 'HS256'
-        self.access_token_expire_hours = int(os.getenv('JWT_ACCESS_EXPIRE_HOURS', '24'))
+        self.access_token_expire_hours = float(os.getenv('JWT_ACCESS_EXPIRE_HOURS', '0.25'))  # 15 minutes
         self.refresh_token_expire_days = int(os.getenv('JWT_REFRESH_EXPIRE_DAYS', '30'))
     
     def generate_access_token(self, user_id: str, email: str, roles: List[Dict[str, Any]] = None) -> str:

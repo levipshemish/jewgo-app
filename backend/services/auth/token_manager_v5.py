@@ -29,7 +29,7 @@ class TokenManagerV5:
         self.secret = self._get_secret()
         self.algorithm = 'HS256'  # Will be upgraded to RS256/ES256 in task 3.3
         self.leeway = leeway
-        self.default_access_ttl = int(os.getenv('ACCESS_TTL_SECONDS', '3600'))  # 1 hour
+        self.default_access_ttl = int(os.getenv('ACCESS_TTL_SECONDS', '900'))  # 15 minutes
         self.default_refresh_ttl = int(os.getenv('REFRESH_TTL_SECONDS', '2592000'))  # 30 days
         self.issuer = os.getenv('JWT_ISSUER', 'jewgo.app')
         self.audience = os.getenv('JWT_AUDIENCE', 'jewgo.app')
