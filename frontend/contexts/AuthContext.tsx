@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       };
       
-      performAuthCheck();
+      // Use setTimeout to ensure this only runs once even in React Strict Mode
+      setTimeout(performAuthCheck, 0);
     }
   }, []); // Empty dependency array - only run once on mount
 

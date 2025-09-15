@@ -68,7 +68,7 @@ function getCachedRestaurant(restaurantId: string): Restaurant | null {
 // Get restaurants from cache that are within the bounds (optimized)
 function getCachedRestaurantsInBounds(bounds: Bounds): Restaurant[] {
   // Only check if we have a reasonable number of cached restaurants for performance
-  if (restaurantCache.size > 500) {
+  if (restaurantCache.size > 200) {
     // Too many restaurants to check efficiently, skip this optimization
     return [];
   }
@@ -141,7 +141,7 @@ function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
         cachedBounds.ne.lng >= requestedBounds.ne.lng &&
         cachedBounds.sw.lat <= requestedBounds.sw.lat &&
         cachedBounds.sw.lng <= requestedBounds.sw.lng &&
-        coverageRatio > 4.0) { // Only use if cached area is at least 4x larger (more conservative)
+        coverageRatio > 8.0) { // Only use if cached area is at least 8x larger (very conservative)
       return cacheEntry.data;
     }
   }
@@ -213,7 +213,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
 
   // Check if we already have restaurants in these bounds from previous loads
   // Only do this check for reasonable cache sizes to avoid performance issues
-  if (restaurantCache.size < 200) {
+  if (restaurantCache.size < 100) {
     const cachedRestaurantsInBounds = getCachedRestaurantsInBounds(bounds);
     if (cachedRestaurantsInBounds.length > 0) {
       cacheHits++;
@@ -311,6 +311,95 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     const response = await fetch(`${backendUrl}/api/v5/restaurants?bounds=${encodeURIComponent(apiKey)}&limit=${limit}`);
     
     if (!response.ok) {
+      // Handle 502 Bad Gateway errors with retry logic
+      if (response.status === 502 && consecutiveFailures < 3) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🗺️ 502 Bad Gateway, retrying in ${(consecutiveFailures + 1) * 1000}ms...`);
+        }
+        await new Promise(resolve => setTimeout(resolve, (consecutiveFailures + 1) * 1000));
+        // Retry the request
+        const retryResponse = await fetch(`${backendUrl}/api/v5/restaurants?bounds=${encodeURIComponent(apiKey)}&limit=${limit}`);
+        if (!retryResponse.ok) {
+          throw new Error(`HTTP ${retryResponse.status}: ${retryResponse.statusText}`);
+        }
+        // Use the retry response
+        const retryData = await retryResponse.json();
+        const data = retryData.items || retryData.restaurants || retryData.data || [];
+        const fetchTime = performance.now() - startTime;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🗺️ API Response (retry):', { 
+            hasRestaurants: !!retryData.restaurants, 
+            hasData: !!retryData.data, 
+            restaurantsCount: retryData.restaurants?.length || 0,
+            dataCount: retryData.data?.length || 0,
+            finalDataCount: data.length 
+          });
+        }
+        
+        // Transform backend data to livemap format and track loaded restaurants
+        const transformedData = data.map((restaurant: any) => {
+          const transformedRestaurant = {
+            id: restaurant.id.toString(),
+            name: restaurant.name,
+            pos: {
+              lat: restaurant.latitude,
+              lng: restaurant.longitude
+            },
+            rating: restaurant.google_rating || restaurant.rating,
+            kosher: restaurant.kosher_category?.toUpperCase() as "MEAT" | "DAIRY" | "PAREVE" || "PAREVE",
+            openNow: restaurant.status === 'active',
+            agencies: restaurant.certifying_agency ? [restaurant.certifying_agency] : [],
+            // Include additional fields for Card component
+            image_url: restaurant.image_url,
+            price_range: restaurant.price_range,
+            address: restaurant.address,
+            city: restaurant.city,
+            state: restaurant.state,
+            zip_code: restaurant.zip_code
+          };
+          
+          // Track this restaurant as loaded to prevent duplicate API calls
+          addLoadedRestaurant(transformedRestaurant);
+          
+          return transformedRestaurant;
+        });
+
+        // Filter data to the actual requested bounds (client-side filtering)
+        const filteredData = transformedData.filter((restaurant: any) => {
+          const lat = restaurant.pos.lat;
+          const lng = restaurant.pos.lng;
+          return lat >= bounds.sw.lat && lat <= bounds.ne.lat &&
+                 lng >= bounds.sw.lng && lng <= bounds.ne.lng;
+        });
+
+        // Cache the transformed result with the API bounds key
+        cache.set(apiKey, { ts: currentTime, data: transformedData });
+        
+        // Update store with filtered data
+        useLivemapStore.getState().setRestaurants(filteredData);
+        useLivemapStore.setState((s) => ({ 
+          loading: { ...s.loading, restaurants: "success" } 
+        }));
+        
+        // Trigger filtering after data is loaded
+        const { runFilter } = await import('./workerManager');
+        runFilter();
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🗺️ Loaded ${data?.length || 0} restaurants, filtered to ${filteredData.length} in ${fetchTime.toFixed(1)}ms (cache miss, ${isLargeBounds ? 'zoom-out' : 'normal'} strategy, retry)`);
+        }
+        
+        // Reset failure count on success
+        consecutiveFailures = 0;
+        
+        // Mark that initial load is complete after first successful request
+        if (isInitialLoad) {
+          isInitialLoad = false;
+        }
+        
+        return;
+      }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     

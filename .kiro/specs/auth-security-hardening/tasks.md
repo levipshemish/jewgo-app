@@ -25,14 +25,14 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
 - [-] 3. Enhanced Token Management System
-- [-] 3.1 Implement TokenManagerV5 with Leeway Support
+- [x] 3.1 Implement TokenManagerV5 with Leeway Support
   - Create TokenManagerV5 class with configurable leeway for JWT verification (default 60 seconds)
   - Implement HEAD /api/v5/auth/verify-token endpoint with sub-120ms p95 performance target
   - Add enhanced token minting with JTI (JWT ID) for tracking and revocation
   - Write performance tests to ensure verify-token endpoint meets latency requirements
   - _Requirements: 2.1, 2.2, 2.5, 8.8_
 
-- [ ] 3.2 Implement Session Family Management with Replay Hardening
+- [-] 3.2 Implement Session Family Management with Replay Hardening
   - Create SessionFamilyManager class for managing token families and rotation
   - Implement server-side refresh mutex per family_id using Redis SET NX with 10s TTL
   - Add one-time use refresh token validation (revoke used JTI, second use triggers family revoke)
