@@ -17,6 +17,7 @@ from flask import g, request, jsonify
 
 from utils.logging_config import get_logger
 from utils.postgres_auth import get_postgres_auth
+from services.auth.token_manager_v5 import TokenManagerV5
 from utils.rbac import RoleBasedAccessControl
 
 logger = get_logger(__name__)
@@ -35,6 +36,7 @@ class AuthV5Middleware:
     def __init__(self, app=None):
         self.app = app
         self.rbac = RoleBasedAccessControl()
+        self.token_manager_v5 = TokenManagerV5()
         if app is not None:
             self.init_app(app)
     
@@ -59,14 +61,26 @@ class AuthV5Middleware:
                     self._set_unauthenticated_context()
                     return
                 
-                auth_manager = get_postgres_auth()
-                user_info = auth_manager.verify_access_token(token)
-                
-                if not user_info:
+                # Verify using TokenManagerV5 for consistent claims
+                payload = self.token_manager_v5.verify_token(token)
+                if not payload or payload.get('type') != 'access':
                     self._set_unauthenticated_context()
                     self._log_auth_event("Invalid token provided", level='warning')
                     return
-                
+
+                uid = payload.get('uid')
+                if not uid:
+                    self._set_unauthenticated_context()
+                    self._log_auth_event("Token missing uid", level='warning')
+                    return
+
+                # Load user info (email + roles) from DB
+                user_info = self._load_user_info(uid, payload)
+                if not user_info:
+                    self._set_unauthenticated_context()
+                    self._log_auth_event("User not found for token", level='warning')
+                    return
+
                 # Enhanced context population with v5 features
                 self._populate_auth_context(user_info)
                 
@@ -105,6 +119,51 @@ class AuthV5Middleware:
                 logger.debug(f"V5 cookie attach error: {self._mask_pii(str(e))}")
             
             return resp
+
+    def _load_user_info(self, uid: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Load user info (email, roles) from DB for context population."""
+        try:
+            auth_manager = get_postgres_auth()
+            with auth_manager.db.connection_manager.session_scope() as session:
+                from sqlalchemy import text
+                row = session.execute(
+                    text(
+                        """
+                        SELECT u.id, u.email, u.name, u.email_verified,
+                               COALESCE(
+                                   JSON_AGG(
+                                       JSON_BUILD_OBJECT(
+                                           'role', ur.role,
+                                           'level', ur.level,
+                                           'granted_at', ur.created_at,
+                                           'expires_at', ur.expires_at
+                                       )
+                                   ) FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
+                                   '[]'
+                               ) AS roles
+                        FROM users u 
+                        LEFT JOIN user_roles ur ON u.id = ur.user_id
+                        WHERE u.id = :uid AND u.is_active = TRUE
+                        GROUP BY u.id, u.email, u.name, u.email_verified
+                        """
+                    ),
+                    {"uid": uid},
+                ).fetchone()
+            if not row:
+                return None
+            import json as _json
+            roles = _json.loads(row.roles) if row.roles else []
+            return {
+                'user_id': row.id,
+                'email': row.email,
+                'name': row.name,
+                'email_verified': row.email_verified,
+                'roles': roles,
+                'token_payload': payload,
+            }
+        except Exception as e:
+            logger.debug(f"Failed to load user info: {e}")
+            return None
     
     def _should_apply_v5_auth(self) -> bool:
         """Determine if v5 authentication should be applied to current request."""
@@ -183,7 +242,6 @@ class AuthV5Middleware:
     
     def _attempt_enhanced_refresh(self, auth_manager, user_info) -> None:
         """Enhanced token refresh with improved security and validation."""
-        from services.auth.tokens import verify as verify_jwt
         from services.auth.sessions import rotate_or_reject
         
         # Configurable refresh window (default 2 minutes)
@@ -205,8 +263,8 @@ class AuthV5Middleware:
         if not rt or not self._validate_token_format(rt):
             return
         
-        rt_payload = verify_jwt(rt, expected_type='refresh')
-        if not rt_payload:
+        rt_payload = self.token_manager_v5.verify_token(rt)
+        if not rt_payload or rt_payload.get('type') != 'refresh':
             return
         
         sid = rt_payload.get('sid')

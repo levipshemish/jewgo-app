@@ -11,6 +11,7 @@ from flask import request, jsonify, g
 from utils.logging_config import get_logger
 from utils.error_handler import AuthenticationError
 from utils.postgres_auth import get_postgres_auth
+from services.auth.token_manager_v5 import TokenManagerV5
 
 logger = get_logger(__name__)
 
@@ -201,12 +202,47 @@ def require_auth(f):
             if not token:
                 raise AuthenticationError("Authentication required")
             
-            # Verify token using PostgreSQL auth
-            auth_manager = get_postgres_auth()
-            user_info = auth_manager.verify_access_token(token)
-            
-            if not user_info:
+            # Verify with TokenManagerV5 then load user from DB
+            tm = TokenManagerV5()
+            payload = tm.verify_token(token)
+            if not payload or payload.get('type') != 'access':
                 raise AuthenticationError("Invalid or expired token")
+
+            uid = payload.get('uid')
+            if not uid:
+                raise AuthenticationError("Invalid token payload")
+
+            auth_manager = get_postgres_auth()
+            with auth_manager.db.connection_manager.session_scope() as session:
+                from sqlalchemy import text
+                row = session.execute(
+                    text(
+                        """
+                        SELECT u.id, u.email, u.name, u.email_verified,
+                               COALESCE(
+                                   JSON_AGG(JSON_BUILD_OBJECT('role', ur.role, 'level', ur.level))
+                                   FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
+                                   '[]'
+                               ) AS roles
+                        FROM users u LEFT JOIN user_roles ur ON u.id = ur.user_id
+                        WHERE u.id = :uid AND u.is_active = TRUE
+                        GROUP BY u.id, u.email, u.name, u.email_verified
+                        """
+                    ),
+                    {"uid": uid},
+                ).fetchone()
+            if not row:
+                raise AuthenticationError("User not found")
+            import json as _json
+            roles = _json.loads(row.roles) if row.roles else []
+            user_info = {
+                'user_id': row.id,
+                'email': row.email,
+                'name': row.name,
+                'email_verified': row.email_verified,
+                'roles': roles,
+                'token_payload': payload,
+            }
             
             # Add user info to Flask g context
             g.user = user_info
@@ -355,10 +391,38 @@ def optional_auth(f):
             from utils.auth_helpers import extract_token_from_request
             token = extract_token_from_request(request)
             if token:
-                # Verify token using PostgreSQL auth
-                auth_manager = get_postgres_auth()
-                user_info = auth_manager.verify_access_token(token)
-                if user_info:
+                tm = TokenManagerV5()
+                payload = tm.verify_token(token)
+                if payload and payload.get('type') == 'access':
+                    uid = payload.get('uid')
+                    if uid:
+                        auth_manager = get_postgres_auth()
+                        with auth_manager.db.connection_manager.session_scope() as session:
+                            from sqlalchemy import text
+                            row = session.execute(
+                                text(
+                                    """
+                                    SELECT u.id, u.email,
+                                           COALESCE(
+                                               JSON_AGG(JSON_BUILD_OBJECT('role', ur.role, 'level', ur.level))
+                                               FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
+                                               '[]'
+                                           ) AS roles
+                                    FROM users u LEFT JOIN user_roles ur ON u.id = ur.user_id
+                                    WHERE u.id = :uid AND u.is_active = TRUE
+                                    GROUP BY u.id, u.email
+                                    """
+                                ),
+                                {"uid": uid},
+                            ).fetchone()
+                        if row:
+                            import json as _json
+                            roles = _json.loads(row.roles) if row.roles else []
+                            user_info = {'user_id': row.id, 'email': row.email, 'roles': roles, 'token_payload': payload}
+                            g.user = user_info
+                            g.user_id = user_info['user_id']
+                            g.user_roles = user_info.get('roles', [])
+                            logger.debug(f"Optional auth successful: {user_info['email']}")
                     g.user = user_info
                     g.user_id = user_info['user_id']
                     g.user_roles = user_info.get('roles', [])

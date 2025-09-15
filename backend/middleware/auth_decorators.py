@@ -295,15 +295,17 @@ def rate_limit_by_user(max_requests: int = 100, window_minutes: int = 60) -> Cal
     def decorator(f: Callable) -> Callable:
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if not hasattr(g, 'current_user') or not g.current_user:
-                # Skip rate limiting for unauthenticated requests
-                return f(*args, **kwargs)
-            
-            user_id = g.current_user.get('id')
+            # Determine principal: user ID if authenticated, else client IP
             endpoint = request.endpoint or f.__name__
-            
+            if hasattr(g, 'current_user') and g.current_user:
+                principal = f"user:{g.current_user.get('id')}"
+            else:
+                # Fallback to IP-based limiting for unauthenticated endpoints
+                ip = request.headers.get('X-Forwarded-For')
+                client_ip = ip.split(',')[0].strip() if ip else request.headers.get('X-Real-IP') or request.remote_addr or 'unknown'
+                principal = f"ip:{client_ip}"
             # Create rate limit key
-            rate_limit_key = f"rate_limit:user:{user_id}:{endpoint}"
+            rate_limit_key = f"rate_limit:{principal}:{endpoint}"
             
             # Check current count
             try:
@@ -313,6 +315,9 @@ def rate_limit_by_user(max_requests: int = 100, window_minutes: int = 60) -> Cal
                 current_count = redis_manager.get(rate_limit_key, prefix='rate_limit') or 0
                 
                 if int(current_count) >= max_requests:
+                    user_id = None
+                    if hasattr(g, 'current_user') and g.current_user:
+                        user_id = g.current_user.get('id')
                     logger.warning("Rate limit exceeded", 
                                  user_id=user_id,
                                  endpoint=endpoint,

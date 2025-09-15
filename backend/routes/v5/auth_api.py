@@ -20,6 +20,7 @@ from middleware.auth_v5 import require_permission_v5
 from middleware.auth_decorators import auth_required, rate_limit_by_user, step_up_required
 from services.auth_service_v5 import AuthServiceV5
 from services.auth.token_manager_v5 import TokenManagerV5
+from services.auth.cookies import set_auth, clear_auth
 from services.auth.jwks_manager import JWKSManager
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5
@@ -118,30 +119,9 @@ def login():
             'timestamp': datetime.utcnow().isoformat()
         }
 
-        # Set secure cookies
+        # Set secure cookies via centralized helper
         response = make_response(jsonify(response_data))
-        cookie_max_age = int(tokens.get('expires_in', 3600))  # Default 1 hour
-        
-        cookie_domain = os.getenv('COOKIE_DOMAIN')
-        response.set_cookie(
-            'access_token',
-            tokens.get('access_token', ''),
-            max_age=cookie_max_age,
-            secure=True,
-            httponly=True,
-            samesite='None',
-            domain=cookie_domain,
-        )
-        
-        response.set_cookie(
-            'refresh_token',
-            tokens.get('refresh_token', ''),
-            max_age=30 * 24 * 60 * 60,  # 30 days
-            secure=True,
-            httponly=True,
-            samesite='None',
-            domain=cookie_domain,
-        )
+        set_auth(response, tokens.get('access_token', ''), tokens.get('refresh_token', ''), int(tokens.get('expires_in', 3600)))
 
         return response
 
@@ -230,26 +210,7 @@ def register():
 
         # Set secure cookies
         response = make_response(jsonify(response_data))
-        cookie_domain = os.getenv('COOKIE_DOMAIN')
-        response.set_cookie(
-            'access_token',
-            tokens.get('access_token', ''),
-            max_age=8 * 60 * 60,  # 8 hours
-            secure=True,
-            httponly=True,
-            samesite='None',
-            domain=cookie_domain,
-        )
-        
-        response.set_cookie(
-            'refresh_token',
-            tokens.get('refresh_token', ''),
-            max_age=30 * 24 * 60 * 60,  # 30 days
-            secure=True,
-            httponly=True,
-            samesite='None',
-            domain=cookie_domain,
-        )
+        set_auth(response, tokens.get('access_token', ''), tokens.get('refresh_token', ''), int(tokens.get('expires_in', 8*60*60)))
 
         return response, 201
 
@@ -285,11 +246,9 @@ def logout():
             'timestamp': datetime.utcnow().isoformat()
         }
 
-        # Clear cookies
+        # Clear cookies using centralized helper to match attributes
         response = make_response(jsonify(response_data))
-        cookie_domain = os.getenv('COOKIE_DOMAIN')
-        response.set_cookie('access_token', '', max_age=0, domain=cookie_domain)
-        response.set_cookie('refresh_token', '', max_age=0, domain=cookie_domain)
+        clear_auth(response)
 
         return response
 
@@ -334,17 +293,13 @@ def refresh_token():
             'timestamp': datetime.utcnow().isoformat()
         }
 
-        # Update access token cookie
+        # Update cookies (access + rotated refresh) via centralized helper
         response = make_response(jsonify(response_data))
-        cookie_domain = os.getenv('COOKIE_DOMAIN')
-        response.set_cookie(
-            'access_token',
+        set_auth(
+            response,
             new_tokens.get('access_token', ''),
-            max_age=8 * 60 * 60,  # 8 hours
-            secure=True,
-            httponly=True,
-            samesite='None',
-            domain=cookie_domain,
+            new_tokens.get('refresh_token', ''),
+            int(new_tokens.get('expires_in', 8 * 60 * 60))
         )
 
         return response

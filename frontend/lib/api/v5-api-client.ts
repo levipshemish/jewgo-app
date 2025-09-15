@@ -104,7 +104,8 @@ export class V5ApiClient {
           ...fetchOptions,
           signal: controller.signal,
           headers: {
-            'Content-Type': 'application/json',
+            // Only set Content-Type for requests with body (POST, PUT, PATCH)
+            ...(fetchOptions.body ? { 'Content-Type': 'application/json' } : {}),
             ...fetchOptions.headers,
           },
         });

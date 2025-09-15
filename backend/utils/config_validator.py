@@ -16,8 +16,8 @@ class ConfigValidator:
     # Required configuration for all environments
     REQUIRED_CONFIG = {
         'DATABASE_URL': {
-            'description': 'PostgreSQL database connection string',
-            'example': 'postgresql://user:pass@localhost:5432/jewgo'
+            'description': 'Database connection string (PostgreSQL for production, SQLite allowed in development)',
+            'example': 'postgresql://user:pass@localhost:5432/jewgo or sqlite:///./test.db'
         },
         'SECRET_KEY': {
             'description': 'Flask secret key for session security',
@@ -155,12 +155,22 @@ class ConfigValidator:
         if not database_url:
             return False
         
-        # Check URL format
-        if not database_url.startswith(('postgresql://', 'postgres://')):
+        # Check URL format - allow SQLite in development
+        if not database_url.startswith(('postgresql://', 'postgres://', 'sqlite://')):
             self.errors.append({
                 'key': 'DATABASE_URL',
                 'error': 'Invalid database URL format',
-                'description': 'Must be a PostgreSQL connection string',
+                'description': 'Must be a PostgreSQL or SQLite connection string',
+                'example': 'postgresql://user:pass@localhost:5432/jewgo or sqlite:///./test.db'
+            })
+            return False
+        
+        # SQLite is only allowed in development
+        if database_url.startswith('sqlite://') and self.is_production:
+            self.errors.append({
+                'key': 'DATABASE_URL',
+                'error': 'SQLite not allowed in production',
+                'description': 'PostgreSQL is required for production environments',
                 'example': 'postgresql://user:pass@localhost:5432/jewgo'
             })
             return False

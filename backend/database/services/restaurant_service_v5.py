@@ -107,68 +107,80 @@ class RestaurantServiceV5:
             return 0
 
     def get_filter_options(self) -> Dict[str, Any]:
-        """Get available filter options for restaurants."""
+        """Get available filter options for restaurants using efficient database queries."""
         try:
-            # Get all restaurants to extract unique values
-            restaurants, _, _, _ = self.get_restaurants(
-                limit=1000,  # Get all restaurants for filter options
-                include_relations=False,
-                use_cache=True
-            )
+            # Use cache for filter options (they don't change frequently)
+            cache_key = f"restaurant_filter_options_v2"
+            if self.cache_manager:
+                cached_options = self.cache_manager.get(cache_key)
+                if cached_options:
+                    logger.info("Retrieved filter options from cache")
+                    return cached_options
             
-            # Extract unique values
-            kosher_categories = set()
-            certifying_agencies = set()
-            price_ranges = set()
-            cities = set()
-            states = set()
-            listing_types = set()
-            ratings = set()
-            kosher_details = set()
-            
-            for restaurant in restaurants:
-                if restaurant.get('kosher_category'):
-                    kosher_categories.add(restaurant['kosher_category'])
-                if restaurant.get('certifying_agency'):
-                    certifying_agencies.add(restaurant['certifying_agency'])
-                if restaurant.get('price_range'):
-                    price_ranges.add(restaurant['price_range'])
-                if restaurant.get('city'):
-                    cities.add(restaurant['city'])
-                if restaurant.get('state'):
-                    states.add(restaurant['state'])
-                if restaurant.get('listing_type'):
-                    listing_types.add(restaurant['listing_type'])
+            # Use direct database queries instead of fetching all restaurants
+            with self.repository.get_session() as session:
+                from sqlalchemy import distinct, func
+                from backend.database.models import Restaurant
                 
-                # Extract ratings for dynamic rating filter
-                if restaurant.get('google_rating') and restaurant['google_rating'] > 0:
-                    rating = restaurant['google_rating']
-                    # Round to nearest 0.5 for cleaner filter options
-                    rounded_rating = round(rating * 2) / 2
-                    ratings.add(rounded_rating)
+                # Get distinct values efficiently with limited results
+                filter_options = {
+                    'kosherCategories': [],
+                    'agencies': [],
+                    'priceRanges': [],
+                    'cities': [],
+                    'states': [],
+                    'listingTypes': [],
+                    'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],  # Predefined rating options
+                    'kosherDetails': ['Cholov Yisroel', 'Pas Yisroel', 'Cholov Stam']  # Predefined kosher details
+                }
                 
-                # Extract kosher details for additional filters
-                if restaurant.get('is_cholov_yisroel'):
-                    kosher_details.add('Cholov Yisroel')
-                if restaurant.get('is_pas_yisroel'):
-                    kosher_details.add('Pas Yisroel')
-                if restaurant.get('cholov_stam'):
-                    kosher_details.add('Cholov Stam')
+                # Get kosher categories (limit to top 20)
+                kosher_cats = session.query(distinct(Restaurant.kosher_category)).filter(
+                    Restaurant.kosher_category.isnot(None),
+                    Restaurant.kosher_category != ''
+                ).limit(20).all()
+                filter_options['kosherCategories'] = sorted([cat[0] for cat in kosher_cats if cat[0]])
+                
+                # Get certifying agencies (limit to top 20)
+                agencies = session.query(distinct(Restaurant.certifying_agency)).filter(
+                    Restaurant.certifying_agency.isnot(None),
+                    Restaurant.certifying_agency != ''
+                ).limit(20).all()
+                filter_options['agencies'] = sorted([agency[0] for agency in agencies if agency[0]])
+                
+                # Get price ranges (limit to top 10)
+                prices = session.query(distinct(Restaurant.price_range)).filter(
+                    Restaurant.price_range.isnot(None),
+                    Restaurant.price_range != ''
+                ).limit(10).all()
+                filter_options['priceRanges'] = sorted([price[0] for price in prices if price[0]])
+                
+                # Get cities (limit to top 50)
+                cities = session.query(distinct(Restaurant.city)).filter(
+                    Restaurant.city.isnot(None),
+                    Restaurant.city != ''
+                ).limit(50).all()
+                filter_options['cities'] = sorted([city[0] for city in cities if city[0]])
+                
+                # Get states (limit to top 20)
+                states = session.query(distinct(Restaurant.state)).filter(
+                    Restaurant.state.isnot(None),
+                    Restaurant.state != ''
+                ).limit(20).all()
+                filter_options['states'] = sorted([state[0] for state in states if state[0]])
+                
+                # Get listing types (limit to top 10)
+                types = session.query(distinct(Restaurant.listing_type)).filter(
+                    Restaurant.listing_type.isnot(None),
+                    Restaurant.listing_type != ''
+                ).limit(10).all()
+                filter_options['listingTypes'] = sorted([type_[0] for type_ in types if type_[0]])
             
+            # Cache the filter options for 1 hour
+            if self.cache_manager:
+                self.cache_manager.set(cache_key, filter_options, ttl=3600)
             
-            # Convert to sorted lists
-            filter_options = {
-                'kosherCategories': sorted(list(kosher_categories)),
-                'agencies': sorted(list(certifying_agencies)),
-                'priceRanges': sorted(list(price_ranges)),
-                'cities': sorted(list(cities)),
-                'states': sorted(list(states)),
-                'listingTypes': sorted(list(listing_types)),
-                'ratings': sorted(list(ratings), reverse=True),  # Highest ratings first
-                'kosherDetails': sorted(list(kosher_details))
-            }
-            
-            logger.info("Successfully retrieved filter options")
+            logger.info("Successfully retrieved filter options using efficient queries")
             return filter_options
             
         except Exception as e:

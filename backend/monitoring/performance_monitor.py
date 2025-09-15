@@ -149,7 +149,7 @@ class MetricsCollector:
             thread_count = psutil.Process().num_threads()
             
             metrics = SystemMetrics(
-                timestamp=datetime.now(),
+            timestamp=datetime.now(),
                 cpu_percent=cpu_percent,
                 memory_percent=memory.percent,
                 memory_used_mb=memory.used / 1024 / 1024,
@@ -163,7 +163,7 @@ class MetricsCollector:
                 thread_count=thread_count
             )
             
-            with self.lock:
+        with self.lock:
                 self.metrics_history['system'].append(metrics)
                 self.current_metrics['system'] = metrics
             
@@ -578,7 +578,7 @@ def track_performance(monitor: PerformanceMonitor = None):
                 response_time = (time.time() - start_time) * 1000
                 if monitor:
                     monitor.record_request(response_time, is_error)
-        
+
         return wrapper
     return decorator
 

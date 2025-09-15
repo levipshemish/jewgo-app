@@ -9,14 +9,18 @@ Delegates to existing token/session utilities and postgres_auth.
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timedelta
 import jwt
+import os
 import hashlib
 import secrets
 from utils.logging_config import get_logger
 from cache.redis_manager_v5 import get_redis_manager_v5
 from database.connection_manager import get_connection_manager
 from utils.feature_flags_v5 import FeatureFlagsV5
-from utils.postgres_auth import PostgresAuthManager, TokenManager
-from services.auth.tokens import mint_access, mint_refresh, verify
+from utils.postgres_auth import PostgresAuthManager, TokenManager, PasswordSecurity
+from services.auth.token_manager_v5 import TokenManagerV5
+from services.auth.sessions import persist_initial, new_session_id, new_family_id, rotate_or_reject
+from services.auth.tokens import verify
+from flask import request
 
 logger = get_logger(__name__)
 
@@ -32,6 +36,7 @@ class AuthServiceV5:
         # Initialize existing auth utilities
         self.postgres_auth = PostgresAuthManager(self.db_manager)
         self.token_manager = TokenManager()
+        self.token_manager_v5 = TokenManagerV5()
         
         logger.info("AuthServiceV5 initialized")
     
@@ -88,22 +93,37 @@ class AuthServiceV5:
             email = user_data['email']
             roles = user_data.get('roles', [])
             
-            # Generate tokens using existing utilities
-            access_token, access_ttl = mint_access(user_id, email, roles)
-            
-            # Generate session and fingerprint IDs for refresh token
-            session_id = secrets.token_hex(16)
-            fingerprint_id = secrets.token_hex(16)
-            refresh_token, refresh_ttl = mint_refresh(user_id, sid=session_id, fid=fingerprint_id)
-            
-            # Store refresh token in cache
-            refresh_key = f"auth:refresh:{user_id}"
-            self.redis_manager.set(
-                refresh_key,
-                refresh_token,
-                ttl=refresh_ttl,
-                prefix='auth'
-            )
+            # Mint tokens via TokenManagerV5 for consistent claims (iss/aud/jti)
+            access_token, access_ttl = self.token_manager_v5.mint_access_token(user_id, email, roles)
+
+            # Create session family for refresh rotation/reuse detection
+            session_id = new_session_id()
+            family_id = new_family_id()
+            refresh_token, refresh_ttl = self.token_manager_v5.mint_refresh_token(user_id, session_id, family_id)
+
+            # Persist initial session row for rotation
+            try:
+                user_agent = request.headers.get('User-Agent') if request else None
+                # Prefer X-Forwarded-For first IP
+                ip = None
+                if request:
+                    xff = request.headers.get('X-Forwarded-For')
+                    if xff:
+                        ip = xff.split(',')[0].strip()
+                    if not ip:
+                        ip = request.headers.get('X-Real-IP') or request.remote_addr
+                persist_initial(
+                    self.db_manager,
+                    user_id=user_id,
+                    refresh_token=refresh_token,
+                    sid=session_id,
+                    fid=family_id,
+                    user_agent=user_agent,
+                    ip=ip,
+                    ttl_seconds=refresh_ttl,
+                )
+            except Exception as e:
+                logger.error(f"Failed to persist initial session: {e}")
             
             logger.info(f"Tokens generated for user {user_id}")
             
@@ -210,37 +230,65 @@ class AuthServiceV5:
             Tuple of (success, new_tokens) - new_tokens is None if refresh failed
         """
         try:
-            # Verify refresh token
-            payload = verify(refresh_token, expected_type='refresh')
-            if not payload:
+            # Verify refresh token using v5 manager
+            payload = self.token_manager_v5.verify_token(refresh_token)
+            if not payload or payload.get('type') != 'refresh':
                 logger.warning("Invalid refresh token")
                 return False, None
-            
+
             user_id = payload.get('uid')
-            if not user_id:
-                logger.warning("No user ID in refresh token")
+            sid = payload.get('sid')
+            fid = payload.get('fid')
+            if not user_id or not sid or not fid:
+                logger.warning("Refresh token missing required claims")
                 return False, None
-            
-            # Check if refresh token is in cache
-            refresh_key = f"auth:refresh:{user_id}"
-            cached_refresh = self.redis_manager.get(refresh_key, prefix='auth')
-            
-            if cached_refresh != refresh_token:
-                logger.warning(f"Refresh token mismatch for user {user_id}")
-                return False, None
-            
+
             # Get user data
             user_data = self._get_user_by_id(user_id)
             if not user_data:
                 logger.warning(f"User {user_id} not found")
                 return False, None
-            
-            # Generate new tokens
-            new_tokens = self.generate_tokens(user_data)
-            
+
+            # Rotate or revoke on reuse
+            try:
+                user_agent = request.headers.get('User-Agent') if request else None
+                ip = None
+                if request:
+                    xff = request.headers.get('X-Forwarded-For')
+                    if xff:
+                        ip = xff.split(',')[0].strip()
+                    if not ip:
+                        ip = request.headers.get('X-Real-IP') or request.remote_addr
+                rotate_res = rotate_or_reject(
+                    self.db_manager,
+                    user_id=user_id,
+                    provided_refresh=refresh_token,
+                    sid=sid,
+                    fid=fid,
+                    user_agent=user_agent,
+                    ip=ip,
+                    ttl_seconds=int(os.getenv('REFRESH_TTL_SECONDS', str(45 * 24 * 3600)))
+                )
+                if not rotate_res:
+                    logger.warning(f"Refresh token reuse detected; family revoked for user {user_id}")
+                    return False, None
+                new_sid, new_refresh, new_refresh_ttl = rotate_res
+            except Exception as e:
+                logger.error(f"Token rotation error: {e}")
+                return False, None
+
+            # Mint new access
+            new_access, access_ttl = self.token_manager_v5.mint_access_token(
+                user_id, user_data['email'], user_data.get('roles', [])
+            )
+
             logger.info(f"Access token refreshed for user {user_id}")
-            return True, new_tokens
-            
+            return True, {
+                'access_token': new_access,
+                'refresh_token': new_refresh,
+                'expires_in': access_ttl,
+            }
+
         except Exception as e:
             logger.error(f"Token refresh error: {e}")
             return False, None
@@ -329,17 +377,31 @@ class AuthServiceV5:
             Tuple of (success, message)
         """
         try:
-            # Validate new password
-            if len(new_password) < 8:
-                return False, "Password must be at least 8 characters"
-            
-            # Get user data
-            user_data = self._get_user_by_id(user_id)
-            if not user_data:
-                return False, "User not found"
-            
-            # Verify current password (would need to implement)
-            # For now, return success
+            # Validate new password strength
+            strength = PasswordSecurity.validate_password_strength(new_password)
+            if not strength['is_valid']:
+                return False, "; ".join(strength['issues'])
+
+            # Verify current password against stored hash
+            from sqlalchemy import text
+            with self.db_manager.connection_manager.session_scope() as session:
+                row = session.execute(
+                    text("SELECT password_hash FROM users WHERE id = :uid"),
+                    {"uid": user_id},
+                ).fetchone()
+                if not row or not row.password_hash:
+                    return False, "User not found"
+
+                if not PasswordSecurity.verify_password(current_password, row.password_hash):
+                    return False, "Current password is incorrect"
+
+                # Hash and update to new password
+                new_hash = PasswordSecurity.hash_password(new_password)
+                session.execute(
+                    text("UPDATE users SET password_hash = :ph, updated_at = NOW() WHERE id = :uid"),
+                    {"ph": new_hash, "uid": user_id},
+                )
+
             logger.info(f"Password changed for user {user_id}")
             return True, "Password changed successfully"
             
@@ -358,7 +420,10 @@ class AuthServiceV5:
             Token payload if valid, None otherwise
         """
         try:
-            return verify(token, expected_type='access')
+            payload = self.token_manager_v5.verify_token(token)
+            if not payload or payload.get('type') != 'access':
+                return None
+            return payload
         except Exception as e:
             logger.error(f"Token verification error: {e}")
             return None

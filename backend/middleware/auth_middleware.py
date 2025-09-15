@@ -15,6 +15,7 @@ from flask import g, request
 
 from utils.logging_config import get_logger
 from utils.postgres_auth import get_postgres_auth
+from services.auth.token_manager_v5 import TokenManagerV5
 
 logger = get_logger(__name__)
 
@@ -23,6 +24,8 @@ def register_auth_middleware(app) -> None:
     """Register before/after request hooks enabling cookie-based auth integration."""
     from utils.auth_helpers import extract_token_from_request
 
+    token_manager_v5 = TokenManagerV5()
+
     @app.before_request
     def _auth_context_loader():
         try:
@@ -30,10 +33,39 @@ def register_auth_middleware(app) -> None:
             if not token:
                 return  # No auth present; continue
 
-            auth_manager = get_postgres_auth()
-            user_info = auth_manager.verify_access_token(token)
-            if not user_info:
+            payload = token_manager_v5.verify_token(token)
+            if not payload or payload.get('type') != 'access':
                 return  # Invalid token; context remains unauthenticated
+
+            uid = payload.get('uid')
+            if not uid:
+                return
+
+            # Load user info from DB
+            auth_manager = get_postgres_auth()
+            with auth_manager.db.connection_manager.session_scope() as session:
+                from sqlalchemy import text
+                row = session.execute(
+                    text(
+                        """
+                        SELECT u.id, u.email,
+                               COALESCE(
+                                   JSON_AGG(JSON_BUILD_OBJECT('role', ur.role, 'level', ur.level))
+                                   FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
+                                   '[]'
+                               ) AS roles
+                        FROM users u LEFT JOIN user_roles ur ON u.id = ur.user_id
+                        WHERE u.id = :uid AND u.is_active = TRUE
+                        GROUP BY u.id, u.email
+                        """
+                    ),
+                    {"uid": uid},
+                ).fetchone()
+            if not row:
+                return
+            import json as _json
+            roles = _json.loads(row.roles) if row.roles else []
+            user_info = {'user_id': row.id, 'email': row.email, 'roles': roles, 'token_payload': payload}
 
             # Populate request context
             g.user = user_info
@@ -67,7 +99,8 @@ def _attempt_refresh_if_needed(auth_manager, user_info) -> None:
 
     This does not raise on failure; it's best-effort to smooth UX.
     """
-    from services.auth.tokens import verify as verify_jwt
+    from services.auth.token_manager_v5 import TokenManagerV5
+    verify_v5 = TokenManagerV5().verify_token
     from services.auth.sessions import rotate_or_reject
 
     # How soon to refresh before expiry (seconds)
@@ -86,8 +119,8 @@ def _attempt_refresh_if_needed(auth_manager, user_info) -> None:
     rt = request.cookies.get('refresh_token')
     if not rt:
         return
-    rt_payload = verify_jwt(rt, expected_type='refresh')
-    if not rt_payload:
+    rt_payload = verify_v5(rt)
+    if not rt_payload or rt_payload.get('type') != 'refresh':
         return
 
     sid = rt_payload.get('sid')
@@ -112,10 +145,7 @@ def _attempt_refresh_if_needed(auth_manager, user_info) -> None:
 
     new_sid, new_rt, new_rt_ttl = rotate_res
 
-    # Mint a new access token using PostgresAuth manager utilities (consistent roles)
-    # The manager's token manager may differ from services.auth; however, routes
-    # rely on services.auth for cookies. We'll mint access via services.auth for
-    # consistency of cookie TTLs.
+    # Mint a new access token using services.auth.tokens for consistency with cookies
     from services.auth.tokens import mint_access
 
     # Query roles + email to mint an access token
