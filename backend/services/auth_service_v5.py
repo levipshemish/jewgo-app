@@ -93,13 +93,13 @@ class AuthServiceV5:
             email = user_data['email']
             roles = user_data.get('roles', [])
             
-            # Mint tokens via TokenManagerV5 for consistent claims (iss/aud/jti)
-            access_token, access_ttl = self.token_manager_v5.mint_access_token(user_id, email, roles)
-
             # Create session family for refresh rotation/reuse detection
             session_id = new_session_id()
             family_id = new_family_id()
             refresh_token, refresh_ttl = self.token_manager_v5.mint_refresh_token(user_id, session_id, family_id)
+
+            # Mint access token including session id to support step-up checks
+            access_token, access_ttl = self.token_manager_v5.mint_access_token(user_id, email, roles, sid=session_id)
 
             # Persist initial session row for rotation
             try:
@@ -279,7 +279,7 @@ class AuthServiceV5:
 
             # Mint new access
             new_access, access_ttl = self.token_manager_v5.mint_access_token(
-                user_id, user_data['email'], user_data.get('roles', [])
+                user_id, user_data['email'], user_data.get('roles', []), sid=new_sid
             )
 
             logger.info(f"Access token refreshed for user {user_id}")

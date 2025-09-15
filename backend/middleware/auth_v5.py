@@ -294,14 +294,14 @@ class AuthV5Middleware:
         new_sid, new_rt, new_rt_ttl = rotate_res
         
         # Enhanced access token minting with role consistency
-        new_access, access_ttl = self._mint_enhanced_access_token(auth_manager, uid)
+        new_access, access_ttl = self._mint_enhanced_access_token(auth_manager, uid, sid=new_sid)
         
         # Store for cookie attachment
         g._auth_v5_set_cookie = (new_access, new_rt, access_ttl)
         
         logger.info(f"Enhanced token refresh completed for user {self._mask_pii(uid)}")
     
-    def _mint_enhanced_access_token(self, auth_manager, uid: str):
+    def _mint_enhanced_access_token(self, auth_manager, uid: str, *, sid: Optional[str] = None):
         """Mint enhanced access token with improved role consistency using TokenManagerV5."""
         
         # Enhanced role and permission query
@@ -338,7 +338,7 @@ class AuthV5Middleware:
         import json as _json
         roles = _json.loads(row.roles) if row and row.roles else []
         
-        return self.token_manager_v5.mint_access_token(uid, email, roles)
+        return self.token_manager_v5.mint_access_token(uid, email, roles, sid=sid)
     
     def _get_rate_limit_tier(self, user_roles: List[Dict[str, Any]]) -> str:
         """Determine rate limit tier based on user roles."""

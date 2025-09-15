@@ -109,7 +109,7 @@ class TokenManagerV5:
             return None
     
     def mint_access_token(self, user_id: str, email: str, roles: Optional[List[Dict[str, Any]]] = None, 
-                         ttl: Optional[int] = None, auth_time: Optional[datetime] = None) -> Tuple[str, int]:
+                         ttl: Optional[int] = None, auth_time: Optional[datetime] = None, sid: Optional[str] = None) -> Tuple[str, int]:
         """
         Mint access token with JTI and enhanced claims.
         
@@ -146,6 +146,9 @@ class TokenManagerV5:
             # Add auth_time for step-up authentication
             if auth_time:
                 payload['auth_time'] = int(auth_time.timestamp())
+            # Include session id to support step-up checks
+            if sid:
+                payload['sid'] = sid
             
             token = jwt.encode(payload, self.secret, algorithm=self.algorithm)
             

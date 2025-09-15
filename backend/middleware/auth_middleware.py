@@ -170,7 +170,7 @@ def _attempt_refresh_if_needed(auth_manager, user_info) -> None:
     email = row.email if row else ''
     import json as _json
     roles = _json.loads(row.roles) if row and row.roles else []
-    new_access, access_ttl = tm.mint_access_token(uid, email, roles)
+    new_access, access_ttl = tm.mint_access_token(uid, email, roles, sid=new_sid)
 
     # Stash into Flask g; the registered after_request will apply cookies
     g._auth_set_cookie = (new_access, new_rt, access_ttl)
