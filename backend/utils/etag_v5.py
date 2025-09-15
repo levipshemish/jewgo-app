@@ -431,7 +431,7 @@ class ETagV5Manager:
                                 WITH base AS (
                                     SELECT MAX(t.{timestamp_col}) AS max_ts
                                     FROM {table} t
-                                    WHERE {status_filter}
+                                    WHERE t.status <> 'deleted'
                                 ), reviews AS (
                                     SELECT MAX(r.updated_at) AS max_ts
                                     FROM reviews r
@@ -455,7 +455,7 @@ class ETagV5Manager:
                             WITH base AS (
                                 SELECT MAX(t.{timestamp_col}) AS max_ts
                                 FROM {table} t
-                                WHERE {status_filter}
+                                WHERE t.status <> 'deleted'
                             ), reviews AS (
                                 SELECT MAX(r.updated_at) AS max_ts
                                 FROM reviews r
@@ -549,7 +549,7 @@ class ETagV5Manager:
                                 query = f"""
                                 SELECT EXTRACT(EPOCH FROM MAX({timestamp_col}))::bigint AS watermark
                                 FROM {table}
-                                WHERE {status_filter}
+                                WHERE status <> 'deleted'
                                 """
                                 params = {}
                                 result = session.execute(text(query), params).fetchone()
@@ -562,7 +562,7 @@ class ETagV5Manager:
                             query = f"""
                             SELECT EXTRACT(EPOCH FROM MAX({timestamp_col}))::bigint AS watermark
                             FROM {table}
-                            WHERE {status_filter}
+                            WHERE status <> 'deleted'
                             """
                             params = {}
                             result = session.execute(text(query), params).fetchone()
