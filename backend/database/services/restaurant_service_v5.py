@@ -246,7 +246,7 @@ class RestaurantServiceV5:
         logger.info("Successfully retrieved filter options using efficient queries")
         return filter_options
         
-        except Exception as e:
+    except Exception as e:
             logger.error(f"Error getting filter options: {e}")
             return {
                 'kosherCategories': [],
