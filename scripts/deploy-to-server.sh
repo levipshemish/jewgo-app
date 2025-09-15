@@ -189,9 +189,9 @@ execute_on_server "
           --network-alias backend \
           -p 5000:5000 \
           --env-file .env \
-          -w /app \
+          -w /app/backend \
           jewgo-app-backend \
-          gunicorn --config backend/config/gunicorn.conf.py backend.wsgi:app && \
+          gunicorn --config config/gunicorn.conf.py wsgi:app && \
         echo 'Backend container started (docker run with gunicorn and network alias)'
     fi
 " "Starting new backend container"

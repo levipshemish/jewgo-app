@@ -68,7 +68,7 @@
   - Write integration tests for CORS preflight requests with credentials on *.vercel.app domains
   - _Requirements: 4.3, 4.4, 4.5, 8.2, 9.3_
 
-- [-] 5. Security Headers and Monitoring Implementation
+- [x] 5. Security Headers and Monitoring Implementation
 - [x] 5.1 Implement Comprehensive Security Headers Middleware
   - Create after_request middleware to add security headers: X-Frame-Options=DENY, X-Content-Type-Options=nosniff, Referrer-Policy=no-referrer
   - Add Cache-Control: no-store on all auth responses to prevent caching
@@ -77,7 +77,7 @@
   - Write tests to verify security headers are present on all responses
   - _Requirements: 5.1, 5.4_
 
-- [-] 5.2 Implement Comprehensive Authentication Metrics System
+- [x] 5.2 Implement Comprehensive Authentication Metrics System
   - Create AuthMetrics class with counters: login success/fail by reason, refresh {success|replay|revoked}, CSRF {valid|invalid}
   - Implement histograms: /verify-token latency p50/p95, refresh operation latency
   - Add correlation ID propagation from frontend through backend to logs and metrics
