@@ -31,6 +31,55 @@ function hashBounds(bounds: Bounds): string {
 let fetchCount = 0;
 let cacheHits = 0;
 
+// Find overlapping cached data that covers the requested bounds
+function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
+  const now = Date.now();
+  
+  for (const [cacheKey, cacheEntry] of cache.entries()) {
+    if (now - cacheEntry.ts >= TTL) continue;
+    
+    // Parse cached bounds from key
+    const [neStr, swStr] = cacheKey.split('-');
+    const [neLat, neLng] = neStr.split(',').map(Number);
+    const [swLat, swLng] = swStr.split(',').map(Number);
+    
+    const cachedBounds = {
+      ne: { lat: neLat, lng: neLng },
+      sw: { lat: swLat, lng: swLng }
+    };
+    
+    // Check if cached bounds completely cover the requested bounds
+    if (cachedBounds.ne.lat >= requestedBounds.ne.lat &&
+        cachedBounds.ne.lng >= requestedBounds.ne.lng &&
+        cachedBounds.sw.lat <= requestedBounds.sw.lat &&
+        cachedBounds.sw.lng <= requestedBounds.sw.lng) {
+      return cacheEntry.data;
+    }
+  }
+  
+  return null;
+}
+
+// Expand bounds to get more data and improve caching
+function expandBounds(bounds: Bounds, factor: number = 1.5): Bounds {
+  const latSpan = bounds.ne.lat - bounds.sw.lat;
+  const lngSpan = bounds.ne.lng - bounds.sw.lng;
+  
+  const latExpansion = (latSpan * factor - latSpan) / 2;
+  const lngExpansion = (lngSpan * factor - lngSpan) / 2;
+  
+  return {
+    ne: {
+      lat: bounds.ne.lat + latExpansion,
+      lng: bounds.ne.lng + lngExpansion
+    },
+    sw: {
+      lat: bounds.sw.lat - latExpansion,
+      lng: bounds.sw.lng - lngExpansion
+    }
+  };
+}
+
 export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
   const key = hashBounds(bounds);
   const existing = cache.get(key);
@@ -47,6 +96,18 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     return;
   }
 
+  // Check if we have overlapping cached data that covers the requested bounds
+  const overlappingData = findOverlappingCache(bounds);
+  if (overlappingData) {
+    cacheHits++;
+    useLivemapStore.getState().setRestaurants(overlappingData);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🗺️ Overlapping cache hit for bounds ${key} (${cacheHits}/${fetchCount + cacheHits})`);
+    }
+    return;
+  }
+
   // Set loading state
   useLivemapStore.setState((s) => ({ 
     loading: { ...s.loading, restaurants: "pending" }, 
@@ -57,9 +118,13 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     fetchCount++;
     const startTime = performance.now();
     
-    // Fetch from direct backend API (same as eatery page) with bounds parameter
+    // Expand bounds to get more data and improve caching
+    const expandedBounds = expandBounds(bounds, 1.5);
+    const expandedKey = hashBounds(expandedBounds);
+    
+    // Fetch from direct backend API (same as eatery page) with expanded bounds parameter
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-    const response = await fetch(`${backendUrl}/api/v5/restaurants?bounds=${encodeURIComponent(key)}&limit=100`);
+    const response = await fetch(`${backendUrl}/api/v5/restaurants?bounds=${encodeURIComponent(expandedKey)}&limit=200`);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -100,11 +165,19 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
       zip_code: restaurant.zip_code
     }));
 
-    // Cache the transformed result
-    cache.set(key, { ts: now, data: transformedData });
+    // Filter data to the actual requested bounds (client-side filtering)
+    const filteredData = transformedData.filter(restaurant => {
+      const lat = restaurant.pos.lat;
+      const lng = restaurant.pos.lng;
+      return lat >= bounds.sw.lat && lat <= bounds.ne.lat &&
+             lng >= bounds.sw.lng && lng <= bounds.ne.lng;
+    });
+
+    // Cache the transformed result with expanded bounds key for better coverage
+    cache.set(expandedKey, { ts: now, data: transformedData });
     
-    // Update store
-    useLivemapStore.getState().setRestaurants(transformedData);
+    // Update store with filtered data
+    useLivemapStore.getState().setRestaurants(filteredData);
     useLivemapStore.setState((s) => ({ 
       loading: { ...s.loading, restaurants: "success" } 
     }));
@@ -114,7 +187,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     runFilter();
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🗺️ Loaded ${data?.length || 0} restaurants in ${fetchTime.toFixed(1)}ms (cache miss)`);
+      console.log(`🗺️ Loaded ${data?.length || 0} restaurants, filtered to ${filteredData.length} in ${fetchTime.toFixed(1)}ms (cache miss)`);
     }
     
   } catch (error: any) {

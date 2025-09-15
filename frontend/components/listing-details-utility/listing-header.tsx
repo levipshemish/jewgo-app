@@ -86,10 +86,10 @@ export function ListingHeader({
             variant="ghost" 
             size="icon" 
             onClick={onBack} 
-            className="h-6 w-6 p-0 m-0 min-w-0 min-h-0 max-w-6 max-h-6 hover:bg-gray-100 transition-colors"
-            style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '1.5rem', maxHeight: '1.5rem' }}
+            className="h-8 w-8 p-0 m-0 min-w-0 min-h-0 max-w-8 max-h-8 hover:bg-gray-100 transition-colors"
+            style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '2rem', maxHeight: '2rem' }}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         )}
 
@@ -157,10 +157,10 @@ export function ListingHeader({
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-6 w-6 p-0 m-0 min-w-0 min-h-0 max-w-6 max-h-6 hover:bg-gray-100 transition-colors"
-              style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '1.5rem', maxHeight: '1.5rem' }}
+              className="h-8 w-8 p-0 m-0 min-w-0 min-h-0 max-w-8 max-h-8 hover:bg-gray-100 transition-colors"
+              style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '2rem', maxHeight: '2rem' }}
             >
-              <Share className="h-4 w-4" />
+              <Share className="h-5 w-5" />
             </Button>
           </>
         )}
@@ -168,16 +168,16 @@ export function ListingHeader({
         {/* Favorite button */}
         {onFavorite && (
           <>
-            <div className="w-1.5" />
+            <div className="w-2" />
             <Button
               variant="ghost"
               size="icon"
               onClick={onFavorite}
-              className="h-6 w-6 p-0 m-0 min-w-0 min-h-0 max-w-6 max-h-6 hover:bg-gray-100 transition-colors group"
-              style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '1.5rem', maxHeight: '1.5rem' }}
+              className="h-8 w-8 p-0 m-0 min-w-0 min-h-0 max-w-8 max-h-8 hover:bg-gray-100 transition-colors group"
+              style={{ padding: 0, margin: 0, minWidth: 0, minHeight: 0, maxWidth: '2rem', maxHeight: '2rem' }}
             >
               <Heart
-                className={`h-4 w-4 transition-colors ${
+                className={`h-5 w-5 transition-colors ${
                   isFavorited
                     ? 'fill-red-500 text-red-500'
                     : 'text-gray-600 group-hover:fill-red-500 group-hover:text-red-500'

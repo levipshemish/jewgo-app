@@ -249,10 +249,31 @@ class PostgresAuthClient {
     }
   }
 
+  // Auth request deduplication
+  private _profilePromise: Promise<AuthUser> | null = null;
+
   /**
-   * Get current user profile
+   * Get current user profile with deduplication
    */
   async getProfile(): Promise<AuthUser> {
+    // If there's already a profile request in flight, return that promise
+    if (this._profilePromise) {
+      return this._profilePromise;
+    }
+
+    // Create new profile request
+    this._profilePromise = this._fetchProfile();
+    
+    try {
+      const result = await this._profilePromise;
+      return result;
+    } finally {
+      // Clear the promise when done (success or failure)
+      this._profilePromise = null;
+    }
+  }
+
+  private async _fetchProfile(): Promise<AuthUser> {
     const response = await this.request('/profile');
     const result = await this.handleResponse<{ user: AuthUser }>(response);
     return result.user;

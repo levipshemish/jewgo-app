@@ -92,6 +92,7 @@ class CSRFMiddleware:
             
             # Validate CSRF token
             user_agent = request.headers.get('User-Agent', '')
+            logger.debug(f"CSRF validation: session_id={session_id}, user_agent={repr(user_agent)}, token={csrf_token[:50]}...")
             is_valid = self.csrf_manager.validate_token(csrf_token, session_id, user_agent)
             
             if not is_valid:
@@ -113,15 +114,8 @@ class CSRFMiddleware:
         Returns:
             Session ID from authenticated user or anonymous session
         """
-        # Try to get session ID from authenticated user
-        if hasattr(g, 'user') and g.user:
-            user_id = g.user.get('user_id')
-            if user_id:
-                return f"user:{user_id}"
-        
-        # For unauthenticated requests, use IP-based session
-        client_ip = self._get_client_ip()
-        return f"anon:{client_ip}"
+        from utils.request_utils import get_session_id
+        return get_session_id()
     
     def _extract_csrf_token(self) -> Optional[str]:
         """

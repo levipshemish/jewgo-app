@@ -468,65 +468,20 @@ class Mikvah(Base):
     email = Column(String(255))
     
     # Location data
-    latitude = Column(Numeric(10, 8))
-    longitude = Column(Numeric(11, 8))
+    latitude = Column(Float)  # Changed from Numeric to Float to match Synagogue
+    longitude = Column(Float)  # Changed from Numeric to Float to match Synagogue
     
     # Mikvah details
     mikvah_type = Column(String(100))
-    mikvah_category = Column(String(100))
-    business_hours = Column(Text)
-    hours_parsed = Column(Boolean, default=False)
-    timezone = Column(String(50))
     requires_appointment = Column(Boolean, default=False)
-    appointment_phone = Column(String(50))
-    appointment_website = Column(String(500))
-    walk_in_available = Column(Boolean, default=False)
-    advance_booking_days = Column(Integer, default=0)
-    
-    # Distance and rating
-    distance = Column(String(50))
-    distance_miles = Column(Numeric(8, 2))
-    rating = Column(Numeric(3, 2))
-    review_count = Column(Integer, default=0)
-    star_rating = Column(Numeric(3, 2))
-    google_rating = Column(Numeric(3, 2))
-    
-    # Images
-    image_url = Column(Text)
-    logo_url = Column(Text)
-    
-    # Amenities
-    has_changing_rooms = Column(Boolean, default=True)
-    has_shower_facilities = Column(Boolean, default=True)
-    has_towels_provided = Column(Boolean, default=False)
-    has_soap_provided = Column(Boolean, default=False)
-    has_hair_dryers = Column(Boolean, default=False)
-    has_private_entrance = Column(Boolean, default=False)
-    has_disabled_access = Column(Boolean, default=False)
-    has_parking = Column(Boolean, default=False)
-    
-    # Religious and community
-    rabbinical_supervision = Column(String(255))
-    kosher_certification = Column(String(255))
-    community_affiliation = Column(String(255))
-    religious_authority = Column(String(255))
-    
-    # Pricing and payment
-    fee_amount = Column(Numeric(10, 2))
-    fee_currency = Column(String(3), default='USD')
-    accepts_credit_cards = Column(Boolean, default=False)
-    accepts_cash = Column(Boolean, default=True)
-    accepts_checks = Column(Boolean, default=False)
     
     # Status and verification
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     
     # Search and metadata
-    search_vector = Column(Text)  # tsvector type - using Text for compatibility
-    tags = Column(Text)  # text[] type - using Text for compatibility
-    admin_notes = Column(Text)
-    specials = Column(Text)
+    search_vector = Column(Text)
+    tags = Column(ARRAY(String))
     listing_type = Column(String(100), default='mikvah')
     status = Column(String(50), default='active')
     

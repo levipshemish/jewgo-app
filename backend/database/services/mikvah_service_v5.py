@@ -63,7 +63,8 @@ class MikvahServiceV5:
         sort: str = 'created_at_desc',
         include_relations: bool = False,
         user_context: Optional[Dict[str, Any]] = None,
-        use_cache: bool = True
+        use_cache: bool = True,
+        include_filter_options: bool = False
     ) -> Dict[str, Any]:
         """
         Get entities (mikvahs) with API-compatible interface.
