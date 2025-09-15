@@ -144,17 +144,21 @@ def get_entities(entity_type: str):
         entities = result.get('data', [])
         next_cursor = result.get('next_cursor')
         prev_cursor = result.get('prev_cursor')
+        total_count = result.get('total_count', len(entities))  # Use service total_count or fallback to current page count
 
         # Format response to match frontend PaginatedResponse<T> contract
         response_data = {
             'data': entities,  # Entities directly in data array
+            'next_cursor': next_cursor,
+            'prev_cursor': prev_cursor,
+            'total_count': total_count,  # Add total_count at top level for frontend compatibility
             'pagination': {
                 'cursor': cursor,
                 'next_cursor': next_cursor,
                 'prev_cursor': prev_cursor,
                 'limit': limit,
                 'has_more': next_cursor is not None,
-                'total_count': len(entities)  # Note: this is just current page count
+                'total_count': total_count  # Use actual total count from service
             },
             'metadata': {
                 'filters_applied': filters,
