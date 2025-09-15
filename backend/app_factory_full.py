@@ -19,6 +19,7 @@ from flask_caching import Cache
 from flask_session import Session
 from flask_socketio import SocketIO
 import redis
+from middleware.security_middleware import SecurityMiddleware
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -326,6 +327,10 @@ def create_app(config_class=None):
         logger.info("Shared limiter bridge initialized")
     except Exception as e:
         logger.warning("Failed to initialize shared limiter bridge", error=str(e))
+    
+    # Initialize Security Middleware
+    security_middleware = SecurityMiddleware(app)
+    logger.info("Security middleware initialized")
         
     logger.info(
         f"Rate limiter configured with storage: {redis_url} (high limits for testing)"
@@ -592,16 +597,27 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 WebSocket API blueprint: {e}")
         
-        # Register v5 Job Queue API
-        if feature_flags_v5.is_enabled('job_queue_api_v5', default=True):
-            try:
-                from routes.v5.job_queue_api import job_queue_api
-                app.register_blueprint(job_queue_api)
-                logger.info("V5 Job Queue API blueprint registered successfully")
-            except ImportError as e:
-                logger.warning(f"Could not import v5 Job Queue API blueprint: {e}")
-            except Exception as e:
-                logger.warning(f"Could not register v5 Job Queue API blueprint: {e}")
+            # Register v5 Job Queue API
+            if feature_flags_v5.is_enabled('job_queue_api_v5', default=True):
+                try:
+                    from routes.v5.job_queue_api import job_queue_api
+                    app.register_blueprint(job_queue_api)
+                    logger.info("V5 Job Queue API blueprint registered successfully")
+                except ImportError as e:
+                    logger.warning(f"Could not import v5 Job Queue API blueprint: {e}")
+                except Exception as e:
+                    logger.warning(f"Could not register v5 Job Queue API blueprint: {e}")
+            
+            # Register v5 Security API
+            if feature_flags_v5.is_enabled('security_api_v5', default=True):
+                try:
+                    from routes.v5.security_api import security_api
+                    app.register_blueprint(security_api)
+                    logger.info("V5 Security API blueprint registered successfully")
+                except ImportError as e:
+                    logger.warning(f"Could not import v5 Security API blueprint: {e}")
+                except Exception as e:
+                    logger.warning(f"Could not register v5 Security API blueprint: {e}")
         
         # Register v5 monitoring API
         try:
