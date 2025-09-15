@@ -110,7 +110,7 @@ class RestaurantServiceV5:
         """Get available filter options for restaurants."""
         try:
             # Get all restaurants to extract unique values
-            restaurants, _, _ = self.get_restaurants(
+            restaurants, _, _, _ = self.get_restaurants(
                 limit=1000,  # Get all restaurants for filter options
                 include_relations=False,
                 use_cache=True
@@ -620,7 +620,7 @@ class RestaurantServiceV5:
             search_filters['search'] = query.strip()
             
             # Get restaurants
-            restaurants, _, _ = self.get_restaurants(
+            restaurants, _, _, _ = self.get_restaurants(
                 limit=limit,
                 sort_key='name_asc',  # For search, sort by relevance/name
                 filters=search_filters,

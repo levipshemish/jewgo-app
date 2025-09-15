@@ -273,7 +273,7 @@ class SynagogueServiceV5:
             processed_filters = self._process_synagogue_filters(filters)
             
             # Get synagogues from repository
-            synagogues, next_cursor, prev_cursor = self.repository.get_entities_with_cursor(
+            synagogues, next_cursor, prev_cursor, total_count = self.repository.get_entities_with_cursor(
                 entity_type='synagogues',
                 cursor=cursor,
                 page=page,
@@ -290,7 +290,7 @@ class SynagogueServiceV5:
                 enhanced = self._enhance_synagogue_data(synagogue, user_context)
                 enhanced_synagogues.append(enhanced)
             
-            result = (enhanced_synagogues, next_cursor, prev_cursor)
+            result = (enhanced_synagogues, next_cursor, prev_cursor, total_count)
             
             # Cache result
             if use_cache and cache_key:
@@ -301,12 +301,12 @@ class SynagogueServiceV5:
                     prefix='cache'
                 )
             
-            logger.info(f"Retrieved {len(enhanced_synagogues)} synagogues")
+            logger.info(f"Retrieved {len(enhanced_synagogues)} synagogues, total: {total_count}")
             return result
             
         except Exception as e:
             logger.error(f"Error getting synagogues: {e}")
-            return [], None, None
+            return [], None, None, 0
     
     def get_entity(self, entity_id: int) -> Optional[Dict[str, Any]]:
         """

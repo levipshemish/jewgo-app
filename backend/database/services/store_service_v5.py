@@ -246,7 +246,7 @@ class StoreServiceV5:
         """
         try:
             # Get paginated results from repository
-            entities, next_cursor, prev_cursor = self.repository.get_entities_with_cursor(
+            entities, next_cursor, prev_cursor, total_count = self.repository.get_entities_with_cursor(
                 entity_type='stores',
                 filters=filters,
                 cursor=cursor,
@@ -266,11 +266,11 @@ class StoreServiceV5:
                            count=len(enriched_stores),
                            has_more=(next_cursor is not None))
             
-            return enriched_stores, next_cursor, prev_cursor
+            return enriched_stores, next_cursor, prev_cursor, total_count
             
         except Exception as e:
             self.logger.exception("Failed to get stores", error=str(e))
-            return [], None, None
+            return [], None, None, 0
 
     def _process_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Normalize store filters to repository schema."""

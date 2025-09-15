@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DataTable, { Column } from './DataTable';
 // Local hook and fetch function to avoid restricted imports
 const useAdminCsrf = () => {
