@@ -247,12 +247,28 @@ class MikvahServiceV5:
                            count=len(enriched_mikvahs), 
                            has_more=result['pagination']['has_more'])
             
-            # Return tuple format to match restaurant service
-            return (enriched_mikvahs, result['pagination']['next_cursor'], result['pagination']['prev_cursor'])
+            # Return dictionary format to match expected structure
+            return {
+                'data': enriched_mikvahs,
+                'pagination': {
+                    'next_cursor': result['pagination']['next_cursor'],
+                    'prev_cursor': result['pagination']['prev_cursor'],
+                    'has_more': result['pagination']['has_more']
+                },
+                'total_count': result['total_count']
+            }
             
         except Exception as e:
             self.logger.exception("Failed to get mikvahs", error=str(e))
-            return ([], None, None)
+            return {
+                'data': [],
+                'pagination': {
+                    'next_cursor': None,
+                    'prev_cursor': None,
+                    'has_more': False
+                },
+                'total_count': 0
+            }
 
     # --- Generic API wrappers for parity with other services ---
     def create_entity(self, data: Dict[str, Any], user_context: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
