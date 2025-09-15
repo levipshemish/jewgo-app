@@ -70,13 +70,19 @@ class RestaurantServiceV5:
             import os
             google_api_key = os.getenv('GOOGLE_MAPS_API_KEY')
             if google_api_key:
-                import googlemaps
-                self.places_client = googlemaps.Client(key=google_api_key)
-                logger.info("Google Places API client initialized")
-        except ImportError:
-            logger.warning("googlemaps library not available")
+                try:
+                    import googlemaps
+                    self.places_client = googlemaps.Client(key=google_api_key)
+                    logger.info("Google Places API client initialized")
+                except ImportError:
+                    logger.info("googlemaps library not available - using fallback Google Places API calls")
+                    self.places_client = None
+            else:
+                logger.info("GOOGLE_MAPS_API_KEY not set - Google Places API disabled")
+                self.places_client = None
         except Exception as e:
             logger.error(f"Failed to initialize Google Places client: {e}")
+            self.places_client = None
     
     def get_entity_count(
         self,

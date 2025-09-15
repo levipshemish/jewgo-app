@@ -416,8 +416,63 @@ class ETagV5Manager:
                         if category_filter:
                             status_filter += f" AND t.category_id = '{category_filter}'"
                     else:
+                        # For mikvahs and stores, check if hours table exists first
                         hours_table = f'{table}_hours'
                         status_filter = "t.status = 'active'"
+                        
+                        # Check if hours table exists before including it in query
+                        try:
+                            check_hours_table = session.execute(
+                                text(f"SELECT 1 FROM information_schema.tables WHERE table_name = '{hours_table}'")
+                            ).fetchone()
+                            if not check_hours_table:
+                                # Hours table doesn't exist, fall back to base table + reviews only
+                                query = f"""
+                                WITH base AS (
+                                    SELECT MAX(t.{timestamp_col}) AS max_ts
+                                    FROM {table} t
+                                    WHERE {status_filter}
+                                ), reviews AS (
+                                    SELECT MAX(r.updated_at) AS max_ts
+                                    FROM reviews r
+                                    WHERE r.entity_type = :entity_type
+                                )
+                                SELECT EXTRACT(EPOCH FROM GREATEST(
+                                    COALESCE(base.max_ts, 'epoch'::timestamp),
+                                    COALESCE(reviews.max_ts, 'epoch'::timestamp)
+                                ))::bigint AS watermark
+                                FROM base, reviews
+                                """
+                                params = {'entity_type': table[:-1]}
+                                result = session.execute(text(query), params).fetchone()
+                                if result and getattr(result, 'watermark', None):
+                                    return str(result.watermark)
+                                else:
+                                    return str(int(time.time()))
+                        except Exception:
+                            # If we can't check table existence, fall back to base table + reviews only
+                            query = f"""
+                            WITH base AS (
+                                SELECT MAX(t.{timestamp_col}) AS max_ts
+                                FROM {table} t
+                                WHERE {status_filter}
+                            ), reviews AS (
+                                SELECT MAX(r.updated_at) AS max_ts
+                                FROM reviews r
+                                WHERE r.entity_type = :entity_type
+                            )
+                            SELECT EXTRACT(EPOCH FROM GREATEST(
+                                COALESCE(base.max_ts, 'epoch'::timestamp),
+                                COALESCE(reviews.max_ts, 'epoch'::timestamp)
+                            ))::bigint AS watermark
+                            FROM base, reviews
+                            """
+                            params = {'entity_type': table[:-1]}
+                            result = session.execute(text(query), params).fetchone()
+                            if result and getattr(result, 'watermark', None):
+                                return str(result.watermark)
+                            else:
+                                return str(int(time.time()))
                     
                     query = f"""
                     WITH base AS (
