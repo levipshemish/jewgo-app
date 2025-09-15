@@ -20,20 +20,20 @@ from utils.etag_v5 import ETagV5Manager
 
 logger = logging.getLogger(__name__)
 
-# Create minimal blueprint for debugging - DISABLED IN PRODUCTION
+# Create reviews blueprint - now available in production
 reviews_v5 = Blueprint('reviews_v5', __name__, url_prefix='/api/v5/reviews')
 
-# Add security warning for incomplete implementation
-@reviews_v5.before_request
-def check_development_only():
-    """Ensure reviews endpoints are only accessible in development."""
-    import os
-    if os.environ.get('FLASK_ENV') == 'production':
-        from flask import jsonify
-        return jsonify({
-            'error': 'Reviews system is disabled in production',
-            'code': 'FEATURE_DISABLED'
-        }), 503
+# Reviews system is now available in production
+# @reviews_v5.before_request
+# def check_development_only():
+#     """Ensure reviews endpoints are only accessible in development."""
+#     import os
+#     if os.environ.get('FLASK_ENV') == 'production':
+#         from flask import jsonify
+#         return jsonify({
+#             'error': 'Reviews system is disabled in production',
+#             'code': 'FEATURE_DISABLED'
+#         }), 503
 
 # Global service instances
 entity_repository = None
