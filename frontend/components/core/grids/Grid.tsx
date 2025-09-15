@@ -103,12 +103,12 @@ export default function Grid({
   const [items, setItems] = useState<Array<RealShul | any>>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(0)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [backendError, setBackendError] = useState(false)
   const isRetryingRef = useRef(false)
 
   // Real API function with cursor-based pagination
-  const fetchItems = useCallback(async (limit: number, offset: number = 0, params?: string, timeoutMs: number = 8000) => {
+  const fetchItems = useCallback(async (limit: number, cursor?: string, params?: string, timeoutMs: number = 8000) => {
     try {
       // Build API URL with parameters based on data type - use v5 endpoints
       let endpoint: string;
@@ -125,7 +125,11 @@ export default function Grid({
       
       const apiUrl = new URL(endpoint, window.location.origin)
       apiUrl.searchParams.set('limit', limit.toString())
-      apiUrl.searchParams.set('offset', offset.toString())
+
+      // Add cursor for pagination if provided
+      if (cursor) {
+        apiUrl.searchParams.set('cursor', cursor)
+      }
 
       // Add entityType for marketplace (stores)
       if (dataType === 'marketplace') {
@@ -164,7 +168,6 @@ export default function Grid({
 
       // Calculate hasMore if not provided by backend
       const total = data.total_count || data.total || 0
-      const currentOffset = offset
       const hasMoreData = data.next_cursor !== null && data.next_cursor !== undefined
       
       
@@ -172,6 +175,7 @@ export default function Grid({
         items: data.data || data.synagogues || data.products || data.listings || [],
         total,
         hasMore: hasMoreData,
+        nextCursor: data.next_cursor,
         limit,
         cached: result.cached || false,
         performance: result.performance
@@ -249,10 +253,8 @@ export default function Grid({
 
     try {
       if (useRealData && !backendError) {
-        // Try real API first
-        const currentPage = page;
-        const offset = currentPage * 24;
-        const response = await fetchItems(24, offset, buildSearchParams());
+        // Try real API first - use cursor-based pagination
+        const response = await fetchItems(24, nextCursor, buildSearchParams());
         setItems((prev) => {
           // Deduplicate items by ID to prevent duplicates
           const existingIds = new Set(prev.map(item => item.id));
@@ -261,22 +263,21 @@ export default function Grid({
           return newItems;
         });
         setHasMore(response.hasMore);
-        setPage((prev) => prev + 1);
+        setNextCursor(response.nextCursor);
       } else {
         // Use mock data (fallback or when backend is in error state)
         await new Promise((resolve) => setTimeout(resolve, 1000));
         
         const newItems: MockShul[] = [];
         for (let i = 0; i < 24; i++) {
-          const itemIndex = page * 24 + i;
+          const itemIndex = items.length + i;
           if (itemIndex < 50) { // Limit mock data to 50 items
             newItems.push(generateMockShuls(1)[0]);
           }
         }
         
         setItems((prev) => [...prev, ...newItems]);
-        setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
-        setPage((prev) => prev + 1);
+        setHasMore(newItems.length === 24 && items.length + newItems.length < 50);
       }
     } catch (error) {
       console.error('Error loading more items:', error);
@@ -288,7 +289,7 @@ export default function Grid({
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const newItems: MockShul[] = [];
       for (let i = 0; i < 24; i++) {
-        const itemIndex = page * 24 + i;
+        const itemIndex = items.length + i;
         if (itemIndex < 50) {
           newItems.push(generateMockShuls(1)[0]);
         }
@@ -300,17 +301,16 @@ export default function Grid({
         const uniqueNewItems = newItems.filter((item: any) => !existingIds.has(item.id));
         return [...prev, ...uniqueNewItems];
       });
-      setHasMore(newItems.length === 24 && page * 24 + newItems.length < 50);
-      setPage((prev) => prev + 1);
+      setHasMore(newItems.length === 24 && items.length + newItems.length < 50);
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, page, useRealData, backendError, fetchItems, buildSearchParams, items.length]);
+  }, [loading, hasMore, nextCursor, useRealData, backendError, fetchItems, buildSearchParams, items.length]);
 
   // Load initial items when component mounts or category/search changes
   useEffect(() => {
     setItems([])
-    setPage(0)
+    setNextCursor(null)
     setHasMore(true)
     setBackendError(false)
     isRetryingRef.current = false
@@ -324,17 +324,16 @@ export default function Grid({
       const attemptFetch = async (): Promise<void> => {
         try {
             if (useRealData && currentRetryCount < 3) {
-              const response = await fetchItems(24, 0, buildSearchParams())
+              const response = await fetchItems(24, undefined, buildSearchParams())
               setItems(response.items)
               setHasMore(response.hasMore)
+              setNextCursor(response.nextCursor)
               isRetryingRef.current = false
-              setPage(1)
           } else {
             await new Promise((resolve) => setTimeout(resolve, 1000))
             const mockItems = generateMockShuls(24)
             setItems(mockItems)
             setHasMore(true)
-            setPage(1)
             
             if (currentRetryCount >= 3) {
               setBackendError(true)
@@ -367,10 +366,9 @@ export default function Grid({
           } else {
             setBackendError(true)
             
-              const mockItems = generateMockShuls(24)
-              setItems(mockItems)
-              setHasMore(true)
-              setPage(1)
+            const mockItems = generateMockShuls(24)
+            setItems(mockItems)
+            setHasMore(true)
           }
         }
       }
