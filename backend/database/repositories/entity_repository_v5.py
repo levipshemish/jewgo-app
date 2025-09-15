@@ -314,7 +314,7 @@ class EntityRepositoryV5(BaseRepository):
                 # Get total count for pagination info
                 count_query = session.query(model_class)
                 count_query = self._apply_filters(count_query, model_class, filters, mapping)
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude') and sort_key != 'distance_asc':
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
                     count_query = self._apply_geospatial_filter(count_query, model_class, filters)
                 
                 total_count = count_query.count()
