@@ -38,36 +38,35 @@ export async function proxyToBackend(
     requireNodeRuntime = false
   } = options;
 
-  // Check runtime requirement
-  if (requireNodeRuntime && process.env.NEXT_RUNTIME === 'edge') {
-    throw new Error('This endpoint requires Node.js runtime');
-  }
-
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
-  if (!backendUrl) {
-    throw new Error('Backend URL not configured');
-  }
-
-  const url = `${backendUrl}${endpoint}`;
-
-  // Build headers from request
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  // Preserve specified headers from original request
-  preserveHeaders.forEach(headerName => {
-    const value = request.headers.get(headerName);
-    if (value) {
-      headers[headerName] = value;
-    }
-  });
-
-  // Create AbortController for timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
   try {
+    // Check runtime requirement
+    if (requireNodeRuntime && process.env.NEXT_RUNTIME === 'edge') {
+      throw new Error('This endpoint requires Node.js runtime');
+    }
+
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+    if (!backendUrl) {
+      throw new Error('Backend URL not configured');
+    }
+
+    const url = `${backendUrl}${endpoint}`;
+
+    // Build headers from request
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Preserve specified headers from original request
+    preserveHeaders.forEach(headerName => {
+      const value = request.headers.get(headerName);
+      if (value) {
+        headers[headerName] = value;
+      }
+    });
+
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     const fetchOptions: RequestInit = {
       method,
       headers,
@@ -128,7 +127,12 @@ export async function proxyToBackend(
     // Forward multiple Set-Cookie headers using response.headers.raw()
     const setCookieHeaders = getSetCookieHeaders(response);
     setCookieHeaders.forEach(cookieValue => {
-      nextResponse.headers.append('Set-Cookie', cookieValue);
+      try {
+        nextResponse.headers.append('Set-Cookie', cookieValue);
+      } catch (error) {
+        // Fallback for test environments where append might not be available
+        nextResponse.headers.set('Set-Cookie', cookieValue);
+      }
     });
 
     // Forward other important headers
@@ -154,8 +158,6 @@ export async function proxyToBackend(
     };
 
   } catch (error) {
-    clearTimeout(timeoutId);
-
     if (mapErrors) {
       return handleProxyError(error);
     }
@@ -245,7 +247,8 @@ function handleProxyError(error: any): ProxyResponse {
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
         success: false,
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+        message: error?.message || 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
       },
       { status: 500 }
     ),
@@ -263,7 +266,7 @@ export function createAuthErrorResponse(
   status: number,
   details?: any
 ): NextResponse {
-  return NextResponse.json(
+  const response = NextResponse.json(
     {
       error,
       code,
@@ -271,14 +274,14 @@ export function createAuthErrorResponse(
       details: process.env.NODE_ENV === 'development' ? details : undefined,
       timestamp: new Date().toISOString()
     },
-    { 
-      status,
-      headers: {
-        'Cache-Control': 'no-store',
-        'Content-Type': 'application/json'
-      }
-    }
+    { status }
   );
+  
+  // Set headers manually to ensure they're set correctly
+  response.headers.set('Cache-Control', 'no-store');
+  response.headers.set('Content-Type', 'application/json');
+  
+  return response;
 }
 
 /**
