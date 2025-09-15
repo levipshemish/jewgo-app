@@ -182,39 +182,76 @@ class PostgresAuthClient {
    */
   public async getCsrf(): Promise<string> {
     // v5 auth exposes CSRF at /api/v5/auth/csrf
-    const resp = await fetch(`${this.baseUrl}/api/v5/auth/csrf`, { credentials: 'include', cache: 'no-store' });
-    // Try to parse JSON, but handle HTML/error bodies gracefully
-    const contentType = resp.headers.get('Content-Type') || '';
-    let token: string | null = null;
-    if (resp.ok) {
+    const url = `${this.baseUrl}/api/v5/auth/csrf`;
+    const attempts = 3;
+    let lastError: PostgresAuthError | null = null;
+
+    for (let i = 0; i < attempts; i++) {
       try {
-        if (contentType.includes('application/json')) {
-          const data = await resp.json();
-          // Backend returns { success, data: { csrf_token } }
-          token = data?.data?.csrf_token ?? data?.csrf_token ?? data?.token ?? null;
-        } else {
-          // Unexpected content-type on success
-          const _ = await resp.text();
-          token = null;
+        const resp = await fetch(url, { credentials: 'include', cache: 'no-store' });
+        const contentType = resp.headers.get('Content-Type') || '';
+        let token: string | null = null;
+        if (resp.ok) {
+          try {
+            if (contentType.includes('application/json')) {
+              const data = await resp.json();
+              token = data?.data?.csrf_token ?? data?.csrf_token ?? data?.token ?? null;
+            } else {
+              const _ = await resp.text();
+              token = null;
+            }
+          } catch {
+            token = null;
+          }
+          if (token) {
+            this.csrfToken = token;
+            return this.csrfToken;
+          }
         }
-      } catch {
-        // JSON parse failed
-        token = null;
-      }
-      if (token) {
-        this.csrfToken = token;
-        return this.csrfToken;
+
+        // Not OK response — construct informative error
+        let bodyPreview = '';
+        try { bodyPreview = (await resp.text()).slice(0, 120); } catch {}
+
+        if (resp.status === 503) {
+          lastError = new PostgresAuthError(
+            'CSRF service unavailable (503). This may be a temporary outage. Retry shortly. If it persists, check API health and CSRF configuration on the backend.',
+            'CSRF_SERVICE_UNAVAILABLE',
+            503,
+          );
+        } else if (resp.status === 502) {
+          lastError = new PostgresAuthError(
+            'Gateway error (502) when fetching CSRF. This usually means the reverse proxy cannot reach the auth service. Retry shortly. If it persists, check Nginx upstream and the auth service health.',
+            'CSRF_BAD_GATEWAY',
+            502,
+          );
+        } else {
+          lastError = new PostgresAuthError(
+            `Failed to obtain CSRF token (${resp.status}). ${bodyPreview}`,
+            'CSRF_ERROR',
+            resp.status,
+          );
+        }
+
+        // Backoff before next attempt (exponential: 200ms, 400ms)
+        if (i < attempts - 1) {
+          const delay = 200 * Math.pow(2, i);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+      } catch (e) {
+        // Network or other error; store and backoff
+        lastError = e instanceof PostgresAuthError ? e : new PostgresAuthError('Network error fetching CSRF token', 'NETWORK_ERROR');
+        if (i < attempts - 1) {
+          const delay = 200 * Math.pow(2, i);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
       }
     }
 
-    // Build a clearer error including status and a short body preview
-    let bodyPreview = '';
-    try { bodyPreview = (await resp.text()).slice(0, 120); } catch {}
-    throw new PostgresAuthError(
-      `Failed to obtain CSRF token (${resp.status}). ${bodyPreview}`,
-      'CSRF_ERROR',
-      resp.status,
-    );
+    // Out of attempts
+    throw lastError ?? new PostgresAuthError('Failed to obtain CSRF token', 'CSRF_ERROR');
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
