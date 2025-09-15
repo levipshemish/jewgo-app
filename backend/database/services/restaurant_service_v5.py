@@ -119,7 +119,7 @@ class RestaurantServiceV5:
             
             # Use direct database queries instead of fetching all restaurants
             with self.repository.connection_manager.session_scope() as session:
-                from sqlalchemy import distinct, func
+                from sqlalchemy import distinct, func, text
                 from database.models import Restaurant
                 
                 # Get distinct values efficiently with limited results
@@ -226,7 +226,7 @@ class RestaurantServiceV5:
                 
                 # Count restaurants currently open (based on open_now field in hours_json)
                 restaurants_open_now = session.query(func.count(Restaurant.id)).filter(
-                    Restaurant.hours_json.op('->>')('open_now') == 'true'
+                    func.cast(Restaurant.hours_json, text('jsonb'))['open_now'].astext == 'true'
                 ).scalar()
                 
                 # Build hours options based on actual data availability
