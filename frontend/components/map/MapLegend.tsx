@@ -9,7 +9,7 @@ interface MapLegendProps {
 export default function MapLegend({ showRatingBubbles }: MapLegendProps) {
   return (
     <div 
-      className="absolute top-20 left-2 sm:top-24 sm:left-4 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2 shadow-lg z-10 max-w-[100px] sm:max-w-[120px] md:max-w-none"
+      className="absolute top-28 left-2 sm:top-32 sm:left-4 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2 shadow-lg z-10 max-w-[100px] sm:max-w-[120px] md:max-w-none"
       role="region"
       aria-label="Map legend showing kosher restaurant types"
     >

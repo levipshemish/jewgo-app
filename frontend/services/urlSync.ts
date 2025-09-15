@@ -8,25 +8,26 @@
  */
 
 import { useLivemapStore } from '@/lib/stores/livemap-store';
-import type { Filters, LatLng } from '@/types/livemap';
+import type { LatLng } from '@/types/livemap';
+import type { AppliedFilters } from '@/lib/filters/filters.types';
 
 // URL-synced fields (subset of filters)
 const URL_SYNC_FIELDS = [
-  'query',
-  'kosher', 
-  'agencies',
-  'minRating',
+  'q',
+  'dietary', 
+  'agency',
+  'ratingMin',
   'maxDistanceMi'
 ] as const;
 
-type URLSyncableFilters = Pick<Filters, typeof URL_SYNC_FIELDS[number]>;
+type URLSyncableFilters = Pick<AppliedFilters, typeof URL_SYNC_FIELDS[number]>;
 
 // URL parameter names
 const URL_PARAMS = {
-  query: 'q',
-  kosher: 'k',
-  agencies: 'a',
-  minRating: 'r',
+  q: 'q',
+  dietary: 'k',
+  agency: 'a',
+  ratingMin: 'r',
   maxDistanceMi: 'd',
   center: 'c',
   zoom: 'z',
@@ -57,30 +58,30 @@ function hydrateStoreFromURL(): void {
   const filters: Partial<URLSyncableFilters> = {};
   
   // Parse filter parameters
-  if (urlParams.has(URL_PARAMS.query)) {
-    filters.query = urlParams.get(URL_PARAMS.query) || undefined;
+  if (urlParams.has(URL_PARAMS.q)) {
+    filters.q = urlParams.get(URL_PARAMS.q) || undefined;
   }
   
-  if (urlParams.has(URL_PARAMS.kosher)) {
-    const kosherParam = urlParams.get(URL_PARAMS.kosher);
-    if (kosherParam) {
-      filters.kosher = kosherParam.split(',').filter(k => 
+  if (urlParams.has(URL_PARAMS.dietary)) {
+    const dietaryParam = urlParams.get(URL_PARAMS.dietary);
+    if (dietaryParam) {
+      filters.dietary = dietaryParam.split(',').filter(k => 
         ['MEAT', 'DAIRY', 'PAREVE'].includes(k)
-      ) as Array<'MEAT' | 'DAIRY' | 'PAREVE'>;
+      );
     }
   }
   
-  if (urlParams.has(URL_PARAMS.agencies)) {
-    const agenciesParam = urlParams.has(URL_PARAMS.agencies);
-    if (agenciesParam) {
-      filters.agencies = urlParams.get(URL_PARAMS.agencies)?.split(',') || [];
+  if (urlParams.has(URL_PARAMS.agency)) {
+    const agencyParam = urlParams.get(URL_PARAMS.agency);
+    if (agencyParam) {
+      filters.agency = agencyParam;
     }
   }
   
-  if (urlParams.has(URL_PARAMS.minRating)) {
-    const rating = parseFloat(urlParams.get(URL_PARAMS.minRating) || '0');
+  if (urlParams.has(URL_PARAMS.ratingMin)) {
+    const rating = parseFloat(urlParams.get(URL_PARAMS.ratingMin) || '0');
     if (rating > 0) {
-      filters.minRating = rating;
+      filters.ratingMin = rating;
     }
   }
   
@@ -169,7 +170,7 @@ function subscribeToStoreChanges(): void {
  * Update URL from store state
  */
 function updateURLFromStore(state: {
-  filters: Filters;
+  filters: AppliedFilters;
   map: { center: LatLng | null; zoom: number };
 }): void {
   // Handle SSR - skip URL update if window is not available
@@ -180,20 +181,20 @@ function updateURLFromStore(state: {
   const urlParams = new URLSearchParams();
   
   // Add filter parameters
-  if (state.filters.query) {
-    urlParams.set(URL_PARAMS.query, state.filters.query);
+  if (state.filters.q) {
+    urlParams.set(URL_PARAMS.q, state.filters.q);
   }
   
-  if (state.filters.kosher && state.filters.kosher.length > 0) {
-    urlParams.set(URL_PARAMS.kosher, state.filters.kosher.join(','));
+  if (state.filters.dietary && state.filters.dietary.length > 0) {
+    urlParams.set(URL_PARAMS.dietary, state.filters.dietary.join(','));
   }
   
-  if (state.filters.agencies && state.filters.agencies.length > 0) {
-    urlParams.set(URL_PARAMS.agencies, state.filters.agencies.join(','));
+  if (state.filters.agency) {
+    urlParams.set(URL_PARAMS.agency, state.filters.agency);
   }
   
-  if (state.filters.minRating && state.filters.minRating > 0) {
-    urlParams.set(URL_PARAMS.minRating, state.filters.minRating.toString());
+  if (state.filters.ratingMin && state.filters.ratingMin > 0) {
+    urlParams.set(URL_PARAMS.ratingMin, state.filters.ratingMin.toString());
   }
   
   if (state.filters.maxDistanceMi && state.filters.maxDistanceMi > 0) {
@@ -240,30 +241,30 @@ export function getURLState(): {
   
   const filters: URLSyncableFilters = {};
   
-  if (urlParams.has(URL_PARAMS.query)) {
-    filters.query = urlParams.get(URL_PARAMS.query) || undefined;
+  if (urlParams.has(URL_PARAMS.q)) {
+    filters.q = urlParams.get(URL_PARAMS.q) || undefined;
   }
   
-  if (urlParams.has(URL_PARAMS.kosher)) {
-    const kosherParam = urlParams.get(URL_PARAMS.kosher);
-    if (kosherParam) {
-      filters.kosher = kosherParam.split(',').filter(k => 
+  if (urlParams.has(URL_PARAMS.dietary)) {
+    const dietaryParam = urlParams.get(URL_PARAMS.dietary);
+    if (dietaryParam) {
+      filters.dietary = dietaryParam.split(',').filter(k => 
         ['MEAT', 'DAIRY', 'PAREVE'].includes(k)
-      ) as Array<'MEAT' | 'DAIRY' | 'PAREVE'>;
+      );
     }
   }
   
-  if (urlParams.has(URL_PARAMS.agencies)) {
-    const agenciesParam = urlParams.get(URL_PARAMS.agencies);
-    if (agenciesParam) {
-      filters.agencies = agenciesParam.split(',');
+  if (urlParams.has(URL_PARAMS.agency)) {
+    const agencyParam = urlParams.get(URL_PARAMS.agency);
+    if (agencyParam) {
+      filters.agency = agencyParam;
     }
   }
   
-  if (urlParams.has(URL_PARAMS.minRating)) {
-    const rating = parseFloat(urlParams.get(URL_PARAMS.minRating) || '0');
+  if (urlParams.has(URL_PARAMS.ratingMin)) {
+    const rating = parseFloat(urlParams.get(URL_PARAMS.ratingMin) || '0');
     if (rating > 0) {
-      filters.minRating = rating;
+      filters.ratingMin = rating;
     }
   }
   

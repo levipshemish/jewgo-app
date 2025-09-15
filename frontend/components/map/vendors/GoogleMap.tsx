@@ -75,7 +75,7 @@ export default function GoogleMap({
           zoom,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           mapTypeControl: true,
-          streetViewControl: true,
+          streetViewControl: false,
           fullscreenControl: true,
           zoomControl: true,
           clickableIcons: true,

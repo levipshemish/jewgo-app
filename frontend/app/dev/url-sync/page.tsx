@@ -68,16 +68,16 @@ export default function URLSyncTestPage() {
   const handleTestFilter = (filterType: string) => {
     switch (filterType) {
       case 'meat':
-        setFilters({ kosher: ['MEAT'] });
+        setFilters({ dietary: ['MEAT'] });
         break;
       case 'dairy':
-        setFilters({ kosher: ['DAIRY'] });
+        setFilters({ dietary: ['DAIRY'] });
         break;
       case 'high-rating':
-        setFilters({ minRating: 4.5 });
+        setFilters({ ratingMin: 4.5 });
         break;
       case 'search':
-        setFilters({ query: 'burger' });
+        setFilters({ q: 'burger' });
         break;
       case 'clear':
         setFilters({});

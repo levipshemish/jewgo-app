@@ -152,19 +152,48 @@ execute_on_server "
 
 # Build and restart backend via docker compose (ensures Nginx upstream 'backend' points to the new container)
 print_status "Building new backend Docker image..."
+# Prefer docker compose if docker-compose.yml exists; otherwise fallback to docker build/run
 execute_on_server "
-    cd $SERVER_PATH && \
-    docker compose -f docker-compose.yml build backend && \
-    echo 'Backend image built successfully'
+    set -euo pipefail
+    if [ -f '$SERVER_PATH/docker-compose.yml' ]; then
+        cd $SERVER_PATH && \
+        docker compose -f docker-compose.yml build backend && \
+        echo 'Backend image built successfully (compose)'
+    else
+        echo 'docker-compose.yml not found; using direct docker build' && \
+        cd $SERVER_PATH/backend && \
+        docker build -t jewgo-app-backend . && \
+        echo 'Backend image built successfully (docker build)'
+    fi
 " "Building new backend Docker image"
 
-print_status "Restarting backend service via docker compose..."
+print_status "Restarting backend service..."
 execute_on_server "
-    cd $SERVER_PATH && \
-    docker compose -f docker-compose.yml stop backend || true && \
-    docker compose -f docker-compose.yml rm -f backend || true && \
-    docker compose -f docker-compose.yml up -d backend && \
-    echo 'Backend service restarted'
+    set -euo pipefail
+    if [ -f '$SERVER_PATH/docker-compose.yml' ]; then
+        cd $SERVER_PATH && \
+        docker compose -f docker-compose.yml stop backend || true && \
+        docker compose -f docker-compose.yml rm -f backend || true && \
+        docker compose -f docker-compose.yml up -d backend && \
+        echo 'Backend service restarted (compose)'
+    else
+        echo 'docker-compose.yml not found; using direct docker run' && \
+        # Stop any existing container
+        docker stop jewgo_backend 2>/dev/null || true && \
+        docker rm jewgo_backend 2>/dev/null || true && \
+        # Start container on compose default network with alias backend for Nginx upstream
+        cd $SERVER_PATH && \
+        docker run -d \
+          --name jewgo_backend \
+          --network jewgo-app_default \
+          --network-alias backend \
+          -p 5000:5000 \
+          --env-file .env \
+          -w /app \
+          jewgo-app-backend \
+          gunicorn --config backend/config/gunicorn.conf.py backend.wsgi:app && \
+        echo 'Backend container started (docker run with gunicorn and network alias)'
+    fi
 " "Starting new backend container"
 
 # Clear Redis cache

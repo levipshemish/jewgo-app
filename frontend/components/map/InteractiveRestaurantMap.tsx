@@ -164,7 +164,7 @@ export function InteractiveRestaurantMap({
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           mapId, // Required for Advanced Markers
           mapTypeControl: true,
-          streetViewControl: true,
+          streetViewControl: false,
           fullscreenControl: true,
           zoomControl: true,
           clickableIcons: true,
