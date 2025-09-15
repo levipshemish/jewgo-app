@@ -22,6 +22,8 @@ from services.auth_service_v5 import AuthServiceV5
 from services.auth.token_manager_v5 import TokenManagerV5
 from services.auth.cookies import set_auth, clear_auth
 from services.auth.jwks_manager import JWKSManager
+from services.auth.sessions import revoke_family
+from utils.postgres_auth import get_postgres_auth
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5
 # CSRF manager import moved to function level to avoid circular imports
@@ -237,6 +239,16 @@ def logout():
         if access_token:
             auth_service.invalidate_token(access_token)
         if refresh_token:
+            # Revoke the entire refresh family defensively
+            try:
+                payload = token_manager_v5.verify_token(refresh_token)
+                if payload and payload.get('type') == 'refresh':
+                    fid = payload.get('fid')
+                    if fid:
+                        revoke_family(auth_service.db_manager, fid=fid)
+            except Exception as e:
+                logger.warning(f"Failed to revoke refresh family on logout: {e}")
+            # Also invalidate legacy-style if still in use
             auth_service.invalidate_token(refresh_token)
 
         # Create response
@@ -301,7 +313,7 @@ def refresh_token():
             new_tokens.get('refresh_token', ''),
             int(new_tokens.get('expires_in', 8 * 60 * 60))
         )
-
+        
         return response
 
     except Exception as e:
@@ -535,6 +547,66 @@ def verify_token():
             'error': 'Token verification service unavailable',
             'response_time_ms': round(duration_ms, 2)
         }), 503
+
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+@rate_limit_by_user(max_requests=10, window_minutes=60)
+def forgot_password():
+    """Initiate password reset flow."""
+    try:
+        data = request.get_json() or {}
+        email = (data.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            return jsonify({'success': False, 'error': 'Valid email is required'}), 400
+
+        ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.headers.get('X-Real-IP') or request.remote_addr
+        auth_mgr = get_postgres_auth()
+        # Do not reveal user existence; function returns True even if user missing
+        ok = auth_mgr.initiate_password_reset(email, ip_address=ip)
+        return jsonify({'success': True, 'message': 'If the email exists, a reset link was sent.'}), 200
+    except Exception as e:
+        logger.error(f"Forgot password error: {e}")
+        return jsonify({'success': False, 'error': 'Password reset service unavailable'}), 503
+
+
+@auth_bp.route('/reset-password', methods=['POST'])
+@rate_limit_by_user(max_requests=10, window_minutes=60)
+def reset_password():
+    """Reset password with a valid reset token."""
+    try:
+        data = request.get_json() or {}
+        token = data.get('token')
+        new_password = data.get('new_password')
+        if not token or not new_password:
+            return jsonify({'success': False, 'error': 'Token and new_password are required'}), 400
+
+        ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.headers.get('X-Real-IP') or request.remote_addr
+        auth_mgr = get_postgres_auth()
+        ok = auth_mgr.reset_password_with_token(token, new_password, ip_address=ip)
+        if not ok:
+            return jsonify({'success': False, 'error': 'Invalid or expired token'}), 400
+        return jsonify({'success': True, 'message': 'Password has been reset'}), 200
+    except Exception as e:
+        logger.error(f"Reset password error: {e}")
+        return jsonify({'success': False, 'error': 'Password reset service unavailable'}), 503
+
+
+@auth_bp.route('/verify-email', methods=['GET'])
+@rate_limit_by_user(max_requests=20, window_minutes=60)
+def verify_email():
+    """Verify user email using a verification token."""
+    try:
+        token = request.args.get('token') or (request.json.get('token') if request.is_json and request.json else None)
+        if not token:
+            return jsonify({'success': False, 'error': 'Verification token is required'}), 400
+        auth_mgr = get_postgres_auth()
+        ok = auth_mgr.verify_email(token)
+        if not ok:
+            return jsonify({'success': False, 'error': 'Invalid or expired verification token'}), 400
+        return jsonify({'success': True, 'message': 'Email verified successfully'}), 200
+    except Exception as e:
+        logger.error(f"Email verification error: {e}")
+        return jsonify({'success': False, 'error': 'Verification service unavailable'}), 503
 
 
 @auth_bp.route('/csrf', methods=['GET'])

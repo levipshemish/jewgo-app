@@ -302,8 +302,7 @@ class AuthV5Middleware:
         logger.info(f"Enhanced token refresh completed for user {self._mask_pii(uid)}")
     
     def _mint_enhanced_access_token(self, auth_manager, uid: str):
-        """Mint enhanced access token with improved role consistency."""
-        from services.auth.tokens import mint_access
+        """Mint enhanced access token with improved role consistency using TokenManagerV5."""
         
         # Enhanced role and permission query
         with auth_manager.db.connection_manager.session_scope() as session:
@@ -339,7 +338,7 @@ class AuthV5Middleware:
         import json as _json
         roles = _json.loads(row.roles) if row and row.roles else []
         
-        return mint_access(uid, email, roles, is_guest=is_guest)
+        return self.token_manager_v5.mint_access_token(uid, email, roles)
     
     def _get_rate_limit_tier(self, user_roles: List[Dict[str, Any]]) -> str:
         """Determine rate limit tier based on user roles."""

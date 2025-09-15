@@ -145,8 +145,8 @@ def _attempt_refresh_if_needed(auth_manager, user_info) -> None:
 
     new_sid, new_rt, new_rt_ttl = rotate_res
 
-    # Mint a new access token using services.auth.tokens for consistency with cookies
-    from services.auth.tokens import mint_access
+    # Mint a new access token using TokenManagerV5 for consistent claims
+    tm = TokenManagerV5()
 
     # Query roles + email to mint an access token
     with auth_manager.db.connection_manager.session_scope() as session:
@@ -170,8 +170,7 @@ def _attempt_refresh_if_needed(auth_manager, user_info) -> None:
     email = row.email if row else ''
     import json as _json
     roles = _json.loads(row.roles) if row and row.roles else []
-    is_guest = any(r.get('role') == 'guest' for r in roles)
-    new_access, access_ttl = mint_access(uid, email, roles, is_guest=is_guest)
+    new_access, access_ttl = tm.mint_access_token(uid, email, roles)
 
     # Stash into Flask g; the registered after_request will apply cookies
     g._auth_set_cookie = (new_access, new_rt, access_ttl)

@@ -122,7 +122,7 @@ class SynagogueServiceV5:
         This method provides a unified interface for the entity API routes.
         """
         try:
-            synagogues, next_cursor, prev_cursor = self.get_synagogues(
+            synagogues, next_cursor, prev_cursor, total_count = self.get_synagogues(
                 cursor=cursor,
                 page=page,
                 limit=limit,
@@ -136,7 +136,8 @@ class SynagogueServiceV5:
             response = {
                 'data': synagogues,
                 'next_cursor': next_cursor,
-                'prev_cursor': prev_cursor
+                'prev_cursor': prev_cursor,
+                'total_count': total_count
             }
             # Optionally include filter options metadata on first page
             if include_filter_options and (page is None or page == 1):
@@ -152,7 +153,8 @@ class SynagogueServiceV5:
             return {
                 'data': [],
                 'next_cursor': None,
-                'prev_cursor': None
+                'prev_cursor': None,
+                'total_count': 0
             }
 
     def get_entity_count(

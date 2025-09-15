@@ -142,9 +142,29 @@ def get_entities(entity_type: str):
             sort=sort
         )
         entities = result.get('data', [])
+        
+        # Handle different pagination formats
         next_cursor = result.get('next_cursor')
         prev_cursor = result.get('prev_cursor')
-        total_count = result.get('total_count', len(entities))  # Use service total_count or fallback to current page count
+        
+        # Check for mikvah/store service format with pagination object
+        if next_cursor is None or prev_cursor is None:
+            pagination = result.get('pagination', {})
+            if next_cursor is None:
+                next_cursor = pagination.get('next_cursor')
+            if prev_cursor is None:
+                prev_cursor = pagination.get('prev_cursor')
+        
+        # Handle different response formats from different services
+        total_count = result.get('total_count')
+        if total_count is None:
+            # Check for mikvah/store service format with meta.total_count
+            meta = result.get('meta', {})
+            total_count = meta.get('total_count', len(entities))
+        
+        # Fallback to current page count if still None
+        if total_count is None:
+            total_count = len(entities)
 
         # Format response to match frontend PaginatedResponse<T> contract
         response_data = {
