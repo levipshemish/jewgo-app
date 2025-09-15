@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,9 +32,9 @@ export default function StepUpAuthPage() {
 
   useEffect(() => {
     fetchStepUpChallenge();
-  }, []);
+  }, [fetchStepUpChallenge]);
 
-  const fetchStepUpChallenge = async () => {
+  const fetchStepUpChallenge = useCallback(async () => {
     try {
       const response = await postgresAuth.request('/step-up/challenge', {
         method: 'POST',
@@ -52,7 +52,7 @@ export default function StepUpAuthPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [returnTo]);
 
   const handleFreshSession = async () => {
     setProcessing(true);

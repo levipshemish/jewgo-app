@@ -7,7 +7,6 @@
 import { useLivemapStore } from "@/lib/stores/livemap-store";
 import { debounce } from "@/lib/debounce";
 import { loadRestaurantsInBounds } from "./dataManager";
-import { runFilter } from "./workerManager";
 import type { Bounds } from "@/types/livemap";
 import type { AppliedFilters } from "@/lib/filters/filters.types";
 
@@ -29,14 +28,31 @@ export const onBoundsChangedImmediate = (bounds: Bounds, activeFilters?: Applied
   loadRestaurantsInBounds(bounds, activeFilters);
 };
 
-// Debounced filter change handler
+// Debounced filter change handler - now reloads data with server-side filtering
 export const onFiltersChanged = debounce((filters: AppliedFilters) => {
   useLivemapStore.getState().setFilters(filters);
-  runFilter();
+  const state = useLivemapStore.getState();
+  if (state.map.bounds) {
+    // Reload data with new filters (server-side filtering)
+    loadRestaurantsInBounds(state.map.bounds, filters).then(() => {
+      // After reloading, set all restaurants as filtered (server already filtered them)
+      const allRestaurantIds = state.restaurants.map(r => r.id);
+      useLivemapStore.getState().applyFilterResults(allRestaurantIds);
+    });
+  }
 }, FILTER_DEBOUNCE_MS);
 
-// Debounced search handler
+// Debounced search handler - now reloads data with server-side filtering
 export const onSearchChanged = debounce((query: string) => {
-  useLivemapStore.getState().setFilters({ q: query });
-  runFilter();
+  const filters = { q: query };
+  useLivemapStore.getState().setFilters(filters);
+  const state = useLivemapStore.getState();
+  if (state.map.bounds) {
+    // Reload data with new filters (server-side filtering)
+    loadRestaurantsInBounds(state.map.bounds, filters).then(() => {
+      // After reloading, set all restaurants as filtered (server already filtered them)
+      const allRestaurantIds = state.restaurants.map(r => r.id);
+      useLivemapStore.getState().applyFilterResults(allRestaurantIds);
+    });
+  }
 }, FILTER_DEBOUNCE_MS);

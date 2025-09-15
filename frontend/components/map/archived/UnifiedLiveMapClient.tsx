@@ -18,7 +18,17 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useMemoryMonitoring } from '@/lib/hooks/useMemoryMonitoring';
 import { usePerformanceMonitoring } from '@/lib/hooks/usePerformanceMonitoring';
 import { favoritesManager } from '@/lib/utils/favorites';
-import { calculateDistance } from '@/lib/utils/distance';
+// Local distance calculation function
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
@@ -61,7 +71,7 @@ export default function UnifiedLiveMapClient() {
 
   // Core state
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
-  const [displayedRestaurants, setDisplayedRestaurants] = useState<Restaurant[]>([]);
+  const [_displayedRestaurants, setDisplayedRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,7 +149,7 @@ export default function UnifiedLiveMapClient() {
     // Note: kosherDetails filter removed as it's not in AppliedFilters schema
 
     return filtered;
-  }, [allRestaurants, activeFilters, userLocation]);
+  }, [allRestaurants, activeFilters, userLocation, calculateDistance]);
 
   // Update displayed restaurants when filtered restaurants change
   useEffect(() => {
@@ -867,18 +877,7 @@ export default function UnifiedLiveMapClient() {
     return () => clearInterval(interval);
   }, [getPerformanceSummary]);
 
-  // Calculate distance between two points in miles
-  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 3959; // Earth's radius in miles
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }, []);
+  // calculateDistance function is now defined at the top of the file
 
   // Transform restaurant data to match Card component's CardData interface
   const _transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
@@ -944,11 +943,11 @@ export default function UnifiedLiveMapClient() {
     };
   }, [userLocation, calculateDistance]);
 
-  const handleFilterChange = useCallback((filterType: keyof typeof activeFilters, value: any) => {
+  const _handleFilterChange = useCallback((filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
   }, [setFilter]);
 
-  const handleToggleFilter = useCallback((filterType: keyof typeof activeFilters) => {
+  const _handleToggleFilter = useCallback((filterType: keyof typeof activeFilters) => {
     const currentValue = activeFilters[filterType];
     if (currentValue) {
       setFilter(filterType, undefined);
@@ -957,7 +956,7 @@ export default function UnifiedLiveMapClient() {
     }
   }, [activeFilters, setFilter]);
 
-  const handleClearAll = useCallback(() => {
+  const _handleClearAll = useCallback(() => {
     setSearchQuery('');
     clearAllFilters();
   }, [clearAllFilters]);
@@ -970,7 +969,7 @@ export default function UnifiedLiveMapClient() {
     setShowFilters(false);
   }, []);
 
-  const handleFilterOptionsReceived = useCallback((options: any) => {
+  const _handleFilterOptionsReceived = useCallback((options: any) => {
     setFilterOptions(options);
   }, []);
 

@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -93,9 +93,9 @@ export default function CaptchaChallenge({
         scriptRef.current.remove();
       }
     };
-  }, [provider, isLoaded, siteKey]);
+  }, [provider, isLoaded, siteKey, renderRecaptcha, renderTurnstile]);
 
-  const renderTurnstile = () => {
+  const renderTurnstile = useCallback(() => {
     if (!widgetRef.current || !(window as any).turnstile) return;
 
     try {
@@ -125,9 +125,9 @@ export default function CaptchaChallenge({
       setError('Failed to render Turnstile widget');
       onError?.('Failed to render Turnstile widget');
     }
-  };
+  }, [siteKey, theme, size, onVerify, onError, onExpired]);
 
-  const renderRecaptcha = () => {
+  const renderRecaptcha = useCallback(() => {
     if (!widgetRef.current || !(window as any).grecaptcha) return;
 
     try {
@@ -153,7 +153,7 @@ export default function CaptchaChallenge({
       setError('Failed to render reCAPTCHA widget');
       onError?.('Failed to render reCAPTCHA widget');
     }
-  };
+  }, [siteKey, theme, size, onVerify, onError, onExpired]);
 
   const resetCaptcha = () => {
     setError(null);

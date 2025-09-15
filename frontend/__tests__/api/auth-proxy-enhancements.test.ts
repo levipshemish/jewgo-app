@@ -208,7 +208,7 @@ describe('API Proxy Enhancements', () => {
       });
 
       const request = new NextRequest('http://localhost:3000/api/auth/test');
-      const proxyPromise = proxyToBackend(request, '/api/v5/auth/test', { timeout: 5000 });
+      const _proxyPromise = proxyToBackend(request, '/api/v5/auth/test', { timeout: 5000 });
 
       // Fast-forward time to trigger timeout
       jest.advanceTimersByTime(5000);

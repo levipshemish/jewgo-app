@@ -24,7 +24,7 @@ const MAX_BOUNDS_DEGREES = 25.0; // ~2500km max bounds (increased for zoom out)
 const EXTREME_BOUNDS_DEGREES = 90.0; // ~9000km - truly extreme bounds (increased for zoom out)
 
 // Check if bounds are too large for normal API calls
-function isBoundsTooLarge(bounds: Bounds): boolean {
+function _isBoundsTooLarge(bounds: Bounds): boolean {
   const { ne, sw } = bounds;
   const latDiff = Math.abs(ne.lat - sw.lat);
   const lngDiff = Math.abs(ne.lng - sw.lng);
@@ -32,7 +32,7 @@ function isBoundsTooLarge(bounds: Bounds): boolean {
 }
 
 // Check if bounds are extremely large (should be blocked entirely)
-function isBoundsExtremelyLarge(bounds: Bounds): boolean {
+function _isBoundsExtremelyLarge(bounds: Bounds): boolean {
   const { ne, sw } = bounds;
   const latDiff = Math.abs(ne.lat - sw.lat);
   const lngDiff = Math.abs(ne.lng - sw.lng);
@@ -321,9 +321,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
       loading: { ...s.loading, restaurants: "success" } 
     }));
     
-    // Trigger filtering after data is loaded
-    const { runFilter } = await import('./workerManager');
-    runFilter();
+    // No need to run client-side filtering since server already filtered the data
 
     if (process.env.NODE_ENV === 'development') {
       console.log(`🗺️ Loaded ${data.length} restaurants in ${fetchTime.toFixed(1)}ms`);

@@ -17,6 +17,7 @@ from typing import Dict, Any, Optional
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from middleware.auth_v5 import require_permission_v5
+from middleware.auth_decorators import auth_required, rate_limit_by_user, step_up_required
 from services.auth_service_v5 import AuthServiceV5
 from services.auth.token_manager_v5 import TokenManagerV5
 from services.auth.jwks_manager import JWKSManager
@@ -43,6 +44,7 @@ def get_csrf_manager_for_auth():
 
 
 @auth_bp.route('/login', methods=['POST'])
+@rate_limit_by_user(max_requests=10, window_minutes=15)  # Strict rate limiting for login attempts
 def login():
     """Authenticate user and return JWT tokens."""
     try:
@@ -148,6 +150,7 @@ def login():
 
 
 @auth_bp.route('/register', methods=['POST'])
+@rate_limit_by_user(max_requests=5, window_minutes=60)  # Very strict rate limiting for registration
 def register():
     """Register new user account."""
     try:
@@ -255,7 +258,8 @@ def register():
 
 
 @auth_bp.route('/logout', methods=['POST'])
-@require_permission_v5('authenticated')
+@auth_required
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def logout():
     """Logout user and invalidate tokens."""
     try:

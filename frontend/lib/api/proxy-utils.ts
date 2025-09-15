@@ -303,7 +303,7 @@ export function isNodeRuntime(): boolean {
 /**
  * Middleware to ensure Node.js runtime for endpoints that require it
  */
-export function requireNodeRuntime() {
+export function ensureNodeRuntime() {
   if (!isNodeRuntime()) {
     throw new Error('This endpoint requires Node.js runtime for proper Set-Cookie header handling');
   }

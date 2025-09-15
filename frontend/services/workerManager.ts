@@ -9,6 +9,7 @@ import { makeWorker } from "@/lib/workers/makeWorker";
 import type { WorkRequest, WorkResponse } from "@/workers/protocol";
 import type { AppliedFilters } from "@/lib/filters/filters.types";
 import { getCanonicalDistance } from "@/lib/utils/filterValidation";
+import { isRestaurantOpenDuringPeriod } from "@/lib/utils/hours";
 
 // Performance limits
 const MAX_VISIBLE = 200;
@@ -152,51 +153,31 @@ function performSynchronousFilter(
       }
     }
     
-    // Hours filter - time-based filtering
+    // Hours filter - time-based filtering using actual restaurant hours
     if (filters.hoursFilter) {
-      const currentTime = new Date();
-      const currentHour = currentTime.getHours();
+      // Use actual hours data if available
+      const hoursData = restaurant.hours_json || restaurant.hours_of_operation;
       
-      switch (filters.hoursFilter) {
-        case 'openNow':
-          // Use actual hours data if available, fallback to openNow field
-          if (restaurant.hours_json || restaurant.hours_of_operation) {
-            // TODO: Implement proper hours parsing for openNow check
-            // For now, fallback to the openNow field
-            if (restaurant.openNow !== undefined && !restaurant.openNow) {
-              return false;
-            }
-          } else if (restaurant.openNow !== undefined && !restaurant.openNow) {
+      if (hoursData) {
+        // Type guard to ensure hoursFilter is a valid period
+        const validPeriods = ['openNow', 'morning', 'afternoon', 'evening', 'lateNight'] as const;
+        if (validPeriods.includes(filters.hoursFilter as any)) {
+          // Use the proper hours parsing function to check if restaurant is open during the specified period
+          const isOpenDuringPeriod = isRestaurantOpenDuringPeriod(hoursData, filters.hoursFilter as 'openNow' | 'morning' | 'afternoon' | 'evening' | 'lateNight');
+          if (!isOpenDuringPeriod) {
             return false;
           }
-          break;
-        case 'morning':
-          // Check if restaurant is open during morning hours (6 AM - 12 PM)
-          if (currentHour < 6 || currentHour >= 12) {
-            return false;
-          }
-          break;
-        case 'afternoon':
-          // Check if restaurant is open during afternoon hours (12 PM - 6 PM)
-          if (currentHour < 12 || currentHour >= 18) {
-            return false;
-          }
-          break;
-        case 'evening':
-          // Check if restaurant is open during evening hours (6 PM - 10 PM)
-          if (currentHour < 18 || currentHour >= 22) {
-            return false;
-          }
-          break;
-        case 'lateNight':
-          // Check if restaurant is open during late night hours (10 PM - 6 AM)
-          if (currentHour < 22 && currentHour >= 6) {
-            return false;
-          }
-          break;
-        default:
-          // Unknown hours filter, don't filter
-          break;
+        }
+      } else {
+        // Fallback to openNow field for 'openNow' filter only
+        if (filters.hoursFilter === 'openNow' && restaurant.openNow !== undefined && !restaurant.openNow) {
+          return false;
+        }
+        // For other time periods without hours data, we can't determine if they're open
+        // So we filter them out to be conservative
+        if (filters.hoursFilter !== 'openNow') {
+          return false;
+        }
       }
     }
     

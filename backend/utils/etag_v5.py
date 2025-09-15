@@ -470,7 +470,7 @@ class ETagV5Manager:
                     """
                     params = {'entity_type': table[:-1]}
                 elif strategy.get('include_hours'):
-                    # Query with hours only
+                    # Query with hours only - but handle missing hours tables gracefully
                     # Handle different table structures
                     if table in ['restaurants', 'synagogues']:
                         hours_table = 'business_hours'
@@ -480,8 +480,41 @@ class ETagV5Manager:
                         if category_filter:
                             status_filter += f" AND t.category_id = '{category_filter}'"
                     else:
+                        # For mikvahs and stores, check if hours table exists first
                         hours_table = f'{table}_hours'
                         status_filter = "t.status <> 'deleted'"
+                        
+                        # Check if hours table exists before including it in query
+                        try:
+                            check_hours_table = session.execute(
+                                text(f"SELECT 1 FROM information_schema.tables WHERE table_name = '{hours_table}'")
+                            ).fetchone()
+                            if not check_hours_table:
+                                # Hours table doesn't exist, fall back to base table only
+                                query = f"""
+                                SELECT EXTRACT(EPOCH FROM MAX({timestamp_col}))::bigint AS watermark
+                                FROM {table}
+                                WHERE {status_filter}
+                                """
+                                params = {}
+                                result = session.execute(text(query), params).fetchone()
+                                if result and getattr(result, 'watermark', None):
+                                    return str(result.watermark)
+                                else:
+                                    return str(int(time.time()))
+                        except Exception:
+                            # If we can't check table existence, fall back to base table only
+                            query = f"""
+                            SELECT EXTRACT(EPOCH FROM MAX({timestamp_col}))::bigint AS watermark
+                            FROM {table}
+                            WHERE {status_filter}
+                            """
+                            params = {}
+                            result = session.execute(text(query), params).fetchone()
+                            if result and getattr(result, 'watermark', None):
+                                return str(result.watermark)
+                            else:
+                                return str(int(time.time()))
                     
                     query = f"""
                     WITH base AS (

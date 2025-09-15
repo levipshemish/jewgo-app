@@ -71,11 +71,20 @@ export function FilterPreview({
         ? { latitude: userLocation.latitude, longitude: userLocation.longitude }
         : undefined;
 
+      // For distance sorting, we need to ensure the backend properly calculates the total count
+      // by using the same sorting parameters as the main grid
+      const previewFilters = { ...normalizedFilters } as any;
+      
+      // If user location is available, ensure distance sorting is applied for accurate count
+      if (userLocation) {
+        previewFilters.sort = 'distance_asc';
+      }
+
       // Ask backend for count by requesting minimal page
       const response = await fetchRestaurants({
         page: 1,
         limit: 1, // Only need count; backend returns total_count
-        filters: normalizedFilters as any,
+        filters: previewFilters,
         location,
         includeFilterOptions: false,
       });
@@ -101,7 +110,7 @@ export function FilterPreview({
         hasValidationErrors: false
       });
     }
-  }, [userLocation, validation.errors.length, hasActiveFilters, normalizedSignature]);
+  }, [userLocation, validation.errors.length, hasActiveFilters, normalizedSignature, normalizedFilters]);
 
   // Debounced effect
   useEffect(() => {

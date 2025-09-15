@@ -14,9 +14,7 @@ import Header from '@/components/layout/Header';
 import EateryFilterModal from '@/app/eatery/components/EateryFilterModal';
 import RestaurantDetails from './RestaurantDetails';
 import MapLegend from './MapLegend';
-import { onBoundsChanged } from '@/services/triggers';
 import { loadRestaurantsInBounds } from '@/services/dataManager';
-import { runFilter } from '@/services/workerManager';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useLocationData } from '@/hooks/useLocationData';
 import { ActiveFilterChips } from '@/components/filters/ActiveFilterChips';
@@ -97,9 +95,15 @@ const MapEngine = () => {
       );
   }, [ids, restaurants]);
 
-  // Handle bounds changes - trigger data loading and filtering
+  // Handle bounds changes - trigger data loading with current filters
   const handleBoundsChange = (bounds: Bounds) => {
-    onBoundsChanged(bounds, activeFilters);
+    // Load data with current filters (server-side filtering)
+    loadRestaurantsInBounds(bounds, activeFilters).then(() => {
+      // After reloading, set all restaurants as filtered (server already filtered them)
+      const state = useLivemapStore.getState();
+      const allRestaurantIds = state.restaurants.map(r => r.id);
+      useLivemapStore.getState().applyFilterResults(allRestaurantIds);
+    });
   };
 
   // Track if map has been initialized to prevent multiple calls
@@ -126,7 +130,10 @@ const MapEngine = () => {
         if (currentBounds) {
           // Use immediate loading for initial data load (no debounce, no rate limiting)
           loadRestaurantsInBounds(currentBounds, activeFilters).then(() => {
-            runFilter(); // Apply current filters to loaded data
+            // After reloading, set all restaurants as filtered (server already filtered them)
+            const state = useLivemapStore.getState();
+            const allRestaurantIds = state.restaurants.map(r => r.id);
+            useLivemapStore.getState().applyFilterResults(allRestaurantIds);
           });
         }
   };
@@ -141,21 +148,16 @@ const MapEngine = () => {
     // initializeURLSync();
   }, []);
 
-  // Auto-filter when restaurants change (but avoid infinite loops)
+  // Reload data when filters change (server-side filtering like eatery page)
   useEffect(() => {
     const state = useLivemapStore.getState();
-    if (state.restaurants.length > 0 && state.filtered.length === 0) {
-      // Only run filter if we have restaurants but no filtered results yet
-      runFilter();
-    }
-  }, [restaurants.length]);
-
-  // Trigger filtering when livemap store filters change
-  useEffect(() => {
-    const state = useLivemapStore.getState();
-    if (state.restaurants.length > 0) {
-      // Run filter whenever filters change
-      runFilter();
+    if (state.map.bounds) {
+      // Reload data with new filters instead of client-side filtering
+      loadRestaurantsInBounds(state.map.bounds, activeFilters).then(() => {
+        // After reloading, set all restaurants as filtered (server already filtered them)
+        const allRestaurantIds = state.restaurants.map(r => r.id);
+        useLivemapStore.getState().applyFilterResults(allRestaurantIds);
+      });
     }
   }, [activeFilters]);
 

@@ -12,6 +12,13 @@ import json
 import os
 from functools import wraps
 from utils.logging_config import get_logger
+from middleware.auth_decorators import (
+    auth_required, 
+    admin_required, 
+    optional_auth, 
+    permission_required,
+    rate_limit_by_user
+)
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from database.services.restaurant_service_v5 import RestaurantServiceV5
 from database.services.synagogue_service_v5 import SynagogueServiceV5
@@ -277,7 +284,8 @@ def parse_pagination(request_args: Dict[str, Any]) -> Dict[str, Any]:
 
 # Generic entity endpoints
 @api_v5.route('/<entity_type>', methods=['GET'])
-@require_entity_permission('restaurants', 'read')  # Will be overridden by decorator
+@optional_auth  # Allow both authenticated and anonymous access
+@rate_limit_by_user(max_requests=200, window_minutes=60)  # Rate limit authenticated users
 def get_entities(entity_type: str):
     """Get entities with filtering and pagination."""
     try:
@@ -354,7 +362,8 @@ def get_entities(entity_type: str):
 
 
 @api_v5.route('/<entity_type>/<int:entity_id>', methods=['GET'])
-@require_entity_permission('restaurants', 'read')  # Will be overridden by decorator
+@optional_auth  # Allow both authenticated and anonymous access
+@rate_limit_by_user(max_requests=300, window_minutes=60)  # Higher limit for individual entity views
 def get_entity(entity_type: str, entity_id: int):
     """Get a specific entity by ID."""
     try:
@@ -387,7 +396,9 @@ def get_entity(entity_type: str, entity_id: int):
 
 
 @api_v5.route('/<entity_type>', methods=['POST'])
-@require_entity_permission('restaurants', 'create')  # Will be overridden by decorator
+@auth_required
+@permission_required(['create_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=10, window_minutes=60)  # Strict limit for creation
 def create_entity(entity_type: str):
     """Create a new entity."""
     try:
@@ -418,7 +429,9 @@ def create_entity(entity_type: str):
 
 
 @api_v5.route('/<entity_type>/<int:entity_id>', methods=['PUT'])
-@require_entity_permission('restaurants', 'update')  # Will be overridden by decorator
+@auth_required
+@permission_required(['update_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=20, window_minutes=60)  # Moderate limit for updates
 def update_entity(entity_type: str, entity_id: int):
     """Update an existing entity."""
     try:
@@ -450,7 +463,9 @@ def update_entity(entity_type: str, entity_id: int):
 
 
 @api_v5.route('/<entity_type>/<int:entity_id>', methods=['DELETE'])
-@require_entity_permission('restaurants', 'delete')  # Will be overridden by decorator
+@auth_required
+@admin_required  # Only admins can delete entities
+@rate_limit_by_user(max_requests=5, window_minutes=60)  # Very strict limit for deletion
 def delete_entity(entity_type: str, entity_id: int):
     """Delete an entity."""
     try:
@@ -478,140 +493,172 @@ def delete_entity(entity_type: str, entity_id: int):
 
 # Entity-specific endpoints
 @api_v5.route('/restaurants', methods=['GET'])
-@require_entity_permission('restaurants', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=200, window_minutes=60)
 def get_restaurants():
     """Get restaurants with filtering and pagination."""
     return get_entities('restaurants')
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>', methods=['GET'])
-@require_entity_permission('restaurants', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=300, window_minutes=60)
 def get_restaurant(restaurant_id: int):
     """Get a specific restaurant by ID."""
     return get_entity('restaurants', restaurant_id)
 
 
 @api_v5.route('/restaurants', methods=['POST'])
-@require_entity_permission('restaurants', 'create')
+@auth_required
+@permission_required(['create_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=10, window_minutes=60)
 def create_restaurant():
     """Create a new restaurant."""
     return create_entity('restaurants')
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>', methods=['PUT'])
-@require_entity_permission('restaurants', 'update')
+@auth_required
+@permission_required(['update_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def update_restaurant(restaurant_id: int):
     """Update an existing restaurant."""
     return update_entity('restaurants', restaurant_id)
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>', methods=['DELETE'])
-@require_entity_permission('restaurants', 'delete')
+@auth_required
+@admin_required
+@rate_limit_by_user(max_requests=5, window_minutes=60)
 def delete_restaurant(restaurant_id: int):
     """Delete a restaurant."""
     return delete_entity('restaurants', restaurant_id)
 
 
 @api_v5.route('/synagogues', methods=['GET'])
-@require_entity_permission('synagogues', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=200, window_minutes=60)
 def get_synagogues():
     """Get synagogues with filtering and pagination."""
     return get_entities('synagogues')
 
 
 @api_v5.route('/synagogues/<int:synagogue_id>', methods=['GET'])
-@require_entity_permission('synagogues', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=300, window_minutes=60)
 def get_synagogue(synagogue_id: int):
     """Get a specific synagogue by ID."""
     return get_entity('synagogues', synagogue_id)
 
 
 @api_v5.route('/synagogues', methods=['POST'])
-@require_entity_permission('synagogues', 'create')
+@auth_required
+@permission_required(['create_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=10, window_minutes=60)
 def create_synagogue():
     """Create a new synagogue."""
     return create_entity('synagogues')
 
 
 @api_v5.route('/synagogues/<int:synagogue_id>', methods=['PUT'])
-@require_entity_permission('synagogues', 'update')
+@auth_required
+@permission_required(['update_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def update_synagogue(synagogue_id: int):
     """Update an existing synagogue."""
     return update_entity('synagogues', synagogue_id)
 
 
 @api_v5.route('/synagogues/<int:synagogue_id>', methods=['DELETE'])
-@require_entity_permission('synagogues', 'delete')
+@auth_required
+@admin_required
+@rate_limit_by_user(max_requests=5, window_minutes=60)
 def delete_synagogue(synagogue_id: int):
     """Delete a synagogue."""
     return delete_entity('synagogues', synagogue_id)
 
 
 @api_v5.route('/mikvahs', methods=['GET'])
-@require_entity_permission('mikvahs', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=200, window_minutes=60)
 def get_mikvahs():
     """Get mikvahs with filtering and pagination."""
     return get_entities('mikvahs')
 
 
 @api_v5.route('/mikvahs/<int:mikvah_id>', methods=['GET'])
-@require_entity_permission('mikvahs', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=300, window_minutes=60)
 def get_mikvah(mikvah_id: int):
     """Get a specific mikvah by ID."""
     return get_entity('mikvahs', mikvah_id)
 
 
 @api_v5.route('/mikvahs', methods=['POST'])
-@require_entity_permission('mikvahs', 'create')
+@auth_required
+@permission_required(['create_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=10, window_minutes=60)
 def create_mikvah():
     """Create a new mikvah."""
     return create_entity('mikvahs')
 
 
 @api_v5.route('/mikvahs/<int:mikvah_id>', methods=['PUT'])
-@require_entity_permission('mikvahs', 'update')
+@auth_required
+@permission_required(['update_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def update_mikvah(mikvah_id: int):
     """Update an existing mikvah."""
     return update_entity('mikvahs', mikvah_id)
 
 
 @api_v5.route('/mikvahs/<int:mikvah_id>', methods=['DELETE'])
-@require_entity_permission('mikvahs', 'delete')
+@auth_required
+@admin_required
+@rate_limit_by_user(max_requests=5, window_minutes=60)
 def delete_mikvah(mikvah_id: int):
     """Delete a mikvah."""
     return delete_entity('mikvahs', mikvah_id)
 
 
 @api_v5.route('/stores', methods=['GET'])
-@require_entity_permission('stores', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=200, window_minutes=60)
 def get_stores():
     """Get stores with filtering and pagination."""
     return get_entities('stores')
 
 
 @api_v5.route('/stores/<int:store_id>', methods=['GET'])
-@require_entity_permission('stores', 'read')
+@optional_auth
+@rate_limit_by_user(max_requests=300, window_minutes=60)
 def get_store(store_id: int):
     """Get a specific store by ID."""
     return get_entity('stores', store_id)
 
 
 @api_v5.route('/stores', methods=['POST'])
-@require_entity_permission('stores', 'create')
+@auth_required
+@permission_required(['create_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=10, window_minutes=60)
 def create_store():
     """Create a new store."""
     return create_entity('stores')
 
 
 @api_v5.route('/stores/<int:store_id>', methods=['PUT'])
-@require_entity_permission('stores', 'update')
+@auth_required
+@permission_required(['update_entities', 'admin_access'])
+@rate_limit_by_user(max_requests=20, window_minutes=60)
 def update_store(store_id: int):
     """Update an existing store."""
     return update_entity('stores', store_id)
 
 
 @api_v5.route('/stores/<int:store_id>', methods=['DELETE'])
-@require_entity_permission('stores', 'delete')
+@auth_required
+@admin_required
+@rate_limit_by_user(max_requests=5, window_minutes=60)
 def delete_store(store_id: int):
     """Delete a store."""
     return delete_entity('stores', store_id)
@@ -637,6 +684,8 @@ def forbidden(error):
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>/view', methods=['POST'])
+@optional_auth  # Allow anonymous tracking but prefer authenticated
+@rate_limit_by_user(max_requests=100, window_minutes=60)
 def track_restaurant_view(restaurant_id: int):
     """Track a restaurant page view."""
     try:
@@ -669,6 +718,8 @@ def track_restaurant_view(restaurant_id: int):
 
 # Simple reviews endpoint as fallback
 @api_v5.route('/reviews', methods=['GET'])
+@optional_auth
+@rate_limit_by_user(max_requests=100, window_minutes=60)
 def get_reviews_fallback():
     """Simple reviews endpoint as fallback when reviews API is not available."""
     try:
