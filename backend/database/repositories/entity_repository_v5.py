@@ -193,6 +193,13 @@ class EntityRepositoryV5(BaseRepository):
                     # Add computed distance field
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
                         entity_dict['distance'] = self._calculate_distance(entity, filters)
+                        
+                        # Apply radius filter in application layer if PostGIS failed
+                        if filters.get('_radius_km'):
+                            distance_miles = entity_dict.get('distance', float('inf'))
+                            radius_miles = filters['_radius_km'] * 0.621371  # Convert km to miles
+                            if distance_miles > radius_miles:
+                                continue  # Skip this entity as it's outside the radius
                     
                     result_entities.append(entity_dict)
                 
@@ -272,8 +279,8 @@ class EntityRepositoryV5(BaseRepository):
                 # Apply filters
                 query = self._apply_filters(query, model_class, filters, mapping)
                 
-                # Apply geospatial filtering if needed (skip for distance sorting as we handle it in app layer)
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude') and sort_key != 'distance_asc':
+                # Apply geospatial filtering if needed
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
                     query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 # Apply sorting
@@ -294,6 +301,13 @@ class EntityRepositoryV5(BaseRepository):
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
                         distance = self._calculate_distance(entity, filters)
                         entity_dict['distance'] = distance
+                        
+                        # Apply radius filter in application layer if PostGIS failed
+                        if filters.get('_radius_km'):
+                            distance_miles = distance or float('inf')
+                            radius_miles = filters['_radius_km'] * 0.621371  # Convert km to miles
+                            if distance_miles > radius_miles:
+                                continue  # Skip this entity as it's outside the radius
                     
                     result_entities.append(entity_dict)
                 
@@ -389,8 +403,8 @@ class EntityRepositoryV5(BaseRepository):
                 # Apply filters
                 query = self._apply_filters(query, model_class, filters, mapping)
                 
-                # Apply geospatial filtering if needed (skip for distance sorting as we handle it in app layer)
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude') and sort_key != 'distance_asc':
+                # Apply geospatial filtering if needed
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
                     query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 # Apply cursor pagination
@@ -426,6 +440,14 @@ class EntityRepositoryV5(BaseRepository):
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
                         distance = self._calculate_distance(entity, filters)
                         entity_dict['distance'] = distance
+                        
+                        # Apply radius filter in application layer if PostGIS failed
+                        if filters.get('_radius_km'):
+                            distance_miles = distance or float('inf')
+                            radius_miles = filters['_radius_km'] * 0.621371  # Convert km to miles
+                            if distance_miles > radius_miles:
+                                continue  # Skip this entity as it's outside the radius
+                        
                         if distance is not None:
                             logger.debug(f"Added distance {distance:.2f} miles for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
                         else:
@@ -921,14 +943,20 @@ class EntityRepositoryV5(BaseRepository):
                 
                 # Use PostGIS ST_DWithin for efficient spatial queries
                 if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
-                    # Use traditional latitude/longitude columns (most common case)
-                    query = query.filter(
-                        func.ST_DWithin(
-                            func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
-                            func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                            radius_km * 1000  # Convert km to meters
+                    try:
+                        # Use traditional latitude/longitude columns (most common case)
+                        query = query.filter(
+                            func.ST_DWithin(
+                                func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
+                                func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                                radius_km * 1000  # Convert km to meters
+                            )
                         )
-                    )
+                        logger.info(f"Applied PostGIS geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
+                    except Exception as e:
+                        logger.warning(f"PostGIS geospatial filter failed, will filter in application layer: {e}")
+                        # Store radius filter for application-layer filtering
+                        filters['_radius_km'] = radius_km
                 elif hasattr(model_class, 'geom'):
                     # Use geom column (PostGIS geometry column)
                     query = query.filter(

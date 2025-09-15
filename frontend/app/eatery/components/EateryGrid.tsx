@@ -117,15 +117,15 @@ export default function EateryGrid({
     try {
       // Use the restaurants API module which handles v5 endpoints
       const searchParams = new URLSearchParams(params || '')
-      const location = searchParams.get('lat') && searchParams.get('lng') ? {
-        latitude: parseFloat(searchParams.get('lat')!),
-        longitude: parseFloat(searchParams.get('lng')!)
+      const location = searchParams.get('latitude') && searchParams.get('longitude') ? {
+        latitude: parseFloat(searchParams.get('latitude')!),
+        longitude: parseFloat(searchParams.get('longitude')!)
       } : undefined
       
       // Build filters from search params
       const filters: Record<string, any> = {}
       for (const [key, value] of searchParams.entries()) {
-        if (key !== 'lat' && key !== 'lng' && key !== 'cursor') {
+        if (key !== 'latitude' && key !== 'longitude' && key !== 'cursor') {
           filters[key] = value
         }
       }
@@ -264,8 +264,8 @@ export default function EateryGrid({
     
     // Add location parameters for distance sorting
     if (userLocation) {
-      params.set('lat', userLocation.latitude.toString())
-      params.set('lng', userLocation.longitude.toString())
+      params.set('latitude', userLocation.latitude.toString())
+      params.set('longitude', userLocation.longitude.toString())
       // Automatically sort by distance when location is available
       params.set('sort', 'distance_asc')
     } else {
