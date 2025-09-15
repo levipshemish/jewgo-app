@@ -18,10 +18,10 @@ export async function forgotPasswordAction(formData: FormData) {
     }
 
     // Send password reset request to PostgreSQL auth backend
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
-    if (!backendUrl) {
-      return { ok: false, message: "Backend not configured" };
-    }
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      process.env.BACKEND_URL ||
+      'https://api.jewgo.app';
 
     const response = await fetch(`${backendUrl}/api/auth/forgot-password`, {
       method: 'POST',

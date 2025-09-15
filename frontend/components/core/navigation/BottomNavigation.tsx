@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Home, Heart, Star, Bell, User, Activity } from "lucide-react";
+import { Home, Heart, Star, Bell, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -55,14 +55,6 @@ const MENU: MenuItem[] = [
     gradient: "linear-gradient(135deg, rgba(139,69,19,0.2) 0%, rgba(101,49,13,0.1) 100%)",    
     iconColor: "text-amber-700", 
     bgColor: "bg-amber-700/10" 
-  },
-  { 
-    icon: <Activity className="h-5 w-5" />, 
-    label: "Status", 
-    href: "/status",   
-    gradient: "linear-gradient(135deg, rgba(34,197,94,0.2) 0%, rgba(22,163,74,0.1) 100%)",    
-    iconColor: "text-green-500", 
-    bgColor: "bg-green-500/10" 
   },
 ];
 

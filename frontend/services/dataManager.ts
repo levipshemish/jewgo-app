@@ -18,8 +18,8 @@ const restaurantCache = new Map<string, Restaurant>(); // Individual restaurant 
 const MAX_RESTAURANT_CACHE_SIZE = 5000; // Increased limit for better coverage
 
 // Maximum bounds size to prevent excessive API calls
-const MAX_BOUNDS_DEGREES = 15.0; // ~1500km max bounds (increased for better coverage)
-const EXTREME_BOUNDS_DEGREES = 50.0; // ~5000km - truly extreme bounds
+const MAX_BOUNDS_DEGREES = 25.0; // ~2500km max bounds (increased for zoom out)
+const EXTREME_BOUNDS_DEGREES = 90.0; // ~9000km - truly extreme bounds (increased for zoom out)
 
 // Check if bounds are too large for normal API calls
 function isBoundsTooLarge(bounds: Bounds): boolean {
@@ -68,7 +68,7 @@ function getCachedRestaurant(restaurantId: string): Restaurant | null {
 // Get restaurants from cache that are within the bounds (optimized)
 function getCachedRestaurantsInBounds(bounds: Bounds): Restaurant[] {
   // Only check if we have a reasonable number of cached restaurants for performance
-  if (restaurantCache.size > 1000) {
+  if (restaurantCache.size > 500) {
     // Too many restaurants to check efficiently, skip this optimization
     return [];
   }
@@ -108,9 +108,11 @@ let cacheHits = 0;
 let lastRequestTime = 0;
 let consecutiveFailures = 0;
 let isInitialLoad = true; // Track if this is the initial load
+let initialLoadStartTime = Date.now(); // Track when initial load started
 const MIN_REQUEST_INTERVAL = 500; // 500ms minimum between requests (reduced for better scrolling)
 const INITIAL_LOAD_INTERVAL = 100; // Much shorter interval for initial load
 const MAX_BACKOFF_MS = 10000; // 10 seconds max backoff
+const INITIAL_LOAD_TIMEOUT = 30000; // 30 seconds max for initial load
 
 // Find overlapping cached data that covers the requested bounds
 function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
@@ -130,10 +132,16 @@ function findOverlappingCache(requestedBounds: Bounds): Restaurant[] | null {
     };
     
     // Check if cached bounds completely cover the requested bounds
+    // Only use overlapping cache if the cached area is significantly larger than requested
+    const cachedArea = (cachedBounds.ne.lat - cachedBounds.sw.lat) * (cachedBounds.ne.lng - cachedBounds.sw.lng);
+    const requestedArea = (requestedBounds.ne.lat - requestedBounds.sw.lat) * (requestedBounds.ne.lng - requestedBounds.sw.lng);
+    const coverageRatio = cachedArea / requestedArea;
+    
     if (cachedBounds.ne.lat >= requestedBounds.ne.lat &&
         cachedBounds.ne.lng >= requestedBounds.ne.lng &&
         cachedBounds.sw.lat <= requestedBounds.sw.lat &&
-        cachedBounds.sw.lng <= requestedBounds.sw.lng) {
+        cachedBounds.sw.lng <= requestedBounds.sw.lng &&
+        coverageRatio > 4.0) { // Only use if cached area is at least 4x larger (more conservative)
       return cacheEntry.data;
     }
   }
@@ -170,10 +178,17 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     return;
   }
 
+  // Log bounds info for debugging
+  if (process.env.NODE_ENV === 'development') {
+    const latDiff = Math.abs(bounds.ne.lat - bounds.sw.lat);
+    const lngDiff = Math.abs(bounds.ne.lng - bounds.sw.lng);
+    console.log(`🗺️ Processing bounds: ${latDiff.toFixed(2)}° x ${lngDiff.toFixed(2)}° (${latDiff > MAX_BOUNDS_DEGREES || lngDiff > MAX_BOUNDS_DEGREES ? 'large' : 'normal'})`);
+  }
+
   // For large bounds, use a different strategy - don't expand bounds and use smaller limit
   const isLargeBounds = isBoundsTooLarge(bounds);
   if (isLargeBounds && process.env.NODE_ENV === 'development') {
-    console.log(`🗺️ Large bounds detected (${Math.abs(bounds.ne.lat - bounds.sw.lat).toFixed(2)}° x ${Math.abs(bounds.ne.lng - bounds.sw.lng).toFixed(2)}°), using conservative strategy`);
+    console.log(`🗺️ Large bounds detected (${Math.abs(bounds.ne.lat - bounds.sw.lat).toFixed(2)}° x ${Math.abs(bounds.ne.lng - bounds.sw.lng).toFixed(2)}°), using zoom-out strategy with limit 150`);
   }
 
   const key = hashBounds(bounds);
@@ -185,6 +200,11 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     cacheHits++;
     useLivemapStore.getState().setRestaurants(existing.data);
     
+    // Reset initial load flag after successful cache hit
+    if (isInitialLoad) {
+      isInitialLoad = false;
+    }
+    
     if (process.env.NODE_ENV === 'development') {
       console.log(`🗺️ Cache hit for bounds ${key} (${cacheHits}/${fetchCount + cacheHits})`);
     }
@@ -193,11 +213,16 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
 
   // Check if we already have restaurants in these bounds from previous loads
   // Only do this check for reasonable cache sizes to avoid performance issues
-  if (restaurantCache.size < 500) {
+  if (restaurantCache.size < 200) {
     const cachedRestaurantsInBounds = getCachedRestaurantsInBounds(bounds);
     if (cachedRestaurantsInBounds.length > 0) {
       cacheHits++;
       useLivemapStore.getState().setRestaurants(cachedRestaurantsInBounds);
+      
+      // Reset initial load flag after successful cache hit
+      if (isInitialLoad) {
+        isInitialLoad = false;
+      }
       
       if (process.env.NODE_ENV === 'development') {
         console.log(`🗺️ Using cached restaurants for bounds ${key} (${cachedRestaurantsInBounds.length} restaurants, ${cacheHits}/${fetchCount + cacheHits})`);
@@ -212,10 +237,17 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     cacheHits++;
     useLivemapStore.getState().setRestaurants(overlappingData);
     
+    // Reset initial load flag after successful cache hit
+    if (isInitialLoad) {
+      isInitialLoad = false;
+    }
+    
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🗺️ Overlapping cache hit for bounds ${key} (${cacheHits}/${fetchCount + cacheHits})`);
+      console.log(`🗺️ Overlapping cache hit for bounds ${key} (${overlappingData.length} restaurants, ${cacheHits}/${fetchCount + cacheHits})`);
     }
     return;
+  } else if (process.env.NODE_ENV === 'development') {
+    console.log(`🗺️ No overlapping cache found for bounds ${key}, will make API call`);
   }
 
   // Set loading state
@@ -229,7 +261,18 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     const currentTime = Date.now();
     const timeSinceLastRequest = currentTime - lastRequestTime;
     const backoffMs = Math.min(consecutiveFailures * 1000, MAX_BACKOFF_MS);
-    const requestInterval = isInitialLoad ? INITIAL_LOAD_INTERVAL : MIN_REQUEST_INTERVAL;
+    
+    // Check if initial load has timed out
+    if (isInitialLoad && (currentTime - initialLoadStartTime) > INITIAL_LOAD_TIMEOUT) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🗺️ Initial load timeout, switching to normal rate limiting');
+      }
+      isInitialLoad = false;
+    }
+    
+    // Use shorter interval for large bounds (zoom out) to be more responsive
+    const requestInterval = isInitialLoad ? INITIAL_LOAD_INTERVAL : 
+                           isLargeBounds ? MIN_REQUEST_INTERVAL * 0.5 : MIN_REQUEST_INTERVAL;
     
     if (timeSinceLastRequest < requestInterval + backoffMs) {
       const waitTime = requestInterval + backoffMs - timeSinceLastRequest;
@@ -239,9 +282,6 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
     
-    // Mark that initial load is complete after first successful request
-    // Don't reset on rate limiting or errors
-
     fetchCount++;
     const startTime = performance.now();
     lastRequestTime = currentTime;
@@ -251,9 +291,9 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     let limit = 200;
     
     if (isLargeBounds) {
-      // For large bounds: don't expand, use smaller limit, and use original bounds
+      // For large bounds: use original bounds but with higher limit for zoom out
       apiBounds = bounds;
-      limit = 50; // Smaller limit for large areas
+      limit = 150; // Increased limit for large areas (was 50)
     } else {
       // For normal bounds: expand bounds to get more data and improve caching
       apiBounds = expandBounds(bounds, 1.5);
@@ -261,6 +301,10 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     }
     
     const apiKey = hashBounds(apiBounds);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🗺️ Making API call for bounds ${apiKey} with limit ${limit} (${isLargeBounds ? 'zoom-out' : 'normal'} strategy)`);
+    }
     
     // Fetch from direct backend API (same as eatery page) with bounds parameter
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -334,7 +378,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds): Promise<void> {
     runFilter();
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🗺️ Loaded ${data?.length || 0} restaurants, filtered to ${filteredData.length} in ${fetchTime.toFixed(1)}ms (cache miss)`);
+      console.log(`🗺️ Loaded ${data?.length || 0} restaurants, filtered to ${filteredData.length} in ${fetchTime.toFixed(1)}ms (cache miss, ${isLargeBounds ? 'zoom-out' : 'normal'} strategy)`);
     }
     
     // Reset failure count on success
@@ -376,6 +420,7 @@ export function clearRestaurantCache(): void {
 // Reset initial load flag (useful for testing or manual resets)
 export function resetInitialLoad(): void {
   isInitialLoad = true;
+  initialLoadStartTime = Date.now();
 }
 
 // Check if a specific restaurant is already loaded

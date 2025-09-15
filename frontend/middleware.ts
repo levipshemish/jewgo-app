@@ -58,7 +58,10 @@ export async function middleware(request: NextRequest) {
     // Verify JWT token with backend using cookies only
     // Skip cookie presence check to avoid cross-domain issues
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        process.env.BACKEND_URL ||
+        'https://api.jewgo.app';
       const verifyResponse = await fetch(`${backendUrl}/api/auth/me`, {
         credentials: 'include'
       });

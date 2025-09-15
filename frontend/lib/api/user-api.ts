@@ -9,7 +9,10 @@
 import { postgresAuth } from '@/lib/auth/postgres-auth';
 
 // Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.BACKEND_URL ||
+  'https://api.jewgo.app';
 
 /**
  * Get the current user's JWT token for API authentication

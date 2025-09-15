@@ -30,10 +30,10 @@ export async function signInAction(prevState: any, formData: FormData) {
 
 
     // Attempt sign in with PostgreSQL auth backend
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
-    if (!backendUrl) {
-      return { ok: false, message: "Backend not configured" };
-    }
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      process.env.BACKEND_URL ||
+      'https://api.jewgo.app';
 
     const response = await fetch(`${backendUrl}/api/auth/login`, {
       method: 'POST',

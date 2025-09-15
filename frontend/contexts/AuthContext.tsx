@@ -40,9 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Only check auth once on mount to prevent rate limiting (including React Strict Mode)
-    if (!authChecked && !hasRunRef.current) {
+    if (!hasRunRef.current) {
       hasRunRef.current = true;
-      setAuthChecked(true);
       
       // Call checkAuth directly without dependency
       const performAuthCheck = async () => {
@@ -64,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       performAuthCheck();
     }
-  }, [authChecked]); // Only depend on authChecked
+  }, []); // Empty dependency array - only run once on mount
 
   const login = async (email: string, password: string) => {
     try {

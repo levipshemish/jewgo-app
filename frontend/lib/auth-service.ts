@@ -33,7 +33,10 @@ class AuthService {
   private refreshToken: string | null = null;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+    this.baseUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      process.env.BACKEND_URL ||
+      'https://api.jewgo.app';
     this.loadTokens();
   }
 
