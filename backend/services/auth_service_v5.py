@@ -119,13 +119,64 @@ class AuthServiceV5:
     
     def invalidate_token(self, token: str) -> bool:
         """
-        Invalidate a token by adding it to a blacklist.
+        Invalidate a token by adding it to a blacklist with proper expiration.
         
         Args:
             token: Token to invalidate
             
         Returns:
             True if successful, False otherwise
+        """
+        try:
+            # Decode token to get user_id and expiration
+            payload = verify(token)
+            if not payload:
+                return False
+                
+            user_id = payload.get('uid')
+            exp = payload.get('exp')
+            if not user_id or not exp:
+                return False
+            
+            # Calculate TTL based on token expiration
+            import time
+            current_time = int(time.time())
+            ttl = max(0, exp - current_time)
+            
+            if ttl <= 0:
+                # Token already expired, no need to blacklist
+                logger.info(f"Token already expired for user {user_id}")
+                return True
+            
+            # Store token hash instead of full token for privacy
+            import hashlib
+            token_hash = hashlib.sha256(token.encode()).hexdigest()[:16]
+            
+            # Add token hash to blacklist with expiration
+            blacklist_key = f"auth:blacklist:{user_id}:{token_hash}"
+            self.redis_manager.set(
+                blacklist_key,
+                {'invalidated_at': time.time(), 'reason': 'manual_invalidation'},
+                ttl=ttl,
+                prefix='auth'
+            )
+            
+            logger.info(f"Token invalidated for user {user_id}, expires in {ttl}s")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Token invalidation error: {e}")
+            return False
+    
+    def is_token_blacklisted(self, token: str) -> bool:
+        """
+        Check if a token is blacklisted.
+        
+        Args:
+            token: Token to check
+            
+        Returns:
+            True if blacklisted, False otherwise
         """
         try:
             # Decode token to get user_id
@@ -137,15 +188,15 @@ class AuthServiceV5:
             if not user_id:
                 return False
             
-            # Add token to blacklist
-            blacklist_key = f"auth:blacklist:{user_id}"
-            self.redis_manager.add_to_list(blacklist_key, token, max_length=1000)
+            # Check token hash in blacklist
+            import hashlib
+            token_hash = hashlib.sha256(token.encode()).hexdigest()[:16]
+            blacklist_key = f"auth:blacklist:{user_id}:{token_hash}"
             
-            logger.info(f"Token invalidated for user {user_id}")
-            return True
+            return self.redis_manager.exists(blacklist_key, prefix='auth')
             
         except Exception as e:
-            logger.error(f"Token invalidation error: {e}")
+            logger.error(f"Token blacklist check error: {e}")
             return False
     
     def refresh_access_token(self, refresh_token: str) -> Tuple[bool, Optional[Dict[str, str]]]:
@@ -676,19 +727,38 @@ class AuthServiceV5:
             Verification result
         """
         try:
-            # For now, return success as WebAuthn is not fully implemented
-            # In a real implementation, this would verify the WebAuthn assertion
-            logger.info(f"WebAuthn assertion verification (mock) for user {user_id}")
+            # Check if WebAuthn is enabled in configuration
+            webauthn_enabled = os.environ.get('WEBAUTHN_ENABLED', 'false').lower() == 'true'
             
+            if not webauthn_enabled:
+                logger.warning(f"WebAuthn verification attempted but not enabled for user {user_id}")
+                return {
+                    'verified': False, 
+                    'error': 'WebAuthn not enabled',
+                    'code': 'WEBAUTHN_DISABLED'
+                }
+            
+            # In development, allow mock verification with explicit flag
+            if os.environ.get('FLASK_ENV') != 'production' and os.environ.get('WEBAUTHN_MOCK', 'false').lower() == 'true':
+                logger.warning(f"WebAuthn mock verification for user {user_id} (development only)")
+                return {
+                    'verified': True,
+                    'credential_id': assertion.get('id', 'mock_credential'),
+                    'counter': 1,
+                    'mock': True
+                }
+            
+            # Production should have real WebAuthn implementation
+            logger.error(f"WebAuthn verification not implemented for user {user_id}")
             return {
-                'verified': True,
-                'credential_id': assertion.get('id', 'mock_credential'),
-                'counter': 1
+                'verified': False,
+                'error': 'WebAuthn verification not implemented',
+                'code': 'NOT_IMPLEMENTED'
             }
             
         except Exception as e:
             logger.error(f"Error verifying WebAuthn assertion for user {user_id}: {e}")
-            return {'verified': False, 'error': str(e)}
+            return {'verified': False, 'error': str(e), 'code': 'VERIFICATION_ERROR'}
     
     def mark_session_step_up_complete(self, session_id: str) -> None:
         """

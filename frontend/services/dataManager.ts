@@ -263,7 +263,7 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
       filters,
       location: locationPayload,
       cursor: undefined,
-      includeFilterOptions: false
+      includeFilterOptions: true
     });
     
     if (!response.success) {
@@ -291,8 +291,24 @@ export async function loadRestaurantsInBounds(bounds: Bounds, activeFilters?: Ap
       address: restaurant.address,
       city: restaurant.city,
       state: restaurant.state,
-      zip_code: restaurant.zip_code
+      zip_code: restaurant.zip_code,
+      // Include fields needed for filtering
+      listing_type: restaurant.listing_type,
+      certifying_agency: restaurant.certifying_agency,
+      kosher_category: restaurant.kosher_category,
+      is_open: restaurant.is_open,
+      kosher_details: restaurant.kosher_details,
+      google_rating: restaurant.google_rating,
+      quality_rating: restaurant.quality_rating
     }));
+
+    // Handle filter options if included in response
+    if (response.filterOptions) {
+      // Store filter options in a way that MapEngine can access them
+      useLivemapStore.setState((s) => ({ 
+        filterOptions: response.filterOptions
+      }));
+    }
 
     // Update store with data
     useLivemapStore.getState().setRestaurants(transformedData);

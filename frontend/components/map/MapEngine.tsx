@@ -59,7 +59,9 @@ const MapEngine = () => {
   
   // Filter modal state
   const [showFilters, setShowFilters] = useState(false);
-  const [_filterOptions, setFilterOptions] = useState<any>(null);
+  
+  // Get filter options from store
+  const filterOptions = useLivemapStore(sel.filterOptions);
   
   // Search handler
   const handleSearch = useCallback((query: string) => {
@@ -148,6 +150,15 @@ const MapEngine = () => {
     }
   }, [restaurants.length]);
 
+  // Trigger filtering when livemap store filters change
+  useEffect(() => {
+    const state = useLivemapStore.getState();
+    if (state.restaurants.length > 0) {
+      // Run filter whenever filters change
+      runFilter();
+    }
+  }, [activeFilters]);
+
   return (
     <div className="relative w-full h-full">
       {/* Header with integrated search and filter button */}
@@ -161,17 +172,17 @@ const MapEngine = () => {
           onBack={() => window.history.back()}
         />
         
-        {/* Active Filter Chips - Same as eatery page */}
+        {/* Active Filter Chips - Thinner for map view */}
         {Object.values(activeFilters).some(value => 
           value !== undefined && value !== null && value !== ''
         ) && (
-          <div className="px-4 py-2 border-b border-border/30 bg-background/95 backdrop-blur-sm">
+          <div className="px-4 py-1 border-b border-border/30 bg-background/95 backdrop-blur-sm">
             <ActiveFilterChips
               filters={activeFilters}
               onRemoveFilter={handleRemoveFilter}
               onClearAll={clearAllFilters}
-              variant="full"
-              className="min-h-[32px]"
+              variant="compact"
+              className="min-h-[24px]"
             />
           </div>
         )}

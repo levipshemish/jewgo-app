@@ -1,9 +1,34 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import os
+import sys
+
+# Check dependencies before proceeding
+print('Checking application dependencies...')
+try:
+    from utils.dependency_checker import check_dependencies_on_startup
+    check_dependencies_on_startup()
+    print('SUCCESS: All critical dependencies available')
+except SystemExit:
+    # Re-raise system exit from dependency checker
+    raise
+except Exception as e:
+    print(f'WARNING: Dependency check failed: {e}')
+    print('Continuing with startup - some features may not work')
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+
+# Require SECRET_KEY in production - no fallback
+secret_key = os.environ.get('SECRET_KEY')
+if not secret_key:
+    if os.environ.get('FLASK_ENV') == 'production':
+        print("ERROR: SECRET_KEY environment variable is required in production")
+        sys.exit(1)
+    else:
+        print("WARNING: Using development secret key - not for production use")
+        secret_key = 'dev-secret-key-not-for-production'
+
+app.config['SECRET_KEY'] = secret_key
 
 # Enable CORS for all routes
 CORS(app)
@@ -35,40 +60,54 @@ except Exception as e:
     import traceback
     traceback.print_exc()
     
-    # Fallback to mock services if real database fails
-    print('Falling back to mock services...')
-    class MockConnectionManager:
+    # In production, fail fast instead of using mocks
+    if os.environ.get('FLASK_ENV') == 'production':
+        print('CRITICAL: Database initialization failed in production - exiting')
+        sys.exit(1)
+    
+    # In development, allow graceful degradation with clear warnings
+    print('WARNING: Using degraded mode - some features may not work')
+    print('WARNING: This is only acceptable in development environments')
+    
+    # Create minimal fallback managers that log their usage
+    class DegradedConnectionManager:
         def __init__(self):
-            pass
+            self.degraded = True
         def connect(self):
-            pass
+            print('WARNING: Using degraded database connection')
+            return False
 
-    class MockRedisManager:
+    class DegradedRedisManager:
         def __init__(self):
-            pass
+            self.degraded = True
         
         def get(self, key, prefix=None):
+            print(f'WARNING: Degraded Redis GET for key: {key}')
             return None
         
         def set(self, key, value, ex=None, ttl=None):
-            pass
+            print(f'WARNING: Degraded Redis SET for key: {key}')
+            return False
         
         def delete(self, key):
-            pass
+            print(f'WARNING: Degraded Redis DELETE for key: {key}')
+            return False
         
         def exists(self, key):
+            print(f'WARNING: Degraded Redis EXISTS for key: {key}')
             return False
 
     try:
         from routes.v5.api_v5 import init_services
-        mock_connection_manager = MockConnectionManager()
-        mock_redis_manager = MockRedisManager()
-        init_services(mock_connection_manager, mock_redis_manager)
-        print('SUCCESS: Mock services initialized as fallback')
+        degraded_connection_manager = DegradedConnectionManager()
+        degraded_redis_manager = DegradedRedisManager()
+        init_services(degraded_connection_manager, degraded_redis_manager)
+        print('WARNING: Degraded services initialized - expect limited functionality')
     except Exception as e2:
-        print(f'ERROR: Failed to initialize mock services: {e2}')
+        print(f'CRITICAL: Failed to initialize even degraded services: {e2}')
         import traceback
         traceback.print_exc()
+        sys.exit(1)
 
 print('Registering monitoring blueprint...')
 try:
@@ -109,6 +148,18 @@ except Exception as e:
     print(f'ERROR: Failed to register main API blueprint: {e}')
     import traceback
     traceback.print_exc()
+
+# Disable incomplete reviews system in production
+if os.environ.get('FLASK_ENV') != 'production':
+    print('Registering reviews blueprint (development only)...')
+    try:
+        from routes.v5.reviews_v5 import reviews_v5
+        app.register_blueprint(reviews_v5)
+        print(f'SUCCESS: Registered {reviews_v5.name} with prefix {reviews_v5.url_prefix}')
+    except Exception as e:
+        print(f'WARNING: Failed to register reviews blueprint: {e}')
+else:
+    print('SKIPPED: Reviews system disabled in production (incomplete implementation)')
 
 # Add a simple test endpoint
 @app.route('/test')

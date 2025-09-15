@@ -317,9 +317,10 @@ def get_entities(entity_type: str):
             cursor_token=pagination.get('cursor')
         )
         
-        # Optional geospatial debug header
         response = jsonify(result)
-        if request.args.get('debug_geo', 'false').lower() == 'true':
+        
+        # Only allow debug information in development
+        if os.environ.get('FLASK_ENV') != 'production' and request.args.get('debug_geo', 'false').lower() == 'true':
             try:
                 repo = getattr(service, 'repository', None)
                 postgis_available = getattr(repo, '_postgis_available', None)

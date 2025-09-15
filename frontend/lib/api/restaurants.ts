@@ -58,14 +58,25 @@ export async function fetchRestaurants({
   includeFilterOptions?: boolean;
 }): Promise<RestaurantsResponse> {
   try {
+    // Normalize distance: if distanceMi/maxDistanceMi present and location provided, attach radius (km)
+    let normalizedFilters = { ...filters } as Record<string, any>;
+    let locationPayload = location as any;
+    const distanceMi = (filters as any).distanceMi ?? (filters as any).maxDistanceMi ?? undefined;
+    if (location && distanceMi) {
+      const radiusKm = Number(distanceMi) * 1.60934;
+      // Provide radius to both filters (for generic parsing) and location (for v5 client convenience)
+      if (normalizedFilters.radius === undefined) normalizedFilters.radius = radiusKm.toString();
+      locationPayload = { ...location, radius: radiusKm };
+    }
     // Use V5 API client for restaurants
     const response = await v5ApiClient.getRestaurants({
       page: page || undefined, // Only pass page if it's provided
       limit,
-      filters,
-      location: location ? {
+      filters: normalizedFilters,
+      location: locationPayload ? {
         lat: location.latitude,
         lng: location.longitude,
+        radius: locationPayload.radius,
       } : undefined,
       cursor,
       includeFilterOptions,

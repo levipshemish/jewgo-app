@@ -166,6 +166,13 @@ class DatabaseConnectionManager:
                 
                 logger.info("Database connection established successfully", 
                           extra={"connection_time_ms": connection_time})
+                
+                # Mark startup as complete and recreate engine with full settings if needed
+                if not hasattr(self, '_startup_complete'):
+                    self._startup_complete = True
+                    # Optionally recreate engine with full pool settings
+                    # This could be done on first heavy load instead
+                
                 return True
             except Exception as e:
                 self._connection_attempts += 1
@@ -225,12 +232,30 @@ class DatabaseConnectionManager:
                 "keepalives_count": ConfigManager.get_pg_keepalives_count(),
             }
         )
-        # Create engine with optimized connection pooling for startup performance
+        # Determine if this is startup phase or runtime
+        is_startup = not hasattr(self, '_startup_complete')
+        
+        if is_startup:
+            # Conservative settings for startup
+            pool_size = min(ConfigManager.get_db_pool_size(), 3)
+            max_overflow = min(ConfigManager.get_db_max_overflow(), 5)
+            pool_timeout = min(ConfigManager.get_db_pool_timeout(), 10)
+            logger.info("Using startup connection pool settings", 
+                       pool_size=pool_size, max_overflow=max_overflow)
+        else:
+            # Full settings for runtime
+            pool_size = ConfigManager.get_db_pool_size()
+            max_overflow = ConfigManager.get_db_max_overflow()
+            pool_timeout = ConfigManager.get_db_pool_timeout()
+            logger.info("Using runtime connection pool settings", 
+                       pool_size=pool_size, max_overflow=max_overflow)
+        
+        # Create engine with appropriate connection pooling
         engine = create_engine(
             self.database_url,
-            pool_size=min(ConfigManager.get_db_pool_size(), 3),  # Cap at 3 for startup
-            max_overflow=min(ConfigManager.get_db_max_overflow(), 5),  # Cap at 5 for startup
-            pool_timeout=min(ConfigManager.get_db_pool_timeout(), 10),  # Reduce timeout for startup
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_timeout=pool_timeout,
             pool_recycle=ConfigManager.get_db_pool_recycle(),
             pool_pre_ping=True,
             echo=False,  # Set to True for SQL debugging

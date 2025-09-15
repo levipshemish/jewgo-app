@@ -25,6 +25,7 @@ interface LivemapState {
 
   // Filters / UI
   filters: AppliedFilters;
+  filterOptions: any | null;
   loading: { restaurants: LoadingState; location: LoadingState };
   error: string | null;
 
@@ -51,6 +52,7 @@ export const useLivemapStore = create<LivemapState>()(
       userLoc: null,
       favorites: new Set(),
       filters: {},
+      filterOptions: null,
       loading: { restaurants: "idle", location: "idle" },
       error: null,
       map: { bounds: null, center: null, zoom: 12 },
@@ -83,6 +85,7 @@ export const sel = {
   userLocation: (s: LivemapState) => s.userLoc,
   favorites: (s: LivemapState) => s.favorites,
   filters: (s: LivemapState) => s.filters,
+  filterOptions: (s: LivemapState) => s.filterOptions,
   loading: (s: LivemapState) => s.loading,
   error: (s: LivemapState) => s.error,
   map: (s: LivemapState) => s.map,
@@ -95,6 +98,7 @@ export const useSelected = () => useLivemapStore(sel.selected);
 export const useUserLocation = () => useLivemapStore(sel.userLocation);
 export const useFavorites = () => useLivemapStore(sel.favorites);
 export const useFilters = () => useLivemapStore(sel.filters);
+export const useFilterOptions = () => useLivemapStore(sel.filterOptions);
 export const useLoading = () => useLivemapStore(sel.loading);
 export const useError = () => useLivemapStore(sel.error);
 export const useMap = () => useLivemapStore(sel.map);

@@ -207,13 +207,18 @@ class EntityRepositoryV5(BaseRepository):
                     # Add computed distance field
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
                         entity_dict['distance'] = self._calculate_distance(entity, filters)
-                        
-                        # Apply radius filter in application layer if PostGIS failed
-                        if filters.get('_radius_km'):
+                        # Strict application-layer radius enforcement (fallback or double-check)
+                        radius_km = None
+                        if filters.get('_radius_km') is not None:
+                            radius_km = float(filters.get('_radius_km'))
+                        elif filters.get('radius') is not None:
+                            # radius from query is in km
+                            radius_km = float(filters.get('radius'))
+                        if radius_km is not None:
                             distance_miles = entity_dict.get('distance', float('inf'))
-                            radius_miles = filters['_radius_km'] * 0.621371  # Convert km to miles
+                            radius_miles = radius_km * 0.621371
                             if distance_miles > radius_miles:
-                                continue  # Skip this entity as it's outside the radius
+                                continue  # Drop out-of-radius entities
                     
                     result_entities.append(entity_dict)
                 
@@ -315,13 +320,17 @@ class EntityRepositoryV5(BaseRepository):
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
                         distance = self._calculate_distance(entity, filters)
                         entity_dict['distance'] = distance
-                        
-                        # Apply radius filter in application layer if PostGIS failed
-                        if filters.get('_radius_km'):
+                        # Strict application-layer radius enforcement (fallback or double-check)
+                        radius_km = None
+                        if filters.get('_radius_km') is not None:
+                            radius_km = float(filters.get('_radius_km'))
+                        elif filters.get('radius') is not None:
+                            radius_km = float(filters.get('radius'))
+                        if radius_km is not None:
                             distance_miles = distance or float('inf')
-                            radius_miles = filters['_radius_km'] * 0.621371  # Convert km to miles
+                            radius_miles = radius_km * 0.621371
                             if distance_miles > radius_miles:
-                                continue  # Skip this entity as it's outside the radius
+                                continue  # Drop out-of-radius entities
                     
                     result_entities.append(entity_dict)
                 
