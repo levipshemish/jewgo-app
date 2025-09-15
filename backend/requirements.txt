@@ -17,6 +17,7 @@ SQLAlchemy==2.0.43
 
 # Redis dependencies
 redis==5.0.1
+croniter==2.0.1
 
 # Environment and configuration
 python-dotenv==1.0.0

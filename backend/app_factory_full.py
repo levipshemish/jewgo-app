@@ -592,6 +592,17 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 WebSocket API blueprint: {e}")
         
+        # Register v5 Job Queue API
+        if feature_flags_v5.is_enabled('job_queue_api_v5', default=True):
+            try:
+                from routes.v5.job_queue_api import job_queue_api
+                app.register_blueprint(job_queue_api)
+                logger.info("V5 Job Queue API blueprint registered successfully")
+            except ImportError as e:
+                logger.warning(f"Could not import v5 Job Queue API blueprint: {e}")
+            except Exception as e:
+                logger.warning(f"Could not register v5 Job Queue API blueprint: {e}")
+        
         # Register v5 monitoring API
         try:
             from routes.v5.monitoring_api import monitoring_v5, init_services as init_monitoring_services
