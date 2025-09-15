@@ -90,6 +90,16 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+print('Registering CSRF middleware...')
+try:
+    from middleware.csrf_v5 import register_csrf_middleware
+    register_csrf_middleware(app)
+    print('SUCCESS: CSRF middleware registered')
+except Exception as e:
+    print(f'ERROR: Failed to register CSRF middleware: {e}')
+    import traceback
+    traceback.print_exc()
+
 print('Registering main API blueprint...')
 try:
     from routes.v5.api_v5 import api_v5

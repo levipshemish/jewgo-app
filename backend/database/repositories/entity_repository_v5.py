@@ -55,7 +55,7 @@ class EntityRepositoryV5(BaseRepository):
         },
         'mikvahs': {
             'model_name': 'Mikvah',
-            'table_name': 'mikvah',
+            'table_name': 'mikvahs',
             'primary_key': 'id',
             'default_sort': 'created_at',
             'searchable_fields': ['name', 'description', 'address'],

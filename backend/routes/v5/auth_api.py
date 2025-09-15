@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from datetime import timedelta as td
 import jwt
 import bcrypt
+import os
 from typing import Dict, Any, Optional
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
@@ -18,6 +19,7 @@ from middleware.auth_v5 import require_permission_v5
 from services.auth_service_v5 import AuthServiceV5
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5
+from utils.csrf_manager import get_csrf_manager
 
 logger = get_logger(__name__)
 
@@ -26,8 +28,9 @@ auth_bp = BlueprintFactoryV5.create_blueprint(
     'auth_api', __name__, '/api/v5/auth'
 )
 
-# Initialize auth service
+# Initialize auth service and CSRF manager
 auth_service = AuthServiceV5()
+csrf_manager = get_csrf_manager()
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -516,6 +519,63 @@ def verify_token():
         return jsonify({
             'success': False,
             'error': 'Token verification service unavailable'
+        }), 503
+
+
+@auth_bp.route('/csrf', methods=['GET'])
+def csrf_token():
+    """Issue CSRF token and set secure cookie."""
+    try:
+        # Get session ID for CSRF token generation
+        if hasattr(g, 'user') and g.user:
+            user_id = g.user.get('user_id')
+            session_id = f"user:{user_id}" if user_id else f"anon:{request.remote_addr}"
+        else:
+            # For unauthenticated requests, use IP-based session
+            client_ip = request.remote_addr or 'unknown'
+            session_id = f"anon:{client_ip}"
+        
+        # Generate CSRF token
+        user_agent = request.headers.get('User-Agent', '')
+        csrf_token = csrf_manager.generate_token(session_id, user_agent)
+        
+        # Create response
+        response_data = {
+            'success': True,
+            'data': {
+                'csrf_token': csrf_token,
+                'session_id': session_id[:20] + '...',  # Truncated for security
+                'expires_in': csrf_manager.token_ttl
+            },
+            'message': 'CSRF token issued successfully',
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        # Create response with secure cookie
+        response = make_response(jsonify(response_data))
+        
+        # Set CSRF cookie with environment-aware configuration
+        cookie_config = csrf_manager.get_csrf_cookie_config()
+        response.set_cookie(
+            '_csrf_token',
+            csrf_token,
+            **cookie_config
+        )
+        
+        # Add security headers
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Referrer-Policy'] = 'no-referrer'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        
+        logger.debug(f"CSRF token issued for session {session_id[:20]}...")
+        return response
+        
+    except Exception as e:
+        logger.error(f"CSRF token generation error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'CSRF token service unavailable'
         }), 503
 
 
