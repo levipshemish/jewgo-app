@@ -218,19 +218,19 @@ class RestaurantServiceV5:
                 filter_options['kosherDetails'] = sorted(list(kosher_details))
                 
                 # Get hours options based on actual restaurant data
-                # Count restaurants with hours data using proper JSONB queries
+                # Count restaurants with hours data using simple text matching
                 try:
                     restaurants_with_hours = session.query(Restaurant).filter(
                         Restaurant.hours_json.isnot(None),
                         Restaurant.hours_json != '',
-                        func.cast(Restaurant.hours_json, text('jsonb'))['periods'].isnot(None)
+                        Restaurant.hours_json.like('%"periods":%')
                     ).count()
                     
                     logger.info(f"Restaurants with hours data: {restaurants_with_hours}")
                     
-                    # Count restaurants currently open using JSONB query
+                    # Count restaurants currently open using simple text search
                     restaurants_open_now = session.query(Restaurant).filter(
-                        func.cast(Restaurant.hours_json, text('jsonb'))['open_now'].astext == 'true'
+                        Restaurant.hours_json.like('%"open_now": true%')
                     ).count()
                             
                     logger.info(f"Restaurants currently open: {restaurants_open_now}")
