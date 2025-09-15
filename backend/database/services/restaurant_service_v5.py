@@ -239,26 +239,26 @@ class RestaurantServiceV5:
                 
                 filter_options['hoursOptions'] = hours_options
         
-        # Cache the filter options for 1 hour
-        if self.cache_manager:
-            self.cache_manager.set(cache_key, filter_options, ttl=3600)
+            # Cache the filter options for 1 hour
+            if self.cache_manager:
+                self.cache_manager.set(cache_key, filter_options, ttl=3600)
+            
+            logger.info("Successfully retrieved filter options using efficient queries")
+            return filter_options
         
-        logger.info("Successfully retrieved filter options using efficient queries")
-        return filter_options
-        
-    except Exception as e:
-        logger.error(f"Error getting filter options: {e}")
-        return {
-            'kosherCategories': [],
-            'agencies': [],
-            'priceRanges': [],
-            'ratings': [],
-            'kosherDetails': [],
-            'cities': [],
-            'states': [],
-            'listingTypes': [],
-            'hoursOptions': []
-        }
+        except Exception as e:
+            logger.error(f"Error getting filter options: {e}")
+            return {
+                'kosherCategories': [],
+                'agencies': [],
+                'priceRanges': [],
+                'ratings': [],
+                'kosherDetails': [],
+                'cities': [],
+                'states': [],
+                'listingTypes': [],
+                'hoursOptions': []
+            }
 
     def get_entities(
         self,
