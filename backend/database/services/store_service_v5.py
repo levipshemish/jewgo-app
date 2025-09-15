@@ -232,8 +232,8 @@ class StoreServiceV5:
             return None
 
     def get_stores(self, filters: Optional[Dict[str, Any]] = None, cursor: Optional[str] = None,
-                   page: Optional[int] = None, limit: int = 20, sort_key: str = 'name_asc') -> Dict[str, Any]:
-        """Get stores with filtering and pagination.
+                   page: Optional[int] = None, limit: int = 20, sort_key: str = 'name_asc') -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
+        """Get stores with filtering and pagination, returning (items, next_cursor, prev_cursor).
         
         Args:
             filters: Filter criteria
@@ -255,33 +255,36 @@ class StoreServiceV5:
                 sort_key=sort_key
             )
             
-            # Format result to match expected structure
-            result = {
-                'data': entities,
-                'pagination': {
-                    'next_cursor': next_cursor,
-                    'prev_cursor': prev_cursor,
-                    'has_more': next_cursor is not None
-                }
-            }
-            
             # Enrich each store with basic additional data
-            enriched_stores = []
-            for store in result['data']:
+            enriched_stores: List[Dict[str, Any]] = []
+            for store in entities:
                 store_data = self._format_store_response(store)
                 store_data = self._add_store_status(store_data)
                 enriched_stores.append(store_data)
             
-            result['data'] = enriched_stores
-            self.logger.info("Retrieved stores successfully", 
-                           count=len(enriched_stores), 
-                           has_more=result['pagination']['has_more'])
+            self.logger.info("Retrieved stores successfully",
+                           count=len(enriched_stores),
+                           has_more=(next_cursor is not None))
             
-            return result
+            return enriched_stores, next_cursor, prev_cursor
             
         except Exception as e:
             self.logger.exception("Failed to get stores", error=str(e))
-            return {'data': [], 'pagination': {'has_more': False, 'next_cursor': None}}
+            return [], None, None
+
+    def _process_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Normalize store filters to repository schema."""
+        if not filters:
+            return {}
+        processed: Dict[str, Any] = {}
+        try:
+            for key, value in filters.items():
+                if value in (None, ''):
+                    continue
+                processed[key] = value
+            return processed
+        except Exception:
+            return processed
 
     def create_store(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create new store with validation.

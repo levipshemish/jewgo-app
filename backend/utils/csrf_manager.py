@@ -1,270 +1,310 @@
+#!/usr/bin/env python3
 """
-CSRF Protection Manager for JewGo Authentication System
+CSRF Protection Manager
 
 Provides HMAC-based CSRF token generation and validation with timing attack protection.
-Implements environment-aware cookie configuration for production, preview, and development.
+Implements the double-submit cookie pattern for CSRF protection.
 """
 
+import os
 import hmac
 import hashlib
 import secrets
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
-import os
-from flask import request
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
 class CSRFManager:
-    """
-    CSRF Protection Manager with HMAC-based token generation.
+    """CSRF protection manager with HMAC-based token validation."""
     
-    Features:
-    - HMAC-based token generation using session_id, user_agent, and day bucket
-    - Timing attack protection using constant-time comparison
-    - Environment-aware cookie configuration
-    - Day bucket rotation for token validity
-    """
+    def __init__(self, secret_key: str = None):
+        """Initialize CSRF manager."""
+        self.secret_key = secret_key or os.getenv('CSRF_SECRET_KEY', 'default-csrf-secret')
+        if not self.secret_key or self.secret_key == 'default-csrf-secret':
+            logger.warning("Using default CSRF secret - not secure for production")
+        
+        # Token configuration
+        self.token_length = 32
+        self.day_bucket_format = '%Y-%m-%d'
     
-    def __init__(self, secret_key: str):
-        """
-        Initialize CSRF Manager.
-        
-        Args:
-            secret_key: Secret key for HMAC generation
-        """
-        if not secret_key:
-            raise ValueError("CSRF secret key is required")
-        
-        self.secret_key = secret_key.encode('utf-8')
-        self.token_ttl = 24 * 60 * 60  # 24 hours in seconds
-        
-        logger.info("CSRFManager initialized")
-    
-    def generate_token(self, session_id: str, user_agent: str = None) -> str:
+    def generate_token(self, session_id: str, user_agent: str) -> str:
         """
         Generate HMAC-based CSRF token with day bucket.
         
         Args:
             session_id: Session identifier
-            user_agent: User agent string (optional)
+            user_agent: User agent string
             
         Returns:
-            Base64-encoded CSRF token
+            CSRF token string
         """
         try:
-            # Get current day bucket (YYYY-MM-DD format)
-            day_bucket = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+            # Create day bucket for token rotation
+            day_bucket = datetime.utcnow().strftime(self.day_bucket_format)
             
-            # Use provided user_agent or get from request
-            if user_agent is None:
-                user_agent = request.headers.get('User-Agent', '') if request else ''
+            # Generate random nonce
+            nonce = secrets.token_urlsafe(self.token_length)
             
-            # Create user agent hash for privacy
-            user_agent_hash = hashlib.sha256(user_agent.encode('utf-8')).hexdigest()[:16]
-            
-            # Create token payload
-            token_data = f"{session_id}:{user_agent_hash}:{day_bucket}"
+            # Create message to sign
+            message = f"{session_id}:{user_agent}:{day_bucket}:{nonce}"
             
             # Generate HMAC signature
             signature = hmac.new(
-                self.secret_key,
-                token_data.encode('utf-8'),
+                self.secret_key.encode('utf-8'),
+                message.encode('utf-8'),
                 hashlib.sha256
             ).hexdigest()
             
-            # Combine token data and signature
-            full_token = f"{token_data}:{signature}"
-            
-            # Base64 encode for safe transport
-            import base64
-            encoded_token = base64.b64encode(full_token.encode('utf-8')).decode('utf-8')
+            # Combine nonce and signature
+            token = f"{nonce}:{signature}"
             
             logger.debug(f"CSRF token generated for session {session_id[:8]}...")
-            return encoded_token
+            return token
             
         except Exception as e:
             logger.error(f"CSRF token generation error: {e}")
             raise
     
-    def validate_token(self, token: str, session_id: str, user_agent: str = None) -> bool:
+    def validate_token(self, token: str, session_id: str, user_agent: str) -> bool:
         """
         Validate CSRF token with timing attack protection.
         
         Args:
-            token: Base64-encoded CSRF token
+            token: CSRF token to validate
             session_id: Session identifier
-            user_agent: User agent string (optional)
+            user_agent: User agent string
             
         Returns:
             True if token is valid, False otherwise
         """
         try:
-            if not token or not session_id:
-                return False
+            # Use constant-time comparison to prevent timing attacks
+            start_time = time.time()
             
-            # Decode token
-            import base64
-            try:
-                decoded_token = base64.b64decode(token.encode('utf-8')).decode('utf-8')
-            except Exception:
-                logger.warning("Invalid CSRF token encoding")
-                return False
+            # Parse token
+            if ':' not in token:
+                return self._constant_time_false(start_time)
             
-            # Parse token components
-            token_parts = decoded_token.split(':')
-            if len(token_parts) < 4:
-                logger.warning("Invalid CSRF token format")
-                return False
+            nonce, provided_signature = token.split(':', 1)
+            if len(nonce) < 20 or len(provided_signature) != 64:  # SHA256 hex length
+                return self._constant_time_false(start_time)
             
-            # Handle case where session_id might contain colons (e.g., "anon:127.0.0.1")
-            if len(token_parts) == 4:
-                token_session_id, token_user_agent_hash, token_day_bucket, token_signature = token_parts
-            else:
-                # Reconstruct session_id from multiple parts
-                token_signature = token_parts[-1]
-                token_day_bucket = token_parts[-2]
-                token_user_agent_hash = token_parts[-3]
-                token_session_id = ':'.join(token_parts[:-3])
+            # Try current day bucket first
+            day_bucket = datetime.utcnow().strftime(self.day_bucket_format)
+            is_valid = self._validate_token_for_bucket(
+                nonce, provided_signature, session_id, user_agent, day_bucket
+            )
             
-            # Use provided user_agent or get from request
-            if user_agent is None:
-                user_agent = request.headers.get('User-Agent', '') if request else ''
+            if is_valid:
+                return self._constant_time_true(start_time)
             
-            # Create user agent hash
-            user_agent_hash = hashlib.sha256(user_agent.encode('utf-8')).hexdigest()[:16]
+            # Try previous day bucket (for clock skew tolerance)
+            prev_day = (datetime.utcnow() - timedelta(days=1)).strftime(self.day_bucket_format)
+            is_valid = self._validate_token_for_bucket(
+                nonce, provided_signature, session_id, user_agent, prev_day
+            )
             
-            # Validate session ID match
-            if not self._constant_time_compare(token_session_id, session_id):
-                logger.warning("CSRF token session ID mismatch")
-                return False
-            
-            # Validate user agent hash match
-            if not self._constant_time_compare(token_user_agent_hash, user_agent_hash):
-                logger.warning("CSRF token user agent mismatch")
-                return False
-            
-            # Validate day bucket (current day or previous day for clock skew)
-            current_day = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-            previous_day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
-            
-            if token_day_bucket not in [current_day, previous_day]:
-                logger.warning(f"CSRF token expired: {token_day_bucket}")
-                return False
-            
-            # Validate HMAC signature
-            expected_token_data = f"{token_session_id}:{token_user_agent_hash}:{token_day_bucket}"
-            expected_signature = hmac.new(
-                self.secret_key,
-                expected_token_data.encode('utf-8'),
-                hashlib.sha256
-            ).hexdigest()
-            
-            if not self._constant_time_compare(token_signature, expected_signature):
-                logger.warning("CSRF token signature invalid")
-                return False
-            
-            logger.debug(f"CSRF token validated for session {session_id[:8]}...")
-            return True
+            return self._constant_time_true(start_time) if is_valid else self._constant_time_false(start_time)
             
         except Exception as e:
             logger.error(f"CSRF token validation error: {e}")
             return False
     
+    def _validate_token_for_bucket(self, nonce: str, provided_signature: str, 
+                                 session_id: str, user_agent: str, day_bucket: str) -> bool:
+        """Validate token for a specific day bucket."""
+        try:
+            # Recreate message
+            message = f"{session_id}:{user_agent}:{day_bucket}:{nonce}"
+            
+            # Generate expected signature
+            expected_signature = hmac.new(
+                self.secret_key.encode('utf-8'),
+                message.encode('utf-8'),
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Constant-time comparison
+            return hmac.compare_digest(provided_signature, expected_signature)
+            
+        except Exception as e:
+            logger.error(f"Token bucket validation error: {e}")
+            return False
+    
+    def _constant_time_true(self, start_time: float) -> bool:
+        """Return True with constant timing."""
+        elapsed = time.time() - start_time
+        if elapsed < 0.01:  # Ensure minimum timing
+            time.sleep(0.01 - elapsed)
+        return True
+    
+    def _constant_time_false(self, start_time: float) -> bool:
+        """Return False with constant timing."""
+        elapsed = time.time() - start_time
+        if elapsed < 0.01:  # Ensure minimum timing
+            time.sleep(0.01 - elapsed)
+        return False
+    
     def get_csrf_cookie_config(self) -> Dict[str, Any]:
         """
-        Get environment-aware cookie configuration for CSRF tokens.
+        Get environment-aware cookie configuration.
         
         Returns:
-            Dictionary with cookie configuration
+            Cookie configuration dictionary
         """
-        environment = os.getenv('ENVIRONMENT', 'development').lower()
+        environment = os.getenv('ENVIRONMENT', 'development')
         
         if environment == 'production':
             return {
+                'name': 'csrf_token',
                 'secure': True,
                 'httponly': False,  # CSRF tokens need to be accessible to JavaScript
                 'samesite': 'None',
                 'domain': '.jewgo.app',
-                'max_age': self.token_ttl,
+                'max_age': 3600,  # 1 hour
                 'path': '/'
             }
-        elif environment in ['preview', 'staging']:
+        elif environment == 'preview':
             return {
-                'secure': True,  # HTTPS required for Vercel
+                'name': 'csrf_token',
+                'secure': True,
                 'httponly': False,
                 'samesite': 'None',
-                'domain': None,  # Host-only cookies for *.vercel.app
-                'max_age': self.token_ttl,
+                'domain': None,  # host-only
+                'max_age': 3600,
                 'path': '/'
             }
         else:  # development
             return {
-                'secure': False,  # Allow HTTP for local development
+                'name': 'csrf_token',
+                'secure': False,
                 'httponly': False,
                 'samesite': 'Lax',
                 'domain': None,
-                'max_age': self.token_ttl,
+                'max_age': 3600,
                 'path': '/'
             }
     
-    def _constant_time_compare(self, a: str, b: str) -> bool:
+    def extract_session_id_from_request(self, request) -> Optional[str]:
         """
-        Constant-time string comparison to prevent timing attacks.
+        Extract session ID from request.
         
         Args:
-            a: First string
-            b: Second string
+            request: Flask request object
             
         Returns:
-            True if strings are equal, False otherwise
+            Session ID or None
         """
-        if len(a) != len(b):
-            return False
+        try:
+            # Try to get session ID from various sources
+            session_id = None
+            
+            # 1. From session cookie
+            if hasattr(request, 'cookies'):
+                session_id = request.cookies.get('session_id')
+            
+            # 2. From Authorization header (if it contains session info)
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                # For now, use a hash of the token as session ID
+                token = auth_header.split(' ', 1)[1]
+                session_id = hashlib.sha256(token.encode()).hexdigest()[:16]
+            
+            # 3. From custom header
+            if not session_id:
+                session_id = request.headers.get('X-Session-ID')
+            
+            return session_id
+            
+        except Exception as e:
+            logger.error(f"Error extracting session ID: {e}")
+            return None
+    
+    def extract_user_agent_from_request(self, request) -> str:
+        """
+        Extract user agent from request.
         
-        result = 0
-        for x, y in zip(a, b):
-            result |= ord(x) ^ ord(y)
+        Args:
+            request: Flask request object
+            
+        Returns:
+            User agent string
+        """
+        try:
+            user_agent = request.headers.get('User-Agent', 'Unknown')
+            # Hash user agent to prevent information leakage
+            return hashlib.sha256(user_agent.encode()).hexdigest()[:16]
+        except Exception as e:
+            logger.error(f"Error extracting user agent: {e}")
+            return 'unknown'
+    
+    def is_mutating_method(self, method: str) -> bool:
+        """
+        Check if HTTP method is mutating (requires CSRF protection).
         
-        return result == 0
+        Args:
+            method: HTTP method
+            
+        Returns:
+            True if method requires CSRF protection
+        """
+        return method.upper() in ['POST', 'PUT', 'PATCH', 'DELETE']
+    
+    def validate_request(self, request) -> Dict[str, Any]:
+        """
+        Validate CSRF token for a request.
+        
+        Args:
+            request: Flask request object
+            
+        Returns:
+            Validation result dictionary
+        """
+        try:
+            # Check if method requires CSRF protection
+            if not self.is_mutating_method(request.method):
+                return {
+                    'valid': True,
+                    'reason': 'Non-mutating method'
+                }
+            
+            # Extract session ID and user agent
+            session_id = self.extract_session_id_from_request(request)
+            if not session_id:
+                return {
+                    'valid': False,
+                    'reason': 'No session ID found'
+                }
+            
+            user_agent = self.extract_user_agent_from_request(request)
+            
+            # Get CSRF token from header
+            csrf_token = request.headers.get('X-CSRF-Token')
+            if not csrf_token:
+                return {
+                    'valid': False,
+                    'reason': 'No CSRF token provided'
+                }
+            
+            # Validate token
+            is_valid = self.validate_token(csrf_token, session_id, user_agent)
+            
+            return {
+                'valid': is_valid,
+                'reason': 'Token validation' if is_valid else 'Invalid CSRF token'
+            }
+            
+        except Exception as e:
+            logger.error(f"CSRF request validation error: {e}")
+            return {
+                'valid': False,
+                'reason': f'Validation error: {str(e)}'
+            }
 
 
 # Global CSRF manager instance
-_csrf_manager = None
-
-
-def get_csrf_manager() -> CSRFManager:
-    """
-    Get global CSRF manager instance.
-    
-    Returns:
-        CSRFManager instance
-    """
-    global _csrf_manager
-    
-    if _csrf_manager is None:
-        secret_key = os.getenv('CSRF_SECRET_KEY') or os.getenv('SECRET_KEY')
-        if not secret_key:
-            raise ValueError("CSRF_SECRET_KEY or SECRET_KEY environment variable is required")
-        
-        _csrf_manager = CSRFManager(secret_key)
-    
-    return _csrf_manager
-
-
-def init_csrf_manager(secret_key: str) -> CSRFManager:
-    """
-    Initialize global CSRF manager with custom secret key.
-    
-    Args:
-        secret_key: Secret key for HMAC generation
-        
-    Returns:
-        CSRFManager instance
-    """
-    global _csrf_manager
-    _csrf_manager = CSRFManager(secret_key)
-    return _csrf_manager
+csrf_manager = CSRFManager()

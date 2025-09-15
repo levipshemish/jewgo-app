@@ -16,6 +16,19 @@ except Exception as e:
     print(f'WARNING: Dependency check failed: {e}')
     print('Continuing with startup - some features may not work')
 
+# Validate configuration
+print('Validating application configuration...')
+try:
+    from utils.config_validator import validate_config_on_startup
+    config_summary = validate_config_on_startup()
+    print('SUCCESS: Configuration validation passed')
+except SystemExit:
+    # Re-raise system exit from config validator
+    raise
+except Exception as e:
+    print(f'WARNING: Configuration validation failed: {e}')
+    print('Continuing with startup - some features may not work properly')
+
 app = Flask(__name__)
 
 # Require SECRET_KEY in production - no fallback
@@ -126,6 +139,17 @@ try:
     print(f'SUCCESS: Registered {auth_bp.name} with prefix {auth_bp.url_prefix}')
 except Exception as e:
     print(f'ERROR: Failed to register auth blueprint: {e}')
+    import traceback
+    traceback.print_exc()
+
+print('Registering error handlers...')
+try:
+    from middleware.error_handlers import register_error_handlers, register_custom_error_handlers
+    register_error_handlers(app)
+    register_custom_error_handlers(app)
+    print('SUCCESS: Error handlers registered')
+except Exception as e:
+    print(f'ERROR: Failed to register error handlers: {e}')
     import traceback
     traceback.print_exc()
 

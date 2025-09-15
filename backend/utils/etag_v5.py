@@ -518,11 +518,24 @@ class ETagV5Manager:
                     """
                     params = {}
                 
-                result = session.execute(text(query), params).fetchone()
+                try:
+                    result = session.execute(text(query), params).fetchone()
+                except Exception as qe:
+                    logger.error("Database watermark query failed", error=str(qe))
+                    result = None
                 
-                if result and result.watermark:
+                if result and getattr(result, 'watermark', None):
                     return str(result.watermark)
                 else:
+                    # Fallback to base table max(updated_at) to avoid hard failures when hours/reviews tables are missing
+                    try:
+                        base_fallback = session.execute(
+                            text(f"SELECT EXTRACT(EPOCH FROM COALESCE(MAX({timestamp_col}),'epoch'))::bigint AS watermark FROM {table}")
+                        ).fetchone()
+                        if base_fallback and getattr(base_fallback, 'watermark', None) is not None:
+                            return str(base_fallback.watermark)
+                    except Exception as fe:
+                        logger.warning("Watermark base-table fallback failed", error=str(fe))
                     return str(int(time.time()))
                 
         except Exception as e:
