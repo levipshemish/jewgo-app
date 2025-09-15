@@ -603,6 +603,11 @@ def create_app(config_class=None):
                     from routes.v5.job_queue_api import job_queue_api
                     app.register_blueprint(job_queue_api)
                     logger.info("V5 Job Queue API blueprint registered successfully")
+                    
+                    # Initialize background jobs
+                    from services.background_jobs import initialize_background_jobs
+                    initialize_background_jobs()
+                    logger.info("Background jobs initialized successfully")
                 except ImportError as e:
                     logger.warning(f"Could not import v5 Job Queue API blueprint: {e}")
                 except Exception as e:
