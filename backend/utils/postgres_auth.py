@@ -280,7 +280,8 @@ class PostgresAuthManager:
             raise
         except IntegrityError as ie:
             logger.info(f"IntegrityError caught: {ie}")
-            raise ValidationError("Email address is already registered")
+            logger.info(f"IntegrityError details: {ie.orig}")
+            raise ValidationError(f"Email address is already registered (IntegrityError: {ie})")
         except Exception as e:
             logger.error(f"User creation error: {e}")
             logger.error(f"User creation error details - email: {email}, error type: {type(e).__name__}, error args: {e.args}")
