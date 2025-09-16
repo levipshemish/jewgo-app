@@ -196,6 +196,8 @@ class PostgresAuthManager:
                     {'email': email}
                 ).fetchone()
                 
+                logger.info(f"Email check for {email}: result = {result}")
+                
                 if result:
                     raise ValidationError("Email address is already registered")
                 
