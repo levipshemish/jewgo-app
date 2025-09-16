@@ -163,7 +163,7 @@ class PostgresAuthClient {
           const retryAfter = response.headers.get('Retry-After');
           const retryAfterSeconds = retryAfter ? parseInt(retryAfter) : 60;
           throw new PostgresAuthError(
-            `Too many requests. Please wait ${retryAfterSeconds > 60 ? Math.ceil(retryAfterSeconds / 60) + ' minutes' : retryAfterSeconds + ' seconds'} before trying again.`,
+            `Too many requests. Please wait ${retryAfterSeconds > 60 ? `${Math.ceil(retryAfterSeconds / 60)} minutes` : `${retryAfterSeconds} seconds`} before trying again.`,
             'RATE_LIMIT_EXCEEDED',
             429
           );

@@ -19,10 +19,9 @@ Last Updated: 2025-01-15
 import time
 import threading
 import psutil
-import json
-from collections import deque, defaultdict
+from collections import deque
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass, asdict
 from functools import wraps
 
@@ -571,7 +570,7 @@ def track_performance(monitor: PerformanceMonitor = None):
             try:
                 result = func(*args, **kwargs)
                 return result
-            except Exception as e:
+            except Exception:
                 is_error = True
                 raise
             finally:

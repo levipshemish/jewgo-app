@@ -618,7 +618,7 @@ def forgot_password():
         ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.headers.get('X-Real-IP') or request.remote_addr
         auth_mgr = get_postgres_auth()
         # Do not reveal user existence; function returns True even if user missing
-        ok = auth_mgr.initiate_password_reset(email, ip_address=ip)
+        auth_mgr.initiate_password_reset(email, ip_address=ip)
         return jsonify({'success': True, 'message': 'If the email exists, a reset link was sent.'}), 200
     except Exception as e:
         logger.error(f"Forgot password error: {e}")

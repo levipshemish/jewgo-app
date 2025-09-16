@@ -86,6 +86,7 @@ class AuthV5Middleware:
                 
                 # Enhanced automatic refresh with improved detection
                 try:
+                    auth_manager = get_postgres_auth()
                     self._attempt_enhanced_refresh(auth_manager, user_info)
                 except Exception as e:
                     logger.debug(f"Enhanced auto-refresh check failed: {self._mask_pii(str(e))}")
@@ -333,7 +334,7 @@ class AuthV5Middleware:
             raise ValueError(f"User not found or inactive: {uid}")
         
         email = row.email
-        is_guest = row.is_guest or False
+        # is_guest = row.is_guest or False  # Unused variable
         
         import json as _json
         roles = _json.loads(row.roles) if row and row.roles else []
