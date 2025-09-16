@@ -51,6 +51,25 @@ function EateryPageContent() {
     console.log('EateryPageClient filterOptions changed:', filterOptions);
   }, [filterOptions]);
 
+  // Load filter options when component mounts
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/restaurants/filter-options');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            setFilterOptions(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load filter options:', error);
+      }
+    };
+
+    loadFilterOptions();
+  }, []);
+
   // Update active tab based on current pathname
   useEffect(() => {
     if (pathname.startsWith('/eatery')) {
