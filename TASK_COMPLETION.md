@@ -142,3 +142,33 @@ Docs Updated
 
 Follow-ups
 - (empty)
+
+## 2025-09-16 — Fix TypeScript and Syntax Issues for Vercel Deployment
+- ID: 2025-09-16-VERCEL-DEPLOYMENT-FIX
+- Owner: Claude Sonnet 4
+- Links: `frontend/app/auth/magic/page.tsx`, `frontend/app/auth/error/page.tsx`, `frontend/app/auth/magic/MagicLinkHandler.tsx`, `frontend/app/auth/error/AuthErrorHandler.tsx`
+
+Reason Why — Vercel deployment was failing due to Next.js build errors: "useSearchParams() should be wrapped in a suspense boundary" in auth pages. This is required for static generation and proper pre-rendering in Next.js 15.
+
+Change Summary
+- **Fixed /auth/magic page**: Split into server component with Suspense boundary and client component for search params logic
+- **Fixed /auth/error page**: Applied same Suspense pattern to prevent pre-rendering issues
+- **Created dedicated handlers**: `MagicLinkHandler.tsx` and `AuthErrorHandler.tsx` for client-side search params logic
+- **Fixed ESLint warning**: Properly escaped apostrophe character in text content
+
+Risks & Mitigations
+- No functional changes to authentication flow, only structural improvements for Next.js compatibility
+- Suspense boundaries provide proper loading states during client-side hydration
+- All existing functionality preserved with better error boundaries
+
+Tests
+- Next.js build completes successfully with 133 pages generated
+- TypeScript compilation passes with no errors
+- ESLint passes with no warnings or errors
+- All authentication pages maintain existing functionality
+
+Docs Updated
+- Code includes proper component structure following Next.js 15 patterns
+
+Follow-ups
+- (empty)
