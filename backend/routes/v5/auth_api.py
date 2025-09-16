@@ -438,19 +438,29 @@ def get_profile():
 
     # Step 5: Build response
     try:
-        return jsonify({
+        # Safely get roles and permissions with fallbacks
+        user_roles = getattr(g, 'user_roles', None) or []
+        user_permissions = getattr(g, 'user_permissions', None) or []
+        
+        # Build response with safe datetime handling
+        from datetime import datetime
+        timestamp = datetime.utcnow().isoformat()
+        
+        response_data = {
             'success': True,
             'user': profile,  # compatibility for frontend expecting { user }
             'data': {
                 'profile': profile,
                 'session': {
                     'user_id': user_id,
-                    'roles': getattr(g, 'user_roles', []),
-                    'permissions': getattr(g, 'user_permissions', [])
+                    'roles': user_roles,
+                    'permissions': user_permissions
                 }
             },
-            'timestamp': datetime.utcnow().isoformat()
-        })
+            'timestamp': timestamp
+        }
+        
+        return jsonify(response_data)
     except Exception as e:
         logger.error(f"Exception in step 5 (response building): {e}", exc_info=True)
         return jsonify({'success': False, 'error': 'Step 5 failed', 'debug': str(e)}), 503
