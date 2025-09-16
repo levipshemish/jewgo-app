@@ -209,7 +209,9 @@ class PostgresAuthManager:
                 
                 if result:
                     logger.warning(f"Email '{email}' already exists with ID: {result[0]}")
-                    raise ValidationError("Email address is already registered")
+                    # For debugging, let's return more detailed error information
+                    error_msg = f"Email address is already registered. Existing emails: {[row[0] for row in all_emails]}"
+                    raise ValidationError(error_msg)
                 
                 # Insert new user with all required fields
                 session.execute(
