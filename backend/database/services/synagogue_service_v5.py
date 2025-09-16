@@ -143,9 +143,20 @@ class SynagogueServiceV5:
             if include_filter_options and (page is None or page == 1):
                 try:
                     response['filter_options'] = self._get_filter_options()
-                except Exception:
+                except Exception as e:
                     # Don't fail the request if metadata can't be built
-                    response['filter_options'] = {}
+                    self.logger.error(f"Error getting filter options in get_entities: {e}")
+                    # Return fallback options instead of empty dict
+                    response['filter_options'] = {
+                        'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],
+                        'shulTypes': ['traditional', 'ashkenazi', 'sephardic', 'chabad'],
+                        'cities': [],
+                        'states': [],
+                        'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
+                        'accessibility': ['wheelchair_accessible', 'parking_available'],
+                        'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
+                        'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
+                    }
             return response
             
         except Exception as e:
