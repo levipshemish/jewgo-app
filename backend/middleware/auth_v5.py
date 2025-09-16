@@ -124,7 +124,7 @@ class AuthV5Middleware:
         """Load user info (email, roles) from DB for context population."""
         try:
             auth_manager = get_postgres_auth()
-            with auth_manager.db.connection_manager.session_scope() as session:
+            with auth_manager.db.session_scope() as session:
                 from sqlalchemy import text
                 row = session.execute(
                     text(
@@ -305,7 +305,7 @@ class AuthV5Middleware:
         """Mint enhanced access token with improved role consistency using TokenManagerV5."""
         
         # Enhanced role and permission query
-        with auth_manager.db.connection_manager.session_scope() as session:
+        with auth_manager.db.session_scope() as session:
             from sqlalchemy import text
             row = session.execute(
                 text("""

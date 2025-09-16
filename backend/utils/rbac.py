@@ -213,7 +213,7 @@ def require_auth(f):
                 raise AuthenticationError("Invalid token payload")
 
             auth_manager = get_postgres_auth()
-            with auth_manager.db.connection_manager.session_scope() as session:
+            with auth_manager.db.session_scope() as session:
                 from sqlalchemy import text
                 row = session.execute(
                     text(
@@ -397,7 +397,7 @@ def optional_auth(f):
                     uid = payload.get('uid')
                     if uid:
                         auth_manager = get_postgres_auth()
-                        with auth_manager.db.connection_manager.session_scope() as session:
+                        with auth_manager.db.session_scope() as session:
                             from sqlalchemy import text
                             row = session.execute(
                                 text(

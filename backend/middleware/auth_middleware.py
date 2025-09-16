@@ -43,7 +43,7 @@ def register_auth_middleware(app) -> None:
 
             # Load user info from DB
             auth_manager = get_postgres_auth()
-            with auth_manager.db.connection_manager.session_scope() as session:
+            with auth_manager.db.session_scope() as session:
                 from sqlalchemy import text
                 row = session.execute(
                     text(
@@ -149,7 +149,7 @@ def _attempt_refresh_if_needed(auth_manager, user_info) -> None:
     tm = TokenManagerV5()
 
     # Query roles + email to mint an access token
-    with auth_manager.db.connection_manager.session_scope() as session:
+    with auth_manager.db.session_scope() as session:
         from sqlalchemy import text
         row = session.execute(
             text(
