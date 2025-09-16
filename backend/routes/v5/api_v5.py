@@ -753,18 +753,11 @@ def not_found(error):
 def get_synagogue_filter_options():
     """Get filter options for synagogues."""
     try:
-        from database.services.synagogue_service_v5 import SynagogueServiceV5
-        from database.repositories.entity_repository_v5 import EntityRepositoryV5
-        from cache.redis_manager_v5 import RedisManagerV5
-        from utils.feature_flags_v5 import FeatureFlagsV5
+        # Use the main synagogues endpoint with include_filter_options=true
+        # This is more consistent with the restaurant pattern
+        service = get_entity_service('synagogues')
         
-        # Initialize services
-        entity_repo = EntityRepositoryV5()
-        redis_manager = RedisManagerV5()
-        feature_flags = FeatureFlagsV5()
-        service = SynagogueServiceV5(entity_repo, redis_manager, feature_flags)
-        
-        # Get filter options
+        # Get filter options using the same method as restaurants
         filter_options = service.get_filter_options()
         
         return jsonify({
