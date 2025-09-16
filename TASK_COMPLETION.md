@@ -172,3 +172,34 @@ Docs Updated
 
 Follow-ups
 - (empty)
+
+## 2025-09-16 — Update Shul Grid Card Mapping
+- ID: 2025-09-16-SHUL-GRID-CARD-UPDATE
+- Owner: Claude Sonnet 4  
+- Links: `frontend/lib/types/shul.ts`, `frontend/components/core/cards/Card.tsx`, `frontend/components/core/grids/Grid.tsx`, `frontend/types/index.ts`
+
+Reason Why — User requested updating the shul page cards grid mapping to follow a new ShulGridCard type specification with specific field mappings for synagogue data display, including proper subtitle mapping to rabbi_name and additionalText for computed distance.
+
+Change Summary
+- **Created new ShulGridCard type**: Added `frontend/lib/types/shul.ts` with ShulGridCard interface and RealShul schema types
+- **Added transformation function**: Created `transformShulToGridCard()` with distance calculation logic using PostGIS/user location
+- **Updated CardData interface**: Modified to support `string | null` for badge and additionalText fields
+- **Enhanced Grid component**: Updated transformItem function to use dedicated shul transformation for dataType='shuls'
+- **Updated type exports**: Added shul types to main types barrel export
+
+Risks & Mitigations
+- Backward compatibility maintained for non-shul card types (restaurants, marketplace)
+- Existing CardData interface extended rather than replaced to avoid breaking changes
+- Distance calculation gracefully handles missing location data with fallbacks
+
+Tests
+- All modified files pass linting with 0 errors
+- Type safety maintained with proper TypeScript interfaces
+- Transformation logic handles edge cases (missing rabbi_name, coordinates, etc.)
+
+Docs Updated
+- Added comprehensive type documentation in `frontend/lib/types/shul.ts`
+- Updated types barrel export to include new shul types
+
+Follow-ups
+- (empty)

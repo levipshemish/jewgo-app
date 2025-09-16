@@ -7,6 +7,7 @@ import { AppliedFilters } from "@/lib/filters/filters.types"
 
 // Import the mock data generator (fallback)
 import { generateMockShuls, type MockShul } from "@/lib/mockData/shuls"
+import { RealShul, transformShulToGridCard } from "@/lib/types/shul"
 
 interface GridProps {
   category?: string
@@ -22,70 +23,6 @@ interface GridProps {
   dataType?: 'shuls' | 'restaurants' | 'marketplace'
 }
 
-// Real shul type matching the database schema
-interface RealShul {
-  id: number
-  name: string
-  description?: string
-  address?: string
-  city?: string
-  state?: string
-  zip_code?: string
-  country?: string
-  latitude?: number
-  longitude?: number
-  phone_number?: string
-  website?: string
-  email?: string
-  shul_type?: string
-  shul_category?: string
-  denomination?: string
-  business_hours?: string
-  hours_parsed?: boolean
-  timezone?: string
-  has_daily_minyan?: boolean
-  has_shabbat_services?: boolean
-  has_holiday_services?: boolean
-  has_women_section?: boolean
-  has_mechitza?: boolean
-  has_separate_entrance?: boolean
-  distance?: string
-  distance_miles?: number
-  rating?: number
-  review_count?: number
-  star_rating?: number
-  google_rating?: number
-  image_url?: string
-  logo_url?: string
-  has_parking?: boolean
-  has_disabled_access?: boolean
-  has_kiddush_facilities?: boolean
-  has_social_hall?: boolean
-  has_library?: boolean
-  has_hebrew_school?: boolean
-  has_adult_education?: boolean
-  has_youth_programs?: boolean
-  has_senior_programs?: boolean
-  rabbi_name?: string
-  rabbi_phone?: string
-  rabbi_email?: string
-  religious_authority?: string
-  community_affiliation?: string
-  kosher_certification?: string
-  membership_required?: boolean
-  membership_fee?: number
-  fee_currency?: string
-  accepts_visitors?: boolean
-  visitor_policy?: string
-  is_active?: boolean
-  is_verified?: boolean
-  created_at?: string
-  updated_at?: string
-  tags?: string[]
-  admin_notes?: string
-  specials?: string
-  listing_type?: string
-}
 
 export default function Grid({ 
   category = "all", 
@@ -400,7 +337,25 @@ export default function Grid({
 
   // Transform item data to match Card interface
   const transformItem = useCallback((item: RealShul | any): CardData => {
-    // Enhanced rating logic with better fallbacks
+    // For shuls, use the dedicated transformation function
+    if (dataType === 'shuls') {
+      const shulGridCard = transformShulToGridCard(item as RealShul, userLocation);
+      return {
+        id: String(item.id),
+        imageUrl: shulGridCard.imageUrl,
+        title: shulGridCard.title,
+        badge: shulGridCard.badge,
+        subtitle: shulGridCard.subtitle,
+        additionalText: shulGridCard.additionalText,
+        showHeart: shulGridCard.showHeart,
+        isLiked: shulGridCard.isLiked,
+        imageTag: shulGridCard.imageTag,
+        kosherCategory: item.denomination || item.shul_category || '',
+        city: item.city || item.address,
+      };
+    }
+
+    // For non-shul items (restaurants, marketplace), keep existing logic
     const rating = item.rating || item.star_rating || item.google_rating
     const ratingText = rating && typeof rating === 'number' ? rating.toFixed(1) : undefined
     
@@ -422,15 +377,7 @@ export default function Grid({
       distanceText = item.distance
     }
     
-    // Create subtitle based on data type
-    let subtitle = ''
-    if (dataType === 'shuls') {
-      const denomination = item.denomination && typeof item.denomination === 'string' ? item.denomination : 'Jewish'
-      const city = item.city && typeof item.city === 'string' ? item.city : 'Florida'
-      subtitle = item.description && typeof item.description === 'string' ? item.description : `${denomination} synagogue in ${city}`
-    } else {
-      subtitle = item.price_range || item.cuisine || ''
-    }
+    const subtitle = item.price_range || item.cuisine || ''
     
     return {
       id: String(item.id),
@@ -441,9 +388,9 @@ export default function Grid({
       additionalText: distanceText ? `${parseFloat(distanceText.replace(/[^\d.]/g, ''))} mi away` : '',
       showHeart: true,
       isLiked: false,
-      kosherCategory: item.denomination || item.kosher_category || item.cuisine || '',
+      kosherCategory: item.kosher_category || item.cuisine || '',
       city: item.city || item.address,
-      imageTag: item.denomination || item.kosher_category || item.cuisine || '',
+      imageTag: item.kosher_category || item.cuisine || '',
     }
   }, [userLocation, dataType])
 

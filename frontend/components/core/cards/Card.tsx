@@ -17,9 +17,9 @@ export interface CardData {
   imageUrl?: string;
   imageTag?: string;
   title: string;
-  badge?: string;
+  badge?: string | null;
   subtitle?: string;
-  additionalText?: string;
+  additionalText?: string | null;
   showHeart?: boolean;
   isLiked?: boolean;
   kosherCategory?: string;
