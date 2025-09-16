@@ -8,11 +8,11 @@ route:
 
 receivers:
   - name: default
-    email_configs: []
+    webhook_configs:
+      - url: http://localhost:9093/api/v1/alerts
   - name: pager
-    pagerduty_configs:
-      - routing_key: ${PAGERDUTY_KEY}
+    webhook_configs:
+      - url: http://localhost:9093/api/v1/alerts
   - name: opsroom
-    slack_configs:
-      - api_url: ${SLACK_WEBHOOK}
-        channel: "#ops"
+    webhook_configs:
+      - url: http://localhost:9093/api/v1/alerts

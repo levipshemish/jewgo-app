@@ -43,3 +43,13 @@ scrape_configs:
       - targets: ['jewgo_backend:5000']
     metrics_path: '/metrics'
     scrape_interval: 30s
+
+  # Scrape authentication metrics endpoint
+  - job_name: 'jewgo_auth_metrics'
+    static_configs:
+      - targets: ['api.jewgo.app']
+    metrics_path: '/api/v5/metrics/auth'
+    scrape_interval: 10s
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true

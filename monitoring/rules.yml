@@ -37,3 +37,86 @@ groups:
     labels: { severity: "page" }
     annotations:
       summary: "Disk < 10% free"
+
+- name: authentication
+  rules:
+  # High authentication failure rate
+  - alert: HighAuthFailureRate
+    expr: rate(auth_errors_total[5m]) > 0.1
+    for: 2m
+    labels: { severity: "warning" }
+    annotations:
+      summary: "High authentication failure rate detected"
+      description: "Authentication error rate is {{ $value }} errors/sec, which is above the threshold of 0.1"
+
+  # Critical authentication failure rate
+  - alert: CriticalAuthFailureRate
+    expr: rate(auth_errors_total[5m]) > 0.5
+    for: 1m
+    labels: { severity: "critical" }
+    annotations:
+      summary: "Critical authentication failure rate"
+      description: "Authentication error rate is {{ $value }} errors/sec, which is critically high"
+
+  # Low authentication success rate
+  - alert: LowAuthSuccessRate
+    expr: rate(auth_attempts_total{result="success"}[5m]) / rate(auth_attempts_total[5m]) < 0.8
+    for: 3m
+    labels: { severity: "warning" }
+    annotations:
+      summary: "Low authentication success rate"
+      description: "Authentication success rate is {{ $value | humanizePercentage }}, which is below 80%"
+
+  # Slow authentication response time
+  - alert: SlowAuthResponseTime
+    expr: histogram_quantile(0.95, rate(auth_duration_seconds_bucket[5m])) > 1.0
+    for: 2m
+    labels: { severity: "warning" }
+    annotations:
+      summary: "Slow authentication response time"
+      description: "95th percentile authentication response time is {{ $value }}s, which is above 1.0s"
+
+  # Very slow authentication response time
+  - alert: VerySlowAuthResponseTime
+    expr: histogram_quantile(0.95, rate(auth_duration_seconds_bucket[5m])) > 2.0
+    for: 1m
+    labels: { severity: "critical" }
+    annotations:
+      summary: "Very slow authentication response time"
+      description: "95th percentile authentication response time is {{ $value }}s, which is critically slow"
+
+  # Low cache hit rate
+  - alert: LowCacheHitRate
+    expr: cache_hit_ratio < 0.7
+    for: 3m
+    labels: { severity: "warning" }
+    annotations:
+      summary: "Low cache hit rate"
+      description: "Cache hit rate is {{ $value | humanizePercentage }}, which is below 70%"
+
+  # High database query time
+  - alert: HighDatabaseQueryTime
+    expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 0.5
+    for: 2m
+    labels: { severity: "warning" }
+    annotations:
+      summary: "High database query response time"
+      description: "95th percentile database query time is {{ $value }}s, which is above 0.5s"
+
+  # High number of active sessions
+  - alert: HighActiveSessions
+    expr: sessions_active > 1000
+    for: 2m
+    labels: { severity: "warning" }
+    annotations:
+      summary: "High number of active sessions"
+      description: "Number of active sessions is {{ $value }}, which is above 1000"
+
+  # Low system health score
+  - alert: LowSystemHealthScore
+    expr: system_health_score < 70
+    for: 5m
+    labels: { severity: "warning" }
+    annotations:
+      summary: "Low system health score"
+      description: "System health score is {{ $value }}, which is below 70"
