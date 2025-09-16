@@ -237,13 +237,29 @@ class PostgresAuthManager:
                 )
                 
                 # Assign default user role (id is auto-increment)
-                session.execute(
-                    text("""
-                        INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
-                        VALUES (:user_id, 'user', 1, NOW(), 'system', TRUE, NOW(), NOW())
-                    """),
-                    {'user_id': user_id}
-                )
+                # Create user role (handle granted_by constraint issue)
+                try:
+                    session.execute(
+                        text("""
+                            INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
+                            VALUES (:user_id, 'user', 1, NOW(), :user_id, TRUE, NOW(), NOW())
+                        """),
+                        {'user_id': user_id}
+                    )
+                except Exception as role_error:
+                    logger.warning(f"Could not create user role with self-granted: {role_error}")
+                    # Try without granted_by if it's causing issues
+                    try:
+                        session.execute(
+                            text("""
+                                INSERT INTO user_roles (user_id, role, level, granted_at, is_active, created_at, updated_at)
+                                VALUES (:user_id, 'user', 1, NOW(), TRUE, NOW(), NOW())
+                            """),
+                            {'user_id': user_id}
+                        )
+                    except Exception as role_error2:
+                        logger.warning(f"Could not create user role even without granted_by: {role_error2}")
+                        # Continue without role creation - user can still be created
                 
                 # Log user creation
                 self._log_auth_event(user_id, 'user_created', True, {'email': email})
