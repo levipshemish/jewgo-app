@@ -3,11 +3,25 @@ import { isPostgresAuthConfigured } from '@/lib/utils/auth-utils-client';
 
 export async function GET(request: NextRequest) {
   try {
-    if (!isPostgresAuthConfigured()) {
-      return NextResponse.json({ success: false, error: 'PostgreSQL auth not configured', user: null }, { status: 500 });
-    }
-
+    // Debug environment configuration
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    console.log('[Auth Sync] Environment check:', {
+      NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+      backendUrl,
+      isConfigured: isPostgresAuthConfigured()
+    });
+    
+    if (!isPostgresAuthConfigured()) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'PostgreSQL auth not configured', 
+        user: null,
+        debug: {
+          NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+          backendUrl
+        }
+      }, { status: 500 });
+    }
 
     // Forward all cookies from the request to the backend
     const cookieHeader = request.headers.get('cookie');
