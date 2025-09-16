@@ -577,11 +577,28 @@ assert_route_present() {
     fi
 }
 
-# Google OAuth start should exist (typically 302 to Google)
-assert_route_present "https://api.jewgo.app/api/v5/auth/google/start?returnTo=%2F" "Google OAuth start"
+# Helper to fail if route returns 404 or 501 (not configured)
+assert_route_configured() {
+    local url="$1"
+    local desc="$2"
+    local code
+    code=$(curl -s -o /dev/null -w "%{http_code}" -I "$url" || echo "000")
+    if [ "$code" = "404" ] || [ "$code" = "000" ]; then
+        print_error "Missing route ($desc): HTTP $code at $url"
+        exit 1
+    elif [ "$code" = "501" ]; then
+        print_error "Route not configured ($desc): HTTP 501 at $url. Ensure required env vars are set on server .env."
+        exit 1
+    else
+        print_success "$desc present and configured (HTTP $code)"
+    fi
+}
 
-# Apple OAuth start should exist (may be 501 if not configured yet)
-assert_route_present "https://api.jewgo.app/api/v5/auth/apple/start?returnTo=%2F" "Apple OAuth start"
+# Google OAuth start should exist and be configured (not 501)
+assert_route_configured "https://api.jewgo.app/api/v5/auth/google/start?returnTo=%2F" "Google OAuth start"
+
+# Apple OAuth start should exist and be configured (not 501)
+assert_route_configured "https://api.jewgo.app/api/v5/auth/apple/start?returnTo=%2F" "Apple OAuth start"
 
 # Google callback route should exist (will redirect to error when missing params)
 assert_route_present "https://api.jewgo.app/api/v5/auth/google/callback" "Google OAuth callback"
