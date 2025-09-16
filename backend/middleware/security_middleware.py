@@ -15,6 +15,7 @@ Version: 1.0
 Last Updated: 2025-01-27
 """
 
+import os
 import re
 import json
 from functools import wraps
@@ -115,13 +116,15 @@ class SecurityMiddleware:
             for header, value in self.security_headers.items():
                 response.headers[header] = value
             
-            # Add CORS headers
-            origin = request.headers.get('Origin')
-            if origin and origin in self.cors_origins:
-                response.headers['Access-Control-Allow-Origin'] = origin
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
-                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+            # Add CORS headers only if Nginx is not handling them
+            nginx_handles_cors = os.environ.get("NGINX_HANDLES_CORS", "true").lower() == "true"
+            if not nginx_handles_cors:
+                origin = request.headers.get('Origin')
+                if origin and origin in self.cors_origins:
+                    response.headers['Access-Control-Allow-Origin'] = origin
+                    response.headers['Access-Control-Allow-Credentials'] = 'true'
+                    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+                    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
             
             # Remove server information
             response.headers.pop('Server', None)
