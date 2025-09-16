@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 # Create blueprint
 debug_bp = BlueprintFactoryV5.create_blueprint(
-    'debug_api', __name__, '/api/debug'
+    'debug_api', __name__, '/api/v5/debug'
 )
 
 @debug_bp.route('/users', methods=['GET'])
