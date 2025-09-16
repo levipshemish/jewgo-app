@@ -13,6 +13,7 @@ import time
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from middleware.auth_decorators import auth_required, rate_limit_by_user, step_up_required
+from middleware.csrf_v5 import csrf_exempt
 from services.auth_service_v5 import AuthServiceV5
 from services.auth.token_manager_v5 import TokenManagerV5
 from services.auth.cookies import set_auth, clear_auth
@@ -964,6 +965,7 @@ def revoke_all_sessions_route():
 
 
 @auth_bp.route('/clear-session', methods=['POST'])
+@csrf_exempt  # Allow clearing session without CSRF token when session is corrupted
 def clear_session():
     """Clear user session and cookies. Used when authentication is in a bad state."""
     try:
