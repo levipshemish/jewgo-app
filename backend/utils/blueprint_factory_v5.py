@@ -429,7 +429,7 @@ class BlueprintFactoryV5:
             response.headers['Access-Control-Allow-Origin'] = origin or '*'
             response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
             response.headers['Access-Control-Allow-Headers'] = (
-                'Content-Type, Authorization, X-Requested-With, X-Idempotency-Key, '
+                'Content-Type, Authorization, X-Requested-With, X-CSRF-Token, X-Idempotency-Key, '
                 'X-Device-ID, X-App-Version, X-Correlation-ID'
             )
             response.headers['Access-Control-Expose-Headers'] = (
