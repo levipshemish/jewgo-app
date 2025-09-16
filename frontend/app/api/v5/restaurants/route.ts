@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('limit')) pagination.limit = parseInt(searchParams.get('limit')!);
     if (searchParams.get('sort')) pagination.sort = searchParams.get('sort')! as any;
     if (searchParams.get('page')) pagination.page = parseInt(searchParams.get('page')!);
+    if (searchParams.get('include_filter_options')) pagination.includeFilterOptions = searchParams.get('include_filter_options') === 'true';
 
     // Call backend API through client
     const response = await apiClient.getEntities(
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
     //   headers.set('ETag', response.headers.etag);
     // }
 
-    return NextResponse.json(response.data, { headers });
+    return NextResponse.json(response.data.data || response.data, { headers });
 
   } catch (error) {
     console.error('Restaurants API error:', error);
