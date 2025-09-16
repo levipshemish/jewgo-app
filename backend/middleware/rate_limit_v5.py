@@ -26,9 +26,9 @@ class RateLimitV5Middleware:
     # Rate limit configurations by user tier
     RATE_LIMIT_CONFIGS = {
         'anonymous': {
-            'requests_per_minute': 60,
-            'requests_per_hour': 1000,
-            'burst_allowance': 100,  # Increased for local testing
+            'requests_per_minute': 120,  # Doubled for auth endpoints
+            'requests_per_hour': 2000,   # Doubled for auth endpoints
+            'burst_allowance': 200,      # Doubled for local testing
             'sliding_window_minutes': 5
         },
         'guest': {
@@ -75,7 +75,7 @@ class RateLimitV5Middleware:
         'upload': 0.1,      # Upload endpoints get 10% of base limit
         'export': 0.2,      # Export endpoints get 20% of base limit
         'admin': 2.0,       # Admin endpoints get 200% of base limit
-        'auth': 0.3,        # Auth endpoints get 30% of base limit (prevent brute force)
+        'auth': 0.8,        # Auth endpoints get 80% of base limit (increased from 30%)
         'public': 1.0,      # Public endpoints get 100% of base limit
     }
     

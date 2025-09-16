@@ -16,6 +16,7 @@ Last Updated: 2025-01-15
 
 from typing import Any, Dict, List, Optional, Callable
 from functools import wraps
+from dataclasses import asdict
 
 from utils.logging_config import get_logger
 from cache.advanced_cache_manager import get_advanced_cache_manager
@@ -174,7 +175,7 @@ class OptimizationManager:
                     'status': 'active' if self.db_optimizer else 'inactive'
                 },
                 'connection_pool': {
-                    'status': self.connection_pool.get_health_summary() if self.connection_pool else None,
+                    'health_summary': self.connection_pool.get_health_summary() if self.connection_pool else None,
                     'status': 'active' if self.connection_pool else 'inactive'
                 },
                 'performance_monitor': {

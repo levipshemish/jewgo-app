@@ -10,7 +10,9 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timedelta
 import os
 import secrets
+from sqlalchemy import text
 from utils.logging_config import get_logger
+from utils.error_handler import ValidationError
 from cache.redis_manager_v5 import get_redis_manager_v5
 from database.connection_manager import get_connection_manager
 from utils.feature_flags_v5 import FeatureFlagsV5

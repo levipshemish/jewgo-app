@@ -14,6 +14,7 @@ import signal
 import threading
 from datetime import datetime
 from typing import Dict, Any, Optional
+from dataclasses import asdict
 from pathlib import Path
 
 # Add the backend directory to the Python path

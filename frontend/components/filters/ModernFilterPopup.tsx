@@ -5,7 +5,7 @@ import { X, MapPin, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { CustomDropdown } from '../ui/CustomDropdown';
 import { useLocalFilters } from '@/lib/hooks/useLocalFilters';
 import { useLazyFilterOptions } from '@/lib/hooks/useFilterOptions';
-import { AppliedFilters } from '@/lib/filters/filters.types';
+import { AppliedFilters, FilterOptions } from '@/lib/filters/filters.types';
 import { validateFilters, normalizeFilters, getCanonicalDistance } from '@/lib/utils/filterValidation';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import { FilterPreview } from './FilterPreview';
@@ -21,16 +21,7 @@ interface ModernFilterPopupProps {
   onRequestLocation?: () => void;
   entityType?: 'restaurants' | 'synagogues' | 'mikvahs';
   // Optional pre-loaded filter options for combined API approach
-  preloadedFilterOptions?: {
-    agencies: string[];
-    kosherCategories: string[];
-    listingTypes: string[];
-    priceRanges: string[];
-    cities: string[];
-    states: string[];
-    ratings: number[];
-    kosherDetails: string[];
-  } | null;
+  preloadedFilterOptions?: FilterOptions | null;
 }
 
 
@@ -71,35 +62,44 @@ export function ModernFilterPopup({
   const { filterOptions: fetchedFilterOptions, loading: filterOptionsLoading, trigger: loadFilterOptions } = useLazyFilterOptions(entityType);
   
   // Get fallback filter options based on entity type
-  const getFallbackFilterOptions = () => {
+  const getFallbackFilterOptions = (): FilterOptions => {
     switch (entityType) {
       case 'synagogues':
         return {
-          denominations: ['orthodox', 'conservative', 'reform', 'reconstructionist'],
-          shulTypes: ['traditional', 'chabad', 'orthodox', 'sephardic'],
-          shulCategories: ['ashkenazi', 'chabad', 'sephardic'],
+          agencies: [],
+          kosherCategories: [],
+          listingTypes: [],
+          businessTypes: [],
+          priceRanges: [],
           cities: [],
           states: [],
           ratings: [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
-          accessibility: ['has_disabled_access', 'has_parking'],
-          services: ['has_daily_minyan', 'has_shabbat_services', 'has_holiday_services'],
-          facilities: ['has_parking', 'has_kiddush_facilities', 'has_social_hall', 'has_library', 'has_hebrew_school']
+          kosherDetails: [],
+          denominations: ['orthodox', 'conservative', 'reform', 'reconstructionist'],
+          shulTypes: ['traditional', 'chabad', 'orthodox', 'sephardic'],
+          shulCategories: ['ashkenazi', 'chabad', 'sephardic']
         };
       case 'mikvahs':
         return {
+          agencies: [],
+          kosherCategories: [],
+          listingTypes: [],
+          businessTypes: [],
+          priceRanges: [],
+          cities: [],
+          states: [],
+          ratings: [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
+          kosherDetails: [],
           appointmentRequired: ['true', 'false'],
           statuses: ['active', 'inactive', 'pending'],
-          cities: [],
-          contactPersons: [],
-          facilities: ['appointment_required', 'is_currently_open'],
-          accessibility: ['appointment_required'],
-          appointmentTypes: ['appointment_required', 'walk_in_available']
+          contactPersons: []
         };
       default: // restaurants
         return {
           agencies: [],
           kosherCategories: [],
           listingTypes: [],
+          businessTypes: [],
           priceRanges: [],
           cities: [],
           states: [],

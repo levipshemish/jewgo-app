@@ -10,6 +10,7 @@ import os
 import secrets
 import jwt
 import bcrypt
+import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from sqlalchemy import text, bindparam
