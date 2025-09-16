@@ -191,14 +191,24 @@ class PostgresAuthManager:
             
             with self.db.session_scope() as session:
                 # Check if email already exists
+                logger.info(f"Checking email uniqueness for: '{email}'")
+                
+                # First, let's see what emails exist in the database
+                all_emails = session.execute(
+                    text("SELECT email FROM users ORDER BY email")
+                ).fetchall()
+                logger.info(f"Existing emails in database: {[row[0] for row in all_emails]}")
+                
                 result = session.execute(
                     text("SELECT id FROM users WHERE email = :email"),
                     {'email': email}
                 ).fetchone()
                 
-                logger.info(f"Email check for {email}: result = {result}")
+                logger.info(f"Email check for '{email}': result = {result}")
+                logger.info(f"Query executed: SELECT id FROM users WHERE email = '{email}'")
                 
                 if result:
+                    logger.warning(f"Email '{email}' already exists with ID: {result[0]}")
                     raise ValidationError("Email address is already registered")
                 
                 # Insert new user with all required fields
