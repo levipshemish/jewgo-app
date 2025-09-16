@@ -646,5 +646,263 @@ def debug_fix_user_roles():
             'error': str(e)
         }), 500
 
+@debug_bp.route('/test-password', methods=['POST'])
+def test_password():
+    """Debug endpoint to test password verification"""
+    try:
+        from utils.postgres_auth import PostgresAuthManager, PasswordSecurity
+        from database.connection_manager import get_connection_manager
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body required'
+            }), 400
+        
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+        
+        if not email or not password:
+            return jsonify({
+                'success': False,
+                'error': 'Email and password are required'
+            }), 400
+        
+        # Get user from database
+        db_manager = get_connection_manager()
+        with db_manager.session_scope() as session:
+            result = session.execute(
+                text("SELECT id, email, password_hash FROM users WHERE email = :email"),
+                {'email': email}
+            ).fetchone()
+            
+            if not result:
+                return jsonify({
+                    'success': False,
+                    'error': 'User not found',
+                    'email': email
+                }), 404
+            
+            user_data = dict(result._mapping)
+            
+            # Test password verification
+            password_security = PasswordSecurity()
+            password_verified = password_security.verify_password(password, user_data['password_hash'])
+            
+            return jsonify({
+                'success': True,
+                'email': email,
+                'user_id': user_data['id'],
+                'password_hash': user_data['password_hash'],
+                'password_verified': password_verified,
+                'password_provided': password
+            })
+            
+    except Exception as e:
+        logger.error(f"Password test error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@debug_bp.route('/test-password-hash', methods=['POST'])
+def test_password_hash():
+    """Debug endpoint to test password hashing and verification"""
+    try:
+        from utils.postgres_auth import PasswordSecurity
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body required'
+            }), 400
+        
+        password = data.get('password', '')
+        
+        if not password:
+            return jsonify({
+                'success': False,
+                'error': 'Password is required'
+            }), 400
+        
+        # Test password hashing
+        try:
+            password_hash = PasswordSecurity.hash_password(password)
+            logger.info(f"Password hashed successfully: {password_hash[:50]}...")
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Password hashing failed: {str(e)}'
+            }), 500
+        
+        # Test password verification
+        try:
+            verification_result = PasswordSecurity.verify_password(password, password_hash)
+            logger.info(f"Password verification result: {verification_result}")
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Password verification failed: {str(e)}'
+            }), 500
+        
+        return jsonify({
+            'success': True,
+            'password_hash': password_hash,
+            'verification_result': verification_result,
+            'message': 'Password hashing and verification test completed'
+        })
+        
+    except Exception as e:
+        logger.error(f"Test password hash error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@debug_bp.route('/debug-login', methods=['POST'])
+def debug_login():
+    """Debug endpoint to test login flow step by step"""
+    try:
+        from utils.postgres_auth import PostgresAuthManager, PasswordSecurity
+        from database.connection_manager import get_connection_manager
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body required'
+            }), 400
+        
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+        
+        if not email or not password:
+            return jsonify({
+                'success': False,
+                'error': 'Email and password are required'
+            }), 400
+        
+        debug_info = {
+            'email': email,
+            'password': password,
+            'steps': {}
+        }
+        
+        # Step 1: Get database connection
+        db_manager = get_connection_manager()
+        auth_manager = PostgresAuthManager(db_manager)
+        debug_info['steps']['db_connection'] = 'success'
+        
+        # Step 2: Query user from database
+        with db_manager.session_scope() as session:
+            from sqlalchemy import text
+            
+            result = session.execute(
+                text("""
+                    SELECT u.id, u.name, u.email, u.password_hash, u.email_verified,
+                           u.failed_login_attempts, u.locked_until, u.last_login
+                    FROM users u
+                    WHERE u.email = :email
+                """),
+                {'email': email}
+            ).fetchone()
+            
+            if not result:
+                debug_info['steps']['user_query'] = 'user_not_found'
+                return jsonify({
+                    'success': False,
+                    'error': 'User not found',
+                    'debug_info': debug_info
+                }), 404
+            
+            user_data = dict(result._mapping)
+            debug_info['steps']['user_query'] = 'success'
+            debug_info['steps']['user_data'] = {
+                'id': user_data['id'],
+                'email': user_data['email'],
+                'name': user_data['name'],
+                'password_hash_length': len(user_data['password_hash']) if user_data['password_hash'] else 0,
+                'password_hash_prefix': user_data['password_hash'][:20] if user_data['password_hash'] else None,
+                'email_verified': user_data['email_verified'],
+                'failed_login_attempts': user_data['failed_login_attempts'],
+                'locked_until': str(user_data['locked_until']) if user_data['locked_until'] else None
+            }
+            
+            # Step 3: Test password verification
+            try:
+                password_verified = PasswordSecurity.verify_password(password, user_data['password_hash'])
+                debug_info['steps']['password_verification'] = {
+                    'success': True,
+                    'result': password_verified
+                }
+            except Exception as e:
+                debug_info['steps']['password_verification'] = {
+                    'success': False,
+                    'error': str(e)
+                }
+                return jsonify({
+                    'success': False,
+                    'error': f'Password verification failed: {str(e)}',
+                    'debug_info': debug_info
+                }), 500
+            
+            # Step 4: Test full authentication
+            try:
+                auth_result = auth_manager.authenticate_user(email, password)
+                debug_info['steps']['full_auth'] = {
+                    'success': True,
+                    'result_type': type(auth_result).__name__,
+                    'result_is_none': auth_result is None,
+                    'result_keys': list(auth_result.keys()) if auth_result and isinstance(auth_result, dict) else None
+                }
+            except Exception as e:
+                debug_info['steps']['full_auth'] = {
+                    'success': False,
+                    'error': str(e)
+                }
+        
+        return jsonify({
+            'success': True,
+            'debug_info': debug_info,
+            'message': 'Debug login completed'
+        })
+        
+    except Exception as e:
+        logger.error(f"Debug login error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@debug_bp.route('/clear-rate-limits', methods=['POST'])
+def clear_rate_limits():
+    """Debug endpoint to clear all rate limits"""
+    try:
+        from cache.redis_manager_v5 import get_redis_manager_v5
+        redis_manager = get_redis_manager_v5()
+        
+        # Get all rate limit keys
+        rate_limit_keys = redis_manager.scan_keys('rate_limit:*')
+        
+        cleared_count = 0
+        for key in rate_limit_keys:
+            redis_manager.delete(key)
+            cleared_count += 1
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cleared {cleared_count} rate limit entries',
+            'cleared_keys': cleared_count
+        })
+        
+    except Exception as e:
+        logger.error(f"Clear rate limits error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # Export blueprint
 __all__ = ['debug_bp']

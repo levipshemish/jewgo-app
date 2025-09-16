@@ -311,28 +311,19 @@ class PostgresAuthManager:
             
             with self.db.session_scope() as session:
                 # Get user details with role information
+                logger.info(f"Looking up user with email: '{email}'")
+                # First, let's try a simpler query to see if the user exists
                 result = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.password_hash, u.email_verified,
-                               u.failed_login_attempts, u.locked_until, u.last_login,
-                               COALESCE(
-                                   JSON_AGG(
-                                       JSON_BUILD_OBJECT(
-                                           'role', ur.role,
-                                           'level', ur.level,
-                                           'granted_at', ur.granted_at
-                                       )
-                                   ) FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
-                                   '[]'
-                               ) as roles
+                               u.failed_login_attempts, u.locked_until, u.last_login
                         FROM users u
-                        LEFT JOIN user_roles ur ON u.id = ur.user_id
                         WHERE u.email = :email
-                        GROUP BY u.id, u.name, u.email, u.password_hash, u.email_verified,
-                                u.failed_login_attempts, u.locked_until, u.last_login
                     """),
                     {'email': email}
                 ).fetchone()
+                
+                logger.info(f"Database query result: {result}")
                 
                 if not result:
                     self._log_auth_event(None, 'login_failed', False, {'email': email, 'reason': 'user_not_found'}, ip_address)
@@ -347,7 +338,15 @@ class PostgresAuthManager:
                     return None
                 
                 # Verify password
-                if not self.password_security.verify_password(password, user_data['password_hash']):
+                logger.info(f"Authenticating user {email}")
+                logger.info(f"User data retrieved: {user_data}")
+                logger.info(f"Password hash from DB: {user_data['password_hash']}")
+                logger.info(f"Password provided: {password}")
+                
+                password_verified = self.password_security.verify_password(password, user_data['password_hash'])
+                logger.info(f"Password verification result: {password_verified}")
+                
+                if not password_verified:
                     # Increment failed attempts
                     failed_attempts = (user_data['failed_login_attempts'] or 0) + 1
                     locked_until = None
@@ -388,9 +387,18 @@ class PostgresAuthManager:
                     {'user_id': user_id}
                 )
                 
-                # Parse roles from JSON
-                import json
-                roles = json.loads(user_data['roles']) if user_data['roles'] else []
+                # Get user roles separately
+                roles_result = session.execute(
+                    text("""
+                        SELECT role, level, granted_at
+                        FROM user_roles
+                        WHERE user_id = :user_id AND is_active = TRUE 
+                        AND (expires_at IS NULL OR expires_at > NOW())
+                    """),
+                    {'user_id': user_id}
+                ).fetchall()
+                
+                roles = [{'role': row[0], 'level': row[1], 'granted_at': row[2]} for row in roles_result]
                 
                 user_info = {
                     'user_id': user_id,
