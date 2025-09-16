@@ -4,6 +4,7 @@ This is a temporary debug endpoint to help identify OAuth failures.
 """
 
 import os
+from datetime import datetime
 from flask import Blueprint, jsonify
 from utils.logging_config import get_logger
 
@@ -14,14 +15,46 @@ oauth_debug_bp = Blueprint('oauth_debug', __name__)
 
 @oauth_debug_bp.route('/oauth-debug', methods=['GET'])
 def oauth_debug():
-    """Debug OAuth configuration and service status."""
+    """Debug OAuth configuration and service status with comprehensive diagnostics."""
     try:
+        # Test OAuth service initialization
+        oauth_service_status = 'unknown'
+        oauth_service_error = None
+        try:
+            from services.oauth_service_v5 import OAuthService
+            oauth_service = OAuthService()
+            oauth_service_status = 'initialized'
+        except Exception as e:
+            oauth_service_status = 'failed'
+            oauth_service_error = str(e)
+        
+        # Test auth service initialization  
+        auth_service_status = 'unknown'
+        auth_service_error = None
+        try:
+            from services.auth_service_v5 import AuthServiceV5
+            auth_service = AuthServiceV5()
+            auth_service_status = 'initialized'
+        except Exception as e:
+            auth_service_status = 'failed'
+            auth_service_error = str(e)
+            
         debug_info = {
+            'timestamp': datetime.utcnow().isoformat(),
             'google_oauth_config': {
                 'client_id_set': bool(os.getenv('GOOGLE_CLIENT_ID')),
+                'client_id_prefix': os.getenv('GOOGLE_CLIENT_ID', '')[:20] if os.getenv('GOOGLE_CLIENT_ID') else None,
                 'client_secret_set': bool(os.getenv('GOOGLE_CLIENT_SECRET')),
                 'redirect_uri_set': bool(os.getenv('GOOGLE_REDIRECT_URI')),
                 'redirect_uri_value': os.getenv('GOOGLE_REDIRECT_URI', 'NOT_SET'),
+                'frontend_url': os.getenv('FRONTEND_URL', 'NOT_SET'),
+                'oauth_state_signing_key_set': bool(os.getenv('OAUTH_STATE_SIGNING_KEY')),
+            },
+            'service_status': {
+                'oauth_service': oauth_service_status,
+                'oauth_service_error': oauth_service_error,
+                'auth_service': auth_service_status, 
+                'auth_service_error': auth_service_error
             },
             'environment_config': {
                 'frontend_url_set': bool(os.getenv('FRONTEND_URL')),

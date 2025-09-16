@@ -322,49 +322,146 @@ class OAuthService:
         return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
 
     def handle_google_callback(self, code: str, state: str) -> Tuple[Dict[str, Any], str]:
-        """Handle Google OAuth callback and return user data + return_to."""
-        return_to = self.validate_and_consume_state(state, 'google')
-        if not return_to:
-            raise OAuthError("Invalid or expired OAuth state")
+        """Handle Google OAuth callback and return user data + return_to with detailed logging."""
+        callback_id = f"oauth_svc_{int(time.time())}_{hash(code) % 10000}"
+        
+        logger.info(f"[{callback_id}] Starting Google OAuth callback processing", extra={
+            'callback_id': callback_id,
+            'code_length': len(code),
+            'state_length': len(state),
+            'code_prefix': code[:20],
+            'state_prefix': state[:20]
+        })
+        
+        # Step 1: Validate state
+        logger.info(f"[{callback_id}] Validating OAuth state")
+        try:
+            return_to = self.validate_and_consume_state(state, 'google')
+            if not return_to:
+                logger.error(f"[{callback_id}] Invalid or expired OAuth state")
+                raise OAuthError("Invalid or expired OAuth state")
+            logger.info(f"[{callback_id}] OAuth state validated successfully", extra={
+                'callback_id': callback_id,
+                'return_to': return_to
+            })
+        except Exception as e:
+            logger.error(f"[{callback_id}] State validation failed: {e}", exc_info=True)
+            raise
 
         try:
-            token_data = self._exchange_google_code(code)
-            profile = self._get_google_profile(token_data['access_token'])
+            # Step 2: Exchange code for tokens
+            logger.info(f"[{callback_id}] Exchanging authorization code for tokens")
+            try:
+                token_data = self._exchange_google_code(code)
+                logger.info(f"[{callback_id}] Token exchange successful", extra={
+                    'callback_id': callback_id,
+                    'token_type': token_data.get('token_type'),
+                    'has_access_token': bool(token_data.get('access_token')),
+                    'has_refresh_token': bool(token_data.get('refresh_token')),
+                    'expires_in': token_data.get('expires_in')
+                })
+            except Exception as e:
+                logger.error(f"[{callback_id}] Token exchange failed: {e}", extra={
+                    'callback_id': callback_id,
+                    'exception_type': type(e).__name__
+                }, exc_info=True)
+                raise
+            
+            # Step 3: Get user profile from Google
+            logger.info(f"[{callback_id}] Fetching user profile from Google")
+            try:
+                profile = self._get_google_profile(token_data['access_token'])
+                logger.info(f"[{callback_id}] Profile fetched successfully", extra={
+                    'callback_id': callback_id,
+                    'profile_sub': profile.get('sub'),
+                    'profile_email': profile.get('email'),
+                    'profile_verified': profile.get('email_verified'),
+                    'profile_name': profile.get('name')
+                })
+            except Exception as e:
+                logger.error(f"[{callback_id}] Profile fetch failed: {e}", extra={
+                    'callback_id': callback_id,
+                    'exception_type': type(e).__name__
+                }, exc_info=True)
+                raise
 
-            # Only set email_verified=True if Google confirms it
-            email_verified = bool(profile.get('email_verified'))
+            # Step 4: Find or create user
+            logger.info(f"[{callback_id}] Finding or creating user account")
+            try:
+                # Only set email_verified=True if Google confirms it
+                email_verified = bool(profile.get('email_verified'))
 
-            user = self.find_or_create_user_from_oauth(
-                provider='google',
-                provider_id=profile['sub'],
-                email=profile['email'],
-                name=profile.get('name'),
-                avatar_url=profile.get('picture'),
-                raw_profile=profile,
-                email_verified=email_verified,
-            )
+                user = self.find_or_create_user_from_oauth(
+                    provider='google',
+                    provider_id=profile['sub'],
+                    email=profile['email'],
+                    name=profile.get('name'),
+                    avatar_url=profile.get('picture'),
+                    raw_profile=profile,
+                    email_verified=email_verified,
+                )
+                logger.info(f"[{callback_id}] User account processed successfully", extra={
+                    'callback_id': callback_id,
+                    'user_id': user.get('id'),
+                    'is_new_user': user.get('is_new', False),
+                    'email_verified': email_verified
+                })
+            except Exception as e:
+                logger.error(f"[{callback_id}] User account processing failed: {e}", extra={
+                    'callback_id': callback_id,
+                    'exception_type': type(e).__name__,
+                    'profile_email': profile.get('email')
+                }, exc_info=True)
+                raise
 
+            logger.info(f"[{callback_id}] Google OAuth callback processing completed successfully")
             return user, return_to
 
         except Exception as e:
-            # Audit log OAuth failures
+            # Audit log OAuth failures with enhanced context
+            logger.error(f"[{callback_id}] OAuth callback failed, recording audit log", extra={
+                'callback_id': callback_id,
+                'error_type': type(e).__name__,
+                'error_message': str(e)
+            })
             try:
                 self.auth_manager._log_auth_event(
                     None,
                     'oauth_callback_failed',
                     False,
-                    {'provider': 'google', 'error': str(e)[:100]},
+                    {
+                        'provider': 'google', 
+                        'error': str(e)[:100],
+                        'callback_id': callback_id,
+                        'error_type': type(e).__name__
+                    },
                     None,
                 )
-            except Exception:
-                pass
+            except Exception as audit_e:
+                logger.warning(f"[{callback_id}] Failed to log OAuth failure: {audit_e}")
             raise
 
     def _exchange_google_code(self, code: str) -> Dict[str, Any]:
-        """Exchange Google authorization code for tokens."""
+        """Exchange Google authorization code for tokens with detailed logging."""
         client_id = os.getenv('GOOGLE_CLIENT_ID')
         client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
         redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
+
+        logger.info("Google token exchange configuration", extra={
+            'has_client_id': bool(client_id),
+            'client_id_prefix': client_id[:20] if client_id else None,
+            'has_client_secret': bool(client_secret),
+            'redirect_uri': redirect_uri,
+            'code_prefix': code[:20]
+        })
+
+        if not client_id or not client_secret or not redirect_uri:
+            logger.error("Missing Google OAuth configuration", extra={
+                'missing_client_id': not client_id,
+                'missing_client_secret': not client_secret,
+                'missing_redirect_uri': not redirect_uri
+            })
+            raise OAuthError("Google OAuth configuration incomplete")
 
         data = {
             'client_id': client_id,
@@ -374,26 +471,99 @@ class OAuthService:
             'redirect_uri': redirect_uri,
         }
 
-        response = requests.post('https://oauth2.googleapis.com/token', data=data, timeout=10)
+        logger.info("Sending token exchange request to Google", extra={
+            'url': 'https://oauth2.googleapis.com/token',
+            'grant_type': data['grant_type'],
+            'redirect_uri': data['redirect_uri']
+        })
 
-        if not response.ok:
-            logger.error(f"Google token exchange failed: {response.status_code}")
-            raise OAuthError("Failed to exchange Google authorization code")
+        try:
+            response = requests.post('https://oauth2.googleapis.com/token', data=data, timeout=10)
+            
+            logger.info("Google token exchange response received", extra={
+                'status_code': response.status_code,
+                'response_headers': dict(response.headers),
+                'response_size': len(response.content)
+            })
 
-        return response.json()
+            if not response.ok:
+                error_details = {}
+                try:
+                    error_details = response.json()
+                except:
+                    error_details = {'raw_response': response.text[:500]}
+                
+                logger.error("Google token exchange failed", extra={
+                    'status_code': response.status_code,
+                    'error_details': error_details,
+                    'response_text': response.text[:200]
+                })
+                raise OAuthError(f"Google token exchange failed: {response.status_code} - {error_details.get('error', 'Unknown error')}")
+
+            token_response = response.json()
+            logger.info("Google token exchange successful", extra={
+                'token_type': token_response.get('token_type'),
+                'expires_in': token_response.get('expires_in'),
+                'scope': token_response.get('scope')
+            })
+            
+            return token_response
+            
+        except requests.RequestException as e:
+            logger.error(f"Google token exchange network error: {e}", exc_info=True)
+            raise OAuthError(f"Network error during token exchange: {e}")
 
     def _get_google_profile(self, access_token: str) -> Dict[str, Any]:
-        """Get Google user profile using OIDC endpoint."""
+        """Get Google user profile using OIDC endpoint with detailed logging."""
+        logger.info("Fetching Google user profile", extra={
+            'access_token_length': len(access_token),
+            'access_token_prefix': access_token[:20],
+            'endpoint': 'https://openidconnect.googleapis.com/v1/userinfo'
+        })
+        
         headers = {'Authorization': f'Bearer {access_token}'}
-        response = requests.get(
-            'https://openidconnect.googleapis.com/v1/userinfo', headers=headers, timeout=10
-        )
+        
+        try:
+            response = requests.get(
+                'https://openidconnect.googleapis.com/v1/userinfo', 
+                headers=headers, 
+                timeout=10
+            )
+            
+            logger.info("Google profile response received", extra={
+                'status_code': response.status_code,
+                'response_headers': dict(response.headers),
+                'response_size': len(response.content)
+            })
 
-        if not response.ok:
-            logger.error(f"Google profile fetch failed: {response.status_code}")
-            raise OAuthError("Failed to fetch Google user profile")
+            if not response.ok:
+                error_details = {}
+                try:
+                    error_details = response.json()
+                except:
+                    error_details = {'raw_response': response.text[:500]}
+                
+                logger.error("Google profile fetch failed", extra={
+                    'status_code': response.status_code,
+                    'error_details': error_details,
+                    'response_text': response.text[:200]
+                })
+                raise OAuthError(f"Google profile fetch failed: {response.status_code} - {error_details.get('error', 'Unknown error')}")
 
-        return response.json()
+            profile_data = response.json()
+            logger.info("Google profile fetched successfully", extra={
+                'profile_keys': list(profile_data.keys()),
+                'has_sub': bool(profile_data.get('sub')),
+                'has_email': bool(profile_data.get('email')),
+                'email_verified': profile_data.get('email_verified'),
+                'has_name': bool(profile_data.get('name'))
+            })
+            
+            return profile_data
+            
+        except requests.RequestException as e:
+            logger.error(f"Google profile fetch network error: {e}", exc_info=True)
+            raise OAuthError(f"Network error during profile fetch: {e}")
 
     # Apple OAuth methods
     def get_apple_auth_url(self, return_to: str = '/') -> str:
