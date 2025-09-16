@@ -6,7 +6,7 @@ import { CategoryTabs } from "@/components/core"
 import ActionButtons from "@/components/layout/ActionButtons"
 import ShulGrid from "@/components/shuls/ShulGrid"
 import ShulBottomNavigation from "@/components/shuls/ShulBottomNavigation"
-import { ModernShulFilterPopup } from "@/components/shuls/ModernShulFilterPopup"
+import { ModernFilterPopup } from "@/components/filters/ModernFilterPopup"
 import { useLocation } from "@/lib/contexts/LocationContext"
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters"
 import { AppliedFilters } from "@/lib/filters/filters.types"
@@ -137,7 +137,7 @@ export default function ShulsPage() {
       <ShulBottomNavigation />
 
       {/* Filter Modal */}
-      <ModernShulFilterPopup
+      <ModernFilterPopup
         isOpen={showFilters}
         onClose={handleCloseFilters}
         onApplyFilters={handleApplyFilters}
