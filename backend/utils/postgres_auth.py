@@ -273,9 +273,11 @@ class PostgresAuthManager:
                     'created_at': datetime.utcnow().isoformat()
                 }
                 
-        except ValidationError:
+        except ValidationError as ve:
+            logger.info(f"ValidationError caught: {ve}")
             raise
-        except IntegrityError:
+        except IntegrityError as ie:
+            logger.info(f"IntegrityError caught: {ie}")
             raise ValidationError("Email address is already registered")
         except Exception as e:
             logger.error(f"User creation error: {e}")
