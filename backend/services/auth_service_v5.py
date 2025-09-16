@@ -514,16 +514,22 @@ class AuthServiceV5:
             User profile data or None if not found
         """
         try:
-            user_data = self._get_user_by_id(user_id)
-            if not user_data:
-                return None
+            # Use postgres_auth for consistency with registration
+            postgres_auth = self._get_postgres_auth()
+            user_data = postgres_auth.get_user_by_id(user_id)
             
-            # Return sanitized profile data
+            if not user_data:
+                # Fallback to AuthServiceV5 database lookup
+                user_data = self._get_user_by_id(user_id)
+                if not user_data:
+                    return None
+            
+            # Return sanitized profile data in consistent format
             return {
-                'id': user_data['id'],
+                'id': user_data.get('user_id') or user_data.get('id'),
                 'email': user_data['email'],
                 'name': user_data.get('name'),
-                'roles': user_data.get('roles', []),
+                'roles': user_data.get('roles', [{'role': 'user', 'level': 1}]),
                 'permissions': user_data.get('permissions', []),
                 'email_verified': user_data.get('email_verified', False),
                 'created_at': user_data.get('created_at'),

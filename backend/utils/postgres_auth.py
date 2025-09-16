@@ -310,6 +310,39 @@ class PostgresAuthManager:
             # Re-raise the original error with more details for debugging
             raise AuthenticationError(f"Failed to create user account: {str(e)}")
     
+    def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get user by ID from database."""
+        try:
+            with self.db.session_scope() as session:
+                row = session.execute(
+                    text("""
+                        SELECT u.id, u.name, u.email, u.email_verified,
+                               u."createdAt", u."updatedAt"
+                        FROM users u
+                        WHERE u.id = :user_id
+                    """),
+                    {"user_id": user_id},
+                ).fetchone()
+
+                if not row:
+                    return None
+
+                return {
+                    'user_id': row.id,
+                    'id': row.id,
+                    'email': row.email,
+                    'name': row.name,
+                    'email_verified': row.email_verified,
+                    'created_at': row.createdAt.isoformat() if row.createdAt else None,
+                    'updated_at': row.updatedAt.isoformat() if row.updatedAt else None,
+                    'roles': [{'role': 'user', 'level': 1}],  # Default role
+                    'permissions': []
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting user by ID {user_id}: {e}")
+            return None
+    
     def authenticate_user(self, email: str, password: str, ip_address: str = None) -> Optional[Dict[str, Any]]:
         """Authenticate user with email/password."""
         try:
