@@ -5,7 +5,7 @@ import { Loader2, Users, AlertCircle } from 'lucide-react';
 import { DraftFilters } from '@/lib/filters/filters.types';
 import { validateFilters, normalizeFilters } from '@/lib/utils/filterValidation';
 // import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
-import { fetchRestaurants } from '@/lib/api/restaurants';
+// import { fetchRestaurants } from '@/lib/api/restaurants';
 
 interface FilterPreviewProps {
   filters: DraftFilters;

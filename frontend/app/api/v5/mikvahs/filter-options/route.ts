@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiClient } from '@/lib/api/index-v5';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Call the v5 API with include_filter_options=true to get filter options
     const response = await apiClient.getEntities(

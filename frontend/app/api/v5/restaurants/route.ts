@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     // Return just data array for main grid (when includeFilterOptions is true)
     if (pagination.includeFilterOptions) {
       // Main grid: return just the data array
-      return NextResponse.json(response.data.data || response.data, { headers });
+      return NextResponse.json((response.data as any).data || response.data, { headers });
     } else {
       // FilterPreview: return full response object with total_count
       return NextResponse.json(response.data, { headers });

@@ -80,7 +80,7 @@ class AdminSetupManager {
       let responseData: any;
       try {
         responseData = await response.json();
-      } catch (e) {
+      } catch (_e) {
         responseData = { success: false, error: 'Invalid JSON response' };
       }
 
@@ -201,7 +201,7 @@ DO UPDATE SET
 
     console.log('📝 Manual SQL execution required:');
     console.log('   Connect to your PostgreSQL database and execute:');
-    console.log('   ' + sqlCommand.trim().replace(/\n/g, '\n   '));
+    console.log(`   ${sqlCommand.trim().replace(/\n/g, '\n   ')}`);
     console.log('');
     
     return true;
@@ -287,7 +287,7 @@ DO UPDATE SET
     console.log('🎉 Super admin user setup initiated!');
     console.log('');
     console.log('⚠️  IMPORTANT: Execute the SQL command above to complete the setup.');
-    console.log('    Then run: npm run admin:test ' + email);
+    console.log(`    Then run: npm run admin:test ${email}`);
     console.log('');
 
     return true;
@@ -360,8 +360,8 @@ async function promptPassword(): Promise<string> {
     // Simple password prompt (in production, use a proper password prompt library)
     const password = await question('Enter password (or press Enter for default "Jewgo123"): ');
     rl.close();
-    return password.trim() || 'Jewgo123';
-  } catch (error) {
+    return (password as unknown as string).trim() || 'Jewgo123';
+  } catch (_error) {
     rl.close();
     return 'Jewgo123';
   }

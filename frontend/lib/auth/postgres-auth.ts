@@ -95,8 +95,9 @@ class PostgresAuthClient {
     const requestKey = `${endpoint}:${options.method || 'GET'}:${JSON.stringify(options.body || {})}`;
     
     // If there's already a pending identical request, return that promise
-    if (this.pendingRequests[requestKey]) {
-      return this.pendingRequests[requestKey];
+    const existingRequest = this.pendingRequests[requestKey];
+    if (existingRequest) {
+      return existingRequest;
     }
     
     // Throttle requests to prevent rapid-fire API calls

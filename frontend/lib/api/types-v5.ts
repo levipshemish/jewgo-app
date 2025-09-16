@@ -26,6 +26,7 @@ export interface PaginatedResponse<T = any> {
     has_more: boolean;
     total_count?: number;
   };
+  filterOptions?: Record<string, any>;  // Add filterOptions property
   metadata?: {
     filters_applied?: Record<string, any>;
     entity_type?: string;
@@ -81,6 +82,7 @@ export interface PaginationOptions {
   limit?: number;
   sort?: string;
   page?: number;
+  includeFilterOptions?: boolean;
 }
 
 export interface MetricsSummary {

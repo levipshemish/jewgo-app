@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
 
 // Global flag to prevent multiple auth checks across all instances
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const currentUser = await postgresAuth.getProfile();
       setUser(currentUser);
-    } catch (error) {
+    } catch (_error) {
       // Silently handle auth errors during refresh
       setUser(null);
     }
