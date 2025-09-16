@@ -149,6 +149,40 @@ def geocode_shul(shul_id: int):
             'error': 'Internal server error'
         }), 500
 
+@geocoding_bp.route('/get-shul/<int:shul_id>', methods=['GET'])
+def get_shul_by_id(shul_id: int):
+    """Get a specific shul by ID for details page."""
+    try:
+        # Get database connection
+        database_url = os.getenv('DATABASE_URL')
+        if not database_url:
+            return jsonify({
+                'success': False,
+                'error': 'Database configuration error'
+            }), 500
+        
+        db_manager = DatabaseManagerV5(database_url)
+        
+        # Get shul data
+        shul_data = db_manager.get_shul_by_id(shul_id)
+        if not shul_data:
+            return jsonify({
+                'success': False,
+                'error': 'Synagogue not found'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'data': dict(shul_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting shul {shul_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
 @geocoding_bp.route('/batch-geocode-shuls', methods=['POST'])
 def batch_geocode_shuls():
     """Batch geocode multiple shuls that don't have coordinates."""
