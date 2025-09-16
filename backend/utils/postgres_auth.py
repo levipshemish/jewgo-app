@@ -199,15 +199,17 @@ class PostgresAuthManager:
                 if result:
                     raise ValidationError("Email address is already registered")
                 
-                # Insert new user (skip created_at/updated_at as they don't exist in users table)
+                # Insert new user with all required fields
                 session.execute(
                     text("""
                         INSERT INTO users (
                             id, name, email, password_hash, email_verified,
-                            verification_token, verification_expires
+                            verification_token, verification_expires,
+                            "isSuperAdmin", "createdAt", "updatedAt"
                         ) VALUES (
                             :user_id, :name, :email, :password_hash, FALSE,
-                            :verification_token, :verification_expires
+                            :verification_token, :verification_expires,
+                            FALSE, NOW(), NOW()
                         )
                     """),
                     {
@@ -659,13 +661,15 @@ class PostgresAuthManager:
             guest_email = f"guest-{user_id}@guest.local"
             
             with self.db.connection_manager.session_scope() as session:
-                # Insert new guest user
+                # Insert new guest user with all required fields
                 session.execute(
                     text("""
                         INSERT INTO users (
-                            id, name, email, email_verified, is_guest
+                            id, name, email, email_verified,
+                            "isSuperAdmin", "createdAt", "updatedAt"
                         ) VALUES (
-                            :user_id, :name, :email, TRUE, TRUE
+                            :user_id, :name, :email, TRUE,
+                            FALSE, NOW(), NOW()
                         )
                     """),
                     {
@@ -694,7 +698,7 @@ class PostgresAuthManager:
                     'email': guest_email,
                     'name': 'Guest User',
                     'email_verified': True,
-                    'is_guest': True,
+                    'is_guest': True,  # Legacy field for compatibility
                     'roles': [{'role': 'guest', 'level': 0, 'granted_at': datetime.utcnow().isoformat()}],
                     'created_at': datetime.utcnow().isoformat()
                 }
@@ -711,7 +715,7 @@ class PostgresAuthManager:
             with self.db.connection_manager.session_scope() as session:
                 # Check if user exists (don't reveal existence in response)
                 result = session.execute(
-                    text("SELECT id FROM users WHERE email = :email AND is_guest = FALSE"),
+                    text("SELECT id FROM users WHERE email = :email AND email NOT LIKE '%@guest.local'"),
                     {'email': email}
                 ).fetchone()
                 
@@ -795,7 +799,7 @@ class PostgresAuthManager:
                         SELECT id, email FROM users 
                         WHERE reset_token = :token 
                         AND reset_expires > NOW()
-                        AND is_guest = FALSE
+                        AND email NOT LIKE '%@guest.local'
                     """),
                     {'token': reset_token}
                 ).fetchone()
@@ -846,7 +850,7 @@ class PostgresAuthManager:
 
         - Ensures the current user is a guest.
         - Validates email and password strength.
-        - Atomically updates user record to set email/password and mark is_guest = FALSE.
+        - Atomically updates user record to set email/password and upgrade from guest status.
         - Deactivates guest role and ensures 'user' role is active at level 1.
         Returns updated user dict on success, None on failure.
         """
@@ -863,14 +867,14 @@ class PostgresAuthManager:
             password_hash = self.password_security.hash_password(password)
 
             with self.db.connection_manager.session_scope() as session:
-                # Verify the current user is a guest
+                # Verify the current user is a guest (check by email pattern)
                 row = session.execute(
-                    text("SELECT id, is_guest FROM users WHERE id = :uid"),
+                    text("SELECT id, email FROM users WHERE id = :uid"),
                     { 'uid': user_id }
                 ).fetchone()
                 if not row:
                     raise ValidationError("User not found")
-                if not row.is_guest:
+                if not row.email.endswith("@guest.local"):
                     raise ValidationError("Only guest accounts can be upgraded")
 
                 # Ensure email not taken by non-guest
@@ -890,9 +894,9 @@ class PostgresAuthManager:
                             name = COALESCE(:name, name),
                             password_hash = :password_hash,
                             email_verified = FALSE,
-                            is_guest = FALSE,
                             verification_token = :verification_token,
-                            verification_expires = :verification_expires
+                            verification_expires = :verification_expires,
+                            "updatedAt" = NOW()
                         WHERE id = :uid
                         """
                     ),
