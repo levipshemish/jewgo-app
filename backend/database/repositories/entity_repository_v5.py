@@ -120,10 +120,10 @@ class EntityRepositoryV5(BaseRepository):
                 """))
                 row = result.fetchone()
                 self._postgis_available = bool(row and row[0])
-                logger.info(f"PostGIS availability: {self._postgis_available}")
-        except Exception as e:
-            logger.warning(f"Could not determine PostGIS availability; assuming false: {e}")
-            self._postgis_available = False
+                    logger.info(f"PostGIS availability: {self._postgis_available}")
+                except Exception as e:
+                    logger.warning(f"Could not determine PostGIS availability; assuming false: {e}")
+                    self._postgis_available = False
     
     def _load_models(self):
         """Load and cache SQLAlchemy model classes."""
@@ -191,6 +191,16 @@ class EntityRepositoryV5(BaseRepository):
                 # Apply filters
                 query = self._apply_filters(query, model_class, filters, mapping)
                 
+                # Apply geospatial filtering if needed
+                logger.info(f"DEBUG: Distance pagination - geospatial={mapping.get('geospatial')}, has_filters={bool(filters)}, has_lat={bool(filters and filters.get('latitude'))}, has_lng={bool(filters and filters.get('longitude'))}")
+                # TEMPORARY DEBUG: Disable geospatial filtering to test
+                logger.info(f"DEBUG: Distance pagination - TEMPORARILY DISABLING geospatial filter for debugging")
+                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                #     logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
+                #     query = self._apply_geospatial_filter(query, model_class, filters)
+                # else:
+                #     logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
+                
                 # Execute query to get all entities
                 try:
                     all_entities = query.all()
@@ -225,7 +235,6 @@ class EntityRepositoryV5(BaseRepository):
                 # Sort by distance
                 if filters and filters.get('latitude') and filters.get('longitude'):
                     result_entities.sort(key=lambda x: x.get('distance', float('inf')))
-                    logger.info(f"Distance pagination: Sorted {len(result_entities)} entities by distance")
                 
                 # Calculate pagination
                 total_count = len(result_entities)
@@ -941,6 +950,7 @@ class EntityRepositoryV5(BaseRepository):
     def _apply_geospatial_filter(self, query, model_class, filters: Dict[str, Any]):
         """Apply geospatial filtering for location-based queries."""
         try:
+            logger.info(f"DEBUG: _apply_geospatial_filter called with filters: {filters}")
             # Handle bounds filtering (for map viewport)
             if 'bounds' in filters:
                 bounds = filters['bounds']
@@ -1508,24 +1518,14 @@ class EntityRepositoryV5(BaseRepository):
             # Order by distance
             lat = filters['latitude']
             lng = filters['longitude']
-            if table_name in ['restaurants', 'synagogues']:
-                # Use PostGIS location column for restaurants/synagogues tables
-                sql_parts.append(f"""
-                    ORDER BY 
-                        ST_Distance(
-                            location::geography,
-                            ST_Point(%s, %s)::geography
-                        ) ASC
-                """)
-            else:
-                # Use separate longitude/latitude columns for other tables
-                sql_parts.append(f"""
-                    ORDER BY 
-                        ST_Distance(
-                            ST_Point(longitude, latitude)::geography,
-                            ST_Point(%s, %s)::geography
-                        ) ASC
-                """)
+            # All tables use separate longitude/latitude columns
+            sql_parts.append(f"""
+                ORDER BY 
+                    ST_Distance(
+                        ST_Point(longitude, latitude)::geography,
+                        ST_Point(%s, %s)::geography
+                    ) ASC
+            """)
             search_params.extend([lng, lat])
         else:
             # Default ordering
