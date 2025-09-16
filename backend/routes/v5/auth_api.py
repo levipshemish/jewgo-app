@@ -560,6 +560,151 @@ def get_me():
         }), 503
 
 
+@auth_bp.route('/avatar/upload', methods=['POST'])
+@auth_required
+@rate_limit_by_user(max_requests=10, window_minutes=60)
+def upload_avatar():
+    """Upload user avatar image."""
+    try:
+        user_id = getattr(g, 'user_id', None)
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'User not authenticated'
+            }), 401
+
+        data = request.get_json()
+        if not data or not data.get('file_data'):
+            return jsonify({
+                'success': False,
+                'error': 'File data required'
+            }), 400
+
+        # Validate file data
+        file_data = data.get('file_data')
+        file_name = data.get('file_name', 'avatar.jpg')
+        file_type = data.get('file_type', 'image/jpeg')
+        file_size = data.get('file_size', 0)
+
+        # Validate file size (5MB limit)
+        max_size = 5 * 1024 * 1024  # 5MB
+        if file_size > max_size:
+            return jsonify({
+                'success': False,
+                'error': 'File size must be less than 5MB'
+            }), 400
+
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+        if file_type.lower() not in allowed_types:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed'
+            }), 400
+
+        # Upload avatar via auth service
+        upload_result = auth_service.upload_user_avatar(user_id, file_data, file_name, file_type)
+        
+        if not upload_result['success']:
+            return jsonify({
+                'success': False,
+                'error': upload_result.get('error', 'Avatar upload failed')
+            }), 400
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'avatar_url': upload_result['avatar_url'],
+                'message': 'Avatar uploaded successfully'
+            },
+            'timestamp': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Avatar upload error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Avatar upload service unavailable'
+        }), 503
+
+
+@auth_bp.route('/avatar/delete', methods=['DELETE'])
+@auth_required
+@rate_limit_by_user(max_requests=10, window_minutes=60)
+def delete_avatar():
+    """Delete user avatar image."""
+    try:
+        user_id = getattr(g, 'user_id', None)
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'User not authenticated'
+            }), 401
+
+        data = request.get_json() or {}
+        avatar_url = data.get('avatar_url')
+
+        # Delete avatar via auth service
+        delete_result = auth_service.delete_user_avatar(user_id, avatar_url)
+        
+        if not delete_result['success']:
+            return jsonify({
+                'success': False,
+                'error': delete_result.get('error', 'Avatar deletion failed')
+            }), 400
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'message': 'Avatar deleted successfully'
+            },
+            'timestamp': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Avatar deletion error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Avatar deletion service unavailable'
+        }), 503
+
+
+@auth_bp.route('/avatar/<path:filename>', methods=['GET'])
+def serve_avatar(filename):
+    """Serve uploaded avatar files."""
+    try:
+        from flask import send_from_directory
+        from pathlib import Path
+        import os
+        
+        # Security: only serve files from avatars directory
+        uploads_dir = Path("uploads/avatars")
+        if not uploads_dir.exists():
+            return jsonify({'error': 'Avatar not found'}), 404
+        
+        # Validate filename to prevent directory traversal
+        if '..' in filename or '/' in filename or '\\' in filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        
+        file_path = uploads_dir / filename
+        if not file_path.exists():
+            return jsonify({'error': 'Avatar not found'}), 404
+        
+        # Get the absolute path for send_from_directory
+        abs_uploads_dir = uploads_dir.resolve()
+        
+        return send_from_directory(
+            abs_uploads_dir,
+            filename,
+            as_attachment=False,
+            mimetype='image/jpeg'  # Let Flask auto-detect based on file extension
+        )
+        
+    except Exception as e:
+        logger.error(f"Avatar serving error: {e}")
+        return jsonify({'error': 'Avatar service unavailable'}), 503
+
+
 @auth_bp.route('/change-password', methods=['POST'])
 @auth_required
 @step_up_required('password')  # Require step-up authentication for password changes

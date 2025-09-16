@@ -1367,3 +1367,165 @@ class AuthServiceV5:
         except Exception as e:
             logger.error(f"Error checking session step-up status {session_id}: {e}")
             return False
+    
+    def upload_user_avatar(self, user_id: str, file_data: str, file_name: str, file_type: str) -> Dict[str, Any]:
+        """
+        Upload user avatar image.
+        
+        Args:
+            user_id: User ID
+            file_data: Base64 encoded file data
+            file_name: Original file name
+            file_type: MIME type of the file
+            
+        Returns:
+            Dictionary with success status and avatar URL
+        """
+        try:
+            import base64
+            import uuid
+            from pathlib import Path
+            
+            # Validate file type
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+            if file_type.lower() not in allowed_types:
+                return {
+                    'success': False,
+                    'error': 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed'
+                }
+            
+            # Decode base64 data
+            try:
+                file_bytes = base64.b64decode(file_data)
+            except Exception as e:
+                logger.error(f"Failed to decode base64 file data: {e}")
+                return {
+                    'success': False,
+                    'error': 'Invalid file data format'
+                }
+            
+            # Generate unique filename
+            file_extension = Path(file_name).suffix or '.jpg'
+            unique_filename = f"{user_id}_{uuid.uuid4().hex}{file_extension}"
+            
+            # Create uploads directory if it doesn't exist
+            uploads_dir = Path("uploads/avatars")
+            uploads_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save file to disk
+            file_path = uploads_dir / unique_filename
+            with open(file_path, 'wb') as f:
+                f.write(file_bytes)
+            
+            # Generate avatar URL (full backend URL for frontend access)
+            backend_url = os.getenv('NEXT_PUBLIC_BACKEND_URL', os.getenv('BACKEND_URL', 'http://localhost:5000')).rstrip('/')
+            avatar_url = f"{backend_url}/api/v5/auth/avatar/{unique_filename}"
+            
+            # Update user profile with new avatar URL
+            postgres_auth = self._get_postgres_auth()
+            update_success = postgres_auth.update_user_profile(user_id, {'avatar_url': avatar_url})
+            
+            if not update_success:
+                # Clean up uploaded file if database update failed
+                try:
+                    file_path.unlink()
+                except:
+                    pass
+                return {
+                    'success': False,
+                    'error': 'Failed to update user profile with avatar URL'
+                }
+            
+            logger.info(f"Avatar uploaded successfully for user {user_id}: {avatar_url}")
+            
+            return {
+                'success': True,
+                'avatar_url': avatar_url,
+                'message': 'Avatar uploaded successfully'
+            }
+            
+        except Exception as e:
+            logger.error(f"Avatar upload error for user {user_id}: {e}")
+            return {
+                'success': False,
+                'error': 'Avatar upload service unavailable'
+            }
+    
+    def delete_user_avatar(self, user_id: str, avatar_url: str = None) -> Dict[str, Any]:
+        """
+        Delete user avatar image.
+        
+        Args:
+            user_id: User ID
+            avatar_url: Optional specific avatar URL to delete
+            
+        Returns:
+            Dictionary with success status
+        """
+        try:
+            postgres_auth = self._get_postgres_auth()
+            
+            # Get current user profile to find avatar URL if not provided
+            if not avatar_url:
+                user_profile = postgres_auth.get_user_by_id(user_id)
+                if not user_profile:
+                    return {
+                        'success': False,
+                        'error': 'User not found'
+                    }
+                avatar_url = user_profile.get('avatar_url')
+            
+            if not avatar_url:
+                return {
+                    'success': True,
+                    'message': 'No avatar to delete'
+                }
+            
+            # Remove avatar URL from user profile
+            update_success = postgres_auth.update_user_profile(user_id, {'avatar_url': None})
+            
+            if not update_success:
+                return {
+                    'success': False,
+                    'error': 'Failed to update user profile'
+                }
+            
+            # Try to delete the physical file (best effort)
+            try:
+                from pathlib import Path
+                import re
+                
+                # Extract filename from full URL or relative path
+                if '/api/v5/auth/avatar/' in avatar_url:
+                    filename = avatar_url.split('/api/v5/auth/avatar/')[-1]
+                elif avatar_url.startswith('/uploads/avatars/'):
+                    filename = avatar_url.split('/uploads/avatars/')[-1]
+                else:
+                    filename = avatar_url
+                
+                # Validate filename (security check)
+                if re.match(r'^[a-zA-Z0-9_\-\.]+$', filename):
+                    file_path = Path(f"uploads/avatars/{filename}")
+                    if file_path.exists():
+                        file_path.unlink()
+                        logger.info(f"Deleted avatar file: {file_path}")
+                else:
+                    logger.warning(f"Invalid filename format, skipping file deletion: {filename}")
+                    
+            except Exception as e:
+                logger.warning(f"Failed to delete avatar file {avatar_url}: {e}")
+                # Don't fail the operation if file deletion fails
+            
+            logger.info(f"Avatar deleted successfully for user {user_id}")
+            
+            return {
+                'success': True,
+                'message': 'Avatar deleted successfully'
+            }
+            
+        except Exception as e:
+            logger.error(f"Avatar deletion error for user {user_id}: {e}")
+            return {
+                'success': False,
+                'error': 'Avatar deletion service unavailable'
+            }

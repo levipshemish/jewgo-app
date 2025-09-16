@@ -21,12 +21,53 @@ import { appLogger } from '@/lib/utils/logger';
  */
 export async function deleteAvatar(avatarUrl: string) {
   try {
-    appLogger.info('Avatar deletion not implemented for PostgreSQL auth', { avatarUrl });
+    appLogger.info('Deleting avatar via PostgreSQL auth', { avatarUrl });
     
-    return { 
-      success: false, 
-      message: 'Avatar deletion not implemented for PostgreSQL auth' 
-    };
+    // Delete avatar via backend API
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+    if (!backendUrl) {
+      return { 
+        success: false, 
+        message: 'Backend URL not configured'
+      };
+    }
+
+    const response = await fetch(`${backendUrl}/api/v5/auth/avatar/delete`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        avatar_url: avatarUrl
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { 
+        success: false, 
+        message: errorData.error || `Delete failed with status ${response.status}`
+      };
+    }
+
+    const result = await response.json();
+    
+    if (result.success) {
+      // Revalidate the profile page
+      revalidatePath('/profile');
+      revalidatePath('/profile/settings');
+      
+      return { 
+        success: true, 
+        message: 'Avatar deleted successfully'
+      };
+    } else {
+      return { 
+        success: false, 
+        message: result.error || 'Delete failed'
+      };
+    }
     
   } catch (error) {
     appLogger.error('Avatar deletion failed', { error });
@@ -58,21 +99,68 @@ export async function uploadAvatar(formData: FormData) {
       return { success: false, message: 'File size must be less than 5MB' };
     }
 
-    appLogger.info('Avatar upload not implemented for PostgreSQL auth', { 
+    appLogger.info('Uploading avatar via PostgreSQL auth', { 
       fileName: file.name, 
       fileSize: file.size, 
       fileType: file.type 
     });
 
-    // Revalidate the profile page
-    revalidatePath('/profile');
+    // Convert file to base64 for backend upload
+    const buffer = await file.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
     
-    return { 
-      success: false, 
-      message: 'Avatar upload not implemented for PostgreSQL auth',
-      avatarUrl: undefined,
-      error: 'Avatar upload not implemented for PostgreSQL auth'
-    };
+    // Upload to backend API
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+    if (!backendUrl) {
+      return { 
+        success: false, 
+        message: 'Backend URL not configured',
+        error: 'Backend URL not configured'
+      };
+    }
+
+    const response = await fetch(`${backendUrl}/api/v5/auth/avatar/upload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        file_data: base64,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { 
+        success: false, 
+        message: errorData.error || `Upload failed with status ${response.status}`,
+        error: errorData.error || 'Upload failed'
+      };
+    }
+
+    const result = await response.json();
+    
+    if (result.success && result.data?.avatar_url) {
+      // Revalidate the profile page
+      revalidatePath('/profile');
+      revalidatePath('/profile/settings');
+      
+      return { 
+        success: true, 
+        message: 'Avatar uploaded successfully',
+        avatarUrl: result.data.avatar_url
+      };
+    } else {
+      return { 
+        success: false, 
+        message: result.error || 'Upload failed',
+        error: result.error || 'Upload failed'
+      };
+    }
     
   } catch (error) {
     appLogger.error('Avatar upload failed', { error });

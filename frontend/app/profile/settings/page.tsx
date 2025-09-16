@@ -60,8 +60,20 @@ export default function SettingsPage() {
           setUser(null);
           setIsLoading(false);
         }
-      } catch (_error) {
-        // console.error('Error loading user:', error);
+      } catch (error) {
+        console.error('Error loading user:', error);
+        
+        // Check if it's a service unavailable error (503)
+        if (error && typeof error === 'object' && 'status' in error && error.status === 503) {
+          // Service unavailable - show error state instead of infinite loading
+          if (isMounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+        
+        // For other errors, redirect to sign in
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile/settings');
       } finally {
@@ -89,12 +101,17 @@ export default function SettingsPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
             <p className="text-gray-600">Please sign in to access your settings.</p>
-            <Link
-              href="/auth/signin"
-              className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Sign In
-            </Link>
+            <div className="mt-4 space-y-2">
+              <Link
+                href="/auth/signin"
+                className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              >
+                Sign In
+              </Link>
+              <p className="text-sm text-gray-500">
+                If you're experiencing issues, the authentication service may be temporarily unavailable.
+              </p>
+            </div>
           </div>
         </div>
       </div>
