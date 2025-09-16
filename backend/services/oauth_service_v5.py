@@ -217,7 +217,7 @@ class OAuthService:
                         text(
                             """
                             INSERT INTO users (
-                                id, name, email, email_verified, is_guest, 
+                                id, name, email, email_verified, "isSuperAdmin",
                                 oauth_provider, oauth_provider_id, oauth_raw_profile,
                                 "createdAt", "updatedAt"
                             )
