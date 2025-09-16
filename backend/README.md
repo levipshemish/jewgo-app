@@ -141,6 +141,11 @@ pytest -m unit          # Unit tests only
 - Rate limiting on all endpoints
 - CORS configuration for frontend
 
+### CORS Handling
+- In production, CORS is handled by Nginx. The backend disables Flask-CORS to avoid duplicate `Access-Control-Allow-Origin` headers.
+- In development (non-production `FLASK_ENV`), Flask-CORS is enabled with `supports_credentials` for local testing.
+- Configure allowed origins at the edge (Nginx) and keep `FRONTEND_ORIGINS` up to date for health checks.
+
 ### Security Headers
 - Content Security Policy
 - X-Frame-Options protection

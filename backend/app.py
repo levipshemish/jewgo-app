@@ -43,8 +43,13 @@ if not secret_key:
 
 app.config['SECRET_KEY'] = secret_key
 
-# Enable CORS for all routes
-CORS(app)
+# CORS handling
+# In production, Nginx sets CORS headers. Avoid duplicate headers by disabling
+# Flask-CORS when running in production. Enable Flask-CORS elsewhere (dev/test).
+if os.environ.get('FLASK_ENV') != 'production':
+    CORS(app, supports_credentials=True)
+else:
+    print('INFO: Flask-CORS disabled in production (Nginx handles CORS)')
 
 print('Initializing real database services...')
 try:

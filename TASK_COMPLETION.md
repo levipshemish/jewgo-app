@@ -28,6 +28,30 @@ Docs Updated
 Follow-ups
 - (empty)
 
+## 2025-09-16 — Fix Duplicate CORS Headers in Production
+- ID: 2025-09-16-CORS-PROD-FIX
+- Owner: automated agent
+- Links: `backend/app.py`, `backend/README.md`
+
+Reason Why — Browser blocked auth requests with: "Access-Control-Allow-Origin header contains multiple values 'https://jewgo.app, https://jewgo.app'". Nginx and Flask-CORS were both setting CORS headers in production, breaking OAuth follow-up calls like `/api/v5/auth/profile`.
+
+Change Summary
+- backend/app.py: Disable Flask-CORS in production; keep it enabled (with credentials) for non-production.
+- backend/README.md: Document production CORS handling via Nginx and dev behavior.
+
+Risks & Mitigations
+- Risk: Removing Flask-CORS in prod could expose missing edge config. Mitigation: Nginx already includes CORS configs; health checks validate origins.
+
+Tests
+- Manual: Verify `Access-Control-Allow-Origin` appears once and equals `https://jewgo.app` on API responses from production.
+- Confirm frontend can call `/api/v5/auth/profile` without CORS errors after OAuth.
+
+Docs Updated
+- backend/README.md — Added CORS Handling notes.
+
+Follow-ups
+- (empty)
+
 ## 2025-09-16 — Codebase Cleanup and Organization
 - ID: 2025-09-16-CODEBASE-CLEANUP
 - Owner: Claude Sonnet 4
