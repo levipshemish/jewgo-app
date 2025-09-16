@@ -765,7 +765,7 @@ def get_synagogue_filter_options():
         service = SynagogueServiceV5(entity_repo, redis_manager, feature_flags)
         
         # Get filter options
-        filter_options = service._get_filter_options()
+        filter_options = service.get_filter_options()
         
         return jsonify({
             'success': True,

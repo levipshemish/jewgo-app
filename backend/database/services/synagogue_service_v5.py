@@ -276,6 +276,40 @@ class SynagogueServiceV5:
                 'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
             }
 
+    def get_filter_options(self) -> Dict[str, Any]:
+        """Get available filter options for synagogues using efficient database queries."""
+        try:
+            # Use cache for filter options (they don't change frequently)
+            cache_key = f"synagogue_filter_options_v2"
+            if self.cache_manager:
+                cached_options = self.cache_manager.get(cache_key)
+                if cached_options:
+                    self.logger.info("Retrieved synagogue filter options from cache")
+                    return cached_options
+            
+            # Get filter options from database
+            filter_options = self._get_filter_options()
+            
+            # Cache the results
+            if self.cache_manager:
+                self.cache_manager.set(cache_key, filter_options, ttl=3600)  # Cache for 1 hour
+            
+            return filter_options
+            
+        except Exception as e:
+            self.logger.error(f"Error getting synagogue filter options: {e}")
+            # Fallback to static options
+            return {
+                'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],
+                'shulTypes': ['traditional', 'ashkenazi', 'sephardic', 'chabad'],
+                'cities': [],
+                'states': [],
+                'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
+                'accessibility': ['wheelchair_accessible', 'parking_available'],
+                'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
+                'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
+            }
+
     def get_synagogues(
         self,
         cursor: Optional[str] = None,
