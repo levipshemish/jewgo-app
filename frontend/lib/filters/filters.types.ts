@@ -183,6 +183,14 @@ export interface AppliedFilters extends Filters {
   hasSeniorPrograms?: boolean;
   acceptsVisitors?: boolean;
   membershipRequired?: boolean;
+
+  // Mikvah-specific filters
+  appointment_required?: boolean;
+  walk_in_available?: boolean;
+  status?: string;
+  contact_person?: string;
+  is_currently_open?: boolean;
+  private_entrance?: boolean;
 }
 
 export interface DraftFilters extends FilterState {
@@ -251,4 +259,12 @@ export interface DraftFilters extends FilterState {
   hasSeniorPrograms?: boolean;
   acceptsVisitors?: boolean;
   membershipRequired?: boolean;
+
+  // Mikvah-specific filters
+  appointment_required?: boolean;
+  walk_in_available?: boolean;
+  status?: string;
+  contact_person?: string;
+  is_currently_open?: boolean;
+  private_entrance?: boolean;
 }
