@@ -126,8 +126,8 @@ function MikvahPageContent() {
   // Use the new location data hook
   const {
     userLocation,
-    isLoading: _locationLoading,
-    requestLocation: _requestLocation,
+    isLoading: locationLoading,
+    requestLocation,
     getItemDisplayText: _getItemDisplayText
   } = useLocationData({
     fallbackText: 'Get Location'
