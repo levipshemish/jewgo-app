@@ -43,7 +43,24 @@ def auth_required(f: Callable) -> Callable:
             }), 401
         
         # Verify token
-        payload = auth_service.verify_token(token)
+        try:
+            payload = auth_service.verify_token(token)
+        except Exception as e:
+            logger.error(
+                f"Token verification error: {e}",
+                extra={
+                    'endpoint': request.endpoint,
+                    'exception_type': type(e).__name__,
+                    'ip': request.remote_addr,
+                    'token_length': len(token) if token else 0
+                },
+                exc_info=True
+            )
+            return jsonify({
+                'error': 'Token verification failed',
+                'code': 'TOKEN_VERIFICATION_ERROR'
+            }), 401
+            
         if not payload:
             logger.warning("Invalid authentication token", 
                          endpoint=request.endpoint, 
@@ -62,7 +79,24 @@ def auth_required(f: Callable) -> Callable:
                 'code': 'MALFORMED_TOKEN'
             }), 401
         
-        user_data = auth_service.get_user_profile(user_id)
+        try:
+            user_data = auth_service.get_user_profile(user_id)
+        except Exception as e:
+            logger.error(
+                f"Auth service error while getting user profile: {e}",
+                extra={
+                    'user_id': user_id,
+                    'endpoint': request.endpoint,
+                    'exception_type': type(e).__name__,
+                    'ip': request.remote_addr
+                },
+                exc_info=True
+            )
+            return jsonify({
+                'error': 'Authentication service temporarily unavailable',
+                'code': 'AUTH_SERVICE_ERROR'
+            }), 503
+            
         if not user_data:
             logger.warning("User not found for valid token", user_id=user_id)
             return jsonify({
