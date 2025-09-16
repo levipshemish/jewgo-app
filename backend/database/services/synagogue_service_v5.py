@@ -149,13 +149,14 @@ class SynagogueServiceV5:
                     # Return fallback options instead of empty dict
                     response['filter_options'] = {
                         'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],
-                        'shulTypes': ['traditional', 'ashkenazi', 'sephardic', 'chabad'],
+                        'shulTypes': ['traditional', 'chabad', 'orthodox', 'sephardic'],
+                        'shulCategories': ['ashkenazi', 'chabad', 'sephardic'],
                         'cities': [],
                         'states': [],
                         'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
-                        'accessibility': ['wheelchair_accessible', 'parking_available'],
-                        'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
-                        'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
+                        'accessibility': ['has_disabled_access', 'has_parking'],
+                        'services': ['has_daily_minyan', 'has_shabbat_services', 'has_holiday_services'],
+                        'facilities': ['has_parking', 'has_kiddush_facilities', 'has_social_hall', 'has_library', 'has_hebrew_school']
                     }
             return response
             
@@ -245,6 +246,7 @@ class SynagogueServiceV5:
             # Extract unique values from database
             denominations = set()
             shul_types = set()
+            shul_categories = set()
             cities = set()
             states = set()
             ratings = set()
@@ -254,6 +256,8 @@ class SynagogueServiceV5:
                     denominations.add(shul['denomination'])
                 if shul.get('shul_type'):
                     shul_types.add(shul['shul_type'])
+                if shul.get('shul_category'):
+                    shul_categories.add(shul['shul_category'])
                 if shul.get('city'):
                     cities.add(shul['city'])
                 if shul.get('state'):
@@ -266,12 +270,13 @@ class SynagogueServiceV5:
             options: Dict[str, Any] = {
                 'denominations': sorted(list(denominations)),
                 'shulTypes': sorted(list(shul_types)),
+                'shulCategories': sorted(list(shul_categories)),
                 'cities': sorted(list(cities)),
                 'states': sorted(list(states)),
                 'ratings': sorted(list(ratings), reverse=True),  # Highest ratings first
-                'accessibility': ['wheelchair_accessible', 'parking_available'],
-                'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
-                'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
+                'accessibility': ['has_disabled_access', 'has_parking'],
+                'services': ['has_daily_minyan', 'has_shabbat_services', 'has_holiday_services'],
+                'facilities': ['has_parking', 'has_kiddush_facilities', 'has_social_hall', 'has_library', 'has_hebrew_school']
             }
             
             self.logger.info("Successfully retrieved synagogue filter options from database", 
@@ -282,13 +287,14 @@ class SynagogueServiceV5:
             # Fallback to static options
             fallback_options = {
                 'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],
-                'shulTypes': ['traditional', 'ashkenazi', 'sephardic', 'chabad'],
+                'shulTypes': ['traditional', 'chabad', 'orthodox', 'sephardic'],
+                'shulCategories': ['ashkenazi', 'chabad', 'sephardic'],
                 'cities': [],
                 'states': [],
                 'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
-                'accessibility': ['wheelchair_accessible', 'parking_available'],
-                'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
-                'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
+                'accessibility': ['has_disabled_access', 'has_parking'],
+                'services': ['has_daily_minyan', 'has_shabbat_services', 'has_holiday_services'],
+                'facilities': ['has_parking', 'has_kiddush_facilities', 'has_social_hall', 'has_library', 'has_hebrew_school']
             }
             self.logger.info(f"Returning fallback filter options: {fallback_options}")
             return fallback_options

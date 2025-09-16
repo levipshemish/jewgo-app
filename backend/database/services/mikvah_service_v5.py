@@ -207,40 +207,36 @@ class MikvahServiceV5:
                 sort_key='created_at_desc'
             )
             
-            # Extract unique values from database
-            mikvah_types = set()
-            mikvah_categories = set()
+            # Extract unique values from database based on actual mikvah fields
+            appointment_required = set()
+            statuses = set()
             cities = set()
             states = set()
-            ratings = set()
-            rabbinical_supervisions = set()
+            contact_persons = set()
             
             for mikvah in mikvahs:
-                if mikvah.get('mikvah_type'):
-                    mikvah_types.add(mikvah['mikvah_type'])
-                if mikvah.get('mikvah_category'):
-                    mikvah_categories.add(mikvah['mikvah_category'])
-                if mikvah.get('city'):
-                    cities.add(mikvah['city'])
-                if mikvah.get('state'):
-                    states.add(mikvah['state'])
-                if mikvah.get('rating'):
-                    # Round ratings to nearest 0.5 for cleaner filter options
-                    rounded_rating = round(float(mikvah['rating']) * 2) / 2
-                    ratings.add(rounded_rating)
-                if mikvah.get('rabbinical_supervision'):
-                    rabbinical_supervisions.add(mikvah['rabbinical_supervision'])
+                if mikvah.get('appointment_required') is not None:
+                    appointment_required.add(str(mikvah['appointment_required']))
+                if mikvah.get('status'):
+                    statuses.add(mikvah['status'])
+                if mikvah.get('contact_person'):
+                    contact_persons.add(mikvah['contact_person'])
+                # Extract city from address if available
+                if mikvah.get('address'):
+                    # Try to extract city from address (this is a simple approach)
+                    address_parts = mikvah['address'].split(',')
+                    if len(address_parts) >= 2:
+                        city = address_parts[-2].strip()
+                        cities.add(city)
             
             options: Dict[str, Any] = {
-                'mikvahTypes': sorted(list(mikvah_types)),
-                'mikvahCategories': sorted(list(mikvah_categories)),
+                'appointmentRequired': sorted(list(appointment_required)),
+                'statuses': sorted(list(statuses)),
                 'cities': sorted(list(cities)),
-                'states': sorted(list(states)),
-                'ratings': sorted(list(ratings), reverse=True),  # Highest ratings first
-                'rabbinicalSupervisions': sorted(list(rabbinical_supervisions)),
-                'facilities': ['changing_rooms', 'shower_facilities', 'towels_provided', 'soap_provided', 'hair_dryers'],
-                'accessibility': ['disabled_access', 'parking_available', 'private_entrance'],
-                'appointmentTypes': ['requires_appointment', 'walk_in_available']
+                'contactPersons': sorted(list(contact_persons)),
+                'facilities': ['appointment_required', 'is_currently_open'],
+                'accessibility': ['appointment_required'],
+                'appointmentTypes': ['appointment_required', 'walk_in_available']
             }
             
             self.logger.info("Successfully retrieved mikvah filter options from database", 
@@ -248,17 +244,15 @@ class MikvahServiceV5:
             return options
         except Exception as e:
             self.logger.error(f"Error getting mikvah filter options: {e}")
-            # Fallback to static options
+            # Fallback to static options based on actual mikvah fields
             return {
-                'mikvahTypes': ['Women\'s', 'Men\'s', 'Both'],
-                'mikvahCategories': ['Community', 'Private', 'Hotel', 'Spa'],
+                'appointmentRequired': ['true', 'false'],
+                'statuses': ['active', 'inactive', 'pending'],
                 'cities': [],
-                'states': [],
-                'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
-                'rabbinicalSupervisions': [],
-                'facilities': ['changing_rooms', 'shower_facilities', 'towels_provided', 'soap_provided', 'hair_dryers'],
-                'accessibility': ['disabled_access', 'parking_available', 'private_entrance'],
-                'appointmentTypes': ['requires_appointment', 'walk_in_available']
+                'contactPersons': [],
+                'facilities': ['appointment_required', 'is_currently_open'],
+                'accessibility': ['appointment_required'],
+                'appointmentTypes': ['appointment_required', 'walk_in_available']
             }
 
     def get_mikvahs(self, filters: Optional[Dict[str, Any]] = None, cursor: Optional[str] = None,
