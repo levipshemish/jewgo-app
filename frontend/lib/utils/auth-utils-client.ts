@@ -40,7 +40,7 @@ export function extractIsAnonymous(u?: any): boolean {
  * Check if PostgreSQL authentication is configured (client-side only)
  */
 export function isPostgresAuthConfigured(): boolean {
-  return !!(process.env.NEXT_PUBLIC_BACKEND_URL && process.env.JWT_SECRET_KEY);
+  return !!(process.env.NEXT_PUBLIC_BACKEND_URL);
 }
 
 // Legacy alias for backward compatibility
