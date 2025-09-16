@@ -24,6 +24,7 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -98,6 +99,13 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
       return;
     }
 
+    // Validate terms acceptance
+    if (!termsAccepted) {
+      setError("You must accept the terms and conditions to create an account");
+      setPending(false);
+      return;
+    }
+
     // Use shared password validation
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
@@ -130,7 +138,8 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
       const _result = await postgresAuth.register({ // TODO: Use registration result
         email,
         password,
-        name: name || undefined
+        name: name || undefined,
+        terms_accepted: termsAccepted
       });
       
       setSuccess("Account created successfully! Please check your email to verify your account.");
@@ -289,6 +298,28 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="terms-accepted"
+              name="termsAccepted"
+              type="checkbox"
+              required
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+            />
+            <label htmlFor="terms-accepted" className="ml-2 block text-sm text-gray-900">
+              I agree to the{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500">
+                Terms and Conditions
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500">
+                Privacy Policy
+              </a>
+            </label>
           </div>
 
           <div>

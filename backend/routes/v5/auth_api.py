@@ -135,6 +135,62 @@ def login():
         }), 503
 
 
+@auth_bp.route('/guest', methods=['POST'])
+@rate_limit_by_user(max_requests=20, window_minutes=60)  # Moderate rate limiting for guest access
+def guest_login():
+    """Create a guest session for anonymous users."""
+    try:
+        # Generate a temporary guest user ID
+        import uuid
+        guest_id = f"guest_{uuid.uuid4().hex[:16]}"
+        
+        # Create guest user data
+        guest_data = {
+            'id': guest_id,
+            'email': f"{guest_id}@guest.local",
+            'name': 'Guest User',
+            'roles': ['guest'],
+            'is_guest': True
+        }
+        
+        # Generate tokens for guest session (shorter expiry)
+        tokens = auth_service.generate_tokens(guest_data, remember_me=False)
+        
+        # Create response
+        response_data = {
+            'success': True,
+            'data': {
+                'user': {
+                    'id': guest_data['id'],
+                    'email': guest_data['email'],
+                    'name': guest_data['name'],
+                    'roles': guest_data['roles'],
+                    'is_guest': True
+                },
+                'tokens': tokens,
+                'session': {
+                    'is_guest': True,
+                    'login_time': datetime.utcnow().isoformat()
+                }
+            },
+            'message': 'Guest session created successfully',
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        # Set secure cookies (shorter expiry for guest sessions)
+        response = make_response(jsonify(response_data))
+        set_auth(response, tokens.get('access_token', ''), tokens.get('refresh_token', ''), int(tokens.get('expires_in', 3600)))
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Guest login error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Guest session service unavailable'
+        }), 503
+
+
 @auth_bp.route('/register', methods=['POST'])
 @rate_limit_by_user(max_requests=5, window_minutes=60)  # Very strict rate limiting for registration
 def register():
