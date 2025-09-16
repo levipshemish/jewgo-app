@@ -114,26 +114,78 @@ export interface RealShul {
 // Transformation Utils
 // ============================================================================
 
+// Helper function to calculate distance using Haversine formula (same as eatery)
+function calculateDistance(location1: { latitude: number; longitude: number }, location2: { latitude: number; longitude: number }): number {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (location2.latitude - location1.latitude) * Math.PI / 180;
+  const dLon = (location2.longitude - location1.longitude) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(location1.latitude * Math.PI / 180) * Math.cos(location2.latitude * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// Helper function to format distance (same as eatery)
+function formatDistance(distance: number): string {
+  if (distance < 1) {
+    return `${Math.round(distance * 5280)} ft`;
+  } else if (distance < 10) {
+    return `${distance.toFixed(1)} miles`;
+  } else {
+    return `${Math.round(distance)} miles`;
+  }
+}
+
 /**
  * Transform a RealShul object to ShulGridCard format
+ * Uses same distance/zip logic as eatery page, with address-only fallback
  */
 export function transformShulToGridCard(
   shul: RealShul,
   userLocation?: { latitude: number; longitude: number } | null
 ): ShulGridCard {
-  // Calculate distance if user location is available
-  let distanceText: string | null = null;
-  if (userLocation && shul.latitude && shul.longitude) {
-    const { calculateDistance, formatDistance } = require('@/lib/utils/distance');
-    const km = calculateDistance(
-      userLocation.latitude,
-      userLocation.longitude,
-      shul.latitude,
-      shul.longitude
+  // Same logic as eatery page: distance if both locations available, otherwise fallback
+  let additionalText: string | null = null;
+  
+  const hasUserLocation = !!userLocation;
+  const hasShulLocation = !!(shul.latitude && shul.longitude && 
+                            shul.latitude !== 0 && shul.longitude !== 0);
+  
+  if (hasUserLocation && hasShulLocation) {
+    // Calculate distance using same logic as eatery
+    const distance = calculateDistance(
+      { latitude: userLocation!.latitude, longitude: userLocation!.longitude },
+      { latitude: shul.latitude!, longitude: shul.longitude! }
     );
-    distanceText = formatDistance(km);
-  } else if (shul.distance) {
-    distanceText = shul.distance;
+    additionalText = formatDistance(distance);
+  } else {
+    // Fallback priority: zip_code > city > address snippet
+    if (shul.zip_code) {
+      additionalText = shul.zip_code;
+    } else if (shul.city) {
+      additionalText = shul.city;
+    } else if (shul.address) {
+      // Extract city/zip from address if available
+      const addressParts = shul.address.split(',');
+      if (addressParts.length >= 2) {
+        // Try to get the last part which might have zip
+        const lastPart = addressParts[addressParts.length - 1].trim();
+        const zipMatch = lastPart.match(/\b\d{5}(-\d{4})?\b/);
+        if (zipMatch) {
+          additionalText = zipMatch[0];
+        } else {
+          // Use city part (usually second to last)
+          additionalText = addressParts[addressParts.length - 2].trim();
+        }
+      } else {
+        // Just show first part of address
+        additionalText = addressParts[0].substring(0, 20) + '...';
+      }
+    } else {
+      additionalText = null;
+    }
   }
 
   return {
@@ -141,7 +193,7 @@ export function transformShulToGridCard(
     title: shul.name || 'Unnamed Shul',
     badge: null, // Reserved for future use
     subtitle: shul.rabbi_name || '',
-    additionalText: distanceText,
+    additionalText: additionalText,
     showHeart: true,
     isLiked: false, // This will be determined by favorites context
     imageTag: shul.shul_category || '',

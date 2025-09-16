@@ -724,6 +724,16 @@ def create_app(config_class=None):
             logger.warning(f"Could not import debug API blueprint: {e}")
         except Exception as e:
             logger.warning(f"Could not register debug API blueprint: {e}")
+        
+        # Register geocoding API
+        try:
+            from routes.geocoding import geocoding_bp
+            app.register_blueprint(geocoding_bp)
+            logger.info("Geocoding API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import geocoding API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register geocoding API blueprint: {e}")
                 
     except ImportError as e:
         logger.warning(f"Could not import v5 feature flags: {e}")

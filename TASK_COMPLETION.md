@@ -203,3 +203,39 @@ Docs Updated
 
 Follow-ups
 - (empty)
+
+## 2025-09-16 — Add Geocoding System for Shul Coordinates
+- ID: 2025-09-16-GEOCODING-SYSTEM
+- Owner: Claude Sonnet 4  
+- Links: `backend/routes/geocoding.py`, `backend/database/database_manager_v5.py`, `backend/scripts/geocode_shuls.py`, `frontend/lib/utils/geocoding.ts`, `frontend/components/admin/GeocodingPanel.tsx`
+
+Reason Why — User identified that shuls only have address data but no coordinates, preventing distance calculations. Requested adding a geocoding system to convert addresses to coordinates and save them in the database for distance calculations when location permissions are granted.
+
+Change Summary
+- **Created geocoding service**: Enhanced existing `backend/utils/geocoding.py` with Google Geocoding API integration
+- **Added geocoding API endpoints**: New REST API routes for single shul geocoding, batch geocoding, and address validation
+- **Extended DatabaseManagerV5**: Added methods for shul coordinate management (`get_shul_by_id`, `update_shul_coordinates`, `get_shuls_for_geocoding`)
+- **Created batch geocoding script**: Standalone script `backend/scripts/geocode_shuls.py` for processing existing shuls without coordinates
+- **Built frontend utilities**: TypeScript utilities for calling geocoding APIs with proper error handling
+- **Added admin panel**: React component for triggering batch geocoding with progress tracking and results display
+
+Risks & Mitigations
+- API rate limiting handled with 100ms delays between requests (well under Google's 50 req/sec limit)
+- Graceful fallback to zip/city display when geocoding fails or coordinates unavailable
+- Dry-run mode in script prevents accidental database updates during testing
+- Comprehensive error handling and logging throughout the system
+
+Tests
+- All files pass linting with 0 errors
+- Script includes verbose logging and comprehensive error reporting
+- Frontend utilities include proper TypeScript typing and error boundaries
+- Database methods include proper transaction handling and rollback
+
+Docs Updated
+- Added comprehensive inline documentation for all new functions and APIs
+- Script includes detailed usage instructions and command-line options
+- Frontend utilities include JSDoc comments with usage examples
+
+Follow-ups
+- Set up GOOGLE_PLACES_API_KEY environment variable for geocoding to work
+- Consider running initial batch geocoding on existing shul data: `python backend/scripts/geocode_shuls.py --limit 100`

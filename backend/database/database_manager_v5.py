@@ -339,6 +339,85 @@ class DatabaseManagerV5:
             result = session.execute(text(query), params or {})
             return [dict(row._mapping) for row in result]
     
+    # Shul Operations for Geocoding
+    def get_shul_by_id(self, shul_id: int) -> Optional[Dict[str, Any]]:
+        """Get a shul by its ID."""
+        try:
+            with self.get_session() as session:
+                result = session.execute(
+                    text("SELECT * FROM shuls WHERE id = :shul_id"),
+                    {"shul_id": shul_id}
+                ).fetchone()
+                
+                if result:
+                    return dict(result._mapping)
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error getting shul by ID {shul_id}: {e}")
+            return None
+    
+    def update_shul_coordinates(self, shul_id: int, latitude: float, longitude: float) -> bool:
+        """Update shul coordinates in the database."""
+        try:
+            with self.get_session() as session:
+                result = session.execute(
+                    text("""
+                        UPDATE shuls 
+                        SET latitude = :latitude, longitude = :longitude, updated_at = NOW()
+                        WHERE id = :shul_id
+                    """),
+                    {
+                        "shul_id": shul_id,
+                        "latitude": latitude,
+                        "longitude": longitude
+                    }
+                )
+                session.commit()
+                
+                if result.rowcount > 0:
+                    logger.info(f"Successfully updated coordinates for shul {shul_id}: ({latitude}, {longitude})")
+                    return True
+                else:
+                    logger.warning(f"No shul found with ID {shul_id}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error updating shul coordinates for ID {shul_id}: {e}")
+            return False
+    
+    def get_shuls_for_geocoding(self, limit: int = 50, include_with_coordinates: bool = False) -> List[Dict[str, Any]]:
+        """Get shuls that need geocoding (without coordinates or all if force update)."""
+        try:
+            with self.get_session() as session:
+                if include_with_coordinates:
+                    # Get all shuls
+                    query = """
+                        SELECT id, name, address, city, state, zip_code, country, latitude, longitude
+                        FROM shuls 
+                        WHERE is_active = true
+                        ORDER BY created_at DESC
+                        LIMIT :limit
+                    """
+                else:
+                    # Get only shuls without coordinates
+                    query = """
+                        SELECT id, name, address, city, state, zip_code, country, latitude, longitude
+                        FROM shuls 
+                        WHERE is_active = true 
+                        AND (latitude IS NULL OR longitude IS NULL OR latitude = 0 OR longitude = 0)
+                        AND (address IS NOT NULL OR city IS NOT NULL)
+                        ORDER BY created_at DESC
+                        LIMIT :limit
+                    """
+                
+                result = session.execute(text(query), {"limit": limit})
+                return [dict(row._mapping) for row in result]
+                
+        except Exception as e:
+            logger.error(f"Error getting shuls for geocoding: {e}")
+            return []
+
     def close(self):
         """Close database connections and cleanup."""
         if self.engine:
