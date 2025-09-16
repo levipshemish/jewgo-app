@@ -489,27 +489,17 @@ function SignInForm() {
               </div>
             </div>
 
-          {/* Debug info for OAuth buttons */}
-          <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-            <p>Debug: NEXT_PUBLIC_BACKEND_URL = {process.env.NEXT_PUBLIC_BACKEND_URL || 'NOT SET'}</p>
-            <p>Debug: BACKEND_URL = {process.env.BACKEND_URL || 'NOT SET'}</p>
-            <p>Debug: isCheckingAuth = {isCheckingAuth.toString()}</p>
-            <p>Debug: csrfReady = {csrfReady?.toString() || 'null'}</p>
-            <p>Debug: error = {error || 'none'}</p>
-          </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3">
               {/* Google OAuth */}
               <button
                 onClick={() => {
                   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
-                  console.log('Google OAuth clicked. Backend URL:', backendUrl);
                   if (!backendUrl) {
                     setError('Missing backend configuration');
                     return;
                   }
                   const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/google/start?returnTo=${encodeURIComponent(redirectTo)}`;
-                  console.log('Redirecting to:', url);
                   window.location.href = url;
                 }}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
