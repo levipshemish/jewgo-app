@@ -54,7 +54,7 @@ class MagicLinkService:
             raise MagicLinkError("Too many magic link requests. Please wait before trying again.")
 
         try:
-            with self.db.session_scope() as session:
+            with self.db.connection_manager.session_scope() as session:
                 # Find or create user
                 user = session.execute(
                     text("SELECT id, name, email_verified FROM users WHERE email = :email"),
@@ -162,7 +162,7 @@ class MagicLinkService:
             if not hmac.compare_digest(signature, expected_signature):
                 raise MagicLinkError("Invalid magic link token")
 
-            with self.db.session_scope() as session:
+            with self.db.connection_manager.session_scope() as session:
                 # Race-safe: lookup by exact link_id with FOR UPDATE
                 result = session.execute(
                     text(
@@ -293,7 +293,7 @@ class MagicLinkService:
     def _check_rate_limit(self, email: str, ip_address: str | None = None) -> bool:
         """Check rate limiting for magic link requests."""
         try:
-            with self.db.session_scope() as session:
+            with self.db.connection_manager.session_scope() as session:
                 # Check email-based rate limit (5 per hour)
                 email_count = session.execute(
                     text(

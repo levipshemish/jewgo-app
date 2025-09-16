@@ -65,7 +65,7 @@ class OAuthService:
         state_token = f"{signature[:16]}.{secrets.token_urlsafe(32)}"
 
         try:
-            with self.db.session_scope() as session:
+            with self.db.connection_manager.session_scope() as session:
                 session.execute(
                     text(
                         """
@@ -89,7 +89,7 @@ class OAuthService:
     def validate_and_consume_state(self, state_token: str, provider: str) -> Optional[str]:
         """Validate OAuth state and return return_to URL."""
         try:
-            with self.db.session_scope() as session:
+            with self.db.connection_manager.session_scope() as session:
                 result = session.execute(
                     text(
                         """
@@ -153,7 +153,7 @@ class OAuthService:
     ) -> Dict[str, Any]:
         """Find existing user or create new user from OAuth profile."""
         try:
-            with self.db.session_scope() as session:
+            with self.db.connection_manager.session_scope() as session:
                 # Check if OAuth account exists
                 existing_oauth = session.execute(
                     text(
