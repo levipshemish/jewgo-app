@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('cuisine')) filters.cuisine_type = searchParams.get('cuisine')!;
     if (searchParams.get('price_range')) filters.price_range = parseInt(searchParams.get('price_range')!);
     if (searchParams.get('kosher_cert')) filters.kosher_certification = searchParams.get('kosher_cert')!;
+    if (searchParams.get('kosher_category')) filters.kosher_category = searchParams.get('kosher_category')!;
 
     // Pagination
     if (searchParams.get('cursor')) pagination.cursor = searchParams.get('cursor')!;
@@ -72,7 +73,15 @@ export async function GET(request: NextRequest) {
     //   headers.set('ETag', response.headers.etag);
     // }
 
-    return NextResponse.json(response.data.data || response.data, { headers });
+    // Return full response object for FilterPreview (when includeFilterOptions is false)
+    // Return just data array for main grid (when includeFilterOptions is true)
+    if (pagination.includeFilterOptions) {
+      // Main grid: return just the data array
+      return NextResponse.json(response.data.data || response.data, { headers });
+    } else {
+      // FilterPreview: return full response object with total_count
+      return NextResponse.json(response.data, { headers });
+    }
 
   } catch (error) {
     console.error('Restaurants API error:', error);

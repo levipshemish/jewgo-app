@@ -111,24 +111,37 @@ export function FilterPreview({
         console.log('🔍 FilterPreview final filters being sent:', previewFilters);
       }
 
-      // Ask backend for count by requesting minimal page
+      // Ask backend for count by requesting minimal page directly from production backend
+      // Build URL with filters
+      const url = new URL('https://api.jewgo.app/api/v5/restaurants');
       
-      const response = await fetchRestaurants({
-        page: 1,
-        limit: 1, // Only need count; backend returns total_count
-        filters: previewFilters,
-        location,
-        includeFilterOptions: false,
+      // Add location params
+      if (location) {
+        url.searchParams.set('latitude', location.latitude.toString());
+        url.searchParams.set('longitude', location.longitude.toString());
+      }
+      
+      // Add filters
+      Object.entries(previewFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          url.searchParams.set(key, String(value));
+        }
       });
+      
+      // Add pagination params
+      url.searchParams.set('page', '1');
+      url.searchParams.set('limit', '1');
+      
+      const directResponse = await fetch(url.toString());
+      const backendData = await directResponse.json();
       
       // Debug: Log the response structure to understand what we're getting
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview response total_count:', (response as any).total_count);
+        console.log('🔍 FilterPreview backend response total_count:', backendData.total_count);
       }
       
-      // Handle different response structures
-      // Prefer backend-provided total_count when available
-      const total = (response as any).total_count ?? (response as any).totalRestaurants ?? (response.restaurants?.length || 0);
+      // Get total count from backend response
+      const total = backendData.total_count || 0;
 
 
       setPreview({
