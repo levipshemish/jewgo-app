@@ -264,7 +264,7 @@ function MikvahPageContent() {
       distance: mikvahFacility.distance,
       distance_miles: mikvahFacility.distance_miles,
       rating: mikvahFacility.rating,
-      reviewcount: mikvahFacility.reviewcount,
+      review_count: mikvahFacility.review_count,
       star_rating: mikvahFacility.star_rating,
       google_rating: mikvahFacility.google_rating,
       image_url: mikvahFacility.image_url,

@@ -39,7 +39,7 @@ export interface RealMikvah {
   distance?: string;
   distance_miles?: number;
   rating?: number;
-  reviewcount?: number;
+  review_count?: number;
   star_rating?: number;
   google_rating?: number;
   image_url?: string;
@@ -145,7 +145,7 @@ export function transformMikvahToGridCard(
 
   // Create badge if rating exists
   const rating = mikvah.rating || mikvah.star_rating || mikvah.google_rating;
-  const reviewCount = mikvah.reviewcount || 0;
+  const reviewCount = mikvah.review_count || 0;
   const badge = rating && reviewCount ? { rating, reviewCount } : undefined;
 
   // Create subtitle from rabbinical supervision or director info

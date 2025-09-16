@@ -90,7 +90,7 @@ interface Mikvah {
   distance?: string;
   distance_miles?: number;
   rating?: number;
-  reviewcount?: number;
+  review_count?: number;
   star_rating?: number;
   google_rating?: number;
   image_url?: string;
@@ -131,7 +131,7 @@ export function mapMikvahToListingData(
 ): MikvahListingData {
   // Determine the best rating to use
   const rating = mikvah.rating || mikvah.star_rating || mikvah.google_rating || 0;
-  const reviewCount = mikvah.reviewcount || 0;
+  const reviewCount = mikvah.review_count || 0;
 
   // Build address string
   const addressParts = [mikvah.address, mikvah.city, mikvah.state, mikvah.zip_code].filter(Boolean);

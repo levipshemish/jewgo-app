@@ -52,7 +52,7 @@ async function fetchMikvahFromDatabase(mikvahId: number): Promise<RealMikvah | n
       distance: row.distance,
       distance_miles: row.distance_miles ? parseFloat(row.distance_miles) : undefined,
       rating: row.rating ? parseFloat(row.rating) : undefined,
-      reviewcount: row.review_count || 0,
+      review_count: row.review_count || 0,
       star_rating: row.star_rating ? parseFloat(row.star_rating) : undefined,
       google_rating: row.google_rating ? parseFloat(row.google_rating) : undefined,
       image_url: row.image_url,

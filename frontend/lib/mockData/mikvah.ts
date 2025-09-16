@@ -20,7 +20,7 @@ export interface MockMikvah {
   distance?: string;
   distance_miles?: number;
   rating?: number;
-  reviewcount?: number;
+  review_count?: number;
   star_rating?: number;
   google_rating?: number;
   image_url?: string;
@@ -165,7 +165,7 @@ export function generateMockMikvah(count: number): MockMikvah[] {
       distance: `${distance} mi`,
       distance_miles: distance,
       rating,
-      reviewcount: reviewCount,
+      review_count: reviewCount,
       star_rating: rating,
       google_rating: rating,
       image_url: `https://picsum.photos/400/300?random=${id}`,
