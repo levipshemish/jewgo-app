@@ -207,13 +207,11 @@ class PostgresAuthManager:
                 logger.info(f"Email check for '{email}': result = {result}")
                 logger.info(f"Query executed: SELECT id FROM users WHERE email = '{email}'")
                 
-                # TEMPORARY: Skip email check for debugging
-                logger.warning("TEMPORARILY SKIPPING EMAIL UNIQUENESS CHECK FOR DEBUGGING")
-                # if result:
-                #     logger.warning(f"Email '{email}' already exists with ID: {result[0]}")
-                #     # For debugging, let's return more detailed error information
-                #     error_msg = f"Email address is already registered. Existing emails: {[row[0] for row in all_emails]}"
-                #     raise ValidationError(error_msg)
+                if result:
+                    logger.warning(f"Email '{email}' already exists with ID: {result[0]}")
+                    # For debugging, let's return more detailed error information
+                    error_msg = f"Email address is already registered. Existing emails: {[row[0] for row in all_emails]}"
+                    raise ValidationError(error_msg)
                 
                 # Insert new user with all required fields
                 session.execute(
