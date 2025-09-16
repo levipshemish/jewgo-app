@@ -254,7 +254,8 @@ def require_auth(f):
             
         except AuthenticationError as e:
             logger.warning(f"Authentication failed: {e}")
-            return jsonify({'error': 'Authentication required', 'message': str(e)}), 401
+            from utils.auth_error_handler import AuthErrorHandler
+            return jsonify({'error': AuthErrorHandler.ERROR_MESSAGES['authentication_required'], 'message': str(e)}), 401
         except Exception as e:
             logger.error(f"Authentication error: {e}")
             return jsonify({'error': 'Authentication failed'}), 500
@@ -270,7 +271,8 @@ def require_permission(permission: str):
             # First check if user is authenticated
             user_roles = getattr(g, 'user_roles', [])
             if not user_roles:
-                return jsonify({'error': 'Authentication required'}), 401
+                from utils.auth_error_handler import AuthErrorHandler
+                return jsonify({'error': AuthErrorHandler.ERROR_MESSAGES['authentication_required']}), 401
             
             # Check permission
             rbac = RoleBasedAccessControl()
@@ -296,7 +298,8 @@ def require_role(role: str):
             # First check if user is authenticated
             user_roles = getattr(g, 'user_roles', [])
             if not user_roles:
-                return jsonify({'error': 'Authentication required'}), 401
+                from utils.auth_error_handler import AuthErrorHandler
+                return jsonify({'error': AuthErrorHandler.ERROR_MESSAGES['authentication_required']}), 401
             
             # Check role
             rbac = RoleBasedAccessControl()
@@ -322,7 +325,8 @@ def require_role_level(level: int):
             # First check if user is authenticated
             user_roles = getattr(g, 'user_roles', [])
             if not user_roles:
-                return jsonify({'error': 'Authentication required'}), 401
+                from utils.auth_error_handler import AuthErrorHandler
+                return jsonify({'error': AuthErrorHandler.ERROR_MESSAGES['authentication_required']}), 401
             
             # Check role level
             rbac = RoleBasedAccessControl()

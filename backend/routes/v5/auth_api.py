@@ -93,9 +93,11 @@ def login():
         success, user_data = auth_service.authenticate_user(email, password)
         
         if not success:
+            # Use standardized error message from auth error handler
+            from utils.auth_error_handler import AuthErrorHandler
             return jsonify({
                 'success': False,
-                'error': 'Invalid email or password'
+                'error': AuthErrorHandler.ERROR_MESSAGES['invalid_credentials']
             }), 401
 
         # Generate tokens

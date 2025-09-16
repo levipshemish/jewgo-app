@@ -48,6 +48,7 @@ class AuthErrorHandler:
     
     # User-friendly error messages
     ERROR_MESSAGES = {
+        'authentication_required': 'Authentication required',
         'invalid_credentials': 'Invalid email or password. Please check your credentials and try again.',
         'account_locked': 'Your account has been temporarily locked due to multiple failed login attempts. Please try again later or contact support.',
         'account_not_verified': 'Please verify your email address before signing in. Check your inbox for a verification link.',

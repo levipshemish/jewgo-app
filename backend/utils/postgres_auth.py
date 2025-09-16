@@ -263,9 +263,6 @@ class PostgresAuthManager:
                         logger.warning(f"Could not create user role even without granted_by: {role_error2}")
                         # Continue without role creation - user can still be created
                 
-                # Log user creation
-                self._log_auth_event(user_id, 'user_created', True, {'email': email})
-                
                 # Send email verification email
                 try:
                     from services.email_service import send_email_verification
@@ -282,7 +279,8 @@ class PostgresAuthManager:
                 
                 logger.info(f"User created successfully: {email}")
                 
-                return {
+                # Store user data for logging after transaction
+                user_creation_data = {
                     'user_id': user_id,
                     'email': email,
                     'name': name,
@@ -290,6 +288,8 @@ class PostgresAuthManager:
                     'verification_token': verification_token,
                     'created_at': datetime.utcnow().isoformat()
                 }
+                
+                return user_creation_data
                 
         except ValidationError as ve:
             logger.info(f"ValidationError caught: {ve}")

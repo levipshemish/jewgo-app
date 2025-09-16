@@ -52,8 +52,11 @@ class AuthServiceV5:
             Tuple of (success, user_data) - user_data is None if authentication failed
         """
         try:
-            # Delegate to existing postgres auth
-            user_info = self.postgres_auth.authenticate_user(email, password)
+            # Create fresh PostgresAuthManager instance to match debug endpoint behavior
+            # This fixes the authentication discrepancy between debug and login endpoints
+            from utils.postgres_auth import PostgresAuthManager
+            fresh_postgres_auth = PostgresAuthManager(self.db_manager)
+            user_info = fresh_postgres_auth.authenticate_user(email, password)
             
             if user_info:
                 # Convert to expected format
@@ -92,6 +95,20 @@ class AuthServiceV5:
             user_id = user_data['id']
             email = user_data['email']
             roles = user_data.get('roles', [])
+            
+            # Convert roles to serializable format (remove datetime objects)
+            serializable_roles = []
+            for role in roles:
+                if isinstance(role, dict):
+                    serializable_role = {
+                        'role': role.get('role'),
+                        'level': role.get('level')
+                    }
+                    serializable_roles.append(serializable_role)
+                else:
+                    # Handle simple string roles
+                    serializable_roles.append(role)
+            roles = serializable_roles
             
             # Create session family for refresh rotation/reuse detection
             session_id = new_session_id()
@@ -469,8 +486,11 @@ class AuthServiceV5:
             Tuple of (success, user_data_or_error_message)
         """
         try:
-            # Delegate to postgres auth
-            user_data = self.postgres_auth.create_user(email, password, name)
+            # Create fresh PostgresAuthManager instance to match login endpoint behavior
+            # This ensures consistent database connection handling across all auth operations
+            from utils.postgres_auth import PostgresAuthManager
+            fresh_postgres_auth = PostgresAuthManager(self.db_manager)
+            user_data = fresh_postgres_auth.create_user(email, password, name)
             
             if user_data:
                 # Convert to expected format
@@ -483,6 +503,17 @@ class AuthServiceV5:
                     'email_verified': False,
                     'created_at': datetime.utcnow().isoformat()
                 }
+                
+                # Log user creation after successful database transaction
+                try:
+                    fresh_postgres_auth._log_auth_event(
+                        user_data['user_id'], 
+                        'user_created', 
+                        True, 
+                        {'email': email}
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Failed to log user creation event: {log_error}")
                 
                 logger.info(f"User registered successfully: {email}")
                 return True, formatted_user
