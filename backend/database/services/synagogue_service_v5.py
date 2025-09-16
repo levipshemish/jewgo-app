@@ -145,7 +145,7 @@ class SynagogueServiceV5:
                     response['filter_options'] = self._get_filter_options()
                 except Exception as e:
                     # Don't fail the request if metadata can't be built
-                    self.logger.error(f"Error getting filter options in get_entities: {e}")
+                    logger.error(f"Error getting filter options in get_entities: {e}")
                     # Return fallback options instead of empty dict
                     response['filter_options'] = {
                         'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],
@@ -229,7 +229,7 @@ class SynagogueServiceV5:
         Returns filter options extracted from actual synagogue data in the database.
         """
         try:
-            self.logger.info("Starting to get synagogue filter options from database")
+            logger.info("Starting to get synagogue filter options from database")
             
             # Get all synagogues to extract unique values
             synagogues, _, _, _ = self.repository.get_entities_with_cursor(
@@ -241,7 +241,7 @@ class SynagogueServiceV5:
                 sort_key='created_at_desc'
             )
             
-            self.logger.info(f"Retrieved {len(synagogues)} synagogues for filter options")
+            logger.info(f"Retrieved {len(synagogues)} synagogues for filter options")
             
             # Extract unique values from database
             denominations = set()
@@ -279,11 +279,11 @@ class SynagogueServiceV5:
                 'facilities': ['has_parking', 'has_kiddush_facilities', 'has_social_hall', 'has_library', 'has_hebrew_school']
             }
             
-            self.logger.info("Successfully retrieved synagogue filter options from database", 
+            logger.info("Successfully retrieved synagogue filter options from database", 
                            options_count=len(options))
             return options
         except Exception as e:
-            self.logger.error(f"Error getting synagogue filter options: {e}", exc_info=True)
+            logger.error(f"Error getting synagogue filter options: {e}", exc_info=True)
             # Fallback to static options
             fallback_options = {
                 'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],
@@ -296,7 +296,7 @@ class SynagogueServiceV5:
                 'services': ['has_daily_minyan', 'has_shabbat_services', 'has_holiday_services'],
                 'facilities': ['has_parking', 'has_kiddush_facilities', 'has_social_hall', 'has_library', 'has_hebrew_school']
             }
-            self.logger.info(f"Returning fallback filter options: {fallback_options}")
+            logger.info(f"Returning fallback filter options: {fallback_options}")
             return fallback_options
 
     def get_filter_options(self) -> Dict[str, Any]:
@@ -307,7 +307,7 @@ class SynagogueServiceV5:
             if self.cache_manager:
                 cached_options = self.cache_manager.get(cache_key)
                 if cached_options:
-                    self.logger.info("Retrieved synagogue filter options from cache")
+                    logger.info("Retrieved synagogue filter options from cache")
                     return cached_options
             
             # Get filter options from database
@@ -320,7 +320,7 @@ class SynagogueServiceV5:
             return filter_options
             
         except Exception as e:
-            self.logger.error(f"Error getting synagogue filter options: {e}")
+            logger.error(f"Error getting synagogue filter options: {e}")
             # Fallback to static options
             return {
                 'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],

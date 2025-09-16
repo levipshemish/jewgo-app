@@ -80,7 +80,7 @@ class MikvahServiceV5:
                 sort_key=sort
             )
             
-            return {
+            response = {
                 'success': True,
                 'data': result.get('data', []),
                 'pagination': {
@@ -94,6 +94,26 @@ class MikvahServiceV5:
                     'entity_type': 'mikvahs'
                 }
             }
+            
+            # Optionally include filter options metadata on first page
+            if include_filter_options and (page is None or page == 1):
+                try:
+                    response['filter_options'] = self.get_filter_options()
+                except Exception as e:
+                    # Don't fail the request if metadata can't be built
+                    logger.error(f"Error getting filter options in get_entities: {e}")
+                    # Return fallback options instead of empty dict
+                    response['filter_options'] = {
+                        'appointmentRequired': ['true', 'false'],
+                        'statuses': ['active', 'inactive', 'pending'],
+                        'cities': [],
+                        'contactPersons': [],
+                        'facilities': ['appointment_required', 'is_currently_open'],
+                        'accessibility': ['appointment_required'],
+                        'appointmentTypes': ['appointment_required', 'walk_in_available']
+                    }
+            
+            return response
         except Exception as e:
             logger.error(f"Failed to get mikvahs: {str(e)}", exc_info=True)
             return {

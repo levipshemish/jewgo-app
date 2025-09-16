@@ -70,8 +70,47 @@ export function ModernFilterPopup({
   // Use preloaded filter options if available, otherwise lazy load
   const { filterOptions: fetchedFilterOptions, loading: filterOptionsLoading, trigger: loadFilterOptions } = useLazyFilterOptions(entityType);
   
-  // Use preloaded options when available, fallback to fetched options
-  const filterOptions = preloadedFilterOptions || fetchedFilterOptions;
+  // Get fallback filter options based on entity type
+  const getFallbackFilterOptions = () => {
+    switch (entityType) {
+      case 'synagogues':
+        return {
+          denominations: ['orthodox', 'conservative', 'reform', 'reconstructionist'],
+          shulTypes: ['traditional', 'chabad', 'orthodox', 'sephardic'],
+          shulCategories: ['ashkenazi', 'chabad', 'sephardic'],
+          cities: [],
+          states: [],
+          ratings: [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
+          accessibility: ['has_disabled_access', 'has_parking'],
+          services: ['has_daily_minyan', 'has_shabbat_services', 'has_holiday_services'],
+          facilities: ['has_parking', 'has_kiddush_facilities', 'has_social_hall', 'has_library', 'has_hebrew_school']
+        };
+      case 'mikvahs':
+        return {
+          appointmentRequired: ['true', 'false'],
+          statuses: ['active', 'inactive', 'pending'],
+          cities: [],
+          contactPersons: [],
+          facilities: ['appointment_required', 'is_currently_open'],
+          accessibility: ['appointment_required'],
+          appointmentTypes: ['appointment_required', 'walk_in_available']
+        };
+      default: // restaurants
+        return {
+          agencies: [],
+          kosherCategories: [],
+          listingTypes: [],
+          priceRanges: [],
+          cities: [],
+          states: [],
+          ratings: [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
+          kosherDetails: []
+        };
+    }
+  };
+  
+  // Use preloaded options when available, fallback to fetched options, then to entity-specific fallbacks
+  const filterOptions = preloadedFilterOptions || fetchedFilterOptions || getFallbackFilterOptions();
   
   // Loading state - if we have preloaded options, we're not loading
   const effectiveFilterOptionsLoading = preloadedFilterOptions ? false : filterOptionsLoading;
@@ -268,149 +307,254 @@ export function ModernFilterPopup({
             </div>
 
 
-            {/* Certifying Agency Filter */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-900">Certifying Agency</label>
-              <CustomDropdown
-                value={draftFilters.agency || ""}
-                onChange={(value) => setDraftFilter('agency', value || undefined)}
-                options={[
-                  { value: "", label: "All Agencies" },
-                  ...(effectiveFilterOptionsLoading 
-                    ? [{ value: "", label: "Loading..." }]
-                    : (filterOptions?.agencies?.map((agency) => ({
-                        value: agency,
-                        label: agency
-                      })) || [])
-                  )
-                ]}
-                placeholder="All Agencies"
-                disabled={effectiveFilterOptionsLoading}
-              />
-            </div>
+            {/* Entity-specific filters */}
+            {entityType === 'restaurants' && (
+              <>
+                {/* Certifying Agency Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Certifying Agency</label>
+                  <CustomDropdown
+                    value={draftFilters.agency || ""}
+                    onChange={(value) => setDraftFilter('agency', value || undefined)}
+                    options={[
+                      { value: "", label: "All Agencies" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.agencies?.map((agency) => ({
+                            value: agency,
+                            label: agency
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Agencies"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+              </>
+            )}
 
-            {/* Kosher Type Filter */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-900">Kosher Type</label>
-              <CustomDropdown
-                key={`category-${draftFilters.category || 'empty'}`}
-                value={draftFilters.category || ""}
-                onChange={(value) => setDraftFilter('category', value || undefined)}
-                options={[
-                  { value: "", label: "All Kosher Types" },
-                  ...(effectiveFilterOptionsLoading 
-                    ? [{ value: "", label: "Loading..." }]
-                    : (filterOptions?.kosherCategories?.map((category) => ({
-                        value: category,
-                        label: category
-                      })) || [])
-                  )
-                ]}
-                placeholder="All Kosher Types"
-                disabled={effectiveFilterOptionsLoading}
-              />
-            </div>
+            {entityType === 'synagogues' && (
+              <>
+                {/* Denomination Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Denomination</label>
+                  <CustomDropdown
+                    value={draftFilters.denomination || ""}
+                    onChange={(value) => setDraftFilter('denomination', value || undefined)}
+                    options={[
+                      { value: "", label: "All Denominations" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.denominations?.map((denomination) => ({
+                            value: denomination,
+                            label: denomination.charAt(0).toUpperCase() + denomination.slice(1)
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Denominations"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
 
-            {/* Price Range Filter */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-900">Price Range</label>
-              <CustomDropdown
-                value={(() => {
-                  // Convert numeric price range back to symbol for display
-                  const priceValue = draftFilters.priceRange?.[0];
-                  if (priceValue === 1) {return '$';}
-                  if (priceValue === 2) {return '$$';}
-                  if (priceValue === 3) {return '$$$';}
-                  if (priceValue === 4) {return '$$$$';}
-                  return '';
-                })()}
-                onChange={(value) => {
-                  if (value === '') {
-                    setDraftFilter('priceRange', undefined);
-                  } else {
-                    // Convert symbol back to numeric value
-                    const numericValue = value === '$' ? 1 : 
-                                       value === '$$' ? 2 : 
-                                       value === '$$$' ? 3 : 
-                                       value === '$$$$' ? 4 : undefined;
-                    if (numericValue) {
-                      setDraftFilter('priceRange', [numericValue, numericValue]);
-                    }
-                  }
-                }}
-                options={[
-                  { value: "", label: "All Price Ranges" },
-                  ...(effectiveFilterOptionsLoading 
-                    ? [{ value: "", label: "Loading..." }]
-                    : (filterOptions?.priceRanges?.map((priceRange) => ({
-                        value: priceRange,
-                        label: `${priceRange} - ${priceRange === '$' ? 'Budget Friendly' : 
-                          priceRange === '$$' ? 'Moderate' : 
-                          priceRange === '$$$' ? 'Expensive' : 'Very Expensive'}`
-                      })) || [])
-                  )
-                ]}
-                placeholder="All Price Ranges"
-                disabled={effectiveFilterOptionsLoading}
-              />
-            </div>
+                {/* Shul Type Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Shul Type</label>
+                  <CustomDropdown
+                    value={draftFilters.shulType || ""}
+                    onChange={(value) => setDraftFilter('shulType', value || undefined)}
+                    options={[
+                      { value: "", label: "All Shul Types" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.shulTypes?.map((shulType) => ({
+                            value: shulType,
+                            label: shulType.charAt(0).toUpperCase() + shulType.slice(1)
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Shul Types"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+              </>
+            )}
 
-            {/* Rating Filter */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-900">Minimum Rating</label>
-              <CustomDropdown
-                value={draftFilters.ratingMin?.toString() || ""}
-                onChange={(value) => {
-                  if (value === "") {
-                    setDraftFilter('ratingMin', undefined);
-                  } else {
-                    const ratingValue = Number(value);
-                    if (!isNaN(ratingValue)) {
-                      setDraftFilter('ratingMin', ratingValue);
-                    }
-                  }
-                }}
-                options={[
-                  { value: "", label: "All Ratings" },
-                  ...(effectiveFilterOptionsLoading 
-                    ? [{ value: "", label: "Loading..." }]
-                    : (filterOptions?.ratings?.map((rating) => ({
-                        value: rating.toString(),
-                        label: `${rating}+ Stars`
-                      })) || [
-                        { value: "3", label: "3+ Stars" },
-                        { value: "4", label: "4+ Stars" },
-                        { value: "4.5", label: "4.5+ Stars" }
-                      ])
-                  )
-                ]}
-                placeholder="All Ratings"
-              />
-            </div>
+            {entityType === 'mikvahs' && (
+              <>
+                {/* Appointment Required Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Appointment Required</label>
+                  <CustomDropdown
+                    value={draftFilters.appointment_required || ""}
+                    onChange={(value) => setDraftFilter('appointment_required', value || undefined)}
+                    options={[
+                      { value: "", label: "All" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.appointmentRequired?.map((appointment) => ({
+                            value: appointment,
+                            label: appointment === 'true' ? 'Yes' : 'No'
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
 
-            {/* Hours Filter */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-600" />
-                <label className="text-sm font-medium text-gray-900">Available Hours</label>
+                {/* Status Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Status</label>
+                  <CustomDropdown
+                    value={draftFilters.status || ""}
+                    onChange={(value) => setDraftFilter('status', value || undefined)}
+                    options={[
+                      { value: "", label: "All Statuses" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.statuses?.map((status) => ({
+                            value: status,
+                            label: status.charAt(0).toUpperCase() + status.slice(1)
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Statuses"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Kosher Type Filter - Only for restaurants */}
+            {entityType === 'restaurants' && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-900">Kosher Type</label>
+                <CustomDropdown
+                  key={`category-${draftFilters.category || 'empty'}`}
+                  value={draftFilters.category || ""}
+                  onChange={(value) => setDraftFilter('category', value || undefined)}
+                  options={[
+                    { value: "", label: "All Kosher Types" },
+                    ...(effectiveFilterOptionsLoading 
+                      ? [{ value: "", label: "Loading..." }]
+                      : (filterOptions?.kosherCategories?.map((category) => ({
+                          value: category,
+                          label: category
+                        })) || [])
+                    )
+                  ]}
+                  placeholder="All Kosher Types"
+                  disabled={effectiveFilterOptionsLoading}
+                />
               </div>
-              <CustomDropdown
-                value={draftFilters.hoursFilter || ""}
-                onChange={(value) => setDraftFilter('hoursFilter', value || undefined)}
-                options={[
-                  { value: "", label: "All Hours" },
-                  { value: "openNow", label: "Open Now" },
-                  { value: "morning", label: "Morning (6 AM - 12 PM)" },
-                  { value: "afternoon", label: "Afternoon (12 PM - 6 PM)" },
-                  { value: "evening", label: "Evening (6 PM - 10 PM)" },
-                  { value: "lateNight", label: "Late Night (10 PM - 6 AM)" }
-                ]}
-                placeholder="All Hours"
-              />
-            </div>
+            )}
 
-            {/* Kosher Details Filter */}
-            {filterOptions?.kosherDetails && filterOptions.kosherDetails.length > 0 && (
+            {/* Price Range Filter - Only for restaurants */}
+            {entityType === 'restaurants' && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-900">Price Range</label>
+                <CustomDropdown
+                  value={(() => {
+                    // Convert numeric price range back to symbol for display
+                    const priceValue = draftFilters.priceRange?.[0];
+                    if (priceValue === 1) {return '$';}
+                    if (priceValue === 2) {return '$$';}
+                    if (priceValue === 3) {return '$$$';}
+                    if (priceValue === 4) {return '$$$$';}
+                    return '';
+                  })()}
+                  onChange={(value) => {
+                    if (value === '') {
+                      setDraftFilter('priceRange', undefined);
+                    } else {
+                      // Convert symbol back to numeric value
+                      const numericValue = value === '$' ? 1 : 
+                                         value === '$$' ? 2 : 
+                                         value === '$$$' ? 3 : 
+                                         value === '$$$$' ? 4 : undefined;
+                      if (numericValue) {
+                        setDraftFilter('priceRange', [numericValue, numericValue]);
+                      }
+                    }
+                  }}
+                  options={[
+                    { value: "", label: "All Price Ranges" },
+                    ...(effectiveFilterOptionsLoading 
+                      ? [{ value: "", label: "Loading..." }]
+                      : (filterOptions?.priceRanges?.map((priceRange) => ({
+                          value: priceRange,
+                          label: `${priceRange} - ${priceRange === '$' ? 'Budget Friendly' : 
+                            priceRange === '$$' ? 'Moderate' : 
+                            priceRange === '$$$' ? 'Expensive' : 'Very Expensive'}`
+                        })) || [])
+                    )
+                  ]}
+                  placeholder="All Price Ranges"
+                  disabled={effectiveFilterOptionsLoading}
+                />
+              </div>
+            )}
+
+            {/* Rating Filter - Only for restaurants */}
+            {entityType === 'restaurants' && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-900">Minimum Rating</label>
+                <CustomDropdown
+                  value={draftFilters.ratingMin?.toString() || ""}
+                  onChange={(value) => {
+                    if (value === "") {
+                      setDraftFilter('ratingMin', undefined);
+                    } else {
+                      const ratingValue = Number(value);
+                      if (!isNaN(ratingValue)) {
+                        setDraftFilter('ratingMin', ratingValue);
+                      }
+                    }
+                  }}
+                  options={[
+                    { value: "", label: "All Ratings" },
+                    ...(effectiveFilterOptionsLoading 
+                      ? [{ value: "", label: "Loading..." }]
+                      : (filterOptions?.ratings?.map((rating) => ({
+                          value: rating.toString(),
+                          label: `${rating}+ Stars`
+                        })) || [
+                          { value: "3", label: "3+ Stars" },
+                          { value: "4", label: "4+ Stars" },
+                          { value: "4.5", label: "4.5+ Stars" }
+                        ])
+                    )
+                  ]}
+                  placeholder="All Ratings"
+                />
+              </div>
+            )}
+
+            {/* Hours Filter - Only for restaurants */}
+            {entityType === 'restaurants' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-600" />
+                  <label className="text-sm font-medium text-gray-900">Available Hours</label>
+                </div>
+                <CustomDropdown
+                  value={draftFilters.hoursFilter || ""}
+                  onChange={(value) => setDraftFilter('hoursFilter', value || undefined)}
+                  options={[
+                    { value: "", label: "All Hours" },
+                    { value: "openNow", label: "Open Now" },
+                    { value: "morning", label: "Morning (6 AM - 12 PM)" },
+                    { value: "afternoon", label: "Afternoon (12 PM - 6 PM)" },
+                    { value: "evening", label: "Evening (6 PM - 10 PM)" },
+                    { value: "lateNight", label: "Late Night (10 PM - 6 AM)" }
+                  ]}
+                  placeholder="All Hours"
+                />
+              </div>
+            )}
+
+            {/* Kosher Details Filter - Only for restaurants */}
+            {entityType === 'restaurants' && filterOptions?.kosherDetails && filterOptions.kosherDetails.length > 0 && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-gray-900">Kosher Details</label>
                 <CustomDropdown
