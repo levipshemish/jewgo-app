@@ -145,6 +145,7 @@ export default function ShulsPage() {
         userLocation={userLocation}
         locationLoading={locationLoading}
         onRequestLocation={requestLocation}
+        entityType="synagogues"
       />
     </div>
   )

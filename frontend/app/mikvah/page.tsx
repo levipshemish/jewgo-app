@@ -386,15 +386,16 @@ function MikvahPageContent() {
       <ShulBottomNavigation />
 
       {/* Filters Modal */}
-      <ModernFilterPopup
-        isOpen={_showFilters}
-        onClose={_handleCloseFilters}
-        onApplyFilters={_handleApplyFilters}
-        initialFilters={activeFilters}
-        userLocation={userLocation}
-        locationLoading={locationLoading}
-        onRequestLocation={requestLocation}
-      />
+              <ModernFilterPopup
+                isOpen={_showFilters}
+                onClose={_handleCloseFilters}
+                onApplyFilters={_handleApplyFilters}
+                initialFilters={activeFilters}
+                userLocation={userLocation}
+                locationLoading={locationLoading}
+                onRequestLocation={requestLocation}
+                entityType="mikvahs"
+              />
     </div>
   )
 }

@@ -19,6 +19,7 @@ interface ModernFilterPopupProps {
   userLocation: { latitude: number; longitude: number } | null;
   locationLoading: boolean;
   onRequestLocation?: () => void;
+  entityType?: 'restaurants' | 'synagogues' | 'mikvahs';
   // Optional pre-loaded filter options for combined API approach
   preloadedFilterOptions?: {
     agencies: string[];
@@ -41,6 +42,7 @@ export function ModernFilterPopup({
   userLocation,
   locationLoading,
   onRequestLocation,
+  entityType = 'restaurants',
   preloadedFilterOptions
 }: ModernFilterPopupProps) {
   // Use our existing local filters hook
@@ -66,7 +68,7 @@ export function ModernFilterPopup({
   }, [initialFilters, resetDraftFilters]);
 
   // Use preloaded filter options if available, otherwise lazy load
-  const { filterOptions: fetchedFilterOptions, loading: filterOptionsLoading, trigger: loadFilterOptions } = useLazyFilterOptions();
+  const { filterOptions: fetchedFilterOptions, loading: filterOptionsLoading, trigger: loadFilterOptions } = useLazyFilterOptions(entityType);
   
   // Use preloaded options when available, fallback to fetched options
   const filterOptions = preloadedFilterOptions || fetchedFilterOptions;

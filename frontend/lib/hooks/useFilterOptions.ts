@@ -14,13 +14,21 @@ interface FilterCounts {
 interface FilterOptions {
   cities: string[];
   states: string[];
-  agencies: string[];
-  listingTypes: string[];
-  priceRanges: string[];
-  kosherCategories: string[];
+  agencies?: string[];
+  listingTypes?: string[];
+  priceRanges?: string[];
+  kosherCategories?: string[];
   ratings?: number[];
   kosherDetails?: string[];
-  counts: FilterCounts;
+  // Synagogue-specific options
+  denominations?: string[];
+  shulTypes?: string[];
+  shulCategories?: string[];
+  // Mikvah-specific options
+  appointmentRequired?: string[];
+  statuses?: string[];
+  contactPersons?: string[];
+  counts?: FilterCounts;
 }
 
 interface UseFilterOptionsReturn {
@@ -69,7 +77,7 @@ export function useFilterOptions(): UseFilterOptionsReturn {
 }
 
 // Lazy version that only fetches when explicitly triggered
-export function useLazyFilterOptions(): UseFilterOptionsReturn & { trigger: () => void } {
+export function useLazyFilterOptions(entityType: 'restaurants' | 'synagogues' | 'mikvahs' = 'restaurants'): UseFilterOptionsReturn & { trigger: () => void } {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +88,9 @@ export function useLazyFilterOptions(): UseFilterOptionsReturn & { trigger: () =
       setLoading(true);
       setError(null);
 
-      const data = await deduplicatedFetch('/api/restaurants/filter-options');
+      // Use the appropriate endpoint based on entity type
+      const endpoint = `/api/v5/${entityType}/filter-options`;
+      const data = await deduplicatedFetch(endpoint);
       
       if (data.success && data.data) {
         setFilterOptions(data.data);
@@ -94,7 +104,7 @@ export function useLazyFilterOptions(): UseFilterOptionsReturn & { trigger: () =
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [entityType]);
 
   const trigger = useCallback(() => {
     if (!hasTriggered) {
