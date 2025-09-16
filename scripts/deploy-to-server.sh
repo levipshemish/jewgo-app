@@ -202,7 +202,12 @@ execute_on_server "
           -e REDIS_PASSWORD= \
           -w /app \
           jewgo-app-backend \
-          gunicorn --bind 0.0.0.0:5000 wsgi:app && \
+          gunicorn --bind 0.0.0.0:5000 wsgi:app || exit 1
+        # Verify image exists and container is running
+        if ! docker image inspect jewgo-app-backend:latest >/dev/null 2>&1; then
+          echo 'Built image not found locally after build; aborting'; exit 1; fi
+        if ! docker inspect -f '{{.State.Running}}' jewgo_backend 2>/dev/null | grep -q true; then
+          echo 'Backend container failed to start'; exit 1; fi && \
         echo 'Backend container started (docker run with gunicorn and network alias)'
     fi
 " "Starting new backend container"
