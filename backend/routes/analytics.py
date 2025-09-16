@@ -7,7 +7,6 @@ This is a lightweight endpoint for tracking user interactions.
 
 from flask import Blueprint, request, jsonify
 from utils.logging_config import get_logger
-from middleware.auth_decorators import rate_limit_by_ip
 from middleware.csrf_v5 import csrf_exempt
 
 logger = get_logger(__name__)
@@ -17,7 +16,6 @@ analytics_bp = Blueprint('analytics', __name__)
 
 @analytics_bp.route('/analytics', methods=['POST'])
 @csrf_exempt  # Allow analytics without CSRF token
-@rate_limit_by_ip(max_requests=100, window_minutes=60)  # Allow anonymous analytics
 def track_analytics():
     """
     Track analytics events from frontend.
@@ -65,7 +63,6 @@ def track_analytics():
         }), 200
 
 @analytics_bp.route('/analytics', methods=['GET'])
-@rate_limit_by_ip(max_requests=50, window_minutes=60)
 def get_analytics():
     """
     Get basic analytics data.
