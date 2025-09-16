@@ -566,7 +566,7 @@ export function transformShulToListing(
 
     // Core Info
     address: parseAddress(shul.address),
-    locationLink: locationLink,
+    locationLink,
     description: shul.description || undefined,
 
     // Hours
@@ -581,7 +581,7 @@ export function transformShulToListing(
     } : undefined,
 
     // Features
-    features: features,
+    features,
 
     // Contact Info
     contacts: {

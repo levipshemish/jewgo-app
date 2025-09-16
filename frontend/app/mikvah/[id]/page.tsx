@@ -3,9 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ListingPage } from '@/components/listing-details-utility/listing-page';
-import { mapMikvahToListingData, type MikvahListingData } from '@/lib/mappers/mikvahMapper';
+import { mapMikvahToListingData } from '@/lib/mappers/mikvahMapper';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
-import { useLocationData } from '@/hooks/useLocationData';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationAwarePage from '@/components/LocationAwarePage';
 
@@ -201,6 +200,18 @@ function MikvahDetailContent() {
   }
 
   const listingData = mapMikvahToListingData(mikvah, parsedHours, distance);
+
+  // Debug: Log the enhanced mikvah data structure
+  console.log('🏛️ Enhanced Mikvah Data:', {
+    id: listingData.id,
+    title: listingData.title,
+    tags: listingData.tags,
+    pricing: listingData.pricing,
+    rabbinicAuthority: listingData.rabbinicAuthority,
+    amenitiesSelected: listingData.amenitiesSelected,
+    policies: listingData.policies,
+    moderation: listingData.moderation
+  });
 
   return (
     <div>
