@@ -997,6 +997,80 @@ def clear_session():
         }), 500
 
 
+@auth_bp.route('/sync-user', methods=['GET'])
+@rate_limit_by_user(max_requests=100, window_minutes=60)
+def sync_user():
+    """Sync user data - compatibility endpoint for frontend calls to /api/auth/sync-user."""
+    try:
+        # Extract token to see if user is authenticated
+        from utils.auth_helpers import extract_token_from_request
+        token = extract_token_from_request()
+        
+        if not token:
+            return jsonify({
+                'success': False,
+                'user': None,
+                'authenticated': False,
+                'message': 'No authentication token provided'
+            }), 200  # Return 200 for compatibility, not 401
+        
+        # Verify token and get user
+        try:
+            payload = auth_service.verify_token(token)
+            if payload and payload.get('uid'):
+                user_id = payload.get('uid')
+                
+                # Handle guest users
+                if user_id.startswith('guest_'):
+                    return jsonify({
+                        'success': True,
+                        'user': None,
+                        'authenticated': False,
+                        'guest': True,
+                        'message': 'Guest user - no profile available'
+                    }), 200
+                
+                # Get user profile
+                profile = auth_service.get_user_profile(user_id)
+                if profile:
+                    return jsonify({
+                        'success': True,
+                        'user': profile,
+                        'authenticated': True,
+                        'message': 'User synchronized successfully'
+                    }), 200
+                else:
+                    # User token valid but no profile - clear session
+                    return jsonify({
+                        'success': False,
+                        'user': None,
+                        'authenticated': False,
+                        'message': 'User profile not found - please sign in again'
+                    }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'user': None,
+                    'authenticated': False,
+                    'message': 'Invalid authentication token'
+                }), 200
+        except Exception as e:
+            logger.warning(f"Token verification failed in sync-user: {e}")
+            return jsonify({
+                'success': False,
+                'user': None,
+                'authenticated': False,
+                'message': 'Authentication verification failed'
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"Error in sync-user endpoint: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Sync service temporarily unavailable',
+            'code': 'SYNC_SERVICE_ERROR'
+        }), 500
+
 @auth_bp.route('/permissions', methods=['GET'])
 @auth_required
 @rate_limit_by_user(max_requests=50, window_minutes=60)

@@ -565,6 +565,26 @@ def create_app(config_class=None):
             except Exception as e:
                 logger.warning(f"Could not register v5 auth API blueprint: {e}")
 
+        # Register analytics API (compatibility for frontend)
+        try:
+            from routes.analytics import analytics_bp
+            app.register_blueprint(analytics_bp, url_prefix='/api')
+            logger.info("Analytics API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import analytics API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register analytics API blueprint: {e}")
+
+        # Register auth compatibility API (for non-v5 frontend calls)
+        try:
+            from routes.auth_compat import auth_compat_bp
+            app.register_blueprint(auth_compat_bp, url_prefix='/api')
+            logger.info("Auth compatibility API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import auth compatibility API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register auth compatibility API blueprint: {e}")
+
         # Register OAuth and Magic Link blueprints (non-breaking additions)
         try:
             from routes.v5.oauth_google import google_oauth_bp
