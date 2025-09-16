@@ -238,12 +238,44 @@ function MikvahPageContent() {
     setShowFilters(false)
   }, [setFilter, clearFilter, clearAllFilters, activeFilters])
 
-  // Transform mikvah data for UnifiedCard
+  // Transform mikvah data for UnifiedCard with distance calculation
   const transformMikvahToCardData = (mikvahFacility: MockMikvah) => {
     const rating = mikvahFacility.rating || mikvahFacility.star_rating || mikvahFacility.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
-    const distanceText = mikvahFacility.distance && mikvahFacility.distance.trim() !== '' ? mikvahFacility.distance : '';
     const mikvahType = mikvahFacility.mikvah_type && mikvahFacility.mikvah_type.trim() !== '' ? mikvahFacility.mikvah_type : '';
+    
+    // Calculate distance if user location and mikvah coordinates are available
+    let distanceText = '';
+    const hasUserLocation = !!(userLocation?.latitude && userLocation?.longitude);
+    const hasMikvahLocation = !!(mikvahFacility.latitude && mikvahFacility.longitude && 
+      mikvahFacility.latitude !== 0 && mikvahFacility.longitude !== 0);
+    
+    if (hasUserLocation && hasMikvahLocation) {
+      // Calculate distance using Haversine formula
+      const R = 3959; // Earth's radius in miles
+      const dLat = (mikvahFacility.latitude! - userLocation!.latitude) * Math.PI / 180;
+      const dLon = (mikvahFacility.longitude! - userLocation!.longitude) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(userLocation!.latitude * Math.PI / 180) * Math.cos(mikvahFacility.latitude! * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c;
+      
+      // Format distance (same as eatery/shul pages)
+      if (distance < 0.1) {
+        distanceText = `${Math.round(distance * 5280)}ft`;
+      } else if (distance < 1) {
+        distanceText = `${Math.round(distance * 10) / 10}mi`;
+      } else if (distance < 10) {
+        distanceText = `${distance.toFixed(1)}mi`;
+      } else {
+        distanceText = `${Math.round(distance)}mi`;
+      }
+    } else {
+      // Fallback to zip code or city if no distance can be calculated
+      distanceText = mikvahFacility.zip_code || mikvahFacility.city || '';
+    }
     
     return {
       id: String(mikvahFacility.id),
@@ -259,7 +291,7 @@ function MikvahPageContent() {
       rating,
       reviewCount: mikvahFacility.reviewcount,
       city: mikvahFacility.city,
-      distance: mikvahFacility.distance,
+      distance: distanceText,
     };
   };
 

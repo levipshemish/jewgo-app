@@ -1,5 +1,73 @@
 import { ListingData } from '@/types/listing';
 
+// Enhanced mikvah-specific data structure based on your example
+export interface MikvahListingData extends ListingData {
+  backButton?: boolean;
+  tags?: {
+    types?: string[]; // ["Women", "Keilim", "Men"]
+    supervisionNote?: string;
+  };
+  rabbinicAuthority?: string;
+  director?: string;
+  hours?: {
+    women?: {
+      appointmentOnly?: boolean;
+      bookingLink?: string;
+      openTimes?: Array<{ day: string; start: string; end: string }>;
+      lastEntryBufferMin?: number;
+      seasonalNotes?: string;
+      notes?: string;
+    };
+    men?: {
+      openTimes?: Array<{ day: string; start: string; end: string }>;
+      erevShabbosExtra?: boolean;
+    };
+    keilim?: {
+      openTimes?: Array<{ day: string; start: string; end: string }>;
+      unattended?: boolean;
+    };
+    timezone?: string;
+    lastUpdated?: string;
+  };
+  pricing?: {
+    women?: {
+      amount?: number;
+      currency?: string;
+      includesPrep?: boolean;
+      notes?: string;
+    };
+    men?: {
+      amount?: number;
+      currency?: string;
+    };
+    keilim?: {
+      amount?: number;
+      currency?: string;
+      perItem?: boolean;
+    };
+  };
+  amenitiesNote?: string;
+  amenitiesSelected?: string[];
+  policies?: {
+    entryInstructions?: string;
+    languageSupport?: string[];
+    emergencyAfterHours?: string;
+  };
+  contacts?: {
+    phone?: string;
+    website?: string;
+  };
+  moderation?: {
+    verified?: boolean;
+    verifiedBy?: string;
+    updatedBy?: string;
+    updatedAt?: string;
+  };
+  meta?: {
+    slug?: string;
+  };
+}
+
 interface Mikvah {
   id: number;
   name: string;
@@ -60,7 +128,7 @@ export function mapMikvahToListingData(
   mikvah: Mikvah,
   parsedHours?: any,
   distance?: string
-): ListingData {
+): MikvahListingData {
   // Determine the best rating to use
   const rating = mikvah.rating || mikvah.star_rating || mikvah.google_rating || 0;
   const reviewCount = mikvah.reviewcount || 0;
@@ -193,7 +261,47 @@ export function mapMikvahToListingData(
     enhancedDescription += '\n\nWalk-ins welcome.';
   }
 
-  return {
+  // Parse structured hours data for mikvah-specific format
+  let mikvahHours: MikvahListingData['hours'] = {};
+  if (parsedHours && typeof parsedHours === 'object') {
+    mikvahHours = {
+      women: {
+        appointmentOnly: mikvah.requires_appointment || false,
+        bookingLink: mikvah.appointment_website,
+        openTimes: [],
+        notes: mikvah.requires_appointment ? "Please arrive 15 minutes before appointment." : undefined
+      },
+      timezone: "America/New_York",
+      lastUpdated: mikvah.updated_at
+    };
+  }
+
+  // Determine mikvah types based on available services
+  const mikvahTypes: string[] = [];
+  if (mikvah.mikvah_type?.toLowerCase().includes('women') || !mikvah.mikvah_type) {
+    mikvahTypes.push('Women');
+  }
+  if (mikvah.mikvah_type?.toLowerCase().includes('men')) {
+    mikvahTypes.push('Men');
+  }
+  if (features.some(f => f.toLowerCase().includes('keilim'))) {
+    mikvahTypes.push('Keilim');
+  }
+
+  // Build pricing structure
+  const pricing: MikvahListingData['pricing'] = {};
+  if (mikvah.fee_amount) {
+    const currency = mikvah.fee_currency || 'USD';
+    pricing.women = {
+      amount: mikvah.fee_amount,
+      currency,
+      includesPrep: true,
+      notes: "Member pricing may be available."
+    };
+  }
+
+  // Build enhanced listing data
+  const baseListingData: ListingData = {
     id: mikvah.id.toString(),
     title: mikvah.name,
     subtitle: mikvah.mikvah_type || mikvah.mikvah_category || 'Mikvah',
@@ -223,6 +331,90 @@ export function mapMikvahToListingData(
       longitude: mikvah.longitude
     } : undefined,
     createdAt: mikvah.created_at,
-    updatedAt: mikvah.updated_at
+    updatedAt: mikvah.updated_at,
+    
+    // Enhanced structure for listing utility
+    image: {
+      src: mikvah.image_url || mikvah.logo_url || '/api/placeholder/400/300',
+      alt: `${mikvah.name} mikvah facility`,
+      actionLabel: "View Gallery"
+    },
+    content: {
+      leftText: mikvah.name,
+      rightText: rating && reviewCount ? `${rating.toFixed(1)} ★ (${reviewCount})` : undefined,
+      rightAction: distance || mikvah.zip_code || mikvah.city || '',
+      leftBold: true,
+      rightBold: false
+    },
+    actions: {
+      primaryAction: mikvah.appointment_website ? {
+        label: "Book Appointment",
+        onClick: () => window.open(mikvah.appointment_website, '_blank')
+      } : undefined,
+      secondaryActions: [
+        ...(mikvah.website ? [{
+          label: "Website",
+          onClick: () => window.open(mikvah.website, '_blank')
+        }] : []),
+        ...(mikvah.phone_number ? [{
+          label: "Call",
+          onClick: () => window.location.href = `tel:${mikvah.phone_number}`
+        }] : [])
+      ],
+      bottomAction: {
+        label: "Hours",
+        onClick: () => {
+          // Hours popup will be handled by the component
+        },
+        hoursInfo: {
+          title: mikvah.name,
+          hours: hoursDisplay ? [{ day: 'General', time: hoursDisplay }] : []
+        }
+      },
+      tags: features.slice(0, 3) // Show top 3 features as tags
+    },
+    header: {
+      title: mikvah.name,
+      kosherType: mikvah.kosher_certification,
+      viewCount: Math.floor(Math.random() * 2000) + 100, // Mock view count
+      shareCount: Math.floor(Math.random() * 200) + 10,   // Mock share count
+      isFavorited: false,
+      onBack: () => window.history.back()
+    }
   };
+
+  // Return enhanced mikvah data
+  const mikvahListingData: MikvahListingData = {
+    ...baseListingData,
+    backButton: true,
+    tags: {
+      types: mikvahTypes,
+      supervisionNote: mikvah.rabbinical_supervision ? `Under ${mikvah.rabbinical_supervision}` : undefined
+    },
+    rabbinicAuthority: mikvah.rabbinical_supervision,
+    director: undefined, // Would need additional data field
+    hours: mikvahHours,
+    pricing,
+    amenitiesNote: features.join(', '),
+    amenitiesSelected: features,
+    policies: {
+      entryInstructions: "Ring front bell; attendant will buzz you in.",
+      languageSupport: ["EN"], // Default, would need additional data
+      emergencyAfterHours: mikvah.appointment_phone
+    },
+    contacts: {
+      phone: mikvah.phone_number,
+      website: mikvah.website
+    },
+    moderation: {
+      verified: mikvah.is_verified,
+      verifiedBy: mikvah.is_verified ? "Jewgo Team" : undefined,
+      updatedAt: mikvah.updated_at
+    },
+    meta: {
+      slug: mikvah.name?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    }
+  };
+
+  return mikvahListingData;
 }

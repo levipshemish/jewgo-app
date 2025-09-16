@@ -443,7 +443,7 @@ export function transformShulToGridCard(
         }
       } else {
         // Just show first part of address
-        additionalText = addressParts[0].substring(0, 20) + '...';
+        additionalText = `${addressParts[0].substring(0, 20)}...`;
       }
     } else {
       additionalText = null;
@@ -455,7 +455,7 @@ export function transformShulToGridCard(
     title: shul.name || 'Unnamed Shul',
     badge: null, // Reserved for future use
     subtitle: shul.rabbi_name || '',
-    additionalText: additionalText,
+    additionalText,
     showHeart: true,
     isLiked: false, // This will be determined by favorites context
     imageTag: shul.shul_category || '',
@@ -552,7 +552,7 @@ export function transformShulToListing(
     leftText: shul.name || 'Unnamed Shul',
     rightText: shul.community_affiliation || undefined,
     leftAction: shul.rabbi_name || undefined,
-    rightAction: rightAction,
+    rightAction,
     leftIcon: undefined,
     rightIcon: undefined,
 

@@ -136,7 +136,7 @@ function transformShulToListingData(
     image: {
       src: shul.image_url || shul.logo_url || "/images/default-restaurant.webp",
       alt: `${shul.name} - ${shul.shul_category || 'Synagogue'}`,
-      allImages: [shul.image_url, shul.logo_url].filter(Boolean)
+      allImages: [shul.image_url, shul.logo_url].filter((url): url is string => Boolean(url))
     },
 
     // Content
@@ -156,7 +156,7 @@ function transformShulToListingData(
     // Actions
     actions: {
       // Secondary Actions - Website, Call, Email (always show, grey out when disabled)
-      secondaryActions: secondaryActions,
+      secondaryActions,
       
       // Tags (same as eatery page)
       tags: tags.length > 0 ? tags.slice(0, 3) : undefined, // Max 3 tags

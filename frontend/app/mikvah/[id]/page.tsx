@@ -3,9 +3,10 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ListingPage } from '@/components/listing-details-utility/listing-page';
-import { mapMikvahToListingData } from '@/lib/mappers/mikvahMapper';
+import { mapMikvahToListingData, type MikvahListingData } from '@/lib/mappers/mikvahMapper';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useLocationData } from '@/hooks/useLocationData';
+import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationAwarePage from '@/components/LocationAwarePage';
 
 interface Mikvah {
@@ -68,22 +69,22 @@ function MikvahDetailContent() {
   const params = useParams();
   const router = useRouter();
   
-  // Use the new location utility system
-  const {
-    userLocation,
-    permissionStatus: _permissionStatus,
-    isLoading: _locationLoading,
-    error: _locationError,
-    requestLocation: _requestLocation
-  } = useLocationData({
-    fallbackText: 'Get Location'
-  })
+  // Use location context for consistency with shul page
+  const { userLocation, requestLocation, permissionStatus } = useLocation();
   
   const [mikvah, setMikvah] = useState<Mikvah | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const mikvahId = params?.id as string;
+
+  // Auto-request location if permission is granted but location is null
+  useEffect(() => {
+    if (permissionStatus === 'granted' && !userLocation) {
+      console.log('🔄 Auto-requesting location since permission is granted but location is null');
+      requestLocation();
+    }
+  }, [permissionStatus, userLocation, requestLocation]);
 
   useEffect(() => {
     if (!mikvahId) return;
@@ -167,28 +168,74 @@ function MikvahDetailContent() {
     }
   }
 
-  // Calculate distance if user location is available
+  // Calculate distance if user location is available (same logic as shul page)
   let distance = mikvah.distance;
-  if (userLocation && mikvah.latitude && mikvah.longitude) {
+  const hasUserLocation = !!(userLocation?.latitude && userLocation?.longitude);
+  const hasMikvahLocation = !!(mikvah.latitude && mikvah.longitude && mikvah.latitude !== 0 && mikvah.longitude !== 0);
+  
+  if (hasUserLocation && hasMikvahLocation) {
     // Calculate distance using Haversine formula
     const R = 3959; // Earth's radius in miles
-    const dLat = (mikvah.latitude - userLocation.latitude) * Math.PI / 180;
-    const dLon = (mikvah.longitude - userLocation.longitude) * Math.PI / 180;
+    const dLat = (mikvah.latitude! - userLocation!.latitude) * Math.PI / 180;
+    const dLon = (mikvah.longitude! - userLocation!.longitude) * Math.PI / 180;
     const a = 
       Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(userLocation.latitude * Math.PI / 180) * Math.cos(mikvah.latitude * Math.PI / 180) * 
+      Math.cos(userLocation!.latitude * Math.PI / 180) * Math.cos(mikvah.latitude! * Math.PI / 180) * 
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const calculatedDistance = R * c;
-    distance = `${calculatedDistance.toFixed(1)} mi`;
+    
+    // Format distance (same as eatery/shul pages)
+    if (calculatedDistance < 0.1) {
+      distance = `${Math.round(calculatedDistance * 5280)}ft`;
+    } else if (calculatedDistance < 1) {
+      distance = `${Math.round(calculatedDistance * 10) / 10}mi`;
+    } else if (calculatedDistance < 10) {
+      distance = `${calculatedDistance.toFixed(1)}mi`;
+    } else {
+      distance = `${Math.round(calculatedDistance)}mi`;
+    }
+  } else {
+    // Fallback to zip code or city if no distance can be calculated
+    distance = mikvah.zip_code || mikvah.city || '';
   }
 
   const listingData = mapMikvahToListingData(mikvah, parsedHours, distance);
 
   return (
-    <ListingPage
-      data={listingData}
-    />
+    <div>
+      {/* Temporary debug panel */}
+      {!userLocation && (
+        <div className="bg-yellow-100 border border-yellow-300 p-4 mb-4 rounded">
+          <p><strong>🔍 Debug Info:</strong></p>
+          <p>• Permission Status: <code>{permissionStatus}</code></p>
+          <p>• User Location: <code>{userLocation ? 'Available' : 'null'}</code></p>
+          <p>• Mikvah Coordinates: <code>{mikvah?.latitude && mikvah?.longitude ? 'Available' : 'Missing'}</code></p>
+          
+          {permissionStatus !== 'denied' && (
+            <button 
+              onClick={() => {
+                console.log('🔄 Manual location request triggered');
+                requestLocation();
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
+            >
+              Request Location Now
+            </button>
+          )}
+          
+          {permissionStatus === 'denied' && (
+            <p className="text-red-600 mt-2">
+              ❌ Location permission denied. Please enable in browser settings.
+            </p>
+          )}
+        </div>
+      )}
+      
+      <ListingPage
+        data={listingData}
+      />
+    </div>
   );
 }
 

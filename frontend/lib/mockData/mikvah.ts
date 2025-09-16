@@ -50,6 +50,9 @@ export interface MockMikvah {
   admin_notes?: string;
   specials?: string;
   listing_type?: string;
+  latitude?: number;
+  longitude?: number;
+  zip_code?: string;
 }
 
 const mikvahNames = [
@@ -109,6 +112,38 @@ export function generateMockMikvah(count: number): MockMikvah[] {
     const reviewCount = Math.floor(Math.random() * 100) + 5;
     const distance = Math.round((Math.random() * 20 + 0.5) * 10) / 10; // 0.5 to 20.5 miles
     
+    // Generate realistic coordinates for different cities
+    const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
+      "Brooklyn": { lat: 40.6782, lng: -73.9442 },
+      "Queens": { lat: 40.7282, lng: -73.7949 },
+      "Manhattan": { lat: 40.7831, lng: -73.9712 },
+      "Bronx": { lat: 40.8448, lng: -73.8648 },
+      "Staten Island": { lat: 40.5795, lng: -74.1502 },
+      "Miami": { lat: 25.7617, lng: -80.1918 },
+      "Boca Raton": { lat: 26.3683, lng: -80.1289 },
+      "Aventura": { lat: 25.9564, lng: -80.1393 },
+      "Hollywood": { lat: 26.0112, lng: -80.1495 },
+      "Fort Lauderdale": { lat: 26.1224, lng: -80.1373 },
+      "Los Angeles": { lat: 34.0522, lng: -118.2437 },
+      "Beverly Hills": { lat: 34.0736, lng: -118.4004 },
+      "West Hollywood": { lat: 34.0900, lng: -118.3617 },
+      "Santa Monica": { lat: 34.0195, lng: -118.4912 },
+      "Chicago": { lat: 41.8781, lng: -87.6298 },
+      "Skokie": { lat: 42.0334, lng: -87.7334 },
+      "Highland Park": { lat: 42.1817, lng: -87.8006 },
+      "Deerfield": { lat: 42.1711, lng: -87.8445 },
+      "Boston": { lat: 42.3601, lng: -71.0589 },
+      "Newton": { lat: 42.3370, lng: -71.2092 },
+      "Brookline": { lat: 42.3318, lng: -71.1211 },
+      "Cambridge": { lat: 42.3736, lng: -71.1097 }
+    };
+    
+    const baseCoords = cityCoordinates[city] || { lat: 40.7831, lng: -73.9712 }; // Default to Manhattan
+    // Add some random variation within the city (±0.05 degrees ≈ ±3 miles)
+    const latitude = baseCoords.lat + (Math.random() - 0.5) * 0.1;
+    const longitude = baseCoords.lng + (Math.random() - 0.5) * 0.1;
+    const zipCode = `${Math.floor(Math.random() * 90000) + 10000}`;
+    
     mikvahs.push({
       id,
       name: `${name} ${i > 0 ? i + 1 : ''}`.trim(),
@@ -159,7 +194,10 @@ export function generateMockMikvah(count: number): MockMikvah[] {
       tags: [mikvahType, "Mikvah", "Jewish", "Religious"],
       admin_notes: "",
       specials: Math.random() > 0.8 ? "Special hours for holidays" : "",
-      listing_type: "mikvah"
+      listing_type: "mikvah",
+      latitude,
+      longitude,
+      zip_code: zipCode
     });
   }
   
