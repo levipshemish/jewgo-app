@@ -522,5 +522,129 @@ def debug_cleanup():
             'error': str(e)
         }), 500
 
+@debug_bp.route('/fix-user-roles', methods=['POST'])
+def debug_fix_user_roles():
+    """Fix user roles foreign key constraint issue"""
+    try:
+        db_manager = get_connection_manager()
+        
+        fix_results = {
+            'actions_performed': [],
+            'errors': [],
+            'success': True
+        }
+        
+        with db_manager.session_scope() as session:
+            # Step 1: Check if user_roles table exists
+            result = session.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'user_roles'
+                );
+            """)).fetchone()
+            
+            if not result or not result[0]:
+                fix_results['errors'].append("user_roles table does not exist")
+                fix_results['success'] = False
+                return jsonify({'success': False, 'fix_results': fix_results}), 400
+            
+            fix_results['actions_performed'].append("✅ user_roles table exists")
+            
+            # Step 2: Check current foreign key constraints on granted_by
+            result = session.execute(text("""
+                SELECT 
+                    tc.constraint_name,
+                    kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu 
+                    ON tc.constraint_name = kcu.constraint_name
+                WHERE tc.table_name = 'user_roles'
+                AND kcu.column_name = 'granted_by'
+                AND tc.constraint_type = 'FOREIGN KEY';
+            """)).fetchall()
+            
+            if result:
+                fix_results['actions_performed'].append(f"Found {len(result)} foreign key constraints on granted_by")
+                
+                # Drop the foreign key constraints
+                for row in result:
+                    constraint_name = row[0]
+                    try:
+                        session.execute(text(f"ALTER TABLE user_roles DROP CONSTRAINT {constraint_name};"))
+                        fix_results['actions_performed'].append(f"✅ Dropped constraint: {constraint_name}")
+                    except Exception as e:
+                        fix_results['errors'].append(f"Failed to drop constraint {constraint_name}: {str(e)}")
+                        fix_results['success'] = False
+                
+                # Make granted_by nullable
+                try:
+                    session.execute(text("ALTER TABLE user_roles ALTER COLUMN granted_by DROP NOT NULL;"))
+                    fix_results['actions_performed'].append("✅ Made granted_by column nullable")
+                except Exception as e:
+                    fix_results['errors'].append(f"Failed to make granted_by nullable: {str(e)}")
+                    fix_results['success'] = False
+                
+                # Set default value for granted_by
+                try:
+                    session.execute(text("ALTER TABLE user_roles ALTER COLUMN granted_by SET DEFAULT 'system';"))
+                    fix_results['actions_performed'].append("✅ Set default value for granted_by to 'system'")
+                except Exception as e:
+                    fix_results['errors'].append(f"Failed to set default for granted_by: {str(e)}")
+                    fix_results['success'] = False
+            else:
+                fix_results['actions_performed'].append("✅ No foreign key constraints found on granted_by column")
+            
+            # Step 3: Test user role creation
+            try:
+                # Get the existing admin user
+                result = session.execute(text("""
+                    SELECT id FROM users WHERE email = 'admin@jewgo.app' LIMIT 1;
+                """)).fetchone()
+                
+                if result:
+                    user_id = result[0]
+                    fix_results['actions_performed'].append(f"✅ Found admin user with ID: {user_id}")
+                    
+                    # Test creating a user role
+                    session.execute(text("""
+                        INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
+                        VALUES (:user_id, 'user', 1, NOW(), :user_id, TRUE, NOW(), NOW())
+                        ON CONFLICT (user_id, role) DO NOTHING;
+                    """), {'user_id': user_id})
+                    
+                    fix_results['actions_performed'].append("✅ Successfully created test user role")
+                    
+                    # Verify the role was created
+                    result = session.execute(text("""
+                        SELECT role, level, granted_by FROM user_roles 
+                        WHERE user_id = :user_id AND role = 'user';
+                    """), {'user_id': user_id}).fetchone()
+                    
+                    if result:
+                        fix_results['actions_performed'].append(f"✅ Role verified: {result[0]} (level {result[1]}, granted by {result[2]})")
+                    else:
+                        fix_results['errors'].append("Role was not created or verified")
+                        fix_results['success'] = False
+                else:
+                    fix_results['errors'].append("No admin user found to test with")
+                    fix_results['success'] = False
+                    
+            except Exception as e:
+                fix_results['errors'].append(f"Failed to test user role creation: {str(e)}")
+                fix_results['success'] = False
+        
+        return jsonify({
+            'success': fix_results['success'],
+            'fix_results': fix_results
+        })
+        
+    except Exception as e:
+        logger.error(f"Fix user roles error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # Export blueprint
 __all__ = ['debug_bp']
