@@ -154,21 +154,20 @@ class OAuthService:
         """Find existing user or create new user from OAuth profile."""
         try:
             with self.db.connection_manager.session_scope() as session:
-                # Check if OAuth account exists
+                # Check if OAuth user exists directly in users table
                 existing_oauth = session.execute(
                     text(
                         """
-                        SELECT a.userid, u.name, u.email, u.email_verified
-                        FROM accounts a
-                        JOIN users u ON a.userid = u.id
-                        WHERE a.provider = :provider AND a.provideraccountid = :provider_id
+                        SELECT id, name, email, email_verified
+                        FROM users
+                        WHERE oauth_provider = :provider AND oauth_provider_id = :provider_id
                         """
                     ),
                     {'provider': provider, 'provider_id': provider_id}
                 ).fetchone()
 
                 if existing_oauth:
-                    logger.info(f"Found existing OAuth account for {provider}:{provider_id}")
+                    logger.info(f"Found existing OAuth user for {provider}:{provider_id}")
                     return {
                         'id': existing_oauth[0],
                         'name': existing_oauth[1],
@@ -191,14 +190,42 @@ class OAuthService:
                     logger.info(
                         f"Linking {provider} account to existing user: {email[:3]}***@{email.split('@')[1]}"
                     )
+                    
+                    # Update existing user with OAuth information
+                    session.execute(
+                        text(
+                            """
+                            UPDATE users 
+                            SET oauth_provider = :provider,
+                                oauth_provider_id = :provider_id,
+                                oauth_raw_profile = :raw_profile,
+                                "updatedAt" = NOW()
+                            WHERE id = :user_id
+                            """
+                        ),
+                        {
+                            'user_id': user_id,
+                            'provider': provider,
+                            'provider_id': provider_id,
+                            'raw_profile': json.dumps(raw_profile) if raw_profile else None,
+                        },
+                    )
                 else:
-                    # Create new user
+                    # Create new user with OAuth information
                     user_id = secrets.token_hex(16)
                     session.execute(
                         text(
                             """
-                            INSERT INTO users (id, name, email, email_verified, is_guest, "createdAt", "updatedAt")
-                            VALUES (:user_id, :name, :email, :email_verified, FALSE, NOW(), NOW())
+                            INSERT INTO users (
+                                id, name, email, email_verified, is_guest, 
+                                oauth_provider, oauth_provider_id, oauth_raw_profile,
+                                "createdAt", "updatedAt"
+                            )
+                            VALUES (
+                                :user_id, :name, :email, :email_verified, FALSE,
+                                :provider, :provider_id, :raw_profile,
+                                NOW(), NOW()
+                            )
                             """
                         ),
                         {
@@ -206,6 +233,9 @@ class OAuthService:
                             'name': name or email.split('@')[0],
                             'email': email.lower(),
                             'email_verified': email_verified,
+                            'provider': provider,
+                            'provider_id': provider_id,
+                            'raw_profile': json.dumps(raw_profile) if raw_profile else None,
                         },
                     )
 
@@ -224,29 +254,6 @@ class OAuthService:
                     logger.info(
                         f"Created new user from {provider} OAuth: {email[:3]}***@{email.split('@')[1]}"
                     )
-
-                # Create OAuth account link
-                oauth_account_id = secrets.token_hex(16)
-                session.execute(
-                    text(
-                        """
-                        INSERT INTO accounts (
-                            id, userid, type, provider, provideraccountid, raw_profile, created_at, updated_at
-                        )
-                        VALUES (
-                            :id, :userid, 'oauth', :provider, :provider_id, :raw_profile, NOW(), NOW()
-                        )
-                        ON CONFLICT (provider, provideraccountid) DO NOTHING
-                        """
-                    ),
-                    {
-                        'id': oauth_account_id,
-                        'userid': user_id,
-                        'provider': provider,
-                        'provider_id': provider_id,
-                        'raw_profile': json.dumps(raw_profile) if raw_profile else None,
-                    },
-                )
 
                 # Get complete user data with roles
                 user_data = session.execute(
