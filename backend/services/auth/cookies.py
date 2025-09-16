@@ -59,7 +59,7 @@ class CookiePolicyManager:
             return {
                 **base_config,
                 'secure': True,
-                'samesite': 'None',
+                'samesite': 'Lax',  # Changed from 'None' to 'Lax' for better compatibility
                 'domain': domain,
             }
         elif self.environment in [Environment.PREVIEW.value, Environment.STAGING.value]:
@@ -67,7 +67,7 @@ class CookiePolicyManager:
             return {
                 **base_config,
                 'secure': True,  # HTTPS only for Vercel
-                'samesite': 'None',
+                'samesite': 'Lax',  # Changed from 'None' to 'Lax' for better compatibility
                 'domain': None,  # host-only cookies for *.vercel.app
             }
         else:  # development
