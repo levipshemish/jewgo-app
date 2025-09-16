@@ -115,43 +115,36 @@ async function forwardToGA(req: NextRequest, events: IncomingEvent[]) {
 }
 
 export async function POST(request: NextRequest) {
-  let body: any = null;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
-  }
+    // Get the backend URL
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    
+    // Get the request body
+    const body = await request.json();
+    
+    // Forward the request to the backend analytics endpoint
+    const response = await fetch(`${backendUrl}/api/analytics`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward relevant headers
+        ...(request.headers.get('user-agent') && { 'User-Agent': request.headers.get('user-agent')! }),
+        ...(request.headers.get('x-forwarded-for') && { 'X-Forwarded-For': request.headers.get('x-forwarded-for')! }),
+      },
+      body: JSON.stringify(body),
+    });
 
-  const rawEvents: unknown = body?.events;
-  if (!Array.isArray(rawEvents) || rawEvents.length === 0) {
-    return NextResponse.json({ status: 'no_events' }, { status: 204 });
+    // Forward the backend response
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+    
+  } catch (error) {
+    console.error('Analytics proxy error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Analytics service temporarily unavailable' 
+    }, { status: 500 });
   }
-
-  // Validate and normalize
-  const events: IncomingEvent[] = rawEvents
-    .filter((e) => isObject(e) && typeof (e as any).event === 'string')
-    .slice(0, 50)
-    .map((e: any) => ({
-      event: String(e.event),
-      properties: isObject(e.properties) ? e.properties : undefined,
-      timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
-      userId: typeof e.userId === 'string' ? e.userId : undefined,
-      sessionId: typeof e.sessionId === 'string' ? e.sessionId : undefined,
-      page: typeof e.page === 'string' ? e.page : undefined,
-      referrer: typeof e.referrer === 'string' ? e.referrer : undefined,
-    }));
-
-  if (events.length === 0) {
-    return NextResponse.json({ status: 'no_valid_events' }, { status: 204 });
-  }
-
-  // Forward to GA if configured; otherwise ack
-  const ok = await forwardToGA(request, events);
-  if (!ok) {
-    // Do not retry from the client; we already buffer on the client side
-    return NextResponse.json({ status: 'accepted' }, { status: 202 });
-  }
-  return new NextResponse(null, { status: 204 });
 }
 
 // Preflight support

@@ -7,31 +7,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'PostgreSQL auth not configured', user: null }, { status: 500 });
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
 
-    // Prefer Authorization header; cookie-mode cookies for backend domain are not readable here
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized', user: null }, { status: 401 });
-    }
+    // Forward all cookies from the request to the backend
+    const cookieHeader = request.headers.get('cookie');
     
-    const resp = await fetch(`${backendUrl}/api/auth/me`, {
+    const resp = await fetch(`${backendUrl}/api/auth/sync-user`, {
       method: 'GET',
-      headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward cookies for HttpOnly auth
+        ...(cookieHeader && { 'Cookie': cookieHeader }),
+        // Forward other relevant headers
+        ...(request.headers.get('user-agent') && { 'User-Agent': request.headers.get('user-agent')! }),
+        ...(request.headers.get('x-forwarded-for') && { 'X-Forwarded-For': request.headers.get('x-forwarded-for')! }),
+      },
       signal: AbortSignal.timeout(5000),
     });
 
-    if (!resp.ok) {
-      const status = resp.status === 401 ? 401 : 500;
-      return NextResponse.json({ success: false, error: status === 401 ? 'Unauthorized' : 'Upstream error', user: null }, { status });
-    }
+    // Forward the backend response
     const data = await resp.json();
-    if (!data?.success || !data?.data) {
-      return NextResponse.json({ success: false, error: 'Unauthorized', user: null }, { status: 401 });
-    }
-    return NextResponse.json({ success: true, user: data.data }, { status: 200 });
+    return NextResponse.json(data, { status: resp.status });
+    
   } catch (error) {
     console.error('[Auth] Sync user error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error', user: null }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Auth sync service temporarily unavailable', 
+      user: null 
+    }, { status: 500 });
   }
 }
