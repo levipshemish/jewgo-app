@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('price_range')) filters.price_range = parseInt(searchParams.get('price_range')!);
     if (searchParams.get('kosher_cert')) filters.kosher_certification = searchParams.get('kosher_cert')!;
     if (searchParams.get('kosher_category')) filters.kosher_category = searchParams.get('kosher_category')!;
+    if (searchParams.get('hoursFilter')) filters.hoursFilter = searchParams.get('hoursFilter')!;
 
     // Pagination
     if (searchParams.get('cursor')) pagination.cursor = searchParams.get('cursor')!;
