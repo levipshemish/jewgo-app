@@ -137,6 +137,7 @@ export class ApiClientV5 {
     if (pagination.cursor) queryParams.append('cursor', pagination.cursor);
     if (pagination.limit) queryParams.append('limit', pagination.limit.toString());
     if (pagination.sort) queryParams.append('sort', pagination.sort);
+    if (pagination.page) queryParams.append('page', pagination.page.toString());
     if (pagination.includeFilterOptions) queryParams.append('include_filter_options', 'true');
 
     const endpoint = `/api/v5/${entityType}?${queryParams.toString()}`;
