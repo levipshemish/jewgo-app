@@ -11,6 +11,7 @@ import Link from "next/link";
 import { postgresAuth, PostgresAuthError } from "@/lib/auth/postgres-auth";
 import { useToast } from '@/components/ui/Toast';
 import { handleAuthError } from '@/lib/auth/error-handler';
+import ComingSoonModal from '@/components/ui/ComingSoonModal';
 
 function SignInForm() {
   const [email, setEmail] = useState("");
@@ -28,6 +29,7 @@ function SignInForm() {
   const [upgradePassword, setUpgradePassword] = useState("");
   const [upgradeName, setUpgradeName] = useState("");
   const [upgradePending, setUpgradePending] = useState(false);
+  const [showAppleComingSoon, setShowAppleComingSoon] = useState(false);
   const { showSuccess, showError } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -497,15 +499,7 @@ function SignInForm() {
 
               {/* Apple OAuth */}
               <button
-                onClick={() => {
-                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
-                  if (!backendUrl) {
-                    setError('Missing backend configuration');
-                    return;
-                  }
-                  const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/apple/start?returnTo=${encodeURIComponent(redirectTo)}`;
-                  window.location.href = url;
-                }}
+                onClick={() => setShowAppleComingSoon(true)}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 title="Sign in with Apple"
               >
@@ -589,6 +583,15 @@ function SignInForm() {
           </div>
         </div>
       </div>
+
+      {/* Coming Soon Modal for Apple Sign-In */}
+      <ComingSoonModal
+        isOpen={showAppleComingSoon}
+        onClose={() => setShowAppleComingSoon(false)}
+        title="Apple Sign-In Coming Soon"
+        description="We're currently configuring Apple Sign-In authentication. This feature will be available soon!"
+        feature="Apple Sign-In"
+      />
     </>
   );
 }

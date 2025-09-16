@@ -67,3 +67,30 @@ Pre-Change Safety Checklist
 - No schema/API changes: N/A
 - Avoided servers/builds/migrations: yes
 - Tests/docs updated in same PR: yes (docs only)
+
+## 2025-09-16 — Apple Sign-In Coming Soon Modal Implementation
+- ID: 2025-09-16-APPLE-COMING-SOON
+- Owner: Claude Sonnet 4
+- Links: `frontend/components/ui/ComingSoonModal.tsx`, `frontend/app/auth/signin/page.tsx`
+
+Reason Why — User requested to update the "Continue with Apple" button to show a "Coming Soon" popup instead of redirecting to the auth endpoint while waiting for Apple environment variables configuration.
+
+Change Summary
+- **Created reusable Coming Soon modal**: New `ComingSoonModal.tsx` component with accessible design, keyboard navigation, and backdrop blur
+- **Updated sign-in page**: Modified Apple button to trigger modal instead of API redirect
+- **Added modal state management**: Added `showAppleComingSoon` state to handle modal visibility
+
+Risks & Mitigations
+- No breaking changes to existing authentication flow
+- Apple button functionality gracefully degraded until env vars are configured
+- Modal is accessible with proper ARIA attributes and keyboard support
+
+Tests
+- Linting passes with 0 errors for both modified files
+- Modal includes proper accessibility features and keyboard navigation
+
+Docs Updated
+- Updated component with inline documentation and proper TypeScript interfaces
+
+Follow-ups
+- (empty)

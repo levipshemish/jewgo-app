@@ -72,6 +72,7 @@ def auth_required(f: Callable) -> Callable:
         
         # Set current user in request context
         g.current_user = user_data
+        g.user_id = user_id  # Add this line to fix profile endpoint
         g.token_payload = payload
         
         return f(*args, **kwargs)
