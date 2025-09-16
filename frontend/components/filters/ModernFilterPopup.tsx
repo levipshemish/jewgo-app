@@ -376,6 +376,98 @@ export function ModernFilterPopup({
                     disabled={effectiveFilterOptionsLoading}
                   />
                 </div>
+
+                {/* Shul Category Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Shul Category</label>
+                  <CustomDropdown
+                    value={draftFilters.shulCategory || ""}
+                    onChange={(value) => setDraftFilter('shulCategory', value || undefined)}
+                    options={[
+                      { value: "", label: "All Categories" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.shulCategories?.map((category) => ({
+                            value: category,
+                            label: category.charAt(0).toUpperCase() + category.slice(1)
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Categories"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+
+                {/* City Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">City</label>
+                  <CustomDropdown
+                    value={draftFilters.city || ""}
+                    onChange={(value) => setDraftFilter('city', value || undefined)}
+                    options={[
+                      { value: "", label: "All Cities" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.cities?.map((city) => ({
+                            value: city,
+                            label: city
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Cities"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+
+                {/* State Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">State</label>
+                  <CustomDropdown
+                    value={draftFilters.state || ""}
+                    onChange={(value) => setDraftFilter('state', value || undefined)}
+                    options={[
+                      { value: "", label: "All States" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.states?.map((state) => ({
+                            value: state,
+                            label: state
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All States"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+
+                {/* Rating Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Minimum Rating</label>
+                  <CustomDropdown
+                    value={draftFilters.ratingMin?.toString() || ""}
+                    onChange={(value) => {
+                      if (value === "") {
+                        setDraftFilter('ratingMin', undefined);
+                      } else {
+                        const ratingValue = Number(value);
+                        if (!isNaN(ratingValue)) {
+                          setDraftFilter('ratingMin', ratingValue);
+                        }
+                      }
+                    }}
+                    options={[
+                      { value: "", label: "All Ratings" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.ratings?.map((rating) => ({
+                            value: rating.toString(),
+                            label: `${rating}+ Stars`
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Ratings"
+                  />
+                </div>
               </>
             )}
 
@@ -419,6 +511,48 @@ export function ModernFilterPopup({
                       )
                     ]}
                     placeholder="All Statuses"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+
+                {/* City Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">City</label>
+                  <CustomDropdown
+                    value={draftFilters.city || ""}
+                    onChange={(value) => setDraftFilter('city', value || undefined)}
+                    options={[
+                      { value: "", label: "All Cities" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.cities?.map((city) => ({
+                            value: city,
+                            label: city
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Cities"
+                    disabled={effectiveFilterOptionsLoading}
+                  />
+                </div>
+
+                {/* Contact Person Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900">Contact Person</label>
+                  <CustomDropdown
+                    value={draftFilters.contact_person || ""}
+                    onChange={(value) => setDraftFilter('contact_person', value || undefined)}
+                    options={[
+                      { value: "", label: "All Contact Persons" },
+                      ...(effectiveFilterOptionsLoading 
+                        ? [{ value: "", label: "Loading..." }]
+                        : (filterOptions?.contactPersons?.map((person) => ({
+                            value: person,
+                            label: person
+                          })) || [])
+                      )
+                    ]}
+                    placeholder="All Contact Persons"
                     disabled={effectiveFilterOptionsLoading}
                   />
                 </div>

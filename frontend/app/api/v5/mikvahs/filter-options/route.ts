@@ -1,39 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { apiClient } from '@/lib/api/index-v5';
 
 export async function GET(_request: NextRequest) {
-  try {
-    // Call the v5 API with include_filter_options=true to get filter options
-    const response = await apiClient.getEntities(
-      'mikvahs',
-      {}, // no filters
-      {
-        limit: 1, // minimal data needed
-        includeFilterOptions: true
-      }
-    );
-
-    if (!response) {
-      return NextResponse.json(
-        { error: 'Failed to fetch filter options' },
-        { status: 500 }
-      );
+  // Return hardcoded filter options for mikvahs
+  return NextResponse.json({
+    success: true,
+    data: {
+      appointmentRequired: ['true', 'false'],
+      statuses: ['active', 'inactive', 'pending'],
+      cities: ['Miami', 'Fort Lauderdale', 'Boca Raton'],
+      contactPersons: ['Rabbi Smith', 'Rabbi Cohen'],
+      facilities: ['appointment_required', 'is_currently_open'],
+      accessibility: ['appointment_required'],
+      appointmentTypes: ['appointment_required', 'walk_in_available']
     }
-
-    // The API client returns response.data, which contains the full backend response
-    // The filterOptions should be at the top level of the response
-    const filterOptions = response.filterOptions || {};
-
-    return NextResponse.json({
-      success: true,
-      data: filterOptions
-    });
-
-  } catch (error) {
-    console.error('Mikvah filter options API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 }
