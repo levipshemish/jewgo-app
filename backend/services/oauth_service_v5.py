@@ -18,7 +18,7 @@ from sqlalchemy import text
 
 from utils.logging_config import get_logger
 from utils.postgres_auth import get_postgres_auth
-from services.email_service import send_welcome_email
+from services.email_service import send_oauth_welcome_email
 
 logger = get_logger(__name__)
 
@@ -288,12 +288,13 @@ class OAuthService:
                     'is_new': is_new_user,
                 }
 
-                # Send welcome email for new users (best-effort)
+                # Send OAuth welcome email for new users (best-effort)
                 if is_new_user:
                     try:
-                        send_welcome_email(result['email'], result['name'])
+                        send_oauth_welcome_email(result['email'], result['name'], provider.title())
+                        logger.info(f"Sent OAuth welcome email to {result['email'][:3]}***@{result['email'].split('@')[1]}")
                     except Exception as e:
-                        logger.warning(f"Failed to send welcome email: {e}")
+                        logger.warning(f"Failed to send OAuth welcome email: {e}")
 
                 return result
 
