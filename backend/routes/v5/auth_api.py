@@ -963,6 +963,36 @@ def revoke_all_sessions_route():
         return jsonify({'success': False, 'error': 'Failed to revoke sessions'}), 503
 
 
+@auth_bp.route('/clear-session', methods=['POST'])
+def clear_session():
+    """Clear user session and cookies. Used when authentication is in a bad state."""
+    try:
+        # Clear all auth cookies
+        response = make_response(jsonify({
+            'success': True,
+            'message': 'Session cleared successfully'
+        }))
+        
+        # Clear all possible auth cookies
+        from services.auth.cookies import CookieManager
+        cookie_manager = CookieManager()
+        cookie_manager.clear_auth_cookies(response)
+        
+        # Also clear any additional cookies that might be causing issues
+        response.set_cookie('access_token', '', expires=0)
+        response.set_cookie('refresh_token', '', expires=0)
+        response.set_cookie('_csrf_token', '', expires=0)
+        
+        return response, 200
+        
+    except Exception as e:
+        logger.error(f"Error clearing session: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to clear session'
+        }), 500
+
+
 @auth_bp.route('/permissions', methods=['GET'])
 @auth_required
 @rate_limit_by_user(max_requests=50, window_minutes=60)
