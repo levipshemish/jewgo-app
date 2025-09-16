@@ -25,6 +25,7 @@ Last Updated: 2024
 """
 # Create the Flask application instance
 app = create_app()
+application = app  # WSGI entry point for gunicorn
 if __name__ == "__main__":
     # Get environment configuration
     is_production = config_manager.get("environment.production", False)
