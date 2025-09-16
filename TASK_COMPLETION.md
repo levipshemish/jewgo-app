@@ -52,6 +52,30 @@ Docs Updated
 Follow-ups
 - (empty)
 
+## 2025-09-16 — Add Analytics Sink Endpoint
+- ID: 2025-09-16-ANALYTICS-SINK
+- Owner: automated agent
+- Links: `frontend/app/api/analytics/route.ts`, `frontend/README.md`
+
+Reason Why — Frontend attempted `POST /api/analytics` and received 405 (Method Not Allowed) in production. A minimal sink endpoint prevents errors and noise until a real analytics provider is integrated.
+
+Change Summary
+- Added Next.js API route to accept `POST` (and `OPTIONS`) and return `204` without logging or storing payloads.
+- Documented behavior in `frontend/README.md` and noted env vars for future provider integration.
+
+Risks & Mitigations
+- Risk: Accidental data retention. Mitigation: endpoint discards payload, no logs.
+- Risk: Unbounded traffic. Mitigation: can add rate limits or provider integration later if needed.
+
+Tests
+- Manual: Browser `fetch('/api/analytics', { method: 'POST', body: '{}' })` returns 204; no console/log noise; no 405.
+
+Docs Updated
+- `frontend/README.md` — Added Analytics section.
+
+Follow-ups
+- (empty)
+
 ## 2025-09-16 — Codebase Cleanup and Organization
 - ID: 2025-09-16-CODEBASE-CLEANUP
 - Owner: Claude Sonnet 4

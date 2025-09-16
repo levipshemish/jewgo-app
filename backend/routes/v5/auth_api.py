@@ -30,6 +30,7 @@ auth_bp = BlueprintFactoryV5.create_blueprint(
     'auth_api', __name__, '/api/v5/auth',
     config_override={
         'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
+        'enable_health_check': False,  # Use custom auth service health check
     }
 )
 
@@ -419,10 +420,23 @@ def get_profile():
         })
 
     except Exception as e:
-        logger.error(f"Profile retrieval error: {e}")
+        import traceback
+        logger.error(
+            f"Profile retrieval error for user {user_id}: {e}",
+            extra={
+                'user_id': user_id,
+                'endpoint': 'get_profile',
+                'exception_type': type(e).__name__,
+                'traceback': traceback.format_exc(),
+                'request_ip': request.remote_addr,
+                'user_agent': request.headers.get('User-Agent')
+            },
+            exc_info=True
+        )
         return jsonify({
             'success': False,
-            'error': 'Profile service unavailable'
+            'error': 'Profile service unavailable',
+            'error_code': 'PROFILE_SERVICE_ERROR'
         }), 503
 
 

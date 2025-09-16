@@ -503,43 +503,145 @@ class AuthServiceV5:
             logger.error(f"Token refresh system error: {e}", extra=refresh_context, exc_info=True)
             return False, None
     
-    def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+    def get_user_profile(self, user_id: str, max_retries: int = 3) -> Optional[Dict[str, Any]]:
         """
-        Get user profile by ID.
+        Get user profile by ID with retry logic for transient failures.
         
         Args:
             user_id: User ID
+            max_retries: Maximum number of retry attempts for transient failures
             
         Returns:
             User profile data or None if not found
         """
-        try:
-            # Use postgres_auth for consistency with registration
-            postgres_auth = self._get_postgres_auth()
-            user_data = postgres_auth.get_user_by_id(user_id)
+        import time
+        
+        for attempt in range(max_retries + 1):
+            try:
+                # Use postgres_auth for consistency with registration
+                postgres_auth = self._get_postgres_auth()
+                user_data = postgres_auth.get_user_by_id(user_id)
             
-            if not user_data:
-                # Fallback to AuthServiceV5 database lookup
-                user_data = self._get_user_by_id(user_id)
                 if not user_data:
+                    # Fallback to AuthServiceV5 database lookup
+                    user_data = self._get_user_by_id(user_id)
+                    if not user_data:
+                        return None
+                
+                # Return sanitized profile data in consistent format
+                return {
+                    'id': user_data.get('user_id') or user_data.get('id'),
+                    'email': user_data['email'],
+                    'name': user_data.get('name'),
+                    'roles': user_data.get('roles', [{'role': 'user', 'level': 1}]),
+                    'permissions': user_data.get('permissions', []),
+                    'email_verified': user_data.get('email_verified', False),
+                    'created_at': user_data.get('created_at'),
+                    'updated_at': user_data.get('updated_at'),
+                    'last_login': user_data.get('last_login')
+                }
+                
+            except Exception as e:
+                import traceback
+                
+                # Check if this is a transient error that should be retried
+                is_transient = self._is_transient_error(e)
+                is_final_attempt = attempt == max_retries
+                
+                logger.error(
+                    f"Error getting user profile {user_id} (attempt {attempt + 1}/{max_retries + 1}): {e}",
+                    extra={
+                        'user_id': user_id,
+                        'service': 'AuthServiceV5',
+                        'method': 'get_user_profile',
+                        'attempt': attempt + 1,
+                        'max_retries': max_retries + 1,
+                        'is_transient': is_transient,
+                        'is_final_attempt': is_final_attempt,
+                        'exception_type': type(e).__name__,
+                        'traceback': traceback.format_exc()
+                    },
+                    exc_info=True
+                )
+                
+                # If it's not a transient error or final attempt, don't retry
+                if not is_transient or is_final_attempt:
                     return None
+                    
+                # Wait before retrying (exponential backoff)
+                wait_time = (2 ** attempt) * 0.1  # 0.1s, 0.2s, 0.4s
+                logger.info(f"Retrying user profile fetch for {user_id} in {wait_time}s")
+                time.sleep(wait_time)
+                continue
+        
+        # This should never be reached, but included for completeness
+        return None
+    
+    def _is_transient_error(self, error: Exception) -> bool:
+        """
+        Determine if an error is transient and should be retried.
+        
+        Args:
+            error: The exception to check
             
-            # Return sanitized profile data in consistent format
-            return {
-                'id': user_data.get('user_id') or user_data.get('id'),
-                'email': user_data['email'],
-                'name': user_data.get('name'),
-                'roles': user_data.get('roles', [{'role': 'user', 'level': 1}]),
-                'permissions': user_data.get('permissions', []),
-                'email_verified': user_data.get('email_verified', False),
-                'created_at': user_data.get('created_at'),
-                'updated_at': user_data.get('updated_at'),
-                'last_login': user_data.get('last_login')
-            }
+        Returns:
+            True if the error is likely transient, False otherwise
+        """
+        import psycopg2
+        
+        # Database connection errors that might be transient
+        transient_db_errors = (
+            'connection refused',
+            'connection reset',
+            'connection lost',
+            'timeout',
+            'deadlock',
+            'lock timeout',
+            'connection pool exhausted',
+            'temporary failure',
+            'network error'
+        )
+        
+        # Redis connection errors that might be transient
+        transient_redis_errors = (
+            'connection error',
+            'redis connection',
+            'timeout error',
+            'connection refused'
+        )
+        
+        error_str = str(error).lower()
+        error_type = type(error).__name__.lower()
+        
+        # Check for database-related transient errors
+        if any(db_error in error_str for db_error in transient_db_errors):
+            return True
             
-        except Exception as e:
-            logger.error(f"Error getting user profile {user_id}: {e}")
-            return None
+        # Check for Redis-related transient errors
+        if any(redis_error in error_str for redis_error in transient_redis_errors):
+            return True
+            
+        # Check for specific exception types that are often transient
+        if 'operationalerror' in error_type:  # SQLAlchemy operational errors
+            return True
+            
+        if 'connectionerror' in error_type:  # General connection errors
+            return True
+            
+        # psycopg2 specific transient errors
+        if hasattr(error, 'pgcode'):
+            # PostgreSQL error codes for transient conditions
+            transient_pg_codes = [
+                '08000',  # connection_exception
+                '08003',  # connection_does_not_exist
+                '08006',  # connection_failure
+                '53300',  # too_many_connections
+                '57P01',  # admin_shutdown
+            ]
+            if error.pgcode in transient_pg_codes:
+                return True
+        
+        return False
     
     def update_user_profile(self, user_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -808,7 +910,7 @@ class AuthServiceV5:
             redis_healthy = self.redis_manager.health_check()['status'] == 'healthy'
             
             # Test database connection
-            db_healthy = True  # Would test actual DB connection
+            db_healthy = self._is_connection_healthy()
             
             return {
                 'status': 'healthy' if redis_healthy and db_healthy else 'unhealthy',

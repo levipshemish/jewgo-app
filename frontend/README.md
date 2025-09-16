@@ -94,6 +94,11 @@ Required variables (see `.env.example`):
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
 - Optional: `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `SENTRY_DSN`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
 
+### Analytics
+
+- The route `POST /api/analytics` is a lightweight sink that returns `204` and discards payloads. It exists to prevent 405s from client-side analytics until a provider is integrated.
+- Configure `NEXT_PUBLIC_ANALYTICS_PROVIDER` and `NEXT_PUBLIC_ANALYTICS_API_ENDPOINT` when connecting a real analytics service.
+
 ## Deployment
 
 ### Vercel (Recommended)
