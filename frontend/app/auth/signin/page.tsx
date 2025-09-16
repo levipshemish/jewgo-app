@@ -80,14 +80,24 @@ function SignInForm() {
         router.push(redirectTo);
         return;
       } catch (err: any) {
-        // Not authenticated; show form
+        console.log('Auth check failed:', err);
+        // Not authenticated; show form (handle all auth errors gracefully)
         setIsCheckingAuth(false);
+        
         // Show cookie-size hint if 413 is encountered
         if (err instanceof PostgresAuthError && err.status === 413) {
           setShowHeaderTooLargeHint(true);
         } else if (typeof err?.message === 'string' && err.message.toLowerCase().includes('headers too large')) {
           setShowHeaderTooLargeHint(true);
         }
+        
+        // Log service availability issues but don't block the UI
+        if (err instanceof PostgresAuthError && err.status === 503) {
+          console.warn('Auth service temporarily unavailable, showing sign-in form');
+        }
+      } finally {
+        // Ensure isCheckingAuth is always set to false after the check
+        setIsCheckingAuth(false);
       }
     };
     checkAuthStatus();
@@ -479,16 +489,27 @@ function SignInForm() {
               </div>
             </div>
 
+          {/* Debug info for OAuth buttons */}
+          <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+            <p>Debug: NEXT_PUBLIC_BACKEND_URL = {process.env.NEXT_PUBLIC_BACKEND_URL || 'NOT SET'}</p>
+            <p>Debug: BACKEND_URL = {process.env.BACKEND_URL || 'NOT SET'}</p>
+            <p>Debug: isCheckingAuth = {isCheckingAuth.toString()}</p>
+            <p>Debug: csrfReady = {csrfReady?.toString() || 'null'}</p>
+            <p>Debug: error = {error || 'none'}</p>
+          </div>
+
           <div className="mt-6 grid grid-cols-1 gap-3">
               {/* Google OAuth */}
               <button
                 onClick={() => {
                   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+                  console.log('Google OAuth clicked. Backend URL:', backendUrl);
                   if (!backendUrl) {
                     setError('Missing backend configuration');
                     return;
                   }
                   const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/google/start?returnTo=${encodeURIComponent(redirectTo)}`;
+                  console.log('Redirecting to:', url);
                   window.location.href = url;
                 }}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
