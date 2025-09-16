@@ -1,0 +1,12 @@
+HTTP/2 502 
+server: nginx
+date: Tue, 16 Sep 2025 15:09:32 GMT
+content-type: text/html
+content-length: 497
+etag: "689caae0-1f1"
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: DENY
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+

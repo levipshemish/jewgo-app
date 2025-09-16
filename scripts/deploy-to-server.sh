@@ -333,12 +333,28 @@ if ! check_backend_health; then
     rollback_deployment
 fi
 
+# Proactively ensure Nginx config has no duplicate client_header_buffer_size
+execute_on_server "
+    set -euo pipefail
+    if [ -f /etc/nginx/conf.d/default.conf ]; then
+        sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.$(date +%s) || true
+        sudo sh -c 'awk '\''/client_header_buffer_size/ { if (seen) { print "#"$0; next } else { seen=1 } } { print }'\'' /etc/nginx/conf.d/default.conf > /tmp/default.conf.fixed'
+        if [ -s /tmp/default.conf.fixed ]; then
+            sudo mv /tmp/default.conf.fixed /etc/nginx/conf.d/default.conf
+        fi
+    fi
+    sudo nginx -t
+" "Ensuring Nginx client_header_buffer_size not duplicated"
+
 # Reload Nginx configuration to apply rate limit changes
 print_status "Reloading Nginx configuration to apply rate limit changes..."
 execute_on_server "
     if sudo nginx -t; then
-        sudo systemctl reload nginx && \
-        echo 'Nginx configuration reloaded successfully'
+        if systemctl is-active --quiet nginx; then
+            sudo systemctl reload nginx && echo 'Nginx configuration reloaded successfully (systemd)'
+        else
+            sudo nginx -s reload && echo 'Nginx configuration reloaded successfully (signal)'
+        fi
     else
         echo 'Nginx configuration test failed - not reloading'
         exit 1
@@ -517,6 +533,56 @@ print_status "Testing store-specific endpoints..."
 test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=5" "Stores list endpoint"
 test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1&search=kosher" "Stores search endpoint"
 test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1&distance=20&lat=40.7128&lng=-74.0060" "Stores distance filter endpoint"
+
+# Validate presence of new auth routes (fail deploy if missing)
+print_status "Validating presence of OAuth and Magic Link routes via public domain..."
+
+# Helper to fail if route returns 404
+assert_route_present() {
+    local url="$1"
+    local desc="$2"
+    local code
+    code=$(curl -s -o /dev/null -w "%{http_code}" -I "$url" || echo "000")
+    if [ "$code" = "404" ] || [ "$code" = "000" ]; then
+        print_error "Missing route ($desc): HTTP $code at $url"
+        exit 1
+    else
+        print_success "$desc present (HTTP $code)"
+    fi
+}
+
+# Google OAuth start should exist (typically 302 to Google)
+assert_route_present "https://api.jewgo.app/api/v5/auth/google/start?returnTo=%2F" "Google OAuth start"
+
+# Apple OAuth start should exist (may be 501 if not configured yet)
+assert_route_present "https://api.jewgo.app/api/v5/auth/apple/start?returnTo=%2F" "Apple OAuth start"
+
+# Google callback route should exist (will redirect to error when missing params)
+assert_route_present "https://api.jewgo.app/api/v5/auth/google/callback" "Google OAuth callback"
+
+# Magic Link consume route should exist (invalid token should redirect to error)
+assert_route_present "https://api.jewgo.app/api/v5/auth/magic/consume?token=invalid&email=test%40example.com&rt=%2F" "Magic Link consume"
+
+# Magic Link send route: acquire CSRF, then POST invalid email expecting not-404
+print_status "Fetching CSRF token for Magic Link send test..."
+curl -s -c /tmp/jewgo_csrf_cookies.txt -o /tmp/csrf_ml.json https://api.jewgo.app/api/v5/auth/csrf >/dev/null || true
+CSRF_TOKEN=$(python3 -c 'import json,sys;import pathlib
+p=pathlib.Path("/tmp/csrf_ml.json")
+print(json.load(open(p))["data"]["csrf_token"]) if p.exists() else print("")' 2>/dev/null)
+if [ -z "$CSRF_TOKEN" ]; then
+    print_warning "Could not fetch CSRF token; proceeding but Magic Link send check may be skipped"
+else
+    ML_CODE=$(curl -s -o /tmp/ml_resp.json -w "%{http_code}" -b /tmp/jewgo_csrf_cookies.txt -c /tmp/jewgo_csrf_cookies.txt \
+        -X POST https://api.jewgo.app/api/v5/auth/magic/send \
+        -H 'Content-Type: application/json' -H "X-CSRF-Token: $CSRF_TOKEN" \
+        --data '{"email":"invalid","returnTo":"/"}' || echo "000")
+    if [ "$ML_CODE" = "404" ] || [ "$ML_CODE" = "000" ]; then
+        print_error "Missing route (Magic Link send): HTTP $ML_CODE"
+        exit 1
+    else
+        print_success "Magic Link send route present (HTTP $ML_CODE)"
+    fi
+fi
 
 # Test search functionality
 print_status "Testing search functionality..."
