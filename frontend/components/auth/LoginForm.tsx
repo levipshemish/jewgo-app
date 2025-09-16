@@ -19,7 +19,7 @@ export default function LoginForm() {
 
     try {
       await login(email, password);
-      router.push('/dashboard'); // Redirect to dashboard after login
+      router.push('/eatery'); // Redirect to main eatery page after login
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

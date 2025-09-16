@@ -3,7 +3,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,15 +15,26 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({
   children,
   requiredRoles = [],
-  redirectTo = '/login',
+  redirectTo = '/auth/signin',
   showLoading = true,
 }: ProtectedRouteProps) {
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const hasRedirectedRef = useRef(false);
+  const hasRoleRedirectedRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated()) {
-      router.push(redirectTo);
+      // Prevent infinite loops by checking current path and redirect state
+      if (typeof window !== 'undefined' && 
+          window.location.pathname !== redirectTo && 
+          !hasRedirectedRef.current) {
+        hasRedirectedRef.current = true;
+        router.push(redirectTo);
+      }
+    } else if (isAuthenticated()) {
+      // Reset redirect flag when user becomes authenticated
+      hasRedirectedRef.current = false;
     }
   }, [loading, isAuthenticated, router, redirectTo]);
 
@@ -34,7 +45,16 @@ export default function ProtectedRoute({
       );
       
       if (!hasRequiredRole) {
-        router.push('/unauthorized');
+        // Prevent infinite loops by checking current path and redirect state
+        if (typeof window !== 'undefined' && 
+            window.location.pathname !== '/unauthorized' && 
+            !hasRoleRedirectedRef.current) {
+          hasRoleRedirectedRef.current = true;
+          router.push('/unauthorized');
+        }
+      } else {
+        // Reset role redirect flag when user has required roles
+        hasRoleRedirectedRef.current = false;
       }
     }
   }, [loading, user, requiredRoles, router]);

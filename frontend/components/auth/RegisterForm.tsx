@@ -51,7 +51,7 @@ export default function RegisterForm() {
         name: formData.firstName && formData.lastName ? `${formData.firstName} ${formData.lastName}` : 
               formData.firstName || formData.lastName || undefined,
       });
-      router.push('/dashboard'); // Redirect to dashboard after registration
+      router.push('/eatery'); // Redirect to main eatery page after registration
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
