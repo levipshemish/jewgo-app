@@ -447,6 +447,18 @@ def get_profile():
                 'code': 'MISSING_USER_ID'
             }), 401
 
+        # Handle guest users - they have valid tokens but no database profile
+        if user_id.startswith('guest_'):
+            logger.info(f"Guest user profile request: {user_id}")
+            return jsonify({
+                'success': False,
+                'error': 'Guest users do not have profiles. Please sign in to access your profile.',
+                'code': 'GUEST_USER_NO_PROFILE'
+            }), 401
+
+        # Log the user lookup attempt for debugging
+        logger.info(f"Looking up profile for user: {user_id}")
+
         # Get user profile
         profile = auth_service.get_user_profile(user_id)
         
