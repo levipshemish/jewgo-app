@@ -718,7 +718,7 @@ class PostgresAuthManager:
                 session.execute(
                     text("""
                         INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
-                        VALUES (:user_id, 'guest', 0, NOW(), 'system', TRUE, NOW(), NOW())
+                        VALUES (:user_id, 'guest', 0, NOW(), :user_id, TRUE, NOW(), NOW())
                     """),
                     {'user_id': user_id}
                 )
@@ -954,7 +954,7 @@ class PostgresAuthManager:
                     text(
                         """
                         INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
-                        VALUES (:uid, 'user', 1, NOW(), 'system', TRUE, NOW(), NOW())
+                        VALUES (:uid, 'user', 1, NOW(), :uid, TRUE, NOW(), NOW())
                         ON CONFLICT (user_id, role)
                         DO UPDATE SET is_active = TRUE, level = EXCLUDED.level, updated_at = NOW()
                         """
