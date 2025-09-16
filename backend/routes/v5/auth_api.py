@@ -969,21 +969,22 @@ def revoke_all_sessions_route():
 def clear_session():
     """Clear user session and cookies. Used when authentication is in a bad state."""
     try:
-        # Clear all auth cookies
+        # Create response with success message
         response = make_response(jsonify({
             'success': True,
             'message': 'Session cleared successfully'
         }))
         
-        # Clear all possible auth cookies
-        from services.auth.cookies import CookieManager
-        cookie_manager = CookieManager()
-        cookie_manager.clear_auth_cookies(response)
+        # Clear all possible auth cookies with different domain configurations
+        cookies_to_clear = ['access_token', 'refresh_token', '_csrf_token']
         
-        # Also clear any additional cookies that might be causing issues
-        response.set_cookie('access_token', '', expires=0)
-        response.set_cookie('refresh_token', '', expires=0)
-        response.set_cookie('_csrf_token', '', expires=0)
+        for cookie_name in cookies_to_clear:
+            # Clear for current domain
+            response.set_cookie(cookie_name, '', expires=0, httponly=True, secure=True)
+            # Clear for .jewgo.app domain
+            response.set_cookie(cookie_name, '', expires=0, domain='.jewgo.app', httponly=True, secure=True)
+            # Clear for api.jewgo.app domain
+            response.set_cookie(cookie_name, '', expires=0, domain='api.jewgo.app', httponly=True, secure=True)
         
         return response, 200
         
@@ -991,7 +992,8 @@ def clear_session():
         logger.error(f"Error clearing session: {e}", exc_info=True)
         return jsonify({
             'success': False,
-            'error': 'Failed to clear session'
+            'error': 'Failed to clear session',
+            'debug': str(e)
         }), 500
 
 
