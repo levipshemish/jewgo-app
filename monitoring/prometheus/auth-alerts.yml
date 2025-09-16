@@ -1,0 +1,236 @@
+# Authentication System Alert Rules
+
+groups:
+  - name: authentication_alerts
+    rules:
+      # High authentication failure rate
+      - alert: HighAuthFailureRate
+        expr: auth:error_rate > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authentication failure rate detected"
+          description: "Authentication error rate is {{ $value }} errors/sec, which is above the threshold of 0.1"
+
+      # Critical authentication failure rate
+      - alert: CriticalAuthFailureRate
+        expr: auth:error_rate > 0.5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical authentication failure rate"
+          description: "Authentication error rate is {{ $value }} errors/sec, which is critically high"
+
+      # Low authentication success rate
+      - alert: LowAuthSuccessRate
+        expr: auth:success_rate < 0.8
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low authentication success rate"
+          description: "Authentication success rate is {{ $value | humanizePercentage }}, which is below 80%"
+
+      # Very low authentication success rate
+      - alert: VeryLowAuthSuccessRate
+        expr: auth:success_rate < 0.5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very low authentication success rate"
+          description: "Authentication success rate is {{ $value | humanizePercentage }}, which is critically low"
+
+  - name: performance_alerts
+    rules:
+      # Slow authentication response time
+      - alert: SlowAuthResponseTime
+        expr: histogram_quantile(0.95, rate(auth_duration_seconds_bucket[5m])) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow authentication response time"
+          description: "95th percentile authentication response time is {{ $value }}s, which is above 1.0s"
+
+      # Very slow authentication response time
+      - alert: VerySlowAuthResponseTime
+        expr: histogram_quantile(0.95, rate(auth_duration_seconds_bucket[5m])) > 2.0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very slow authentication response time"
+          description: "95th percentile authentication response time is {{ $value }}s, which is critically slow"
+
+      # High database query time
+      - alert: HighDatabaseQueryTime
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database query response time"
+          description: "95th percentile database query time is {{ $value }}s, which is above 0.5s"
+
+      # Low cache hit rate
+      - alert: LowCacheHitRate
+        expr: auth:cache_hit_rate < 0.7
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}, which is below 70%"
+
+      # Very low cache hit rate
+      - alert: VeryLowCacheHitRate
+        expr: auth:cache_hit_rate < 0.5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}, which is critically low"
+
+  - name: system_health_alerts
+    rules:
+      # Low system health score
+      - alert: LowSystemHealthScore
+        expr: auth:health_score < 70
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low system health score"
+          description: "System health score is {{ $value }}, which is below 70"
+
+      # Critical system health score
+      - alert: CriticalSystemHealthScore
+        expr: auth:health_score < 50
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical system health score"
+          description: "System health score is {{ $value }}, which is critically low"
+
+      # Low performance score
+      - alert: LowPerformanceScore
+        expr: auth:performance_score < 70
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low performance optimization score"
+          description: "Performance score is {{ $value }}, which is below 70"
+
+  - name: resource_alerts
+    rules:
+      # High database connections
+      - alert: HighDatabaseConnections
+        expr: db_connections_active > 15
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of database connections"
+          description: "Number of active database connections is {{ $value }}, which is above 15"
+
+      # Very high database connections
+      - alert: VeryHighDatabaseConnections
+        expr: db_connections_active > 25
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very high number of database connections"
+          description: "Number of active database connections is {{ $value }}, which is critically high"
+
+      # High number of active sessions
+      - alert: HighActiveSessions
+        expr: sessions_active > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of active sessions"
+          description: "Number of active sessions is {{ $value }}, which is above 1000"
+
+      # Very high number of active sessions
+      - alert: VeryHighActiveSessions
+        expr: sessions_active > 5000
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very high number of active sessions"
+          description: "Number of active sessions is {{ $value }}, which is critically high"
+
+  - name: rate_limiting_alerts
+    rules:
+      # High rate limiting hits
+      - alert: HighRateLimitHits
+        expr: rate(rate_limit_hits_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limiting activity"
+          description: "Rate limit hits are {{ $value }} hits/sec, which indicates potential abuse"
+
+      # Very high rate limiting hits
+      - alert: VeryHighRateLimitHits
+        expr: rate(rate_limit_hits_total[5m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very high rate limiting activity"
+          description: "Rate limit hits are {{ $value }} hits/sec, which indicates severe abuse"
+
+  - name: token_alerts
+    rules:
+      # High token generation rate
+      - alert: HighTokenGenerationRate
+        expr: auth:token_generation_rate > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High token generation rate"
+          description: "Token generation rate is {{ $value }} tokens/sec, which is unusually high"
+
+      # Token validation failures
+      - alert: HighTokenValidationFailures
+        expr: rate(token_validations_total{result="failure"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High token validation failure rate"
+          description: "Token validation failure rate is {{ $value }} failures/sec"
+
+  - name: password_security_alerts
+    rules:
+      # Slow password hashing
+      - alert: SlowPasswordHashing
+        expr: histogram_quantile(0.95, rate(password_hash_duration_seconds_bucket[5m])) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow password hashing"
+          description: "95th percentile password hashing time is {{ $value }}s, which is above 0.5s"
+
+      # Very slow password hashing
+      - alert: VerySlowPasswordHashing
+        expr: histogram_quantile(0.95, rate(password_hash_duration_seconds_bucket[5m])) > 1.0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very slow password hashing"
+          description: "95th percentile password hashing time is {{ $value }}s, which is critically slow"

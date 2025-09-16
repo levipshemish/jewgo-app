@@ -1,0 +1,82 @@
+# Prometheus configuration for JewGo Authentication System Metrics
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "auth-alerts.yml"
+
+scrape_configs:
+  # JewGo Backend Authentication Metrics
+  - job_name: 'jewgo-auth'
+    static_configs:
+      - targets: ['localhost:5000']
+    metrics_path: '/api/v5/metrics/auth'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    
+  # JewGo Backend Health Metrics
+  - job_name: 'jewgo-health'
+    static_configs:
+      - targets: ['localhost:5000']
+    metrics_path: '/api/v5/metrics/health'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Redis Metrics (if Redis exporter is available)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['localhost:6379']
+    scrape_interval: 30s
+
+  # PostgreSQL Metrics (if PostgreSQL exporter is available)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['localhost:5432']
+    scrape_interval: 30s
+
+  # Node Exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9100']
+    scrape_interval: 30s
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Recording rules for performance optimization
+recording_rules:
+  - name: auth_performance
+    rules:
+      # Authentication success rate
+      - record: auth:success_rate
+        expr: rate(auth_attempts_total{result="success"}[5m]) / rate(auth_attempts_total[5m])
+      
+      # Authentication error rate
+      - record: auth:error_rate
+        expr: rate(auth_errors_total[5m])
+      
+      # Token generation rate
+      - record: auth:token_generation_rate
+        expr: rate(token_generations_total[5m])
+      
+      # Cache hit rate by type
+      - record: auth:cache_hit_rate
+        expr: rate(cache_operations_total{result="hit"}[5m]) / rate(cache_operations_total[5m])
+      
+      # Database query performance
+      - record: auth:db_query_performance
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))
+      
+      # System health score
+      - record: auth:health_score
+        expr: system_health_score
+      
+      # Performance optimization score
+      - record: auth:performance_score
+        expr: performance_score
