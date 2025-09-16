@@ -13,16 +13,16 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    if (!response || !response.data) {
+    if (!response) {
       return NextResponse.json(
         { error: 'Failed to fetch filter options' },
         { status: 500 }
       );
     }
 
-    // Extract filter options from the response
-    // The response.data contains the full backend response with filterOptions at the top level
-    const filterOptions = response.data.filterOptions || {};
+    // The API client returns response.data, which contains the full backend response
+    // The filterOptions should be at the top level of the response
+    const filterOptions = response.filterOptions || {};
 
     return NextResponse.json({
       success: true,
