@@ -12,6 +12,7 @@ import Card from "@/components/core/cards/Card"
 import { useRouter } from "next/navigation"
 import { generateMockMikvah, type MockMikvah } from "@/lib/mockData/mikvah"
 import LocationAwarePage from "@/components/LocationAwarePage"
+import { MikvahFilters } from "@/components/mikvah/MikvahFilters"
 
 // Mikvah type
 interface _Mikvah {
@@ -383,6 +384,14 @@ function MikvahPageContent() {
 
       {/* Bottom Navigation - Fixed at bottom */}
       <ShulBottomNavigation />
+
+      {/* Filters Modal */}
+      <MikvahFilters
+        isOpen={_showFilters}
+        onClose={_handleCloseFilters}
+        onApplyFilters={_handleApplyFilters}
+        currentFilters={activeFilters}
+      />
     </div>
   )
 }
