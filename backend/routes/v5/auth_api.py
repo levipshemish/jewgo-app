@@ -672,6 +672,7 @@ def verify_email():
 
 
 @auth_bp.route('/csrf', methods=['GET'])
+@rate_limit_by_user(max_requests=200, window_minutes=60)  # Very lenient for CSRF tokens
 def csrf_token():
     """Issue CSRF token and set secure cookie."""
     try:
