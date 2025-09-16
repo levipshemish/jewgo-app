@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 /**
@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
  * Redirects /login to /auth/signin for backward compatibility
  * This prevents 404 errors and infinite loops when old URLs are used
  */
-export default function LoginRedirectPage() {
+function LoginRedirectPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -34,5 +34,17 @@ export default function LoginRedirectPage() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
     </div>
+  );
+}
+
+export default function LoginRedirectPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+      </div>
+    }>
+      <LoginRedirectPageContent />
+    </Suspense>
   );
 }

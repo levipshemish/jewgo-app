@@ -109,7 +109,7 @@ export default function SettingsPage() {
                 Sign In
               </Link>
               <p className="text-sm text-gray-500">
-                If you're experiencing issues, the authentication service may be temporarily unavailable.
+                If you&apos;re experiencing issues, the authentication service may be temporarily unavailable.
               </p>
             </div>
           </div>
