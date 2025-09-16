@@ -383,6 +383,55 @@ def refresh_token():
         }), 503
 
 
+@auth_bp.route('/debug-profile', methods=['GET'])
+def debug_profile():
+    """Debug endpoint to see what's happening with profile requests."""
+    try:
+        # Extract token manually
+        auth_header = request.headers.get('Authorization')
+        cookie_token = request.cookies.get('access_token')
+        
+        debug_info = {
+            'has_auth_header': bool(auth_header),
+            'auth_header_prefix': auth_header[:20] + '...' if auth_header else None,
+            'has_cookie_token': bool(cookie_token),
+            'cookie_token_prefix': cookie_token[:20] + '...' if cookie_token else None,
+            'all_cookies': list(request.cookies.keys()),
+            'user_agent': request.headers.get('User-Agent'),
+            'ip': request.remote_addr
+        }
+        
+        # Try token verification
+        from utils.auth_helpers import extract_token_from_request
+        token = extract_token_from_request()
+        
+        if token:
+            debug_info['extracted_token_prefix'] = token[:20] + '...'
+            try:
+                payload = auth_service.verify_token(token)
+                debug_info['token_valid'] = bool(payload)
+                if payload:
+                    debug_info['token_payload'] = {
+                        'uid': payload.get('uid'),
+                        'type': payload.get('type'),
+                        'exp': payload.get('exp')
+                    }
+            except Exception as e:
+                debug_info['token_verification_error'] = str(e)
+        
+        return jsonify({
+            'success': True,
+            'debug_info': debug_info
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
 @auth_bp.route('/profile', methods=['GET'])
 @auth_required
 @rate_limit_by_user(max_requests=1000, window_minutes=60)  # More lenient for passive auth checks in development
