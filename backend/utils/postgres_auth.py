@@ -222,7 +222,7 @@ class PostgresAuthManager:
                     }
                 )
                 
-                # Assign default user role
+                # Assign default user role (id is auto-increment)
                 session.execute(
                     text("""
                         INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
@@ -265,7 +265,9 @@ class PostgresAuthManager:
             raise ValidationError("Email address is already registered")
         except Exception as e:
             logger.error(f"User creation error: {e}")
-            raise AuthenticationError("Failed to create user account")
+            logger.error(f"User creation error details - email: {email}, error type: {type(e).__name__}, error args: {e.args}")
+            # Re-raise the original error with more details for debugging
+            raise AuthenticationError(f"Failed to create user account: {str(e)}")
     
     def authenticate_user(self, email: str, password: str, ip_address: str = None) -> Optional[Dict[str, Any]]:
         """Authenticate user with email/password."""
