@@ -492,6 +492,7 @@ class AuthServiceV5:
         except Exception as e:
             logger.error(f"Registration error for user {email}: {e}")
             logger.error(f"Registration error details - email: {email}, error type: {type(e).__name__}, error args: {e.args}")
+            # Return the detailed error message for debugging
             return False, str(e)
     
     def health_check(self) -> Dict[str, Any]:
