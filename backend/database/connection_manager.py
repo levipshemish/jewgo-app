@@ -53,7 +53,15 @@ class DatabaseConnectionManager:
     def get_session(self):
         """Get a database session."""
         return self._unified_manager.get_session()
-    
+
+    @property
+    def engine(self):
+        """Expose underlying SQLAlchemy engine for backward compatibility.
+        Some legacy code (v4) accesses `connection_manager.engine` directly
+        for operations like `Base.metadata.create_all(engine)`.
+        """
+        return getattr(self._unified_manager, 'engine', None)
+
     def session_scope(self):
         """Get session context manager."""
         return self._unified_manager.session_scope()

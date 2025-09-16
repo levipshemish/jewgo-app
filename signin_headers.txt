@@ -1,0 +1,25 @@
+HTTP/2 200 
+server: nginx
+date: Tue, 16 Sep 2025 15:25:36 GMT
+content-type: application/json
+content-length: 1313
+vary: Accept-Encoding
+set-cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoiYWNjZXNzIiwidWlkIjoiYjg0ZGNkYTc1NmQ4YTc4NGEzZGY3ZmI0ZTQ2OGM1ZmQiLCJlIjoiYXV0aHRlc3RfMTc1ODAzNjMyMUBleGFtcGxlLmNvbSIsImlhdCI6MTc1ODAzNjMzNiwiZXhwIjoxNzU4MDM3MjM2LCJqdGkiOiIwMjcxYzU3YmU3NmMyOGIyYjdjNjBmNTY5MmMwMjAzOCIsImlzcyI6Impld2dvLmFwcCIsImF1ZCI6Impld2dvLmFwcCIsInIiOlt7InIiOiJ1c2VyIiwibCI6MX1dLCJzaWQiOiI4YzMyNmEwZi02ZTJiLTQ2MDYtOTY1NS0wNGQ1Zjk4NGRlYTYifQ.DvR1AQ1ShzRAclFEFMOTE5ynQrC7oixU6A9bLW4Rvfg; Domain=jewgo.app; Expires=Tue, 16 Sep 2025 15:40:36 GMT; Max-Age=900; Secure; HttpOnly; Path=/; SameSite=None
+set-cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoicmVmcmVzaCIsInVpZCI6ImI4NGRjZGE3NTZkOGE3ODRhM2RmN2ZiNGU0NjhjNWZkIiwic2lkIjoiOGMzMjZhMGYtNmUyYi00NjA2LTk2NTUtMDRkNWY5ODRkZWE2IiwiZmlkIjoiZDFjODIxYzQtYjkxNC00MDY1LTljODQtYTZjNDRlZGJiOTdhIiwiaWF0IjoxNzU4MDM2MzM2LCJleHAiOjE3NjE5MjQzMzYsImp0aSI6IjQzNTJkZTY4ZGIwZDU2NmQwNzIxMDY3NjdkZTlhMWM3IiwiaXNzIjoiamV3Z28uYXBwIiwiYXVkIjoiamV3Z28uYXBwIn0.TBWkqBVVXjxW2D1pzHAQX31P4aBl1-ZYJoS2zlUyBN4; Domain=jewgo.app; Expires=Fri, 31 Oct 2025 15:25:36 GMT; Max-Age=3888000; Secure; HttpOnly; Path=/; SameSite=None
+x-api-version: v5
+x-blueprint: auth_api
+x-trace-id: 1f37fee3-c06d-40f4-be51-6020c509a5f1
+x-span-id: 56e862ea
+x-correlation-id: 1148b521
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=31536000; includeSubDomains
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'
+permissions-policy: geolocation=(), microphone=(), camera=()
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-CSRF-Token
+access-control-allow-credentials: true
+access-control-expose-headers: Content-Length,Content-Range
+

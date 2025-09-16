@@ -338,9 +338,18 @@ execute_on_server "
     set -euo pipefail
     if [ -f /etc/nginx/conf.d/default.conf ]; then
         sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.$(date +%s) || true
-        sudo sh -c 'awk '\''/client_header_buffer_size/ { if (seen) { print "#"$0; next } else { seen=1 } } { print }'\'' /etc/nginx/conf.d/default.conf > /tmp/default.conf.fixed'
+        # sed-only approach:
+        # 1) Mark the first occurrence with a KEEP token
+        sudo sed -e '0,/client_header_buffer_size/s//& __KEEP__/' \
+            /etc/nginx/conf.d/default.conf > /tmp/default.conf.step1
+        # 2) Comment any subsequent occurrences (that do not include KEEP)
+        sudo sed -e '/client_header_buffer_size/ { /__KEEP__/! s/^/#/ }' \
+            /tmp/default.conf.step1 > /tmp/default.conf.step2
+        # 3) Remove the KEEP token
+        sudo sed -e 's/ __KEEP__//' /tmp/default.conf.step2 > /tmp/default.conf.fixed
         if [ -s /tmp/default.conf.fixed ]; then
             sudo mv /tmp/default.conf.fixed /etc/nginx/conf.d/default.conf
+            sudo rm -f /tmp/default.conf.step1 /tmp/default.conf.step2 || true
         fi
     fi
     sudo nginx -t
@@ -350,10 +359,27 @@ execute_on_server "
 print_status "Reloading Nginx configuration to apply rate limit changes..."
 execute_on_server "
     if sudo nginx -t; then
-        if systemctl is-active --quiet nginx; then
+        if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
             sudo systemctl reload nginx && echo 'Nginx configuration reloaded successfully (systemd)'
         else
-            sudo nginx -s reload && echo 'Nginx configuration reloaded successfully (signal)'
+            # Try signal reload first
+            if sudo nginx -s reload 2>/dev/null; then
+                echo 'Nginx configuration reloaded successfully (signal)'
+            else
+                echo 'Nginx not running; attempting to start...'
+                if command -v systemctl >/dev/null 2>&1; then
+                    sudo systemctl start nginx || true
+                fi
+                # Fallback direct start
+                sudo nginx || true
+                # Validate again
+                if sudo nginx -t; then
+                    echo 'Nginx started and config valid'
+                else
+                    echo 'Nginx start failed after reload attempt'
+                    exit 1
+                fi
+            fi
         fi
     else
         echo 'Nginx configuration test failed - not reloading'
