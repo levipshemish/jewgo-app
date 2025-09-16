@@ -1,0 +1,25 @@
+HTTP/2 200 
+server: nginx
+date: Tue, 16 Sep 2025 05:34:54 GMT
+content-type: application/json
+content-length: 1298
+vary: Accept-Encoding
+set-cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoiYWNjZXNzIiwidWlkIjoiMWFhYWY5M2Y1NDQ4YTA0NmRhYmJkMTIxNzg3ZGJiOTYiLCJlIjoidGVzdHVzZXJfMTc1ODAwMDg0NkBleGFtcGxlLmNvbSIsImlhdCI6MTc1ODAwMDg5NCwiZXhwIjoxNzU4MDAxNzk0LCJqdGkiOiJlOTNhZjcwOTQ3ODBlMWUzYzBkNjMzZjVjZjlmNzJhZCIsImlzcyI6Impld2dvLmFwcCIsImF1ZCI6Impld2dvLmFwcCIsInIiOlt7InIiOiJ1c2VyIiwibCI6MX1dLCJzaWQiOiJjNDAxZWQyYy01ZTFiLTQwYzYtODZjYy02MjBkMTE0YzFlNmYifQ.5EfS1vlxngOWa1t8ROV3g31OPi7Ukhw0ZoDan5BE6Ao; Domain=${COOKIE_DOMAIN}; Expires=Tue, 16 Sep 2025 05:49:54 GMT; Max-Age=900; Secure; HttpOnly; Path=/; SameSite=None
+set-cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoicmVmcmVzaCIsInVpZCI6IjFhYWFmOTNmNTQ0OGEwNDZkYWJiZDEyMTc4N2RiYjk2Iiwic2lkIjoiYzQwMWVkMmMtNWUxYi00MGM2LTg2Y2MtNjIwZDExNGMxZTZmIiwiZmlkIjoiNzJjZDNjOTYtNjcxNy00MDVmLWE0ZGYtNDBmNjA4NjY0MzljIiwiaWF0IjoxNzU4MDAwODk0LCJleHAiOjE3NjE4ODg4OTQsImp0aSI6ImU5OTUyODkxYTJlNzFkMDBhNTlhMzZhYTNlMjZiZmY3IiwiaXNzIjoiamV3Z28uYXBwIiwiYXVkIjoiamV3Z28uYXBwIn0.3OzhGuMdncG3ymL0uZu_flfL6H0i92Dmm2p3cDabGH8; Domain=${COOKIE_DOMAIN}; Expires=Fri, 31 Oct 2025 05:34:54 GMT; Max-Age=3888000; Secure; HttpOnly; Path=/; SameSite=None
+x-api-version: v5
+x-blueprint: auth_api
+x-trace-id: 06f38475-9bc4-4b10-a471-3784f774bdcb
+x-span-id: ab1b8c70
+x-correlation-id: 97fa557a
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=31536000; includeSubDomains
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'
+permissions-policy: geolocation=(), microphone=(), camera=()
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-CSRF-Token
+access-control-allow-credentials: true
+access-control-expose-headers: Content-Length,Content-Range
+

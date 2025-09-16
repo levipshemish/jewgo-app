@@ -52,9 +52,7 @@ class CookiePolicyManager:
         
         if self.environment == Environment.PRODUCTION.value:
             # Get domain from environment variable, default to .jewgo.app for production
-            domain = os.getenv('COOKIE_DOMAIN')
-            if domain is None:
-                domain = '.jewgo.app'
+            domain = os.getenv('COOKIE_DOMAIN', '.jewgo.app')
             return {
                 **base_config,
                 'secure': True,
