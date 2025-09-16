@@ -352,11 +352,13 @@ def refresh_token():
                 'error': 'Token refresh failed'
             }), 401
 
+        # Preserve existing shape and add top-level tokens for frontend compatibility
         response_data = {
             'success': True,
             'data': {
                 'tokens': new_tokens
             },
+            'tokens': new_tokens,  # compatibility: allow frontend to read tokens at root
             'message': 'Token refreshed successfully',
             'timestamp': datetime.utcnow().isoformat()
         }
@@ -404,6 +406,7 @@ def get_profile():
 
         return jsonify({
             'success': True,
+            'user': profile,  # compatibility for frontend expecting { user }
             'data': {
                 'profile': profile,
                 'session': {
@@ -631,7 +634,8 @@ def reset_password():
     """Reset password with a valid reset token."""
     try:
         data = request.get_json() or {}
-        token = data.get('token')
+        # Accept both 'token' and 'reset_token' for compatibility
+        token = data.get('token') or data.get('reset_token')
         new_password = data.get('new_password')
         if not token or not new_password:
             return jsonify({'success': False, 'error': 'Token and new_password are required'}), 400
@@ -647,20 +651,31 @@ def reset_password():
         return jsonify({'success': False, 'error': 'Password reset service unavailable'}), 503
 
 
-@auth_bp.route('/verify-email', methods=['GET'])
+@auth_bp.route('/verify-email', methods=['GET', 'POST'])
 @rate_limit_by_user(max_requests=20, window_minutes=60)
 def verify_email():
-    """Verify user email using a verification token."""
+    """Verify user email. GET redirects, POST returns JSON."""
     try:
-        token = request.args.get('token') or (request.json.get('token') if request.is_json and request.json else None)
+        auth_mgr = get_postgres_auth()
+        frontend_base = os.getenv('FRONTEND_URL', os.getenv('NEXT_PUBLIC_FRONTEND_URL', 'http://localhost:3000'))
+
+        # JSON POST flow for frontend programmatic verification
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            token = data.get('verification_token') or data.get('token')
+            if not token:
+                return jsonify({'success': False, 'error': 'verification_token is required'}), 400
+            ok = auth_mgr.verify_email(token)
+            if not ok:
+                return jsonify({'success': False, 'error': 'Invalid or expired token'}), 400
+            return jsonify({'success': True, 'message': 'Email verified'})
+
+        # GET flow with redirects for deep linking
+        token = request.args.get('token')
         if not token:
-            # Optionally redirect to error page
-            frontend_base = os.getenv('FRONTEND_URL', os.getenv('NEXT_PUBLIC_FRONTEND_URL', 'http://localhost:3000'))
             error_url = f"{frontend_base}/auth/verify-error?code=MISSING_TOKEN"
             return redirect(error_url, code=302)
-        auth_mgr = get_postgres_auth()
         ok = auth_mgr.verify_email(token)
-        frontend_base = os.getenv('FRONTEND_URL', os.getenv('NEXT_PUBLIC_FRONTEND_URL', 'http://localhost:3000'))
         if not ok:
             error_url = f"{frontend_base}/auth/verify-error?code=INVALID_OR_EXPIRED"
             return redirect(error_url, code=302)
@@ -668,6 +683,9 @@ def verify_email():
         return redirect(success_url, code=302)
     except Exception as e:
         logger.error(f"Email verification error: {e}")
+        # Keep JSON error for POST, generic for GET
+        if request.method == 'POST':
+            return jsonify({'success': False, 'error': 'Verification service unavailable'}), 503
         return jsonify({'success': False, 'error': 'Verification service unavailable'}), 503
 
 
@@ -734,6 +752,125 @@ def csrf_token():
             'success': False,
             'error': 'CSRF token service unavailable'
         }), 503
+
+
+@auth_bp.route('/upgrade-email', methods=['POST'])
+@auth_required
+@rate_limit_by_user(max_requests=5, window_minutes=60)
+def upgrade_email():
+    """Upgrade a guest account to an email/password account and rotate tokens."""
+    try:
+        data = request.get_json() or {}
+        email = (data.get('email') or '').strip().lower()
+        password = data.get('password') or ''
+        name = (data.get('name') or '').strip() or None
+
+        if not email or '@' not in email:
+            return jsonify({'success': False, 'error': 'Valid email is required'}), 400
+        if not password or len(password) < 8:
+            return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
+
+        # Identify current user (must be guest)
+        current_user = getattr(g, 'current_user', None)
+        user_id = (current_user or {}).get('id') if current_user else None
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+
+        # Perform upgrade
+        auth_mgr = get_postgres_auth()
+        upgraded = auth_mgr.upgrade_guest_to_email(user_id, email, password, name)
+        if not upgraded:
+            return jsonify({'success': False, 'error': 'Failed to upgrade guest account'}), 400
+
+        # Map to unified user format
+        formatted_user = {
+            'id': upgraded['user_id'],
+            'email': upgraded['email'],
+            'name': upgraded.get('name'),
+            'roles': upgraded.get('roles', []),
+            'email_verified': upgraded.get('email_verified', False),
+        }
+
+        # Mint new tokens + set cookies
+        tokens = auth_service.generate_tokens(formatted_user, remember_me=False)
+        response = make_response(jsonify({
+            'success': True,
+            'user': formatted_user,
+            'tokens': tokens,
+            'message': 'Account upgraded successfully'
+        }))
+        set_auth(response, tokens.get('access_token', ''), tokens.get('refresh_token', ''), int(tokens.get('expires_in', 3600)))
+        return response
+
+    except Exception as e:
+        logger.error(f"Upgrade email error: {e}")
+        return jsonify({'success': False, 'error': 'Upgrade service unavailable'}), 503
+
+
+@auth_bp.route('/sessions', methods=['GET'])
+@auth_required
+@rate_limit_by_user(max_requests=60, window_minutes=60)
+def list_sessions():
+    """List the user's sessions/devices."""
+    try:
+        current_user = getattr(g, 'current_user', None)
+        user_id = (current_user or {}).get('id') if current_user else None
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        sessions = auth_service.list_sessions(user_id)
+        return jsonify({'success': True, 'sessions': sessions})
+    except Exception as e:
+        logger.error(f"List sessions error: {e}")
+        return jsonify({'success': False, 'error': 'Failed to list sessions'}), 503
+
+
+@auth_bp.route('/sessions/revoke', methods=['POST'])
+@auth_required
+@rate_limit_by_user(max_requests=20, window_minutes=60)
+def revoke_session_route():
+    """Revoke a specific session or a session family."""
+    try:
+        current_user = getattr(g, 'current_user', None)
+        user_id = (current_user or {}).get('id') if current_user else None
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        data = request.get_json() or {}
+        session_id = data.get('session_id')
+        family_id = data.get('family_id')
+        if not session_id and not family_id:
+            return jsonify({'success': False, 'error': 'session_id or family_id required'}), 400
+        if family_id:
+            revoke_family(auth_service.db_manager, fid=family_id)
+            return jsonify({'success': True, 'message': 'Session family revoked'})
+        ok = auth_service.revoke_session(user_id, session_id)
+        if not ok:
+            return jsonify({'success': False, 'error': 'Failed to revoke session'}), 400
+        return jsonify({'success': True, 'message': 'Session revoked'})
+    except Exception as e:
+        logger.error(f"Revoke session error: {e}")
+        return jsonify({'success': False, 'error': 'Failed to revoke session'}), 503
+
+
+@auth_bp.route('/sessions/revoke-all', methods=['POST'])
+@auth_required
+@rate_limit_by_user(max_requests=10, window_minutes=60)
+def revoke_all_sessions_route():
+    """Revoke all sessions for the user; optionally keep current session."""
+    try:
+        current_user = getattr(g, 'current_user', None)
+        user_id = (current_user or {}).get('id') if current_user else None
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        data = request.get_json() or {}
+        keep_current = bool(data.get('keep_current'))
+        current_sid = None
+        if keep_current and hasattr(g, 'token_payload'):
+            current_sid = (getattr(g, 'token_payload') or {}).get('sid')
+        count = auth_service.revoke_all_sessions(user_id, except_sid=current_sid)
+        return jsonify({'success': True, 'revoked': count})
+    except Exception as e:
+        logger.error(f"Revoke all sessions error: {e}")
+        return jsonify({'success': False, 'error': 'Failed to revoke sessions'}), 503
 
 
 @auth_bp.route('/permissions', methods=['GET'])

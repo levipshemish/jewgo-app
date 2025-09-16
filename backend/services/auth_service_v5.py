@@ -544,36 +544,128 @@ class AuthServiceV5:
             # Check cache first
             cache_key = f"auth:user:{user_id}"
             cached_user = self.redis_manager.get(cache_key, prefix='auth')
-            
+
             if cached_user:
                 return cached_user
-            
-            # Query database (would implement actual query)
-            # For now, return mock data
-            user_data = {
-                'id': user_id,
-                'email': f'user{user_id}@example.com',
-                'name': f'User {user_id}',
-                'roles': [{'role': 'user', 'level': 1}],
-                'permissions': ['read'],
-                'email_verified': True,
-                'created_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat()
-            }
-            
+
+            # Query database for real user data with active roles
+            from sqlalchemy import text
+            with self.db_manager.connection_manager.session_scope() as session:
+                row = session.execute(
+                    text(
+                        """
+                        SELECT u.id, u.name, u.email, u.email_verified,
+                               COALESCE(
+                                   JSON_AGG(
+                                       JSON_BUILD_OBJECT(
+                                           'role', ur.role,
+                                           'level', ur.level,
+                                           'granted_at', ur.granted_at
+                                       )
+                                   ) FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
+                                   '[]'
+                               ) AS roles
+                        FROM users u
+                        LEFT JOIN user_roles ur ON u.id = ur.user_id
+                        WHERE u.id = :uid
+                        GROUP BY u.id, u.name, u.email, u.email_verified
+                        """
+                    ),
+                    {"uid": user_id},
+                ).fetchone()
+
+                if not row:
+                    return None
+
+                import json as _json
+                roles = _json.loads(row.roles) if row.roles else []
+
+                user_data = {
+                    'id': row.id,
+                    'email': row.email,
+                    'name': row.name,
+                    'roles': roles,
+                    'permissions': self._get_permissions_from_roles(roles),
+                    'email_verified': row.email_verified,
+                }
+
             # Cache user data
-            self.redis_manager.set(
-                cache_key, 
-                user_data, 
-                ttl=3600,  # 1 hour
-                prefix='auth'
-            )
-            
+            self.redis_manager.set(cache_key, user_data, ttl=3600, prefix='auth')
+
             return user_data
-            
+
         except Exception as e:
             logger.error(f"Error getting user {user_id}: {e}")
             return None
+
+    # Session management helpers
+    def list_sessions(self, user_id: str) -> list[Dict[str, Any]]:
+        """List active and recent sessions for a user."""
+        try:
+            from sqlalchemy import text
+            with self.db_manager.connection_manager.session_scope() as session:
+                rows = session.execute(
+                    text(
+                        """
+                        SELECT id, family_id, user_agent, ip, created_at, last_used, expires_at, revoked_at
+                        FROM auth_sessions
+                        WHERE user_id = :uid
+                        ORDER BY COALESCE(last_used, created_at) DESC
+                        LIMIT 100
+                        """
+                    ),
+                    {"uid": user_id},
+                ).fetchall()
+                return [
+                    {
+                        'id': r.id,
+                        'family_id': r.family_id,
+                        'user_agent': r.user_agent,
+                        'ip': r.ip,
+                        'created_at': r.created_at.isoformat() if r.created_at else None,
+                        'last_used': r.last_used.isoformat() if r.last_used else None,
+                        'expires_at': r.expires_at.isoformat() if r.expires_at else None,
+                        'revoked': r.revoked_at is not None,
+                    }
+                    for r in rows
+                ]
+        except Exception as e:
+            logger.error(f"Error listing sessions for {user_id}: {e}")
+            return []
+
+    def revoke_session(self, user_id: str, session_id: str) -> bool:
+        """Revoke a single session for this user."""
+        try:
+            from sqlalchemy import text
+            with self.db_manager.connection_manager.session_scope() as session:
+                res = session.execute(
+                    text("UPDATE auth_sessions SET revoked_at = NOW() WHERE id = :sid AND user_id = :uid AND revoked_at IS NULL"),
+                    {"sid": session_id, "uid": user_id},
+                )
+                return res.rowcount > 0
+        except Exception as e:
+            logger.error(f"Error revoking session {session_id} for {user_id}: {e}")
+            return False
+
+    def revoke_all_sessions(self, user_id: str, except_sid: Optional[str] = None) -> int:
+        """Revoke all sessions for this user; optionally keep one active session id."""
+        try:
+            from sqlalchemy import text
+            with self.db_manager.connection_manager.session_scope() as session:
+                if except_sid:
+                    res = session.execute(
+                        text("UPDATE auth_sessions SET revoked_at = NOW() WHERE user_id = :uid AND id <> :sid AND revoked_at IS NULL"),
+                        {"uid": user_id, "sid": except_sid},
+                    )
+                else:
+                    res = session.execute(
+                        text("UPDATE auth_sessions SET revoked_at = NOW() WHERE user_id = :uid AND revoked_at IS NULL"),
+                        {"uid": user_id},
+                    )
+                return res.rowcount or 0
+        except Exception as e:
+            logger.error(f"Error revoking all sessions for {user_id}: {e}")
+            return 0
     
     # Step-up Authentication Methods
     
