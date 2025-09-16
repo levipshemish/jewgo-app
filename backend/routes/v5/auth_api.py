@@ -389,7 +389,6 @@ def refresh_token():
 @rate_limit_by_user(max_requests=1000, window_minutes=60)  # More lenient for passive auth checks in development
 def get_profile():
     """Get current user profile."""
-    # Step 1: Check user_id from auth decorator
     try:
         user_id = getattr(g, 'user_id', None)
         if not user_id:
@@ -399,12 +398,8 @@ def get_profile():
                 'error': 'Authentication required',
                 'code': 'MISSING_USER_ID'
             }), 401
-    except Exception as e:
-        logger.error(f"Exception in step 1 (user_id check): {e}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Step 1 failed', 'debug': str(e)}), 503
 
-    # Step 2: Handle guest users
-    try:
+        # Handle guest users
         if user_id.startswith('guest_'):
             logger.info(f"Guest user profile request: {user_id}")
             return jsonify({
@@ -412,40 +407,25 @@ def get_profile():
                 'error': 'Guest users do not have profiles. Please sign in to access your profile.',
                 'code': 'GUEST_USER_NO_PROFILE'
             }), 401
-    except Exception as e:
-        logger.error(f"Exception in step 2 (guest check): {e}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Step 2 failed', 'debug': str(e)}), 503
 
-    # Step 3: Get user profile
-    try:
+        # Get user profile
         logger.info(f"Looking up profile for user: {user_id}")
         profile = auth_service.get_user_profile(user_id)
-    except Exception as e:
-        logger.error(f"Exception in step 3 (get_user_profile): {e}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Step 3 failed', 'debug': str(e)}), 503
         
-    # Step 4: Handle missing profile
-    try:
         if not profile:
+            # Handle case where JWT token is valid but user doesn't exist in database
             logger.warning(f"Valid JWT token found for non-existent user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'User account not found. Please sign in again.',
                 'code': 'USER_NOT_FOUND'
             }), 401
-    except Exception as e:
-        logger.error(f"Exception in step 4 (profile check): {e}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Step 4 failed', 'debug': str(e)}), 503
 
-    # Step 5: Build response
-    try:
-        # Safely get roles and permissions with fallbacks
+        # Build response with safe fallbacks
         user_roles = getattr(g, 'user_roles', None) or []
         user_permissions = getattr(g, 'user_permissions', None) or []
         
-        # Build response with safe datetime handling
         from datetime import datetime
-        timestamp = datetime.utcnow().isoformat()
         
         response_data = {
             'success': True,
@@ -458,13 +438,30 @@ def get_profile():
                     'permissions': user_permissions
                 }
             },
-            'timestamp': timestamp
+            'timestamp': datetime.utcnow().isoformat()
         }
         
         return jsonify(response_data)
+        
     except Exception as e:
-        logger.error(f"Exception in step 5 (response building): {e}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Step 5 failed', 'debug': str(e)}), 503
+        import traceback
+        logger.error(
+            f"Profile retrieval error for user {getattr(g, 'user_id', 'unknown')}: {e}",
+            extra={
+                'user_id': getattr(g, 'user_id', None),
+                'endpoint': 'get_profile',
+                'exception_type': type(e).__name__,
+                'traceback': traceback.format_exc(),
+                'request_ip': request.remote_addr,
+                'user_agent': request.headers.get('User-Agent')
+            },
+            exc_info=True
+        )
+        return jsonify({
+            'success': False,
+            'error': 'Profile service temporarily unavailable',
+            'error_code': 'PROFILE_SERVICE_ERROR'
+        }), 503
 
 
 
