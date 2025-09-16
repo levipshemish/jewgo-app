@@ -205,11 +205,11 @@ class PostgresAuthManager:
                         INSERT INTO users (
                             id, name, email, password_hash, email_verified,
                             verification_token, verification_expires,
-                            "isSuperAdmin", "createdAt", "updatedAt"
+                            "isSuperAdmin", "createdAt", "updatedAt", "emailVerified"
                         ) VALUES (
                             :user_id, :name, :email, :password_hash, FALSE,
                             :verification_token, :verification_expires,
-                            FALSE, NOW(), NOW()
+                            FALSE, NOW(), NOW(), NULL
                         )
                     """),
                     {
@@ -666,10 +666,10 @@ class PostgresAuthManager:
                     text("""
                         INSERT INTO users (
                             id, name, email, email_verified,
-                            "isSuperAdmin", "createdAt", "updatedAt"
+                            "isSuperAdmin", "createdAt", "updatedAt", "emailVerified"
                         ) VALUES (
                             :user_id, :name, :email, TRUE,
-                            FALSE, NOW(), NOW()
+                            FALSE, NOW(), NOW(), NOW()
                         )
                     """),
                     {
