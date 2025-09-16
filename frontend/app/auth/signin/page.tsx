@@ -1,5 +1,6 @@
 "use client";
 
+// Trigger frontend rebuild to fix missing chunks - 2025-09-16
 import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
 import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
