@@ -120,10 +120,10 @@ class EntityRepositoryV5(BaseRepository):
                 """))
                 row = result.fetchone()
                 self._postgis_available = bool(row and row[0])
-                    logger.info(f"PostGIS availability: {self._postgis_available}")
-                except Exception as e:
-                    logger.warning(f"Could not determine PostGIS availability; assuming false: {e}")
-                    self._postgis_available = False
+                logger.info(f"PostGIS availability: {self._postgis_available}")
+        except Exception as e:
+            logger.warning(f"Could not determine PostGIS availability; assuming false: {e}")
+            self._postgis_available = False
     
     def _load_models(self):
         """Load and cache SQLAlchemy model classes."""
