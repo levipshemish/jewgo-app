@@ -684,6 +684,16 @@ def create_app(config_class=None):
             logger.warning(f"Could not import v5 feature flags API blueprint: {e}")
         except Exception as e:
             logger.warning(f"Could not register v5 feature flags API blueprint: {e}")
+        
+        # Register debug API (for troubleshooting)
+        try:
+            from routes.debug_api import debug_bp
+            app.register_blueprint(debug_bp)
+            logger.info("Debug API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import debug API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register debug API blueprint: {e}")
                 
     except ImportError as e:
         logger.warning(f"Could not import v5 feature flags: {e}")
