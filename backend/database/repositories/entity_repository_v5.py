@@ -931,9 +931,10 @@ class EntityRepositoryV5(BaseRepository):
             
             # Status filter (exclude deleted by default)
             if hasattr(model_class, 'status') and 'status' not in filters:
-                query = query.filter(model_class.status != 'deleted')
+                # Filter out deleted records and only show active records by default
+                query = query.filter(model_class.status == 'active')
             elif hasattr(model_class, 'is_active') and 'is_active' not in filters:
-                # For restaurants/synagogues tables, filter by is_active = True
+                # For tables with is_active field, filter by is_active = True
                 query = query.filter(model_class.is_active == True)
             
             # Category filter for entity types that support categories

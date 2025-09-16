@@ -55,58 +55,52 @@ class Restaurant(Base):
     current_time_local = Column(DateTime)  # System-generated (local time snapshot)
     hours_parsed = Column(Boolean, default=False)  # Internal flag — OK to keep
     # 🧾 Required (updated via ORB scrape every 3 weeks)
-    name = Column(String(255), nullable=False)  # Restaurant name (required)
-    address = Column(String(500), nullable=False)  # Street address
-    city = Column(String(100), nullable=False)  # City name
-    state = Column(String(50), nullable=False)  # State abbreviation
-    zip_code = Column(String(20), nullable=False)  # ZIP code
-    phone_number = Column(String(50), nullable=False)  # Phone number
-    website = Column(String(500))  # Website URL
-    certifying_agency = Column(
-        String(100),
-        default="ORB",
-        nullable=False,
-    )  # Auto-filled = "ORB"
-    kosher_category = Column(
-        String(20),
-        nullable=False,
-    )  # ENUM('meat', 'dairy', 'pareve')
-    listing_type = Column(String(100), nullable=False)  # Business category
+    name = Column(Text, nullable=False)  # Restaurant name (required)
+    address = Column(Text, nullable=False)  # Street address
+    city = Column(Text, nullable=False)  # City name
+    state = Column(Text, nullable=False)  # State abbreviation
+    zip_code = Column(Text, nullable=False)  # ZIP code
+    phone_number = Column(Text, nullable=False)  # Phone number
+    website = Column(Text)  # Website URL
+    certifying_agency = Column(Text, nullable=False)  # Auto-filled = "ORB"
+    kosher_category = Column(Text, nullable=False)  # ENUM('Meat', 'Dairy', 'Pareve', 'Fish', 'Unknown')
+    listing_type = Column(Text, nullable=False)  # Business category
     # 📍 Enriched via Google Places API (on creation or scheduled)
-    google_listing_url = Column(String(500))  # Optional (1-time fetch)
+    google_listing_url = Column(Text)  # Optional (1-time fetch)
     place_id = Column(String(255))  # Google Places place ID for fetching reviews
+    google_place_id = Column(String(255))  # Google Places place ID (alternative)
     google_reviews = Column(Text)  # JSONB for recent reviews (limited)
-    price_range = Column(String(20))  # Optional
+    price_range = Column(Text)  # Optional
     short_description = Column(Text)  # Optional (e.g. from GMB or internal AI)
+    description = Column(Text)  # Full description
     hours_of_operation = Column(Text)  # Optional (check every 7 days)
     hours_json = Column(JSONB)  # JSONB for structured hours data
     hours_last_updated = Column(DateTime)  # Track when hours were last updated
-    timezone = Column(String(50))  # Based on geolocation or ORB data
+    timezone = Column(Text)  # Based on geolocation or ORB data
     latitude = Column(Float)  # Based on geocoded address
     longitude = Column(Float)  # Based on geocoded address
+    formatted_address = Column(Text)  # Formatted address from Google
+    last_google_sync_at = Column(DateTime)  # Last Google sync timestamp
     # 🧼 Kosher Details Source ORB data
     is_cholov_yisroel = Column(Boolean)  # Optional (only if dairy)
     is_pas_yisroel = Column(Boolean)  # Optional (only if meat/pareve)
+    is_bishul_yisroel = Column(Boolean)  # Optional (bishul yisroel certification)
     cholov_stam = Column(Boolean, default=False)  # Optional (Cholov Stam certification)
     # 🖼️ Display/UX
-    image_url = Column(
-        String(2000),
-    )  # Optional — fallback to placeholder (increased for multiple images)
-    specials = Column(
-        Text,
-    )  # Optional — special offers or announcements
-    status = Column(
-        String(20),
-        default="active",
-        nullable=False,
-    )  # ENUM('active', 'inactive', 'pending', 'closed')
+    image_url = Column(Text)  # Optional — fallback to placeholder
+    specials = Column(Text)  # Optional — special offers or announcements
+    status = Column(Text)  # ENUM('active', 'inactive', 'pending', 'closed')
     # 📊 Google Reviews & Rating
+    rating = Column(Float)  # General rating
+    review_count = Column(Integer)  # Number of reviews
     google_rating = Column(Float)  # Google rating (1-5)
     google_review_count = Column(Integer)  # Number of Google reviews
-    view_count = Column(Integer, default=0)  # Number of page views
+    view_count = Column(Integer, default=0, nullable=False)  # Number of page views
+    business_types = Column(Text)  # Business types from Google
+    review_snippets = Column(Text)  # Review snippets
     
     # 👤 Owner/Contact Information
-    user_email = Column(String(255))  # User who submitted/owns this listing
+    user_email = Column(Text)  # User who submitted/owns this listing
     owner_name = Column(Text)  # Business owner name
     owner_email = Column(Text)  # Business owner email
     owner_phone = Column(Text)  # Business owner phone
@@ -122,7 +116,7 @@ class Restaurant(Base):
     business_images = Column(ARRAY(String))  # Array of business image URLs
     
     # 📋 Submission & Approval Process
-    submission_status = Column(String(50), default='pending_approval')  # pending_approval, approved, rejected
+    submission_status = Column(Text, default='approved')  # pending_approval, approved, rejected
     submission_date = Column(DateTime)  # When the submission was made
     approval_date = Column(DateTime)  # When it was approved
     approved_by = Column(Text)  # Who approved it
@@ -146,6 +140,10 @@ class Restaurant(Base):
     
     # 🗑️ Soft Delete
     deleted_at = Column(DateTime)  # Soft delete timestamp
+    
+    # 🗺️ PostGIS Geometry
+    # Note: PostGIS geometry column is handled by the database trigger
+    # We don't need to define it in SQLAlchemy as it's managed by PostGIS
     
     # 🔗 Relationships
     orders = relationship("Order", back_populates="restaurant")
