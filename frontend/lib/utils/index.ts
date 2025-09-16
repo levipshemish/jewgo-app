@@ -3,7 +3,6 @@
 
 export * from './dateUtils';
 export * from './analytics';
-export * from './admin';
 export * from './apiRouteUtils';
 export * from './componentUtils';
 export * from './distance';

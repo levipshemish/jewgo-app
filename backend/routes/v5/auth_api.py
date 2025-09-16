@@ -486,6 +486,54 @@ def update_profile():
         }), 503
 
 
+@auth_bp.route('/me', methods=['GET'])
+@auth_required
+@rate_limit_by_user(max_requests=1000, window_minutes=60)  # More lenient for passive auth checks in development
+def get_me():
+    """Get current user profile (alias for /profile endpoint for frontend compatibility)."""
+    try:
+        user_id = getattr(g, 'user_id', None)
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'User not authenticated'
+            }), 401
+
+        # Get user profile
+        profile = auth_service.get_user_profile(user_id)
+        
+        if not profile:
+            return jsonify({
+                'success': False,
+                'error': 'User profile not found'
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'data': profile,  # Frontend expects { success: true, data: profile }
+            'timestamp': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        import traceback
+        logger.error(
+            f"Me endpoint error for user {user_id}: {e}",
+            extra={
+                'user_id': user_id,
+                'endpoint': 'get_me',
+                'exception_type': type(e).__name__,
+                'traceback': traceback.format_exc(),
+                'request_ip': request.remote_addr,
+                'user_agent': request.headers.get('User-Agent')
+            },
+        )
+        return jsonify({
+            'success': False,
+            'error': 'Profile service unavailable',
+            'error_code': 'ME_SERVICE_ERROR'
+        }), 503
+
+
 @auth_bp.route('/change-password', methods=['POST'])
 @auth_required
 @step_up_required('password')  # Require step-up authentication for password changes

@@ -96,8 +96,13 @@ Required variables (see `.env.example`):
 
 ### Analytics
 
-- The route `POST /api/analytics` is a lightweight sink that returns `204` and discards payloads. It exists to prevent 405s from client-side analytics until a provider is integrated.
-- Configure `NEXT_PUBLIC_ANALYTICS_PROVIDER` and `NEXT_PUBLIC_ANALYTICS_API_ENDPOINT` when connecting a real analytics service.
+- `POST /api/analytics` ingests client events. It validates/scrubs payloads and forwards to Google Analytics Measurement Protocol when configured. No payloads are logged or stored server-side.
+- Configure:
+  - `NEXT_PUBLIC_ANALYTICS_ENABLED=true`
+  - `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXX` (client)
+  - `GA_MEASUREMENT_ID=G-XXXXXXX` and `GA_API_SECRET=your_mp_api_secret` (server)
+  - Optional: `NEXT_PUBLIC_ANALYTICS_API_ENDPOINT` to customize the route
+- PII handling: the endpoint drops obvious PII keys (email, phone, name, address, etc.) and long strings before forwarding.
 
 ## Deployment
 
