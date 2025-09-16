@@ -13,7 +13,7 @@ from flask import Flask
 
 # Import v5 route blueprints
 from routes.v5.api_v5 import api_v5
-from routes.v5.auth_v5 import auth_v5
+from routes.v5.auth_api import auth_bp as auth_v5
 from routes.v5.search_v5 import search_v5
 from routes.v5.admin_api import admin_v5
 from routes.v5.metrics_v5 import metrics_v5

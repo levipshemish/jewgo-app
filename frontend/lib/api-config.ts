@@ -4,14 +4,13 @@
  */
 
 /**
- * Get the API base URL based on environment
+ * Get the API base URL - always use production backend
  */
 export function getApiBaseUrl(): string {
-  // Always prioritize NEXT_PUBLIC_BACKEND_URL if it's set
-  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
-    return process.env.NEXT_PUBLIC_BACKEND_URL;
-  }
+  // Always use production API backend
+  return 'https://api.jewgo.app';
   
+  // Legacy code - keeping for reference but not used
   // In production, use the environment variable or default Render URL
   if (process.env.NODE_ENV === 'production') {
     return '';
@@ -23,18 +22,16 @@ export function getApiBaseUrl(): string {
 
 /**
  * Centralized backend URL utility to eliminate duplication across API routes
- * This replaces the pattern: getBackendUrl()
+ * Always returns production backend URL
  */
 export function getBackendUrl(): string {
-  // Always prioritize NEXT_PUBLIC_BACKEND_URL if it's set
-  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
-    return process.env.NEXT_PUBLIC_BACKEND_URL;
-  }
-  return process.env.BACKEND_URL || '';
+  // Always use production API backend
+  return 'https://api.jewgo.app';
 }
 
 export function getBackendUrlForClient(): string {
-  return process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+  // Always use production API backend
+  return 'https://api.jewgo.app';
 }
 
 /**

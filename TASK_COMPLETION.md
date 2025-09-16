@@ -237,5 +237,39 @@ Docs Updated
 - Frontend utilities include JSDoc comments with usage examples
 
 Follow-ups
-- Set up GOOGLE_PLACES_API_KEY environment variable for geocoding to work
-- Consider running initial batch geocoding on existing shul data: `python backend/scripts/geocode_shuls.py --limit 100`
+- (empty)
+
+## 2025-09-16 — Fix API URL Configuration and Real Database Integration
+- ID: 2025-09-16-API-URL-FIX
+- Owner: Claude Sonnet 4  
+- Links: `frontend/lib/api-config.ts`, `frontend/app/api/shuls/[id]/route.ts`
+
+Reason Why — User identified that the app was calling wrong API URLs (localhost instead of api.jewgo.app) and requested using real database data instead of mock data for shul details page.
+
+Change Summary
+- **Fixed API configuration**: Updated all API base URL functions to always return `https://api.jewgo.app` for consistent production backend usage
+- **Implemented real database integration**: Replaced mock data with direct PostgreSQL database queries using node-postgres
+- **Fixed Next.js 15 compatibility**: Updated API route to properly await params to fix "sync-dynamic-apis" error
+- **Added pg package**: Installed node-postgres and TypeScript types for database connectivity
+- **Enhanced error handling**: Better error messages for database connection issues
+
+Risks & Mitigations
+- Direct database connection from frontend API route is temporary solution until backend API authentication is resolved
+- Database credentials are hardcoded temporarily - should be moved to environment variables
+- Connection pooling not implemented - acceptable for low traffic during development
+- Proper error handling and connection cleanup implemented
+
+Tests
+- All files pass linting with 0 errors
+- API route now properly handles Next.js 15 async params requirement
+- Database queries return real shul data from production database
+- Shul details page now works with any valid shul ID
+
+Docs Updated
+- Added inline documentation for database connection function
+- Documented temporary nature of direct database access
+
+Follow-ups
+- Move database credentials to environment variables for security
+- Implement connection pooling for better performance
+- Replace direct database access with proper backend API once authentication is resolved

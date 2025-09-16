@@ -8,21 +8,12 @@ from typing import List, Optional, Callable
 from flask import request, jsonify, g
 from utils.logging_config import get_logger
 from services.auth_service_v5 import AuthServiceV5
+from utils.auth_helpers import extract_token_from_request
 
 logger = get_logger(__name__)
 
 # Initialize auth service
 auth_service = AuthServiceV5()
-
-def extract_token_from_request() -> Optional[str]:
-    """Extract JWT token from request headers or cookies."""
-    # Try Authorization header first
-    auth_header = request.headers.get('Authorization')
-    if auth_header and auth_header.startswith('Bearer '):
-        return auth_header.split(' ', 1)[1]
-    
-    # Try cookies as fallback
-    return request.cookies.get('access_token')
 
 def auth_required(f: Callable) -> Callable:
     """
