@@ -217,6 +217,8 @@ class SynagogueServiceV5:
         Returns filter options extracted from actual synagogue data in the database.
         """
         try:
+            self.logger.info("Starting to get synagogue filter options from database")
+            
             # Get all synagogues to extract unique values
             synagogues, _, _, _ = self.repository.get_entities_with_cursor(
                 entity_type='synagogues',
@@ -226,6 +228,8 @@ class SynagogueServiceV5:
                 limit=1000,  # Get all synagogues for filter options
                 sort_key='created_at_desc'
             )
+            
+            self.logger.info(f"Retrieved {len(synagogues)} synagogues for filter options")
             
             # Extract unique values from database
             denominations = set()
@@ -263,11 +267,11 @@ class SynagogueServiceV5:
                            options_count=len(options))
             return options
         except Exception as e:
-            self.logger.error(f"Error getting synagogue filter options: {e}")
+            self.logger.error(f"Error getting synagogue filter options: {e}", exc_info=True)
             # Fallback to static options
-            return {
-                'denominations': ['Orthodox', 'Conservative', 'Reform', 'Reconstructionist'],
-                'shulTypes': ['Ashkenazi', 'Sephardic', 'Chabad', 'Modern Orthodox'],
+            fallback_options = {
+                'denominations': ['orthodox', 'conservative', 'reform', 'reconstructionist'],
+                'shulTypes': ['traditional', 'ashkenazi', 'sephardic', 'chabad'],
                 'cities': [],
                 'states': [],
                 'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
@@ -275,6 +279,8 @@ class SynagogueServiceV5:
                 'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
                 'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
             }
+            self.logger.info(f"Returning fallback filter options: {fallback_options}")
+            return fallback_options
 
     def get_filter_options(self) -> Dict[str, Any]:
         """Get available filter options for synagogues using efficient database queries."""
