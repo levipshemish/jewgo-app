@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { transformShulToListing, type RealShul } from '@/lib/types/shul';
+import { type RealShul } from '@/lib/types/shul';
 
 // Database connection configuration
 const DATABASE_URL = "postgresql://app_user:Jewgo123@129.80.190.110:5432/jewgo_db";
 
-// This would typically come from your location context or user preferences
-const getUserLocation = (): { latitude: number; longitude: number } | null => {
-  // For now, return null - in a real app you'd get this from user location
-  // or from request headers/cookies
-  return null;
-};
 
 // Function to fetch shul data directly from database
 async function fetchShulFromDatabase(shulId: number): Promise<RealShul | null> {
@@ -133,19 +127,10 @@ export async function GET(
       );
     }
 
-    const userLocation = getUserLocation();
-    
-    // Transform to ShulListing format
-    const listing = transformShulToListing(shulData, userLocation, {
-      viewCount: Math.floor(Math.random() * 500) + 50, // Mock view count
-      shareCount: Math.floor(Math.random() * 50) + 5,   // Mock share count
-      isLiked: false, // This would come from user favorites
-      // reviews: [] // Could add reviews here
-    });
-
+    // Return raw shul data - transformation will be done on the client side
     return NextResponse.json({
       success: true,
-      data: listing
+      data: shulData
     });
 
   } catch (error) {

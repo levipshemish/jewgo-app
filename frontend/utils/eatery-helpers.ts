@@ -36,6 +36,11 @@ function toRadians(degrees: number): number {
  * Format hours for the popup display
  */
 export function formatHoursForPopup(hours: EateryDB['hours']): Array<{ day: string; time: string }> {
+  // If no hours data exists at all, return empty array so status shows "Hours not available"
+  if (!hours || Object.keys(hours).length === 0) {
+    return []
+  }
+  
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   
   const result: Array<{ day: string; time: string }> = days.map(day => {
