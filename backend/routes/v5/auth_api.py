@@ -27,7 +27,10 @@ logger = get_logger(__name__)
 
 # Create blueprint using factory
 auth_bp = BlueprintFactoryV5.create_blueprint(
-    'auth_api', __name__, '/api/v5/auth'
+    'auth_api', __name__, '/api/v5/auth',
+    config_override={
+        'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
+    }
 )
 
 # Initialize auth service, token manager, and JWKS manager

@@ -16,7 +16,10 @@ from utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 google_oauth_bp = BlueprintFactoryV5.create_blueprint(
-    'google_oauth', __name__, '/api/v5/auth/google'
+    'google_oauth', __name__, '/api/v5/auth/google',
+    config_override={
+        'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
+    }
 )
 
 auth_service = AuthServiceV5()

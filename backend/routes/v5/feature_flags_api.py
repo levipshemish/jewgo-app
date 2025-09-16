@@ -11,6 +11,7 @@ feature_flags_bp = BlueprintFactoryV5.create_blueprint(
     'feature_flags_api', __name__, url_prefix='/api/v5/feature-flags', config_override={
         'enable_etag': False,
         'auth_required': False,
+        'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
     }
 )
 

@@ -16,7 +16,10 @@ from utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 apple_oauth_bp = BlueprintFactoryV5.create_blueprint(
-    'apple_oauth', __name__, '/api/v5/auth/apple'
+    'apple_oauth', __name__, '/api/v5/auth/apple',
+    config_override={
+        'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
+    }
 )
 
 auth_service = AuthServiceV5()

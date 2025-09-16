@@ -16,7 +16,10 @@ from utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 magic_link_bp = BlueprintFactoryV5.create_blueprint(
-    'magic_link', __name__, '/api/v5/auth/magic'
+    'magic_link', __name__, '/api/v5/auth/magic',
+    config_override={
+        'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
+    }
 )
 
 auth_service = AuthServiceV5()

@@ -25,7 +25,10 @@ etag_manager = ETagV5Manager()
 
 # Create blueprint using factory
 search_bp = BlueprintFactoryV5.create_blueprint(
-    'search_api', __name__, '/api/v5/search'
+    'search_api', __name__, '/api/v5/search',
+    config_override={
+        'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
+    }
 )
 
 # Search configuration

@@ -63,7 +63,8 @@ etag_manager = ETagV5Manager()
 # Create blueprint using factory
 entity_bp = BlueprintFactoryV5.create_blueprint(
     'entity_api', __name__, '/api/v5', config_override={
-        'factory_sets_etag': False
+        'factory_sets_etag': False,
+        'enable_cors': False,  # Nginx handles CORS to prevent duplicate headers
     }
 )
 
