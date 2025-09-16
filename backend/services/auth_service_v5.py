@@ -384,7 +384,7 @@ class AuthServiceV5:
 
             # Verify current password against stored hash
             from sqlalchemy import text
-            with self.db_manager.connection_manager.session_scope() as session:
+            with self.db_manager.session_scope() as session:
                 row = session.execute(
                     text("SELECT password_hash FROM users WHERE id = :uid"),
                     {"uid": user_id},
@@ -551,7 +551,7 @@ class AuthServiceV5:
 
             # Query database for real user data with active roles
             from sqlalchemy import text
-            with self.db_manager.connection_manager.session_scope() as session:
+            with self.db_manager.session_scope() as session:
                 row = session.execute(
                     text(
                         """
@@ -604,7 +604,7 @@ class AuthServiceV5:
         """List active and recent sessions for a user."""
         try:
             from sqlalchemy import text
-            with self.db_manager.connection_manager.session_scope() as session:
+            with self.db_manager.session_scope() as session:
                 rows = session.execute(
                     text(
                         """
@@ -638,7 +638,7 @@ class AuthServiceV5:
         """Revoke a single session for this user."""
         try:
             from sqlalchemy import text
-            with self.db_manager.connection_manager.session_scope() as session:
+            with self.db_manager.session_scope() as session:
                 res = session.execute(
                     text("UPDATE auth_sessions SET revoked_at = NOW() WHERE id = :sid AND user_id = :uid AND revoked_at IS NULL"),
                     {"sid": session_id, "uid": user_id},
@@ -652,7 +652,7 @@ class AuthServiceV5:
         """Revoke all sessions for this user; optionally keep one active session id."""
         try:
             from sqlalchemy import text
-            with self.db_manager.connection_manager.session_scope() as session:
+            with self.db_manager.session_scope() as session:
                 if except_sid:
                     res = session.execute(
                         text("UPDATE auth_sessions SET revoked_at = NOW() WHERE user_id = :uid AND id <> :sid AND revoked_at IS NULL"),
