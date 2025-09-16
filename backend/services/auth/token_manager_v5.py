@@ -38,7 +38,7 @@ class TokenManagerV5:
     
     def _get_secret(self) -> str:
         """Get JWT secret from environment."""
-        secret = os.getenv('JWT_SECRET_KEY') or os.getenv('JWT_SECRET')
+        secret = os.getenv('JWT_SECRET_KEY')
         if not secret:
             raise RuntimeError("JWT_SECRET_KEY environment variable is required")
         return secret

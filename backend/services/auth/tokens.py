@@ -13,9 +13,9 @@ def _now() -> datetime:
 
 
 def _secret() -> str:
-    key = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET")
+    key = os.getenv("JWT_SECRET_KEY")
     if not key:
-        raise RuntimeError("JWT_SECRET_KEY is required")
+        raise RuntimeError("JWT_SECRET_KEY environment variable is required")
     return key
 
 

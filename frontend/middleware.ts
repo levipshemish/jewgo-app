@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { validateRedirectUrl } from '@/lib/utils/auth-utils';
 import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
-import { AuthError } from '@/lib/auth/enhanced-auth-service';
+import { AuthError } from '@/lib/auth/errors';
 
 // Type definitions for better type safety
 interface _UserData {

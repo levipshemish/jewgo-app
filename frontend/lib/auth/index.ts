@@ -9,6 +9,9 @@
 // PostgreSQL Authentication (NEW - Migration from Supabase)
 export { postgresAuth, type AuthUser } from './postgres-auth';
 
+// Authentication Errors
+export { AuthError, TokenExpiredError, InvalidTokenError, RateLimitError, InsufficientPermissionsError, StepUpRequiredError } from './errors';
+
 // Legacy exports for backward compatibility (will be removed in future versions)
 // export { createServerSupabaseClient } from '../supabase/server';
 // export { supabaseClient } from '../supabase/client-secure';

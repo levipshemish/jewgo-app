@@ -56,7 +56,7 @@ class ComprehensiveHealthService:
         
         try:
             # Check if JWT secret is configured
-            jwt_secret = os.getenv('JWT_SECRET_KEY') or os.getenv('JWT_SECRET')
+            jwt_secret = os.getenv('JWT_SECRET_KEY')
             if not jwt_secret:
                 return HealthCheckResult(
                     name="jwt_keys",

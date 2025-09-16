@@ -40,6 +40,7 @@ interface RegistrationData {
   email: string;
   password: string;
   name?: string;
+  terms_accepted?: boolean;
 }
 
 interface LoginData {
@@ -497,10 +498,16 @@ class PostgresAuthClient {
 
   /**
    * Check if user is currently authenticated
+   * In cookie-mode, this is a best-effort check using available client-side information
    */
   isAuthenticated(): boolean {
-    // Deprecated in cookie-mode: use middleware guard or call /api/auth/me server-side
-    return false;
+    // In cookie-mode, we can't reliably check HttpOnly cookies from client-side
+    // This is a best-effort check - prefer server-side authentication checks
+    if (typeof window === 'undefined') return false;
+    
+    // Check if we have any authentication-related cookies (best effort)
+    const cookies = document.cookie;
+    return cookies.includes('access_token') || cookies.includes('session');
   }
 
   /**
