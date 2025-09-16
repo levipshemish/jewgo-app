@@ -602,8 +602,8 @@ assert_route_configured() {
 # Google OAuth start should exist and be configured (not 501)
 assert_route_configured "https://api.jewgo.app/api/v5/auth/google/start?returnTo=%2F" "Google OAuth start"
 
-# Apple OAuth start should exist and be configured (not 501)
-assert_route_configured "https://api.jewgo.app/api/v5/auth/apple/start?returnTo=%2F" "Apple OAuth start"
+# Apple OAuth is disabled - skip test
+print_status "Apple OAuth is disabled - skipping test"
 
 # Google callback route should exist (will redirect to error when missing params)
 assert_route_present "https://api.jewgo.app/api/v5/auth/google/callback" "Google OAuth callback"

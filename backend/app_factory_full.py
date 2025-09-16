@@ -575,14 +575,16 @@ def create_app(config_class=None):
         except Exception as e:
             logger.warning(f"Could not register Google OAuth blueprint: {e}")
 
-        try:
-            from routes.v5.oauth_apple import apple_oauth_bp
-            app.register_blueprint(apple_oauth_bp)    # /api/v5/auth/apple/*
-            logger.info("Apple OAuth blueprint registered successfully")
-        except ImportError as e:
-            logger.warning(f"Could not import Apple OAuth blueprint: {e}")
-        except Exception as e:
-            logger.warning(f"Could not register Apple OAuth blueprint: {e}")
+        # Apple OAuth disabled for now
+        # try:
+        #     from routes.v5.oauth_apple import apple_oauth_bp
+        #     app.register_blueprint(apple_oauth_bp)    # /api/v5/auth/apple/*
+        #     logger.info("Apple OAuth blueprint registered successfully")
+        # except ImportError as e:
+        #     logger.warning(f"Could not import Apple OAuth blueprint: {e}")
+        # except Exception as e:
+        #     logger.warning(f"Could not register Apple OAuth blueprint: {e}")
+        logger.info("Apple OAuth blueprint disabled")
 
         try:
             from routes.v5.magic_link import magic_link_bp
