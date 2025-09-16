@@ -745,6 +745,16 @@ def create_app(config_class=None):
         except Exception as e:
             logger.warning(f"Could not register debug API blueprint: {e}")
         
+        # Register OAuth debug endpoint (temporary)
+        try:
+            from routes.oauth_debug import oauth_debug_bp
+            app.register_blueprint(oauth_debug_bp)
+            logger.info("OAuth debug blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import OAuth debug blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register OAuth debug blueprint: {e}")
+        
         # Register geocoding API
         try:
             from routes.geocoding import geocoding_bp
