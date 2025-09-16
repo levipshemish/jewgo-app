@@ -333,6 +333,32 @@ if ! check_backend_health; then
     rollback_deployment
 fi
 
+# Reload Nginx configuration to apply rate limit changes
+print_status "Reloading Nginx configuration to apply rate limit changes..."
+execute_on_server "
+    if sudo nginx -t; then
+        sudo systemctl reload nginx && \
+        echo 'Nginx configuration reloaded successfully'
+    else
+        echo 'Nginx configuration test failed - not reloading'
+        exit 1
+    fi
+" "Reloading Nginx configuration"
+
+# Test rate limits after reload
+print_status "Testing rate limits after Nginx reload..."
+for i in {1..3}; do
+    print_status "Rate limit test $i/3:"
+    local response_code
+    response_code=$(curl -s -w "%{http_code}" "https://api.jewgo.app/api/v5/auth/csrf" -o /dev/null)
+    if [ "$response_code" = "200" ]; then
+        print_success "Rate limit test $i passed (HTTP $response_code)"
+    else
+        print_warning "Rate limit test $i failed (HTTP $response_code)"
+    fi
+    sleep 1
+done
+
 # Test V5 API endpoints (via Nginx HTTPS)
 print_status "Testing V5 API endpoints..."
 
