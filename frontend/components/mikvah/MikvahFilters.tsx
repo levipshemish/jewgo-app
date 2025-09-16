@@ -3,27 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Filters } from '@/lib/filters/schema';
+import { useMikvahFilterOptions } from '@/lib/hooks/useMikvahFilterOptions';
 
 interface FilterOptions {
   cities: string[];
   states: string[];
-  agencies: string[];
-  listingTypes: string[];
-  priceRanges: string[];
-  kosherCategories: string[];
   mikvahTypes: string[];
   mikvahCategories: string[];
-  counts: {
-    cities: Record<string, number>;
-    states: Record<string, number>;
-    agencies: Record<string, number>;
-    listingTypes: Record<string, number>;
-    priceRanges: Record<string, number>;
-    kosherCategories: Record<string, number>;
-    mikvahTypes: Record<string, number>;
-    mikvahCategories: Record<string, number>;
-    total: number;
-  };
+  ratings: number[];
+  rabbinicalSupervisions: string[];
+  facilities: string[];
+  accessibility: string[];
+  appointmentTypes: string[];
 }
 
 interface MikvahFiltersProps {
@@ -40,30 +31,7 @@ export const MikvahFilters: React.FC<MikvahFiltersProps> = ({
   currentFilters,
 }) => {
   const [filters, setFilters] = useState<Partial<Filters>>(currentFilters);
-  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch filter options from database
-  useEffect(() => {
-    const fetchFilterOptions = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/v5/restaurants/filter-options');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            setFilterOptions(data.data);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching filter options:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFilterOptions();
-  }, []);
+  const { filterOptions, loading } = useMikvahFilterOptions();
 
   const handleFilterChange = (filterType: keyof Filters, value: any) => {
     setFilters(prev => ({
@@ -133,9 +101,11 @@ export const MikvahFilters: React.FC<MikvahFiltersProps> = ({
               disabled={loading}
             >
               <option value="">All Types</option>
-              <option value="women's">Women&apos;s Mikvah</option>
-              <option value="men's">Men&apos;s Mikvah</option>
-              <option value="unisex">Unisex Mikvah</option>
+              {filterOptions?.mikvahTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -151,28 +121,9 @@ export const MikvahFilters: React.FC<MikvahFiltersProps> = ({
               disabled={loading}
             >
               <option value="">All Categories</option>
-              <option value="community">Community Mikvah</option>
-              <option value="synagogue">Synagogue Mikvah</option>
-              <option value="private">Private Mikvah</option>
-              <option value="hotel">Hotel Mikvah</option>
-            </select>
-          </div>
-
-          {/* Kosher Agency Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kosher Agency
-            </label>
-            <select
-              value={filters.agency || ''}
-              onChange={(e) => handleFilterChange('agency', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
-            >
-              <option value="">All Agencies</option>
-              {filterOptions?.agencies.map((agency) => (
-                <option key={agency} value={agency}>
-                  {agency} ({filterOptions.counts.agencies[agency] || 0})
+              {filterOptions?.mikvahCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
                 </option>
               ))}
             </select>
@@ -190,10 +141,11 @@ export const MikvahFilters: React.FC<MikvahFiltersProps> = ({
               disabled={loading}
             >
               <option value="">Any Rating</option>
-              <option value="4.5">4.5+ Stars</option>
-              <option value="4.0">4.0+ Stars</option>
-              <option value="3.5">3.5+ Stars</option>
-              <option value="3.0">3.0+ Stars</option>
+              {filterOptions?.ratings.map((rating) => (
+                <option key={rating} value={rating}>
+                  {rating}+ Stars
+                </option>
+              ))}
             </select>
           </div>
 

@@ -67,7 +67,15 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
   // We only use this to disable the guest button and display a banner
   useEffect(() => {
     let cancelled = false;
+    let hasRun = false;
+    
     (async () => {
+      // Prevent multiple concurrent CSRF requests (React Strict Mode protection)
+      if (hasRun) {
+        return;
+      }
+      hasRun = true;
+      
       try {
         await postgresAuth.getCsrf();
         if (!cancelled) {

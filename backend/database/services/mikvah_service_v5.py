@@ -191,6 +191,76 @@ class MikvahServiceV5:
             self.logger.exception("Failed to get mikvah", mikvah_id=mikvah_id, error=str(e))
             return None
 
+    def get_filter_options(self) -> Dict[str, Any]:
+        """Get available filter options for mikvahs using real database data.
+
+        Returns filter options extracted from actual mikvah data in the database.
+        """
+        try:
+            # Get all mikvahs to extract unique values
+            mikvahs, _, _, _ = self.repository.get_entities_with_cursor(
+                entity_type='mikvahs',
+                filters={},
+                cursor=None,
+                page=None,
+                limit=1000,  # Get all mikvahs for filter options
+                sort_key='created_at_desc'
+            )
+            
+            # Extract unique values from database
+            mikvah_types = set()
+            mikvah_categories = set()
+            cities = set()
+            states = set()
+            ratings = set()
+            rabbinical_supervisions = set()
+            
+            for mikvah in mikvahs:
+                if mikvah.get('mikvah_type'):
+                    mikvah_types.add(mikvah['mikvah_type'])
+                if mikvah.get('mikvah_category'):
+                    mikvah_categories.add(mikvah['mikvah_category'])
+                if mikvah.get('city'):
+                    cities.add(mikvah['city'])
+                if mikvah.get('state'):
+                    states.add(mikvah['state'])
+                if mikvah.get('rating'):
+                    # Round ratings to nearest 0.5 for cleaner filter options
+                    rounded_rating = round(float(mikvah['rating']) * 2) / 2
+                    ratings.add(rounded_rating)
+                if mikvah.get('rabbinical_supervision'):
+                    rabbinical_supervisions.add(mikvah['rabbinical_supervision'])
+            
+            options: Dict[str, Any] = {
+                'mikvahTypes': sorted(list(mikvah_types)),
+                'mikvahCategories': sorted(list(mikvah_categories)),
+                'cities': sorted(list(cities)),
+                'states': sorted(list(states)),
+                'ratings': sorted(list(ratings), reverse=True),  # Highest ratings first
+                'rabbinicalSupervisions': sorted(list(rabbinical_supervisions)),
+                'facilities': ['changing_rooms', 'shower_facilities', 'towels_provided', 'soap_provided', 'hair_dryers'],
+                'accessibility': ['disabled_access', 'parking_available', 'private_entrance'],
+                'appointmentTypes': ['requires_appointment', 'walk_in_available']
+            }
+            
+            self.logger.info("Successfully retrieved mikvah filter options from database", 
+                           options_count=len(options))
+            return options
+        except Exception as e:
+            self.logger.error(f"Error getting mikvah filter options: {e}")
+            # Fallback to static options
+            return {
+                'mikvahTypes': ['Women\'s', 'Men\'s', 'Both'],
+                'mikvahCategories': ['Community', 'Private', 'Hotel', 'Spa'],
+                'cities': [],
+                'states': [],
+                'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
+                'rabbinicalSupervisions': [],
+                'facilities': ['changing_rooms', 'shower_facilities', 'towels_provided', 'soap_provided', 'hair_dryers'],
+                'accessibility': ['disabled_access', 'parking_available', 'private_entrance'],
+                'appointmentTypes': ['requires_appointment', 'walk_in_available']
+            }
+
     def get_mikvahs(self, filters: Optional[Dict[str, Any]] = None, cursor: Optional[str] = None,
                    page: Optional[int] = None, limit: int = 20, sort_key: str = 'created_at_desc') -> Dict[str, Any]:
         """Get mikvahs with filtering and pagination.

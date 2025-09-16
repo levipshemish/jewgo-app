@@ -23,12 +23,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  // Note: These variables are currently unused but kept for future optimization
-  // const [_authChecked, _setAuthChecked] = useState(false);
-  // const _hasRunRef = useRef(false);
-  // const _checkAuth = useCallback(async () => { ... }, []);
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple concurrent auth checks (React Strict Mode protection)
+    if (hasRunRef.current) {
+      return;
+    }
+    hasRunRef.current = true;
+
     const checkAuth = async () => {
       try {
         // Probe backend profile; 200 => authenticated, 401 => not

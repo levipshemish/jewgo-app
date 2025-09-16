@@ -72,20 +72,13 @@ class PostgresAuthClient {
   private requestTimeoutMs: number = 10000; // 10 seconds default timeout
 
   constructor() {
-    // Use proxy in development, direct backend URL in production
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    if (isDevelopment) {
-      // Use Next.js proxy in development to avoid CORS issues
-      this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    // Always prioritize NEXT_PUBLIC_BACKEND_URL if it's set, regardless of environment
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (backendUrl) {
+      this.baseUrl = backendUrl;
     } else {
-      // Use direct backend URLs in production for enhanced security
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (backendUrl) {
-        this.baseUrl = backendUrl;
-      } else {
-        // Fallback to frontend API routes for backward compatibility
-        this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-      }
+      // Fallback to frontend API routes for backward compatibility
+      this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
     }
   }
 

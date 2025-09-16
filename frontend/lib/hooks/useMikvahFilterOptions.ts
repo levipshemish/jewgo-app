@@ -1,24 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 
-interface ShulFilterOptions {
+interface MikvahFilterOptions {
   cities: string[];
   states: string[];
-  denominations: string[];
-  shulTypes: string[];
-  shulCategories: string[];
-  booleanOptions: Record<string, string>;
+  mikvahTypes: string[];
+  mikvahCategories: string[];
+  ratings: number[];
+  rabbinicalSupervisions: string[];
+  facilities: string[];
+  accessibility: string[];
+  appointmentTypes: string[];
 }
 
-interface UseShulFilterOptionsReturn {
-  filterOptions: ShulFilterOptions | null;
+interface UseMikvahFilterOptionsReturn {
+  filterOptions: MikvahFilterOptions | null;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
-export function useShulFilterOptions(): UseShulFilterOptionsReturn {
-  const [filterOptions, setFilterOptions] = useState<ShulFilterOptions | null>(null);
+export function useMikvahFilterOptions(): UseMikvahFilterOptionsReturn {
+  const [filterOptions, setFilterOptions] = useState<MikvahFilterOptions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +30,7 @@ export function useShulFilterOptions(): UseShulFilterOptionsReturn {
       setLoading(true);
       setError(null);
 
-      const data = await deduplicatedFetch('/api/v5/synagogues/filter-options');
+      const data = await deduplicatedFetch('/api/v5/mikvahs/filter-options');
       
       if (data.success && data.data) {
         setFilterOptions(data.data);
@@ -37,7 +40,7 @@ export function useShulFilterOptions(): UseShulFilterOptionsReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch filter options';
       setError(errorMessage);
-      console.error('Error fetching shul filter options:', err);
+      console.error('Error fetching mikvah filter options:', err);
     } finally {
       setLoading(false);
     }
@@ -56,8 +59,8 @@ export function useShulFilterOptions(): UseShulFilterOptionsReturn {
 }
 
 // Lazy version for the popup
-export function useLazyShulFilterOptions(): UseShulFilterOptionsReturn & { trigger: () => void } {
-  const [filterOptions, setFilterOptions] = useState<ShulFilterOptions | null>(null);
+export function useLazyMikvahFilterOptions(): UseMikvahFilterOptionsReturn & { trigger: () => void } {
+  const [filterOptions, setFilterOptions] = useState<MikvahFilterOptions | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasTriggered, setHasTriggered] = useState(false);
@@ -67,7 +70,7 @@ export function useLazyShulFilterOptions(): UseShulFilterOptionsReturn & { trigg
       setLoading(true);
       setError(null);
 
-      const data = await deduplicatedFetch('/api/v5/synagogues/filter-options');
+      const data = await deduplicatedFetch('/api/v5/mikvahs/filter-options');
       
       if (data.success && data.data) {
         setFilterOptions(data.data);
@@ -77,7 +80,7 @@ export function useLazyShulFilterOptions(): UseShulFilterOptionsReturn & { trigg
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch filter options';
       setError(errorMessage);
-      console.error('Error fetching shul filter options:', err);
+      console.error('Error fetching mikvah filter options:', err);
     } finally {
       setLoading(false);
     }

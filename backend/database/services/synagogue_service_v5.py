@@ -212,20 +212,69 @@ class SynagogueServiceV5:
         return processed
 
     def _get_filter_options(self) -> Dict[str, Any]:
-        """Build filter options metadata for synagogues UI.
+        """Build filter options metadata for synagogues UI using real database data.
 
-        Returns lightweight static/dynamic options that mirror other services.
+        Returns filter options extracted from actual synagogue data in the database.
         """
         try:
+            # Get all synagogues to extract unique values
+            synagogues, _, _, _ = self.repository.get_entities_with_cursor(
+                entity_type='synagogues',
+                filters={},
+                cursor=None,
+                page=None,
+                limit=1000,  # Get all synagogues for filter options
+                sort_key='created_at_desc'
+            )
+            
+            # Extract unique values from database
+            denominations = set()
+            shul_types = set()
+            cities = set()
+            states = set()
+            ratings = set()
+            
+            for shul in synagogues:
+                if shul.get('denomination'):
+                    denominations.add(shul['denomination'])
+                if shul.get('shul_type'):
+                    shul_types.add(shul['shul_type'])
+                if shul.get('city'):
+                    cities.add(shul['city'])
+                if shul.get('state'):
+                    states.add(shul['state'])
+                if shul.get('rating'):
+                    # Round ratings to nearest 0.5 for cleaner filter options
+                    rounded_rating = round(float(shul['rating']) * 2) / 2
+                    ratings.add(rounded_rating)
+            
             options: Dict[str, Any] = {
-                'denominations': self.VALIDATION_RULES.get('denomination', {}).get('allowed_values', []),
-                'service_types': self.VALIDATION_RULES.get('services_type', {}).get('allowed_values', []),
-                'status': self.VALIDATION_RULES.get('status', {}).get('allowed_values', []),
+                'denominations': sorted(list(denominations)),
+                'shulTypes': sorted(list(shul_types)),
+                'cities': sorted(list(cities)),
+                'states': sorted(list(states)),
+                'ratings': sorted(list(ratings), reverse=True),  # Highest ratings first
                 'accessibility': ['wheelchair_accessible', 'parking_available'],
+                'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
+                'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
             }
+            
+            self.logger.info("Successfully retrieved synagogue filter options from database", 
+                           options_count=len(options))
             return options
-        except Exception:
-            return {}
+        except Exception as e:
+            self.logger.error(f"Error getting synagogue filter options: {e}")
+            # Fallback to static options
+            return {
+                'denominations': ['Orthodox', 'Conservative', 'Reform', 'Reconstructionist'],
+                'shulTypes': ['Ashkenazi', 'Sephardic', 'Chabad', 'Modern Orthodox'],
+                'cities': [],
+                'states': [],
+                'ratings': [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0],
+                'accessibility': ['wheelchair_accessible', 'parking_available'],
+                'services': ['daily_minyan', 'shabbat_services', 'holiday_services'],
+                'facilities': ['parking', 'kiddush_facilities', 'social_hall', 'library', 'hebrew_school']
+            }
 
     def get_synagogues(
         self,

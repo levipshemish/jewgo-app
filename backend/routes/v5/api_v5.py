@@ -747,6 +747,70 @@ def not_found(error):
     return jsonify({'error': 'Resource not found'}), 404
 
 
+@api_v5.route('/synagogues/filter-options', methods=['GET'])
+@optional_auth
+@rate_limit_by_user(max_requests=100, window_minutes=60)
+def get_synagogue_filter_options():
+    """Get filter options for synagogues."""
+    try:
+        from database.services.synagogue_service_v5 import SynagogueServiceV5
+        from database.repositories.entity_repository_v5 import EntityRepositoryV5
+        from cache.redis_manager_v5 import RedisManagerV5
+        from utils.feature_flags_v5 import FeatureFlagsV5
+        
+        # Initialize services
+        entity_repo = EntityRepositoryV5()
+        redis_manager = RedisManagerV5()
+        feature_flags = FeatureFlagsV5()
+        service = SynagogueServiceV5(entity_repo, redis_manager, feature_flags)
+        
+        # Get filter options
+        filter_options = service._get_filter_options()
+        
+        return jsonify({
+            'success': True,
+            'data': filter_options
+        })
+    except Exception as e:
+        logger.exception("Error getting synagogue filter options", error=str(e))
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get filter options'
+        }), 500
+
+
+@api_v5.route('/mikvahs/filter-options', methods=['GET'])
+@optional_auth
+@rate_limit_by_user(max_requests=100, window_minutes=60)
+def get_mikvah_filter_options():
+    """Get filter options for mikvahs."""
+    try:
+        from database.services.mikvah_service_v5 import MikvahServiceV5
+        from database.repositories.entity_repository_v5 import EntityRepositoryV5
+        from cache.redis_manager_v5 import RedisManagerV5
+        from utils.feature_flags_v5 import FeatureFlagsV5
+        
+        # Initialize services
+        entity_repo = EntityRepositoryV5()
+        redis_manager = RedisManagerV5()
+        feature_flags = FeatureFlagsV5()
+        service = MikvahServiceV5(entity_repo, redis_manager, feature_flags)
+        
+        # Get filter options
+        filter_options = service.get_filter_options()
+        
+        return jsonify({
+            'success': True,
+            'data': filter_options
+        })
+    except Exception as e:
+        logger.exception("Error getting mikvah filter options", error=str(e))
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get filter options'
+        }), 500
+
+
 @api_v5.errorhandler(500)
 def internal_server_error(error):
     """Handle internal server errors."""

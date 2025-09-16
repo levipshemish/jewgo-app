@@ -94,7 +94,15 @@ function SignInForm() {
   // Probe CSRF availability on mount
   useEffect(() => {
     let cancelled = false;
+    let hasRun = false;
+    
     (async () => {
+      // Prevent multiple concurrent CSRF requests (React Strict Mode protection)
+      if (hasRun) {
+        return;
+      }
+      hasRun = true;
+      
       try {
         await postgresAuth.getCsrf();
         if (!cancelled) {
