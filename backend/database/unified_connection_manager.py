@@ -459,13 +459,15 @@ class UnifiedConnectionManager:
         
         # PostgreSQL-specific connection arguments
         if 'postgresql' in self.database_url:
-            connect_args.update({
-                'keepalives_idle': ConfigManager.get_pg_keepalives_idle(),
-                'keepalives_interval': ConfigManager.get_pg_keepalives_interval(),
-                'keepalives_count': ConfigManager.get_pg_keepalives_count(),
-                'statement_timeout': ConfigManager.get_pg_statement_timeout(),
-                'idle_in_transaction_session_timeout': ConfigManager.get_pg_idle_tx_timeout(),
-            })
+            # Temporarily disable problematic connection arguments for debugging
+            # connect_args.update({
+            #     'keepalives_idle': int(ConfigManager.get_pg_keepalives_idle()),
+            #     'keepalives_interval': int(ConfigManager.get_pg_keepalives_interval()),
+            #     'keepalives_count': int(ConfigManager.get_pg_keepalives_count()),
+            #     'statement_timeout': int(ConfigManager.get_pg_statement_timeout()),
+            #     'idle_in_transaction_session_timeout': int(ConfigManager.get_pg_idle_tx_timeout()),
+            # })
+            pass
             
             # SSL configuration
             ssl_mode = ConfigManager.get_pg_sslmode()
