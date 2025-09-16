@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const hasRunRef = useRef(false);
+  const checkAuthPromiseRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     // Prevent multiple concurrent auth checks (React Strict Mode protection)
@@ -33,20 +34,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hasRunRef.current = true;
 
     const checkAuth = async () => {
-      try {
-        // Probe backend profile; 200 => authenticated, 401 => not
-        const currentUser = await postgresAuth.getProfile();
-        setUser(currentUser);
-      } catch (error) {
-        // Handle rate limiting gracefully
-        if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
-          console.warn('Auth rate limit exceeded, treating as unauthenticated');
-        }
-        // Treat any failure as unauthenticated for client UX
-        setUser(null);
-      } finally {
-        setLoading(false);
+      // Prevent concurrent auth checks
+      if (checkAuthPromiseRef.current) {
+        return checkAuthPromiseRef.current;
       }
+
+      checkAuthPromiseRef.current = (async () => {
+        try {
+          // Probe backend profile; 200 => authenticated, 401 => not
+          const currentUser = await postgresAuth.getProfile();
+          setUser(currentUser);
+        } catch (error) {
+          // Handle rate limiting gracefully
+          if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+            console.warn('Auth rate limit exceeded, treating as unauthenticated');
+          }
+          // Treat any failure as unauthenticated for client UX
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      })();
+
+      return checkAuthPromiseRef.current;
     };
 
     checkAuth();

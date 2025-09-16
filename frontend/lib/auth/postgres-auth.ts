@@ -70,6 +70,11 @@ class PostgresAuthClient {
   private lastRefreshTime: number = 0;
   private refreshBackoffDelay: number = 1000; // Base delay in ms
   private requestTimeoutMs: number = 10000; // 10 seconds default timeout
+  
+  // Request throttling and deduplication
+  private lastRequestTime: { [key: string]: number } = {};
+  private minRequestInterval: number = 100; // Minimum 100ms between requests to same endpoint
+  private pendingRequests: { [key: string]: Promise<Response> } = {};
 
   constructor() {
     // Always prioritize NEXT_PUBLIC_BACKEND_URL if it's set, regardless of environment
@@ -86,6 +91,26 @@ class PostgresAuthClient {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<Response> {
+    // Create a unique key for this request to enable deduplication
+    const requestKey = `${endpoint}:${options.method || 'GET'}:${JSON.stringify(options.body || {})}`;
+    
+    // If there's already a pending identical request, return that promise
+    if (this.pendingRequests[requestKey]) {
+      return this.pendingRequests[requestKey];
+    }
+    
+    // Throttle requests to prevent rapid-fire API calls
+    const now = Date.now();
+    const lastRequest = this.lastRequestTime[endpoint] || 0;
+    const timeSinceLastRequest = now - lastRequest;
+    
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const delay = this.minRequestInterval - timeSinceLastRequest;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    this.lastRequestTime[endpoint] = Date.now();
+    
     // Use direct backend URL if available, otherwise fallback to API routes
     const isDirectBackend = this.baseUrl !== (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
     const url = isDirectBackend ? `${this.baseUrl}/api/v5/auth${endpoint}` : `${this.baseUrl}/api/v5/auth${endpoint}`;
@@ -126,19 +151,21 @@ class PostgresAuthClient {
       }
     }
 
-    try {
-      const response = await fetch(url, config);
-      clearTimeout(timeoutId);
-      
-      // Handle rate limiting
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        throw new PostgresAuthError(
-          `Rate limit exceeded. Try again ${retryAfter ? `in ${retryAfter} seconds` : 'later'}.`,
-          'RATE_LIMIT_EXCEEDED',
-          429
-        );
-      }
+    // Create the request promise and store it for deduplication
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(url, config);
+        clearTimeout(timeoutId);
+        
+        // Handle rate limiting
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          throw new PostgresAuthError(
+            `Rate limit exceeded. Try again ${retryAfter ? `in ${retryAfter} seconds` : 'later'}.`,
+            'RATE_LIMIT_EXCEEDED',
+            429
+          );
+        }
 
       // Handle 401 responses with loop guard
       if (response.status === 401) {
@@ -180,7 +207,16 @@ class PostgresAuthClient {
         'Network error - please check your connection',
         'NETWORK_ERROR'
       );
+    } finally {
+      // Clean up the pending request
+      delete this.pendingRequests[requestKey];
     }
+    })();
+
+    // Store the promise for deduplication
+    this.pendingRequests[requestKey] = requestPromise;
+    
+    return requestPromise;
   }
 
   /**

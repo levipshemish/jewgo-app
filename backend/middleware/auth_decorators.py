@@ -295,6 +295,11 @@ def rate_limit_by_user(max_requests: int = 100, window_minutes: int = 60) -> Cal
     def decorator(f: Callable) -> Callable:
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            # In development, be more lenient with rate limits
+            import os
+            is_development = os.getenv('FLASK_ENV', 'development') == 'development'
+            effective_max_requests = max_requests * (10 if is_development else 1)  # 10x more lenient in dev
+            
             # Determine principal: user ID if authenticated, else client IP
             endpoint = request.endpoint or f.__name__
             if hasattr(g, 'current_user') and g.current_user:
@@ -314,7 +319,7 @@ def rate_limit_by_user(max_requests: int = 100, window_minutes: int = 60) -> Cal
                 
                 current_count = redis_manager.get(rate_limit_key, prefix='rate_limit') or 0
                 
-                if int(current_count) >= max_requests:
+                if int(current_count) >= effective_max_requests:
                     user_id = None
                     if hasattr(g, 'current_user') and g.current_user:
                         user_id = g.current_user.get('id')
@@ -322,12 +327,14 @@ def rate_limit_by_user(max_requests: int = 100, window_minutes: int = 60) -> Cal
                                  user_id=user_id,
                                  endpoint=endpoint,
                                  current_count=current_count,
-                                 max_requests=max_requests)
+                                 max_requests=effective_max_requests,
+                                 is_development=is_development)
                     
                     return jsonify({
                         'error': 'Rate limit exceeded',
                         'code': 'RATE_LIMIT_EXCEEDED',
-                        'retry_after': window_minutes * 60
+                        'retry_after': window_minutes * 60,
+                        'message': f'Too many requests for {principal}'
                     }), 429
                 
                 # Increment counter

@@ -192,7 +192,7 @@ def guest_login():
 
 
 @auth_bp.route('/register', methods=['POST'])
-@rate_limit_by_user(max_requests=5, window_minutes=60)  # Very strict rate limiting for registration
+@rate_limit_by_user(max_requests=20, window_minutes=60)  # More lenient for development
 def register():
     """Register new user account."""
     try:
@@ -384,7 +384,7 @@ def refresh_token():
 
 @auth_bp.route('/profile', methods=['GET'])
 @auth_required
-@rate_limit_by_user(max_requests=300, window_minutes=60)  # More lenient for passive auth checks
+@rate_limit_by_user(max_requests=1000, window_minutes=60)  # More lenient for passive auth checks in development
 def get_profile():
     """Get current user profile."""
     try:
@@ -690,7 +690,7 @@ def verify_email():
 
 
 @auth_bp.route('/csrf', methods=['GET'])
-@rate_limit_by_user(max_requests=200, window_minutes=60)  # Very lenient for CSRF tokens
+@rate_limit_by_user(max_requests=500, window_minutes=60)  # Very lenient for CSRF tokens in development
 def csrf_token():
     """Issue CSRF token and set secure cookie."""
     try:
