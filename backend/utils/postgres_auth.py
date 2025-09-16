@@ -189,7 +189,7 @@ class PostgresAuthManager:
             user_id = secrets.token_hex(16)
             verification_token = secrets.token_urlsafe(32)
             
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Check if email already exists
                 result = session.execute(
                     text("SELECT id FROM users WHERE email = :email"),
@@ -274,7 +274,7 @@ class PostgresAuthManager:
         try:
             email = email.lower().strip()
             
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Get user details with role information
                 result = session.execute(
                     text("""
@@ -400,7 +400,7 @@ class PostgresAuthManager:
         
         # Get fresh user data from database
         try:
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 result = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.email_verified,
@@ -451,7 +451,7 @@ class PostgresAuthManager:
         
         # Get user data for new access token
         try:
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 result = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.email_verified,
@@ -504,7 +504,7 @@ class PostgresAuthManager:
     def get_user_roles(self, user_id: str) -> List[Dict[str, Any]]:
         """Get active user roles."""
         try:
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 rows = session.execute(
                     text("""
                         SELECT role, level, granted_at, expires_at
@@ -526,7 +526,7 @@ class PostgresAuthManager:
     def assign_user_role(self, user_id: str, role: str, level: int, granted_by: str = None, expires_at: datetime = None) -> bool:
         """Assign role to user."""
         try:
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Check if role already exists
                 existing = session.execute(
                     text("SELECT id FROM user_roles WHERE user_id = :user_id AND role = :role"),
@@ -579,7 +579,7 @@ class PostgresAuthManager:
     def revoke_user_role(self, user_id: str, role: str) -> bool:
         """Revoke role from user."""
         try:
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 session.execute(
                     text("""
                         UPDATE user_roles SET is_active = FALSE
@@ -597,7 +597,7 @@ class PostgresAuthManager:
     def verify_email(self, verification_token: str) -> bool:
         """Verify user email with verification token."""
         try:
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Find user with valid verification token
                 result = session.execute(
                     text("""
@@ -662,7 +662,7 @@ class PostgresAuthManager:
             user_id = secrets.token_hex(16)
             guest_email = f"guest-{user_id}@guest.local"
             
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Insert new guest user with all required fields
                 session.execute(
                     text("""
@@ -714,7 +714,7 @@ class PostgresAuthManager:
         try:
             email = email.lower().strip()
             
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Check if user exists (don't reveal existence in response)
                 result = session.execute(
                     text("SELECT id FROM users WHERE email = :email AND email NOT LIKE '%@guest.local'"),
@@ -794,7 +794,7 @@ class PostgresAuthManager:
             if not password_validation['is_valid']:
                 raise ValidationError(f"Password requirements not met: {'; '.join(password_validation['issues'])}")
             
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Find user with valid reset token
                 result = session.execute(
                     text("""
@@ -868,7 +868,7 @@ class PostgresAuthManager:
 
             password_hash = self.password_security.hash_password(password)
 
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 # Verify the current user is a guest (check by email pattern)
                 row = session.execute(
                     text("SELECT id, email FROM users WHERE id = :uid"),
@@ -977,7 +977,7 @@ class PostgresAuthManager:
     def _log_auth_event(self, user_id: str, action: str, success: bool, details: Dict[str, Any] = None, ip_address: str = None):
         """Log authentication events for audit purposes."""
         try:
-            with self.db.connection_manager.session_scope() as session:
+            with self.db.session_scope() as session:
                 stmt = text("""
                     INSERT INTO auth_audit_log (user_id, action, ip_address, success, details, created_at)
                     VALUES (:user_id, :action, :ip_address, :success, :details, NOW())
