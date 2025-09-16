@@ -5,7 +5,7 @@ Provides proper CORS handling with dynamic origin validation,
 credentials support, and preflight request handling.
 """
 
-from flask import request, make_response, current_app
+from flask import request, make_response
 from typing import List, Optional
 import os
 import re

@@ -8,9 +8,7 @@ WARNING: This will remove security features and may result in data loss.
 Only use this if you need to revert the migration due to critical issues.
 """
 
-import os
 import sys
-import psycopg2
 import logging
 from datetime import datetime
 from pathlib import Path

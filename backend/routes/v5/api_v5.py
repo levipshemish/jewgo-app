@@ -6,8 +6,8 @@ and store endpoints using a generic entity pattern for maximum code reuse.
 Replaces: api_v4.py, restaurants_api.py, synagogues_api.py, and store-related routes.
 """
 
-from flask import Blueprint, request, jsonify, g
-from typing import Dict, Any, Optional, List
+from flask import request, jsonify, g
+from typing import Dict, Any
 import json
 import os
 from functools import wraps
@@ -24,14 +24,9 @@ from database.services.restaurant_service_v5 import RestaurantServiceV5
 from database.services.synagogue_service_v5 import SynagogueServiceV5
 from database.services.mikvah_service_v5 import MikvahServiceV5
 from database.services.store_service_v5 import StoreServiceV5
-from middleware.auth_v5 import AuthV5Middleware
-from middleware.rate_limit_v5 import RateLimitV5Middleware
-from middleware.idempotency_v5 import IdempotencyV5Middleware
-from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from utils.cursor_v5 import CursorV5Manager
 from utils.etag_v5 import ETagV5Manager
-from cache.redis_manager_v5 import RedisManagerV5
 
 logger = get_logger(__name__)
 

@@ -2,7 +2,7 @@ import boto3
 import os
 import gzip
 import tarfile
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 class CloudBackupManager:

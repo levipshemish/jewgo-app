@@ -163,7 +163,7 @@ class MetricsCollector:
                 thread_count=thread_count
             )
             
-        with self.lock:
+            with self.lock:
                 self.metrics_history['system'].append(metrics)
                 self.current_metrics['system'] = metrics
             

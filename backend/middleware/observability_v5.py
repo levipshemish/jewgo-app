@@ -12,11 +12,11 @@ import time
 import json
 import uuid
 import re
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 from functools import wraps
 from collections import defaultdict
 
-from flask import g, request, jsonify
+from flask import g, request
 
 from utils.logging_config import get_logger
 

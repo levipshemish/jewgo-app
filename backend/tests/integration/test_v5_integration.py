@@ -8,8 +8,6 @@ authentication, entity management, search, and admin functionality.
 
 import pytest
 import json
-from datetime import datetime
-from typing import Dict, Any
 
 from database.connection_manager import get_connection_manager
 from utils.logging_config import get_logger

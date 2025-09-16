@@ -20,19 +20,18 @@ import json
 import time
 import threading
 from collections import defaultdict, deque
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union, Tuple, Callable
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, Callable
 from dataclasses import dataclass, asdict
 from functools import wraps
 import re
 
-from sqlalchemy import text, event, create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy import text, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import QueuePool
 
 from utils.logging_config import get_logger
-from cache.advanced_cache_manager import get_advanced_cache_manager, cache_result
+from cache.advanced_cache_manager import get_advanced_cache_manager
 
 logger = get_logger(__name__)
 

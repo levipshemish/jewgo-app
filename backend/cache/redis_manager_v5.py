@@ -12,8 +12,8 @@ import json
 import pickle
 import time
 import zlib
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union, Tuple
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 import redis
 import redis.sentinel

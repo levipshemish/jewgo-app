@@ -9,7 +9,7 @@ security hardening system with validation and startup checks.
 import os
 import json
 import yaml
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path

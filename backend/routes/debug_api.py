@@ -650,7 +650,7 @@ def debug_fix_user_roles():
 def test_password():
     """Debug endpoint to test password verification"""
     try:
-        from utils.postgres_auth import PostgresAuthManager, PasswordSecurity
+        from utils.postgres_auth import PasswordSecurity
         from database.connection_manager import get_connection_manager
         
         data = request.get_json()

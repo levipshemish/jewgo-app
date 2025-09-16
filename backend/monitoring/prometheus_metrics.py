@@ -8,11 +8,10 @@ CSRF validation, performance tracking, and security monitoring.
 
 import time
 import threading
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from collections import defaultdict, deque
-import json
 
 try:
     from prometheus_client import (

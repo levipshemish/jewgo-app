@@ -18,9 +18,8 @@ Last Updated: 2025-01-27
 import re
 import json
 from functools import wraps
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any
 from flask import request, jsonify, g, current_app
-from werkzeug.exceptions import BadRequest, Forbidden
 
 from utils.logging_config import get_logger
 from security.advanced_security_manager import get_security_manager, SecurityLevel

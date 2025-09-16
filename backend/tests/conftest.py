@@ -4,10 +4,8 @@ Pytest configuration and fixtures for backend tests.
 
 import os
 import pytest
-from flask import Flask
 from app_factory_full import create_app
-from unittest.mock import Mock, patch
-import importlib
+from unittest.mock import Mock
 
 # Test configuration
 def pytest_configure(config):

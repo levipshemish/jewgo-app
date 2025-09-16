@@ -4,9 +4,8 @@ Provides secure, reusable decorators for protecting routes.
 """
 
 from functools import wraps
-from typing import List, Optional, Callable, Any
+from typing import List, Optional, Callable
 from flask import request, jsonify, g
-import jwt
 from utils.logging_config import get_logger
 from services.auth_service_v5 import AuthServiceV5
 

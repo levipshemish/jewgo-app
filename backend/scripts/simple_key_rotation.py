@@ -7,12 +7,11 @@ This is a standalone script that doesn't depend on the full application.
 import os
 import sys
 import time
-import json
 import logging
 import argparse
 import signal
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Tuple
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
@@ -20,7 +19,6 @@ import redis
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import hashlib
-import base64
 
 # Configure logging
 logging.basicConfig(

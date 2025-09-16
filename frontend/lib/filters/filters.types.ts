@@ -111,6 +111,16 @@ export interface FilterOptions {
   states?: string[];
   ratings?: number[];
   kosherDetails?: string[];
+  
+  // Shul-specific options
+  denominations?: string[];
+  shulTypes?: string[];
+  shulCategories?: string[];
+  
+  // Mikvah-specific options
+  appointmentRequired?: string[];
+  statuses?: string[];
+  contactPersons?: string[];
 }
 
 export interface AppliedFilters extends Filters {
@@ -239,9 +249,14 @@ export interface DraftFilters extends FilterState {
   priceRange?: [number, number];
   kosherDetails?: string;
 
+  // Location filters
+  city?: string;
+  state?: string;
+
   // Shul-specific filters
   denomination?: string;
   shulType?: string;
+  shulCategory?: string;
   hasDailyMinyan?: boolean;
   hasShabbatServices?: boolean;
   hasHolidayServices?: boolean;

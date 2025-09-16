@@ -1,6 +1,5 @@
 import os
 import json
-from typing import Optional
 
 
 def _dev_bypass_enabled() -> bool:
@@ -61,7 +60,7 @@ def verify_or_429(request):
                 }), 429
 
         return None
-    except Exception as e:
+    except Exception:
         # On verification errors, fail closed in production, open in dev
         if os.getenv("ENVIRONMENT", "development").lower() == "production":
             return jsonify({"error": "reCAPTCHA verification error"}), 429

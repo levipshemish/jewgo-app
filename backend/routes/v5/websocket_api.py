@@ -15,14 +15,13 @@ Last Updated: 2025-01-15
 """
 
 from flask import Blueprint, request, jsonify
-from flask_socketio import emit, join_room, leave_room
+from flask_socketio import emit
 from datetime import datetime
-from typing import Dict, Any, Optional
 
 from utils.logging_config import get_logger
 from middleware.auth_v5 import require_auth_v5
 from middleware.rate_limit_v5 import rate_limit_v5
-from services.websocket_integration import get_websocket_integration, RealTimeEventType
+from services.websocket_integration import get_websocket_integration
 
 logger = get_logger(__name__)
 
@@ -81,7 +80,7 @@ def broadcast_restaurant_update(restaurant_id: int):
         
         return jsonify({
             'success': True,
-            'message': f'Restaurant update broadcasted to subscribers',
+            'message': 'Restaurant update broadcasted to subscribers',
             'restaurant_id': restaurant_id,
             'update_type': update_type,
             'timestamp': datetime.now().isoformat()

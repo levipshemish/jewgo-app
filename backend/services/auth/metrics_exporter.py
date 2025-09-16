@@ -5,9 +5,8 @@ This module provides Prometheus metrics export for authentication performance
 monitoring and Grafana dashboard integration.
 """
 
-import time
 from typing import Dict, Any, Optional
-from prometheus_client import Counter, Histogram, Gauge, Summary, CollectorRegistry, generate_latest
+from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry, generate_latest
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

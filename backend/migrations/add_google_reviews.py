@@ -6,9 +6,7 @@ This script adds the place_id field to restaurants table and creates the google_
 
 import os
 import sys
-from sqlalchemy import create_engine, text, MetaData, Table, Column, String, Integer, Text, DateTime, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from sqlalchemy import create_engine, text
 
 # Add the backend directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

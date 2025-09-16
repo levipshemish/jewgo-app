@@ -11,11 +11,10 @@ import re
 import hashlib
 import threading
 import time
-from typing import Dict, Any, List, Optional, Set, Tuple
+from typing import Dict, Any, List, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
-import json
 
 from utils.logging_config import get_logger
 from database.connection_manager import get_connection_manager

@@ -8,14 +8,12 @@ queries, transaction management, and batch operations for v5 API consolidation.
 
 from __future__ import annotations
 
-import json
-import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from sqlalchemy import and_, func, or_, text, desc, asc
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.exc import IntegrityError, StatementError
+from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
 from database.base_repository import BaseRepository
 from database.connection_manager import DatabaseConnectionManager
@@ -194,7 +192,7 @@ class EntityRepositoryV5(BaseRepository):
                 # Apply geospatial filtering if needed
                 logger.info(f"DEBUG: Distance pagination - geospatial={mapping.get('geospatial')}, has_filters={bool(filters)}, has_lat={bool(filters and filters.get('latitude'))}, has_lng={bool(filters and filters.get('longitude'))}")
                 # TEMPORARY DEBUG: Disable geospatial filtering to test
-                logger.info(f"DEBUG: Distance pagination - TEMPORARILY DISABLING geospatial filter for debugging")
+                logger.info("DEBUG: Distance pagination - TEMPORARILY DISABLING geospatial filter for debugging")
                 # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
                 #     logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
                 #     query = self._apply_geospatial_filter(query, model_class, filters)
@@ -512,23 +510,23 @@ class EntityRepositoryV5(BaseRepository):
                 
                 # Disable cursor pagination for distance sorting since it's done in application layer
                 if sort_key == 'distance_asc':
-                    logger.info(f"DEBUG CURSOR: Distance sorting detected - disabling cursor pagination")
+                    logger.info("DEBUG CURSOR: Distance sorting detected - disabling cursor pagination")
                 elif result_entities:
                     if has_next:
-                        logger.info(f"DEBUG CURSOR: Generating next_cursor for last entity")
+                        logger.info("DEBUG CURSOR: Generating next_cursor for last entity")
                         next_cursor = self._generate_cursor(
                             result_entities[-1], sort_key, 'next', entity_type
                         )
                         logger.info(f"DEBUG CURSOR: Generated next_cursor={next_cursor}")
                     else:
-                        logger.info(f"DEBUG CURSOR: No next_cursor generated because has_next=False")
+                        logger.info("DEBUG CURSOR: No next_cursor generated because has_next=False")
                     
                     prev_cursor = self._generate_cursor(
                         result_entities[0], sort_key, 'prev', entity_type
                     )
                     logger.info(f"DEBUG CURSOR: Generated prev_cursor={prev_cursor}")
                 else:
-                    logger.info(f"DEBUG CURSOR: No cursors generated because result_entities is empty")
+                    logger.info("DEBUG CURSOR: No cursors generated because result_entities is empty")
                 
                 # Get total count for cursor pagination
                 total_count = self.get_entity_count(entity_type, filters)
@@ -1119,7 +1117,7 @@ class EntityRepositoryV5(BaseRepository):
             primary_field = getattr(model_class, 'created_at')
             secondary_field = getattr(model_class, 'id')
             query = query.order_by(desc(primary_field), desc(secondary_field))
-            logger.info(f"Applied distance sorting fallback to created_at")
+            logger.info("Applied distance sorting fallback to created_at")
         else:
             # Regular field sorting
             primary_field = getattr(model_class, strategy['field'])
@@ -1483,7 +1481,7 @@ class EntityRepositoryV5(BaseRepository):
             lng = filters['longitude']
             radius = filters.get('radius', 160)  # Default 160km radius (100mi)
             
-            where_conditions.append(f"""
+            where_conditions.append("""
                 ST_DWithin(
                     ST_Point(longitude, latitude)::geography,
                     ST_Point(%s, %s)::geography,
@@ -1508,7 +1506,7 @@ class EntityRepositoryV5(BaseRepository):
         # Add ordering
         if sort_key == 'relevance':
             # Order by full-text search rank
-            sql_parts.append(f"""
+            sql_parts.append("""
                 ORDER BY 
                     ts_rank(to_tsvector('english', name), plainto_tsquery('english', %s)) DESC,
                     similarity(name, %s) DESC,
@@ -1520,7 +1518,7 @@ class EntityRepositoryV5(BaseRepository):
             lat = filters['latitude']
             lng = filters['longitude']
             # All tables use separate longitude/latitude columns
-            sql_parts.append(f"""
+            sql_parts.append("""
                 ORDER BY 
                     ST_Distance(
                         ST_Point(longitude, latitude)::geography,

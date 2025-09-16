@@ -10,8 +10,7 @@ from __future__ import annotations
 
 import time
 import json
-import hashlib
-from typing import Dict, Optional, Tuple, Any, List
+from typing import Dict, Optional, Tuple, Any
 from functools import wraps
 
 from flask import g, request, jsonify

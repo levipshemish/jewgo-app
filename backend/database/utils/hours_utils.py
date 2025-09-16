@@ -4,8 +4,8 @@ Hours filtering utilities for JewGo App.
 Implements proper hours filtering using normalized time calculations.
 """
 import json
-from datetime import datetime, time
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Dict, List
 import logging
 
 logger = logging.getLogger(__name__)

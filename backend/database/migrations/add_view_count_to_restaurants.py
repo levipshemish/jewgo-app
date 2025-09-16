@@ -11,7 +11,6 @@ Date: 2024
 
 import os
 import sys
-from datetime import datetime
 
 # Add the backend directory to the Python path
 backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

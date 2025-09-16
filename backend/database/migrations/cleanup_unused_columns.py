@@ -449,7 +449,7 @@ def main() -> int | None:
         if results["success"]:
             return 0
         return 1
-    except Exception as e:
+    except Exception:
         return 1
 
 

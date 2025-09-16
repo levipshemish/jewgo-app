@@ -15,8 +15,7 @@ Last Updated: 2025-01-15
 """
 
 from flask import Blueprint, jsonify, request
-from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from datetime import datetime
 
 from utils.logging_config import get_logger
 from utils.optimization_integration import get_optimization_manager, get_optimization_dashboard

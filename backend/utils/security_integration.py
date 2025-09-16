@@ -13,7 +13,7 @@ Last Updated: 2025-01-27
 
 from functools import wraps
 from typing import Dict, Any, Optional, Callable
-from flask import request, jsonify, g, current_app
+from flask import request, jsonify, g
 
 from utils.logging_config import get_logger
 from security.advanced_security_manager import get_security_manager, SecurityLevel

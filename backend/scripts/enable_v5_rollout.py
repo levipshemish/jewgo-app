@@ -11,7 +11,7 @@ import sys
 import time
 import json
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

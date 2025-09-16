@@ -6,7 +6,6 @@ This module provides centralized audit logging for all authentication events
 with structured logging, security monitoring, and compliance features.
 """
 
-import json
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List

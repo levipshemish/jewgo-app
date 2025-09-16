@@ -23,7 +23,7 @@ import time
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from typing import Dict, Any, Optional
 
 # Add backend directory to path
@@ -32,13 +32,7 @@ sys.path.insert(0, str(backend_dir))
 
 # Test imports
 from services.auth_service_v5 import AuthServiceV5
-from utils.postgres_auth import PostgresAuthManager, PasswordSecurity, TokenManager
-from utils.rbac import RoleBasedAccessControl
-from utils.error_handler import ValidationError, AuthenticationError
-from database.unified_connection_manager import UnifiedConnectionManager
-from cache.redis_manager_v5 import RedisManagerV5
-from services.auth.token_manager_v5 import TokenManagerV5
-from services.auth.sessions import persist_initial, new_session_id, new_family_id
+from utils.error_handler import ValidationError
 
 
 class MockRedisManager:

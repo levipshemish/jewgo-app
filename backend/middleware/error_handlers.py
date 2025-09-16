@@ -5,9 +5,7 @@ Provides consistent error responses and logging.
 
 import os
 import traceback
-from typing import Dict, Any, Tuple
 from flask import Flask, jsonify, request, g
-from werkzeug.exceptions import HTTPException
 import jwt
 from utils.logging_config import get_logger
 

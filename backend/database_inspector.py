@@ -12,7 +12,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from database.connection_manager import get_connection_manager
 from sqlalchemy import text
-import json
 
 def inspect_database_schema():
     """Inspect the database schema for constraints and indexes."""
@@ -254,7 +253,7 @@ def cleanup_test_users():
                 'debugtest123@example.com'
             ]
             
-            print(f"\nLooking for test users with these emails:")
+            print("\nLooking for test users with these emails:")
             for pattern in test_patterns:
                 print(f"   - {pattern}")
             

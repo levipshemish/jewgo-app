@@ -6,12 +6,10 @@ Provides A/B cookie naming, metrics-based validation, and gradual rollout
 capabilities for authentication system deployments.
 """
 
-import os
 import time
 import threading
 import hashlib
-import json
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum

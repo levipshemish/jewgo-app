@@ -6,15 +6,12 @@ Provides detailed health checks for JWT keys, CSRF config, CORS origins, databas
 
 import time
 import os
-import sys
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 import asyncio
-import aiohttp
 import redis
 import psycopg2
-from psycopg2 import pool
 
 from utils.logging_config import get_logger
 from config.config import get_config

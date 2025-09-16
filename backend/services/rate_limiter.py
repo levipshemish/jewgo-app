@@ -1,6 +1,4 @@
 import redis
-import time
-import json
 import os
 
 class RateLimiter:

@@ -7,7 +7,6 @@ import subprocess
 import sys
 import time
 import requests
-from database_manager import DatabaseManager as OldDB
 from database_manager_v2 import Base
 from database_manager_v2 import EnhancedDatabaseManager as NewDB
 from dotenv import load_dotenv
@@ -43,7 +42,7 @@ def setup_api_database() -> bool | None:
             print("No legacy migration needed - using PostgreSQL directly")
             return True
         return False
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -54,7 +53,7 @@ def migrate_from_legacy(database_url) -> bool | None:
         # Currently no legacy migration is needed
         print("No legacy migration required - using PostgreSQL directly")
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -96,7 +95,7 @@ def test_api() -> None:
             pass
         # Stop the server
         process.terminate()
-    except Exception as e:
+    except Exception:
         pass
 
 

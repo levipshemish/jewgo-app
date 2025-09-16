@@ -10,11 +10,10 @@ import os
 import sys
 import json
 import time
-import logging
 import signal
 import threading
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from datetime import datetime
+from typing import Dict, Any, Optional
 from pathlib import Path
 
 # Add the backend directory to the Python path

@@ -21,18 +21,16 @@ import os
 import time
 import threading
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Tuple, Union, Callable
-from urllib.parse import urlparse, urlunparse
-from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Union, Callable
+from urllib.parse import urlparse
+from datetime import datetime
 
-from sqlalchemy import create_engine, event, text, MetaData
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
-from sqlalchemy.pool import QueuePool, StaticPool
+from sqlalchemy.pool import QueuePool
 from sqlalchemy.exc import (
     SQLAlchemyError, 
-    OperationalError, 
-    DisconnectionError,
-    TimeoutError as SQLTimeoutError
+    OperationalError
 )
 
 from utils.logging_config import get_logger
@@ -459,14 +457,10 @@ class UnifiedConnectionManager:
         
         # PostgreSQL-specific connection arguments
         if 'postgresql' in self.database_url:
-            # Temporarily disable problematic connection arguments for debugging
-            # connect_args.update({
-            #     'keepalives_idle': int(ConfigManager.get_pg_keepalives_idle()),
-            #     'keepalives_interval': int(ConfigManager.get_pg_keepalives_interval()),
-            #     'keepalives_count': int(ConfigManager.get_pg_keepalives_count()),
-            #     'statement_timeout': int(ConfigManager.get_pg_statement_timeout()),
-            #     'idle_in_transaction_session_timeout': int(ConfigManager.get_pg_idle_tx_timeout()),
-            # })
+            # Note: Basic connection arguments disabled due to DSN compatibility issues
+            # The statement_timeout and related parameters were causing connection failures
+            # when passed as connection arguments. Future implementation should use
+            # server-side configuration or session-level settings instead.
             pass
             
             # SSL configuration

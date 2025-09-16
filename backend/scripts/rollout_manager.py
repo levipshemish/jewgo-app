@@ -6,16 +6,13 @@ This script manages the gradual rollout of v5 APIs with safety controls,
 automated rollback capabilities, and comprehensive monitoring integration.
 """
 
-import os
 import sys
 import json
 import time
-import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime
+from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
-import requests
 
 # Add the backend directory to the Python path
 backend_dir = Path(__file__).parent.parent

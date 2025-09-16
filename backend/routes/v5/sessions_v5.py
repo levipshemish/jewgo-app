@@ -7,11 +7,8 @@ revoking individual sessions, and revoking all sessions for a user.
 """
 
 from flask import Blueprint, request, jsonify, g
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
-import secrets
-import hashlib
-import json
+from typing import Dict, Any
+from datetime import datetime
 from utils.logging_config import get_logger
 from middleware.auth_decorators import auth_required
 from services.auth_service_v5 import AuthServiceV5

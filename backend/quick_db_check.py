@@ -67,7 +67,7 @@ def quick_check():
                 'newadmin@jewgo.app'
             ]
             
-            print(f"\nTesting specific emails:")
+            print("\nTesting specific emails:")
             for email in test_emails:
                 result = session.execute(text("SELECT id FROM users WHERE email = :email"), {'email': email}).fetchone()
                 exists = result is not None

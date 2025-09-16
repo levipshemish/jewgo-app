@@ -10,11 +10,9 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone, time
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import urlparse
 
-from sqlalchemy import func, text
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -111,7 +109,7 @@ class RestaurantServiceV5:
         """Get available filter options for restaurants using efficient database queries."""
         try:
             # Use cache for filter options (they don't change frequently)
-            cache_key = f"restaurant_filter_options_v2"
+            cache_key = "restaurant_filter_options_v2"
             if self.cache_manager:
                 cached_options = self.cache_manager.get(cache_key)
                 if cached_options:
@@ -120,7 +118,7 @@ class RestaurantServiceV5:
             
             # Use direct database queries instead of fetching all restaurants
             with self.repository.connection_manager.session_scope() as session:
-                from sqlalchemy import distinct, func, text, and_, or_
+                from sqlalchemy import distinct, func
                 from database.models import Restaurant
                 
                 # Get distinct values efficiently with limited results

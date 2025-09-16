@@ -7,16 +7,11 @@ JWT management, session handling, role-based access control, and security featur
 """
 
 from flask import request, jsonify, g, make_response, redirect
-from datetime import datetime, timedelta
-from datetime import timedelta as td
-import jwt
-import bcrypt
+from datetime import datetime
 import os
 import time
-from typing import Dict, Any, Optional
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from middleware.auth_v5 import require_permission_v5
 from middleware.auth_decorators import auth_required, rate_limit_by_user, step_up_required
 from services.auth_service_v5 import AuthServiceV5
 from services.auth.token_manager_v5 import TokenManagerV5

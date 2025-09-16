@@ -6,20 +6,15 @@ system status, performance metrics, and service monitoring.
 Replaces: health.py, health_routes.py, redis_health.py, metrics.py, metrics_api.py, container_status_api.py
 """
 
-from flask import Blueprint, request, jsonify, g
-from typing import Dict, Any, Optional, List, Union
-import json
-from datetime import datetime, timedelta
+from flask import jsonify, g
+from typing import Dict, Any
+from datetime import datetime
 from functools import wraps
 import time
 import psutil
 import os
 from utils.logging_config import get_logger
-from middleware.auth_v5 import AuthV5Middleware
-from middleware.rate_limit_v5 import RateLimitV5Middleware
-from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from cache.redis_manager_v5 import RedisManagerV5
 from database.database_manager_v5 import get_database_manager_v5
 from utils.feature_flags_v5 import FeatureFlagsV5
 
@@ -520,7 +515,6 @@ def docker_containers_status():
     """Get Docker containers status from the server."""
     try:
         import subprocess
-        import json
         
         # Get all containers with detailed information
         result = subprocess.run([

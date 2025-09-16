@@ -72,7 +72,7 @@ def init_database() -> bool | None:
         conn.commit()
         conn.close()
         return True
-    except Exception as e:
+    except Exception:
         if "conn" in locals():
             conn.close()
         return False

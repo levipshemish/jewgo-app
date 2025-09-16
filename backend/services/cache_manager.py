@@ -2,7 +2,6 @@ import redis
 import json
 import hashlib
 import os
-from datetime import datetime
 
 class CacheManager:
     def __init__(self):

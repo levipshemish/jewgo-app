@@ -7,7 +7,7 @@ and automated query performance monitoring.
 
 import time
 import json
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 from collections import defaultdict, deque
 from sqlalchemy import text, event
 from sqlalchemy.engine import Engine

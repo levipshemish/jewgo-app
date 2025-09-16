@@ -10,9 +10,8 @@ import aiohttp
 import time
 import json
 import statistics
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List
 from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

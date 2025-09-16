@@ -10,8 +10,8 @@ import os
 import logging
 import time
 import traceback
-from datetime import datetime, timezone
-from flask import Flask, request, jsonify, g
+from datetime import datetime
+from flask import Flask, jsonify
 # from flask_cors import CORS  # Disabled - Nginx handles CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address

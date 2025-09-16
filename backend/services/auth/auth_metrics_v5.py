@@ -11,9 +11,9 @@ import time
 import json
 import re
 import hashlib
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 from collections import defaultdict, deque
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from flask import g, request
@@ -565,7 +565,7 @@ def performance_timer(operation: str):
             try:
                 result = func(*args, **kwargs)
                 return result
-            except Exception as e:
+            except Exception:
                 success = False
                 raise
             finally:

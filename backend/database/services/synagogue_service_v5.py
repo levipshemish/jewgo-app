@@ -9,7 +9,7 @@ and location-based search with caching optimization.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone, time, timedelta
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
@@ -303,7 +303,7 @@ class SynagogueServiceV5:
         """Get available filter options for synagogues using efficient database queries."""
         try:
             # Use cache for filter options (they don't change frequently)
-            cache_key = f"synagogue_filter_options_v2"
+            cache_key = "synagogue_filter_options_v2"
             if self.cache_manager:
                 cached_options = self.cache_manager.get(cache_key)
                 if cached_options:

@@ -17,8 +17,7 @@ Last Updated: 2025-01-15
 """
 
 import time
-from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 from utils.logging_config import get_logger
 from services.job_queue_manager import job, JobPriority, get_job_queue_manager

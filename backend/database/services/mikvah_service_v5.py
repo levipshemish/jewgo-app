@@ -5,11 +5,10 @@ This service provides mikvah management with Jewish calendar integration,
 appointment scheduling, and specialized religious requirements.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 import requests
 from flask import current_app
-import calendar
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from cache.redis_manager_v5 import RedisManagerV5

@@ -7,7 +7,6 @@ incident tracking, and automated response procedures.
 """
 
 import os
-import json
 import time
 import threading
 from typing import Dict, Any, List, Optional, Callable
@@ -19,7 +18,7 @@ from email.mime.text import MimeText
 from email.mime.multipart import MimeMultipart
 
 from utils.logging_config import get_logger
-from monitoring.prometheus_metrics import get_auth_metrics, AuthEvent
+from monitoring.prometheus_metrics import get_auth_metrics
 
 logger = get_logger(__name__)
 

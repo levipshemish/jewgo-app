@@ -193,7 +193,7 @@ def test():
 @app.route('/api/listings')
 def simple_listings():
     """Redirect to the real v5 API endpoint."""
-    from flask import redirect, url_for, request
+    from flask import redirect, request
     
     # Get the category parameter to determine the entity type
     category = request.args.get('category', 'restaurants')

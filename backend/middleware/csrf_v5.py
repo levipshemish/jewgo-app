@@ -5,7 +5,6 @@ Provides comprehensive CSRF protection with blueprint-wide before_request hooks,
 secure token validation, and environment-aware cookie management.
 """
 
-import os
 from typing import Optional, Set
 from functools import wraps
 from flask import request, jsonify, g, make_response, Blueprint

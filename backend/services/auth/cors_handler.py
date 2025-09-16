@@ -4,7 +4,6 @@ CORS Handler for Authentication API.
 Provides environment-aware CORS handling with multiple origin support,
 preflight request handling, and proper credentials support.
 """
-import os
 import re
 from typing import List, Optional, Dict, Any
 from flask import Request, Response, make_response

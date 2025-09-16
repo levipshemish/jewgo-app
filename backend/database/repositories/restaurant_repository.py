@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import and_, func, or_, text
-from sqlalchemy.orm import Session
 
 from database.base_repository import BaseRepository
 from database.connection_manager import DatabaseConnectionManager

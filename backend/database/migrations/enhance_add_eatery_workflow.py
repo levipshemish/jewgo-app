@@ -273,10 +273,10 @@ def run_migration() -> bool | None:
                 trans.rollback()
                 logger.exception("Error during migration, rolling back")
                 raise e
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         logger.exception("Database error during migration")
         return False
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error during migration")
         return False
 
@@ -424,10 +424,10 @@ def rollback_migration() -> bool | None:
                 trans.rollback()
                 logger.exception("Error during rollback, rolling back")
                 raise e
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         logger.exception("Database error during rollback")
         return False
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error during rollback")
         return False
 

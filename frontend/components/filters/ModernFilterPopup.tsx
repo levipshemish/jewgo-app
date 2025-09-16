@@ -345,7 +345,7 @@ export function ModernFilterPopup({
                       { value: "", label: "All Denominations" },
                       ...(effectiveFilterOptionsLoading 
                         ? [{ value: "", label: "Loading..." }]
-                        : (filterOptions?.denominations?.map((denomination) => ({
+                        : (filterOptions?.denominations?.map((denomination: string) => ({
                             value: denomination,
                             label: denomination.charAt(0).toUpperCase() + denomination.slice(1)
                           })) || [])
@@ -366,7 +366,7 @@ export function ModernFilterPopup({
                       { value: "", label: "All Shul Types" },
                       ...(effectiveFilterOptionsLoading 
                         ? [{ value: "", label: "Loading..." }]
-                        : (filterOptions?.shulTypes?.map((shulType) => ({
+                        : (filterOptions?.shulTypes?.map((shulType: string) => ({
                             value: shulType,
                             label: shulType.charAt(0).toUpperCase() + shulType.slice(1)
                           })) || [])
@@ -387,7 +387,7 @@ export function ModernFilterPopup({
                       { value: "", label: "All Categories" },
                       ...(effectiveFilterOptionsLoading 
                         ? [{ value: "", label: "Loading..." }]
-                        : (filterOptions?.shulCategories?.map((category) => ({
+                        : (filterOptions?.shulCategories?.map((category: string) => ({
                             value: category,
                             label: category.charAt(0).toUpperCase() + category.slice(1)
                           })) || [])
@@ -477,13 +477,19 @@ export function ModernFilterPopup({
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-gray-900">Appointment Required</label>
                   <CustomDropdown
-                    value={draftFilters.appointment_required || ""}
-                    onChange={(value) => setDraftFilter('appointment_required', value || undefined)}
+                    value={draftFilters.appointment_required !== undefined ? String(draftFilters.appointment_required) : ""}
+                    onChange={(value) => {
+                      if (value === "") {
+                        setDraftFilter('appointment_required', undefined);
+                      } else {
+                        setDraftFilter('appointment_required', value === 'true');
+                      }
+                    }}
                     options={[
                       { value: "", label: "All" },
                       ...(effectiveFilterOptionsLoading 
                         ? [{ value: "", label: "Loading..." }]
-                        : (filterOptions?.appointmentRequired?.map((appointment) => ({
+                        : (filterOptions?.appointmentRequired?.map((appointment: string) => ({
                             value: appointment,
                             label: appointment === 'true' ? 'Yes' : 'No'
                           })) || [])
@@ -504,7 +510,7 @@ export function ModernFilterPopup({
                       { value: "", label: "All Statuses" },
                       ...(effectiveFilterOptionsLoading 
                         ? [{ value: "", label: "Loading..." }]
-                        : (filterOptions?.statuses?.map((status) => ({
+                        : (filterOptions?.statuses?.map((status: string) => ({
                             value: status,
                             label: status.charAt(0).toUpperCase() + status.slice(1)
                           })) || [])
@@ -546,7 +552,7 @@ export function ModernFilterPopup({
                       { value: "", label: "All Contact Persons" },
                       ...(effectiveFilterOptionsLoading 
                         ? [{ value: "", label: "Loading..." }]
-                        : (filterOptions?.contactPersons?.map((person) => ({
+                        : (filterOptions?.contactPersons?.map((person: string) => ({
                             value: person,
                             label: person
                           })) || [])

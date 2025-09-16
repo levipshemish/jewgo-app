@@ -10,7 +10,6 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime, timezone
 
 from services.comprehensive_health_service import health_service
-from utils.api_response import health_response
 
 health_bp = Blueprint("health", __name__)
 

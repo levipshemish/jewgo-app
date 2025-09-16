@@ -10,7 +10,6 @@ import os
 import sys
 import json
 import time
-import logging
 import statistics
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
@@ -475,7 +474,7 @@ def main():
                 time.sleep(10)
                 summary = tracker.get_current_performance_summary()
                 if summary.get('status') != 'no_data':
-                    print(f"\n📊 Performance Summary:")
+                    print("\n📊 Performance Summary:")
                     print(f"   Requests: {summary['requests']['total']} total, {summary['requests']['v5']} v5 ({summary['requests']['v5_percentage']:.1f}%)")
                     print(f"   Error Rate: {summary['performance']['error_rate']:.2f}%")
                     print(f"   Avg Response Time: {summary['performance']['avg_response_time']:.0f}ms")

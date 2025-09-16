@@ -6,24 +6,18 @@ mikvahs, and stores with advanced filtering, geospatial queries, and faceted sea
 Replaces: unified_search_api.py, restaurant_search.py, and other search endpoints.
 """
 
-from flask import Blueprint, request, jsonify, g
-from typing import Dict, Any, Optional, List, Union
-import json
+from flask import request, jsonify
+from typing import Dict, Any, List
 from datetime import datetime
-from functools import wraps
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from database.services.restaurant_service_v5 import RestaurantServiceV5
 from database.services.synagogue_service_v5 import SynagogueServiceV5
 from database.services.mikvah_service_v5 import MikvahServiceV5
 from database.services.store_service_v5 import StoreServiceV5
-from middleware.auth_v5 import AuthV5Middleware
-from middleware.rate_limit_v5 import RateLimitV5Middleware
-from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from utils.cursor_v5 import CursorV5Manager
 from utils.etag_v5 import ETagV5Manager
-from cache.redis_manager_v5 import RedisManagerV5
 
 logger = get_logger(__name__)
 

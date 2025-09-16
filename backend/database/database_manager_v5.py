@@ -12,12 +12,11 @@ This module provides an enhanced database management system with:
 
 import os
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 from contextlib import contextmanager
 from sqlalchemy import create_engine, event, text, MetaData
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import QueuePool, StaticPool
-from sqlalchemy.exc import SQLAlchemyError, DisconnectionError
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import QueuePool
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

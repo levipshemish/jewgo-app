@@ -3,7 +3,7 @@
 Health service for monitoring system health and status.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

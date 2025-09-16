@@ -10,9 +10,8 @@ import os
 import sys
 import json
 import time
-import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from datetime import datetime
+from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
 import requests
 from pathlib import Path

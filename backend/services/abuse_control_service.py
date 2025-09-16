@@ -6,11 +6,9 @@ Provides per-username rate limiting with exponential backoff and CAPTCHA integra
 
 import time
 import hashlib
-import json
 import os
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, Optional
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 import redis
 import requests
 from utils.logging_config import get_logger

@@ -7,9 +7,7 @@ with proper error handling and rollback capabilities.
 Requirements implemented: 2.1, 2.2, 2.3, 2.4, 2.5
 """
 
-import os
 import sys
-import psycopg2
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -234,7 +232,7 @@ class AuthSessionsMigrationRunner:
                     """)
                     
                     stats = cursor.fetchone()
-                    logger.info(f"Data integrity check:")
+                    logger.info("Data integrity check:")
                     logger.info(f"  Total sessions: {stats[0]}")
                     logger.info(f"  Sessions with family_id: {stats[1]}")
                     logger.info(f"  Sessions with auth_time: {stats[2]}")

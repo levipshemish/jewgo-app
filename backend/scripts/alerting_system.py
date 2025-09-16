@@ -10,11 +10,10 @@ import os
 import sys
 import json
 import time
-import logging
 import smtplib
 import requests
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
@@ -635,7 +634,7 @@ def main():
         print("📊 Alert Status Summary:")
         print(f"   Active Alerts: {summary['active_alerts']}")
         print(f"   Total Alerts: {summary['total_alerts']}")
-        print(f"   Severity Breakdown:")
+        print("   Severity Breakdown:")
         for severity, count in summary['severity_breakdown'].items():
             if count > 0:
                 print(f"     {severity}: {count}")

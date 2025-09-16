@@ -8,9 +8,7 @@ Delegates to existing token/session utilities and postgres_auth.
 
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timedelta
-import jwt
 import os
-import hashlib
 import secrets
 from utils.logging_config import get_logger
 from cache.redis_manager_v5 import get_redis_manager_v5

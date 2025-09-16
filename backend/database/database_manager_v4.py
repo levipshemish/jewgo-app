@@ -4,7 +4,6 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from utils.error_handler import (
-    ExternalServiceError,
     handle_database_operation,
     handle_operation_with_fallback,
 )

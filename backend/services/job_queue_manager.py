@@ -21,10 +21,9 @@ import time
 import uuid
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Callable, Union
+from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass, asdict
 from enum import Enum
-import redis
 from croniter import croniter
 
 from utils.logging_config import get_logger

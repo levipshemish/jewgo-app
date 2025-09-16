@@ -1,7 +1,6 @@
-import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_
 from utils.logging_config import get_logger
 from ..base_repository import BaseRepository
 from ..connection_manager import DatabaseConnectionManager

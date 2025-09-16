@@ -15,20 +15,18 @@ Version: 1.0
 Last Updated: 2025-01-15
 """
 
-import json
-import asyncio
 import threading
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set
-from dataclasses import dataclass, asdict
+from datetime import datetime
+from typing import Dict, Optional, Any, Set
+from dataclasses import dataclass
 from enum import Enum
 
 from flask import request
-from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
+from flask_socketio import SocketIO, emit
 from sqlalchemy import text
 
 from utils.logging_config import get_logger
-from services.websocket_service import WebSocketService, MessageType, WebSocketMessage, ConnectionInfo
+from services.websocket_service import WebSocketService, MessageType, ConnectionInfo
 from database.connection_manager import get_connection_manager
 
 logger = get_logger(__name__)

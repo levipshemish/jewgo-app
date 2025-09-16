@@ -7,10 +7,9 @@ reducing database load and improving response times.
 
 import json
 import time
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 from utils.logging_config import get_logger
 from utils.postgres_auth import PostgresAuthManager
-from utils.error_handler import AuthenticationError, ValidationError
 
 logger = get_logger(__name__)
 

@@ -4,7 +4,6 @@ Test script for Auth Sessions Security Hardening Migration
 This script tests the migration functionality without applying it to production.
 """
 
-import os
 import sys
 import psycopg2
 import logging

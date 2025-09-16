@@ -8,8 +8,7 @@ intelligent invalidation, cache analytics, and distributed cache management.
 import json
 import time
 import asyncio
-from typing import Dict, Any, List, Optional, Set, Callable
-from datetime import datetime, timedelta
+from typing import Dict, Any, List, Callable
 from collections import defaultdict, deque
 from utils.logging_config import get_logger
 from utils.postgres_auth import PostgresAuthManager

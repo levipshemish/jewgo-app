@@ -30,7 +30,7 @@ function SignUpForm({ redirectTo: _redirectTo }: { redirectTo: string }) {
   const [success, setSuccess] = useState<string | null>(null);
   const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
   const [csrfMessage, setCsrfMessage] = useState<string | null>(null);
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
   const router = useRouter();
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   

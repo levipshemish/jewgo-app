@@ -17,16 +17,14 @@ Last Updated: 2025-01-15
 """
 
 import hashlib
-import json
 import pickle
 import time
 import threading
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union, Callable, Tuple
+from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass, asdict
 from functools import wraps
-import zlib
 
 from utils.logging_config import get_logger
 from cache.redis_manager_v5 import get_redis_manager_v5

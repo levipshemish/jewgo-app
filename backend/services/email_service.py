@@ -8,11 +8,9 @@ Supports multiple email providers (SMTP, SendGrid, Mailgun, etc.).
 
 import os
 import smtplib
-import logging
-from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

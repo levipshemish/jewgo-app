@@ -7,8 +7,7 @@ replay attack detection, and family-wide revocation capabilities.
 
 import os
 import secrets
-import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, List, Tuple
 from sqlalchemy import text
 from utils.logging_config import get_logger

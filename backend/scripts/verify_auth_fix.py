@@ -14,10 +14,8 @@ This script verifies that all the critical auth fixes are working properly:
 import os
 import sys
 import requests
-import json
 import time
-from typing import Dict, Any, Optional
-from urllib.parse import urljoin
+from typing import Dict, Any
 
 # Add backend directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

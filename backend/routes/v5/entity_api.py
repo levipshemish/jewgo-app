@@ -7,7 +7,6 @@ with consistent patterns, authentication, caching, and monitoring.
 """
 
 from flask import request, jsonify, g
-from typing import Dict, Any, Optional
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
@@ -16,8 +15,7 @@ from database.services.synagogue_service_v5 import SynagogueServiceV5
 from database.services.mikvah_service_v5 import MikvahServiceV5
 from database.services.store_service_v5 import StoreServiceV5
 from middleware.auth_v5 import require_permission_v5, optional_auth_v5
-from utils.cursor_v5 import CursorV5Manager, create_next_cursor_v5
-from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5, generate_entity_etag_v5
+from utils.etag_v5 import ETagV5Manager, generate_collection_etag_v5
 from cache.etag_cache import get_etag_cache
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5

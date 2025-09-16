@@ -7,10 +7,8 @@ step-up authentication, and WebAuthn integration.
 
 import pytest
 import json
-import time
 from unittest.mock import patch, MagicMock
 from flask import Flask
-from datetime import datetime, timedelta
 
 from middleware.auth_decorators import (
     auth_required, 
@@ -20,7 +18,6 @@ from middleware.auth_decorators import (
     rate_limit_by_user,
     step_up_required
 )
-from services.auth_service_v5 import AuthServiceV5
 from services.auth.webauthn_service import WebAuthnService
 from middleware.error_handlers import register_error_handlers, register_custom_error_handlers
 

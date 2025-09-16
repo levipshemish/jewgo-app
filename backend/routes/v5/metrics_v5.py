@@ -6,19 +6,13 @@ and analytics endpoints with real-time data processing and caching.
 Replaces: metrics_api.py, analytics_endpoints.py, and performance monitoring routes.
 """
 
-from flask import Blueprint, request, jsonify, g
-from typing import Dict, Any, Optional, List, Union
-import json
+from flask import request, jsonify, g
+from typing import Dict, Any
 from datetime import datetime, timedelta
 from functools import wraps
 import time
 from utils.logging_config import get_logger
-from middleware.auth_v5 import AuthV5Middleware
-from middleware.rate_limit_v5 import RateLimitV5Middleware
-from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from cache.redis_manager_v5 import RedisManagerV5
-from utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)
 

@@ -1,4 +1,3 @@
-import types
 from contextlib import contextmanager
 from unittest.mock import patch
 

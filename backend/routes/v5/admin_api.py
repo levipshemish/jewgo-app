@@ -6,8 +6,8 @@ system monitoring, analytics, bulk operations, and content moderation.
 Replaces: admin_api.py, user_management.py, analytics_api.py, and other admin routes.
 """
 
-from flask import Blueprint, request, jsonify, g, Response
-from typing import Dict, Any, Optional, List, Union
+from flask import request, jsonify, g, Response
+from typing import Dict, Any, Optional, List
 import json
 from datetime import datetime, timedelta
 from functools import wraps
@@ -19,12 +19,7 @@ from database.services.restaurant_service_v5 import RestaurantServiceV5
 from database.services.synagogue_service_v5 import SynagogueServiceV5
 from database.services.mikvah_service_v5 import MikvahServiceV5
 from database.services.store_service_v5 import StoreServiceV5
-from middleware.auth_v5 import AuthV5Middleware
-from middleware.rate_limit_v5 import RateLimitV5Middleware
-from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from cache.redis_manager_v5 import RedisManagerV5
-from utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)
 
@@ -461,7 +456,7 @@ def bulk_import(entity_type: str):
         })
         
         return jsonify({
-            'message': f'Bulk import completed',
+            'message': 'Bulk import completed',
             'results': results,
             'entity_type': entity_type
         })

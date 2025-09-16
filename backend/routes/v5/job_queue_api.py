@@ -16,17 +16,14 @@ Last Updated: 2025-01-15
 """
 
 from flask import Blueprint, request, jsonify
-from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from datetime import datetime
 
 from utils.logging_config import get_logger
 from middleware.auth_v5 import require_auth_v5
 from middleware.rate_limit_v5 import rate_limit_v5
 from services.job_queue_manager import (
     get_job_queue_manager, 
-    JobPriority, 
-    JobStatus,
-    JobStats
+    JobPriority
 )
 from services.background_jobs import initialize_background_jobs
 

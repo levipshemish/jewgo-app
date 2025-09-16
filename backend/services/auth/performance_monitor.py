@@ -7,7 +7,7 @@ for authentication system operations.
 
 import time
 import functools
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from collections import defaultdict, deque
 from utils.logging_config import get_logger
 

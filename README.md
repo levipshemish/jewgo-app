@@ -231,7 +231,16 @@ For technical support or questions:
 
 ## 🔄 Changelog
 
-### Recent Updates
+### Recent Updates (January 2025)
+- ✅ **Database Connection Fix**: Resolved v5 API empty response issue
+- ✅ **Model Schema Alignment**: Updated Restaurant model to match database schema
+- ✅ **PostgreSQL Connection**: Fixed UnifiedConnectionManager connection arguments
+- ✅ **API V5 Stability**: All endpoints now returning proper data (207 restaurants)
+- ✅ **Filter Options**: Complete filter options now populated correctly
+- ✅ **Documentation Cleanup**: Organized and updated project documentation
+- ✅ **Codebase Cleanup**: Removed temporary files and improved organization
+
+### Previous Updates
 - ✅ Implemented entity-specific filter system
 - ✅ Added comprehensive filter options for all entity types
 - ✅ Improved API documentation and type definitions

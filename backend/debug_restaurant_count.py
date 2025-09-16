@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Debug script to check restaurant count in database."""
 
-import os
 import sys
 from pathlib import Path
 

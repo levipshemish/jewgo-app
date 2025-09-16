@@ -6,23 +6,17 @@ functionality with enhanced security, rate limiting, and audit logging.
 Replaces: auth_api.py, user_management.py, profile_endpoints.py, and session management routes.
 """
 
-from flask import Blueprint, request, jsonify, g
-from typing import Dict, Any, Optional, List, Union
-import json
+from flask import request, jsonify, g
+from typing import Dict, Any, Optional
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
-from functools import wraps
 import re
 import secrets
 from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from middleware.auth_v5 import AuthV5Middleware
-from middleware.rate_limit_v5 import RateLimitV5Middleware
-from middleware.observability_v5 import ObservabilityV5Middleware
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
-from cache.redis_manager_v5 import RedisManagerV5
-from utils.feature_flags_v5 import FeatureFlagsV5
 
 logger = get_logger(__name__)
 

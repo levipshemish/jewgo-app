@@ -3,7 +3,6 @@
 Helps configure and test PostgreSQL database connections.
 """
 import os
-from database_manager import DatabaseManager as OldDB
 from database_manager_v2 import Base, EnhancedDatabaseManager
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -20,7 +19,7 @@ def test_postgresql_connection() -> bool | None:
             return False
         db = EnhancedDatabaseManager(database_url)
         return bool(db.connect())
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -29,7 +28,7 @@ def test_postgresql_connection(database_url) -> bool | None:
     try:
         db = EnhancedDatabaseManager(database_url)
         return bool(db.connect())
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -39,7 +38,7 @@ def create_tables(database_url) -> bool | None:
         engine = create_engine(database_url)
         Base.metadata.create_all(engine)
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -50,7 +49,7 @@ def migrate_data_from_legacy() -> bool | None:
         # Currently no legacy migration is needed
         print("No legacy migration required")
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -62,7 +61,7 @@ def show_database_info(database_url) -> None:
             stats = db.get_statistics()
         else:
             pass
-    except Exception as e:
+    except Exception:
         pass
 
 
