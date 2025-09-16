@@ -20,6 +20,7 @@ from utils.postgres_auth import PostgresAuthManager, TokenManager, PasswordSecur
 from services.auth.token_manager_v5 import TokenManagerV5
 from services.auth.sessions import persist_initial, new_session_id, new_family_id, rotate_or_reject
 from services.auth.tokens import verify
+from services.auth.performance_monitor import timed_auth_operation
 from flask import request
 
 logger = get_logger(__name__)
@@ -33,30 +34,105 @@ class AuthServiceV5:
         self.db_manager = connection_manager or get_connection_manager()
         self.feature_flags = feature_flags or FeatureFlagsV5()
         
-        # Initialize existing auth utilities
-        self.postgres_auth = PostgresAuthManager(self.db_manager)
+        # Initialize existing auth utilities with connection reuse
+        self._postgres_auth = None
+        self._cached_auth = None
+        self._connection_health_check_interval = 300  # 5 minutes
+        self._last_health_check = 0
         self.token_manager = TokenManager()
         self.token_manager_v5 = TokenManagerV5()
         
-        logger.info("AuthServiceV5 initialized")
+        logger.info("AuthServiceV5 initialized with connection reuse and caching")
     
-    def authenticate_user(self, email: str, password: str) -> Tuple[bool, Optional[Dict[str, Any]]]:
+    def _get_postgres_auth(self):
+        """Get PostgresAuthManager with connection health checks and reuse."""
+        import time
+        
+        now = time.time()
+        if (not self._postgres_auth or 
+            now - self._last_health_check > self._connection_health_check_interval):
+            
+            # Check if existing connection is healthy
+            if self._postgres_auth and not self._is_connection_healthy():
+                logger.warning("PostgresAuthManager connection unhealthy, recreating")
+                self._postgres_auth = None
+                
+            # Create new connection if needed
+            if not self._postgres_auth:
+                self._postgres_auth = PostgresAuthManager(self.db_manager)
+                logger.info("Created new PostgresAuthManager instance")
+                
+            self._last_health_check = now
+            
+        return self._postgres_auth
+    
+    def _get_cached_auth(self):
+        """Get CachedAuthManager for improved performance."""
+        if not self._cached_auth:
+            try:
+                from services.auth.cached_auth_manager import CachedAuthManager
+                postgres_auth = self._get_postgres_auth()
+                redis_client = self.redis_manager.get_client()
+                self._cached_auth = CachedAuthManager(redis_client, postgres_auth)
+                logger.info("Created CachedAuthManager instance")
+            except Exception as e:
+                logger.warning(f"Failed to create CachedAuthManager, falling back to direct auth: {e}")
+                return self._get_postgres_auth()
+        
+        return self._cached_auth
+    
+    def _is_connection_healthy(self):
+        """Check if the database connection is healthy."""
+        try:
+            # Simple health check - try to execute a basic query
+            with self.db_manager.session_scope() as session:
+                session.execute(text("SELECT 1"))
+            return True
+        except Exception as e:
+            logger.warning(f"Database connection health check failed: {e}")
+            return False
+    
+    @timed_auth_operation('login')
+    def authenticate_user(self, email: str, password: str, ip_address: str = None, user_agent: str = None) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """
-        Authenticate user with email and password.
+        Authenticate user with email and password with enhanced logging.
         
         Args:
             email: User email
             password: User password
+            ip_address: Client IP address for logging
+            user_agent: Client user agent for logging
             
         Returns:
             Tuple of (success, user_data) - user_data is None if authentication failed
         """
+        auth_context = {
+            'email': email,
+            'ip_address': ip_address,
+            'user_agent': user_agent,
+            'timestamp': datetime.utcnow().isoformat(),
+            'method': 'password'
+        }
+        
         try:
-            # Create fresh PostgresAuthManager instance to match debug endpoint behavior
-            # This fixes the authentication discrepancy between debug and login endpoints
-            from utils.postgres_auth import PostgresAuthManager
-            fresh_postgres_auth = PostgresAuthManager(self.db_manager)
-            user_info = fresh_postgres_auth.authenticate_user(email, password)
+            # Input validation
+            if not email or not email.strip():
+                logger.warning("Authentication attempt with empty email", extra=auth_context)
+                return False, None
+            
+            if not password:
+                logger.warning("Authentication attempt with empty password", extra=auth_context)
+                return False, None
+            
+            # Normalize email
+            email = email.lower().strip()
+            auth_context['email'] = email
+            
+            logger.info(f"Authentication attempt for user {email}", extra=auth_context)
+            
+            # Use cached authentication for better performance
+            cached_auth = self._get_cached_auth()
+            user_info = cached_auth.authenticate_user(email, password, ip_address)
             
             if user_info:
                 # Convert to expected format
@@ -70,14 +146,48 @@ class AuthServiceV5:
                     'last_login': user_info.get('last_login')
                 }
                 
-                logger.info(f"User {email} authenticated successfully")
+                # Log successful authentication with details
+                success_context = auth_context.copy()
+                success_context.update({
+                    'user_id': user_data['id'],
+                    'email_verified': user_data['email_verified'],
+                    'roles': [role.get('role') if isinstance(role, dict) else role for role in user_data['roles']],
+                    'success': True
+                })
+                logger.info(f"Authentication successful for user {email}", extra=success_context)
+                
                 return True, user_data
             else:
-                logger.warning(f"Authentication failed for user {email}")
+                # Log failed authentication with potential reasons
+                failure_context = auth_context.copy()
+                failure_context.update({
+                    'success': False,
+                    'failure_reason': 'invalid_credentials_or_account_locked'
+                })
+                logger.warning(f"Authentication failed for user {email} - invalid credentials or account locked", extra=failure_context)
                 return False, None
                 
+        except ValidationError as e:
+            # Log validation errors (e.g., invalid email format)
+            validation_context = auth_context.copy()
+            validation_context.update({
+                'success': False,
+                'failure_reason': 'validation_error',
+                'error_details': str(e)
+            })
+            logger.warning(f"Authentication validation error for user {email}: {e}", extra=validation_context)
+            return False, None
+            
         except Exception as e:
-            logger.error(f"Authentication error for user {email}: {e}")
+            # Log unexpected errors with full context
+            error_context = auth_context.copy()
+            error_context.update({
+                'success': False,
+                'failure_reason': 'system_error',
+                'error_type': type(e).__name__,
+                'error_details': str(e)
+            })
+            logger.error(f"Authentication system error for user {email}: {e}", extra=error_context, exc_info=True)
             return False, None
     
     def generate_tokens(self, user_data: Dict[str, Any], remember_me: bool = False) -> Dict[str, str]:
@@ -236,78 +346,161 @@ class AuthServiceV5:
             logger.error(f"Token blacklist check error: {e}")
             return False
     
-    def refresh_access_token(self, refresh_token: str) -> Tuple[bool, Optional[Dict[str, str]]]:
+    def refresh_access_token(self, refresh_token: str, ip_address: str = None, user_agent: str = None) -> Tuple[bool, Optional[Dict[str, str]]]:
         """
-        Refresh access token using refresh token.
+        Refresh access token using refresh token with enhanced logging.
         
         Args:
             refresh_token: Refresh token
+            ip_address: Client IP address for logging
+            user_agent: Client user agent for logging
             
         Returns:
             Tuple of (success, new_tokens) - new_tokens is None if refresh failed
         """
+        refresh_context = {
+            'ip_address': ip_address,
+            'user_agent': user_agent,
+            'timestamp': datetime.utcnow().isoformat(),
+            'operation': 'token_refresh'
+        }
+        
         try:
             # Verify refresh token using v5 manager
             payload = self.token_manager_v5.verify_token(refresh_token)
             if not payload or payload.get('type') != 'refresh':
-                logger.warning("Invalid refresh token")
+                refresh_context.update({
+                    'success': False,
+                    'failure_reason': 'invalid_refresh_token',
+                    'token_valid': payload is not None,
+                    'token_type': payload.get('type') if payload else None
+                })
+                logger.warning("Invalid refresh token provided", extra=refresh_context)
                 return False, None
 
             user_id = payload.get('uid')
             sid = payload.get('sid')
             fid = payload.get('fid')
+            
+            refresh_context['user_id'] = user_id
+            refresh_context['session_id'] = sid
+            refresh_context['family_id'] = fid
+            
             if not user_id or not sid or not fid:
-                logger.warning("Refresh token missing required claims")
+                refresh_context.update({
+                    'success': False,
+                    'failure_reason': 'missing_token_claims',
+                    'has_user_id': bool(user_id),
+                    'has_session_id': bool(sid),
+                    'has_family_id': bool(fid)
+                })
+                logger.warning("Refresh token missing required claims", extra=refresh_context)
                 return False, None
+
+            logger.info(f"Token refresh attempt for user {user_id}", extra=refresh_context)
 
             # Get user data
             user_data = self._get_user_by_id(user_id)
             if not user_data:
-                logger.warning(f"User {user_id} not found")
+                refresh_context.update({
+                    'success': False,
+                    'failure_reason': 'user_not_found'
+                })
+                logger.warning(f"User {user_id} not found during token refresh", extra=refresh_context)
                 return False, None
+
+            refresh_context['user_email'] = user_data.get('email')
 
             # Rotate or revoke on reuse
             try:
-                user_agent = request.headers.get('User-Agent') if request else None
-                ip = None
-                if request:
+                # Use provided values or fallback to request headers
+                current_user_agent = user_agent
+                current_ip = ip_address
+                
+                if not current_user_agent and request:
+                    current_user_agent = request.headers.get('User-Agent')
+                
+                if not current_ip and request:
                     xff = request.headers.get('X-Forwarded-For')
                     if xff:
-                        ip = xff.split(',')[0].strip()
-                    if not ip:
-                        ip = request.headers.get('X-Real-IP') or request.remote_addr
+                        current_ip = xff.split(',')[0].strip()
+                    if not current_ip:
+                        current_ip = request.headers.get('X-Real-IP') or request.remote_addr
+                
                 rotate_res = rotate_or_reject(
                     self.db_manager,
                     user_id=user_id,
                     provided_refresh=refresh_token,
                     sid=sid,
                     fid=fid,
-                    user_agent=user_agent,
-                    ip=ip,
+                    user_agent=current_user_agent,
+                    ip=current_ip,
                     ttl_seconds=int(os.getenv('REFRESH_TTL_SECONDS', str(45 * 24 * 3600)))
                 )
+                
                 if not rotate_res:
-                    logger.warning(f"Refresh token reuse detected; family revoked for user {user_id}")
+                    refresh_context.update({
+                        'success': False,
+                        'failure_reason': 'token_reuse_detected',
+                        'security_action': 'family_revoked'
+                    })
+                    logger.warning(f"Refresh token reuse detected; family revoked for user {user_id}", extra=refresh_context)
                     return False, None
+                
                 new_sid, new_refresh, new_refresh_ttl = rotate_res
+                refresh_context.update({
+                    'new_session_id': new_sid,
+                    'rotation_successful': True
+                })
+                
             except Exception as e:
-                logger.error(f"Token rotation error: {e}")
+                refresh_context.update({
+                    'success': False,
+                    'failure_reason': 'token_rotation_error',
+                    'error_type': type(e).__name__,
+                    'error_details': str(e)
+                })
+                logger.error(f"Token rotation error for user {user_id}: {e}", extra=refresh_context, exc_info=True)
                 return False, None
 
-            # Mint new access
-            new_access, access_ttl = self.token_manager_v5.mint_access_token(
-                user_id, user_data['email'], user_data.get('roles', []), sid=new_sid
-            )
-
-            logger.info(f"Access token refreshed for user {user_id}")
-            return True, {
-                'access_token': new_access,
-                'refresh_token': new_refresh,
-                'expires_in': access_ttl,
-            }
+            # Mint new access token
+            try:
+                new_access, access_ttl = self.token_manager_v5.mint_access_token(
+                    user_id, user_data['email'], user_data.get('roles', []), sid=new_sid
+                )
+                
+                refresh_context.update({
+                    'success': True,
+                    'new_access_token_ttl': access_ttl,
+                    'new_refresh_token_ttl': new_refresh_ttl
+                })
+                
+                logger.info(f"Access token refreshed successfully for user {user_id}", extra=refresh_context)
+                
+                return True, {
+                    'access_token': new_access,
+                    'refresh_token': new_refresh,
+                    'expires_in': access_ttl,
+                }
+                
+            except Exception as e:
+                refresh_context.update({
+                    'success': False,
+                    'failure_reason': 'token_minting_error',
+                    'error_type': type(e).__name__,
+                    'error_details': str(e)
+                })
+                logger.error(f"Token minting error for user {user_id}: {e}", extra=refresh_context, exc_info=True)
+                return False, None
 
         except Exception as e:
-            logger.error(f"Token refresh error: {e}")
+            refresh_context.update({
+                'success': False,
+                'failure_reason': 'system_error',
+                'error_type': type(e).__name__,
+                'error_details': str(e)
+            })
+            logger.error(f"Token refresh system error: {e}", extra=refresh_context, exc_info=True)
             return False, None
     
     def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
@@ -473,24 +666,54 @@ class AuthServiceV5:
             'content_management': ['create_content', 'update_content', 'delete_content']
         }
     
-    def register_user(self, email: str, password: str, name: str) -> Tuple[bool, Any]:
+    @timed_auth_operation('register')
+    def register_user(self, email: str, password: str, name: str, ip_address: str = None, user_agent: str = None) -> Tuple[bool, Any]:
         """
-        Register new user.
+        Register new user with enhanced logging.
         
         Args:
             email: User email
             password: User password
             name: User name
+            ip_address: Client IP address for logging
+            user_agent: Client user agent for logging
             
         Returns:
             Tuple of (success, user_data_or_error_message)
         """
+        registration_context = {
+            'email': email,
+            'name': name,
+            'ip_address': ip_address,
+            'user_agent': user_agent,
+            'timestamp': datetime.utcnow().isoformat(),
+            'operation': 'user_registration'
+        }
+        
         try:
-            # Create fresh PostgresAuthManager instance to match login endpoint behavior
-            # This ensures consistent database connection handling across all auth operations
-            from utils.postgres_auth import PostgresAuthManager
-            fresh_postgres_auth = PostgresAuthManager(self.db_manager)
-            user_data = fresh_postgres_auth.create_user(email, password, name)
+            # Input validation with detailed logging
+            if not email or not email.strip():
+                logger.warning("Registration attempt with empty email", extra=registration_context)
+                return False, "Email is required"
+            
+            if not password:
+                logger.warning("Registration attempt with empty password", extra=registration_context)
+                return False, "Password is required"
+            
+            if not name or not name.strip():
+                logger.warning("Registration attempt with empty name", extra=registration_context)
+                return False, "Name is required"
+            
+            # Normalize inputs
+            email = email.lower().strip()
+            name = name.strip()
+            registration_context.update({'email': email, 'name': name})
+            
+            logger.info(f"Registration attempt for user {email}", extra=registration_context)
+            
+            # Use connection reuse with health checks for better performance
+            postgres_auth = self._get_postgres_auth()
+            user_data = postgres_auth.create_user(email, password, name)
             
             if user_data:
                 # Convert to expected format
@@ -506,25 +729,66 @@ class AuthServiceV5:
                 
                 # Log user creation after successful database transaction
                 try:
-                    fresh_postgres_auth._log_auth_event(
+                    postgres_auth._log_auth_event(
                         user_data['user_id'], 
                         'user_created', 
                         True, 
-                        {'email': email}
+                        {'email': email, 'ip_address': ip_address, 'user_agent': user_agent}
                     )
                 except Exception as log_error:
                     logger.warning(f"Failed to log user creation event: {log_error}")
                 
-                logger.info(f"User registered successfully: {email}")
+                # Log successful registration with details
+                success_context = registration_context.copy()
+                success_context.update({
+                    'user_id': formatted_user['id'],
+                    'success': True,
+                    'default_role': 'user',
+                    'email_verified': False
+                })
+                logger.info(f"User registered successfully: {email}", extra=success_context)
+                
                 return True, formatted_user
             else:
+                # Log failed registration
+                failure_context = registration_context.copy()
+                failure_context.update({
+                    'success': False,
+                    'failure_reason': 'postgres_auth_returned_none'
+                })
+                logger.warning(f"Registration failed for user {email} - postgres auth returned None", extra=failure_context)
                 return False, "Registration failed"
                 
-        except Exception as e:
-            logger.error(f"Registration error for user {email}: {e}")
-            logger.error(f"Registration error details - email: {email}, error type: {type(e).__name__}, error args: {e.args}")
-            # Return the detailed error message for debugging
+        except ValidationError as e:
+            # Log validation errors with context
+            validation_context = registration_context.copy()
+            validation_context.update({
+                'success': False,
+                'failure_reason': 'validation_error',
+                'error_details': str(e),
+                'error_type': 'ValidationError'
+            })
+            logger.warning(f"Registration validation error for user {email}: {e}", extra=validation_context)
             return False, str(e)
+            
+        except Exception as e:
+            # Log unexpected errors with full context and stack trace
+            error_context = registration_context.copy()
+            error_context.update({
+                'success': False,
+                'failure_reason': 'system_error',
+                'error_type': type(e).__name__,
+                'error_details': str(e),
+                'error_args': str(e.args) if hasattr(e, 'args') else None
+            })
+            logger.error(f"Registration system error for user {email}: {e}", extra=error_context, exc_info=True)
+            
+            # Return detailed error message for debugging while being security-conscious
+            if isinstance(e, (ValidationError, ValueError)):
+                return False, str(e)
+            else:
+                # Don't expose internal system errors to the user
+                return False, "Registration failed due to system error. Please try again later."
     
     def health_check(self) -> Dict[str, Any]:
         """

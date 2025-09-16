@@ -30,8 +30,13 @@ class PasswordSecurity:
         if not password or len(password) < 8:
             raise ValidationError("Password must be at least 8 characters long")
         
-        # Generate salt and hash password
-        salt = bcrypt.gensalt(rounds=12)  # Cost factor 12 for security
+        # Generate salt and hash password with configurable cost factor
+        import os
+        cost_factor = int(os.getenv('BCRYPT_ROUNDS', '10'))  # Default to 10 for performance
+        if os.getenv('FLASK_ENV') == 'development':
+            cost_factor = max(8, cost_factor - 2)  # Reduce for development
+        
+        salt = bcrypt.gensalt(rounds=cost_factor)
         password_hash = bcrypt.hashpw(password.encode('utf-8'), salt)
         return password_hash.decode('utf-8')
     
@@ -311,19 +316,35 @@ class PostgresAuthManager:
             
             with self.db.session_scope() as session:
                 # Get user details with role information
-                logger.info(f"Looking up user with email: '{email}'")
-                # First, let's try a simpler query to see if the user exists
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Looking up user with email: '{email[:3]}***@{email.split('@')[1]}'")
+                
+                # Optimized single query with LEFT JOIN for roles
                 result = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.password_hash, u.email_verified,
-                               u.failed_login_attempts, u.locked_until, u.last_login
-                        FROM users u
+                               u.failed_login_attempts, u.locked_until, u.last_login,
+                               COALESCE(
+                                   JSON_AGG(
+                                       JSON_BUILD_OBJECT(
+                                           'role', ur.role, 
+                                           'level', ur.level, 
+                                           'granted_at', ur.granted_at
+                                       )
+                                   ) FILTER (WHERE ur.is_active = TRUE AND (ur.expires_at IS NULL OR ur.expires_at > NOW())),
+                                   '[]'::json
+                               ) AS roles
+                        FROM users u 
+                        LEFT JOIN user_roles ur ON u.id = ur.user_id
                         WHERE u.email = :email
+                        GROUP BY u.id, u.name, u.email, u.password_hash, u.email_verified,
+                                 u.failed_login_attempts, u.locked_until, u.last_login
                     """),
                     {'email': email}
                 ).fetchone()
                 
-                logger.info(f"Database query result: {result}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Database query result: {'Found' if result else 'Not found'}")
                 
                 if not result:
                     self._log_auth_event(None, 'login_failed', False, {'email': email, 'reason': 'user_not_found'}, ip_address)
@@ -338,13 +359,13 @@ class PostgresAuthManager:
                     return None
                 
                 # Verify password
-                logger.info(f"Authenticating user {email}")
-                logger.info(f"User data retrieved: {user_data}")
-                logger.info(f"Password hash from DB: {user_data['password_hash']}")
-                logger.info(f"Password provided: {password}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Authenticating user {email[:3]}***@{email.split('@')[1]}")
                 
                 password_verified = self.password_security.verify_password(password, user_data['password_hash'])
-                logger.info(f"Password verification result: {password_verified}")
+                
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Password verification result: {password_verified}")
                 
                 if not password_verified:
                     # Increment failed attempts
@@ -387,18 +408,11 @@ class PostgresAuthManager:
                     {'user_id': user_id}
                 )
                 
-                # Get user roles separately
-                roles_result = session.execute(
-                    text("""
-                        SELECT role, level, granted_at
-                        FROM user_roles
-                        WHERE user_id = :user_id AND is_active = TRUE 
-                        AND (expires_at IS NULL OR expires_at > NOW())
-                    """),
-                    {'user_id': user_id}
-                ).fetchall()
-                
-                roles = [{'role': row[0], 'level': row[1], 'granted_at': row[2]} for row in roles_result]
+                # Roles are now included in the main query
+                import json
+                roles = user_data.get('roles', [])
+                if isinstance(roles, str):
+                    roles = json.loads(roles)
                 
                 user_info = {
                     'user_id': user_id,

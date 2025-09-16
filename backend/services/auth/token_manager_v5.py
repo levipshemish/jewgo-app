@@ -83,14 +83,35 @@ class TokenManagerV5:
                 }
             )
             
-            # Validate required fields
+            # Validate required fields (handle both old and new formats)
             if not payload.get('jti'):
                 logger.warning("Token missing JTI")
                 return None
             
-            if not payload.get('type'):
+            # Handle optimized payload format
+            token_type = payload.get('type') or payload.get('t')
+            if not token_type:
                 logger.warning("Token missing type")
                 return None
+            
+            # Normalize payload format for backward compatibility
+            if 't' in payload and 'type' not in payload:
+                payload['type'] = payload['t']
+            if 'e' in payload and 'email' not in payload:
+                payload['email'] = payload['e']
+            if 'r' in payload and 'roles' not in payload:
+                # Convert simplified roles back to full format
+                simplified_roles = payload['r']
+                full_roles = []
+                for role in simplified_roles:
+                    if isinstance(role, dict):
+                        full_roles.append({
+                            'role': role.get('r'),
+                            'level': role.get('l')
+                        })
+                    else:
+                        full_roles.append(role)
+                payload['roles'] = full_roles
             
             # Log performance metrics
             duration_ms = (time.perf_counter() - start_time) * 1000
@@ -128,10 +149,11 @@ class TokenManagerV5:
             now = self._now_utc()
             exp_time = now + timedelta(seconds=effective_ttl)
             
+            # Optimized payload with shortened field names
             payload = {
-                'type': 'access',
+                't': 'access',  # type
                 'uid': user_id,
-                'email': email,
+                'e': email,     # email
                 'iat': int(now.timestamp()),
                 'exp': int(exp_time.timestamp()),
                 'jti': secrets.token_hex(16),  # JWT ID for tracking
@@ -139,9 +161,19 @@ class TokenManagerV5:
                 'aud': self.audience
             }
             
-            # Add roles if provided
+            # Add roles if provided (simplified format)
             if roles:
-                payload['roles'] = roles
+                # Convert roles to simplified format to reduce payload size
+                simplified_roles = []
+                for role in roles:
+                    if isinstance(role, dict):
+                        simplified_roles.append({
+                            'r': role.get('role'),      # role
+                            'l': role.get('level')      # level
+                        })
+                    else:
+                        simplified_roles.append(role)
+                payload['r'] = simplified_roles  # roles
             
             # Add auth_time for step-up authentication
             if auth_time:
