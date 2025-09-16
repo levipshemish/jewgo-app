@@ -215,16 +215,45 @@ function SignInForm() {
 
   const handleMagicLinkSignIn = async () => {
     if (magicLinkCooldown > 0) return;
-    
+
     try {
       setMagicStatus('sending');
       setError(null);
-      
-      // PostgreSQL auth doesn't support magic links by default
-      // This could be implemented as a password reset flow
-      setError('Magic link sign-in not supported in PostgreSQL auth system');
-      setMagicStatus(null);
-      
+
+      // Basic email format validation
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setMagicStatus(null);
+        setError('Enter a valid email to receive a magic link');
+        return;
+      }
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+      if (!backendUrl) {
+        setMagicStatus(null);
+        setError('Missing backend configuration');
+        return;
+      }
+
+      const resp = await fetch(`${backendUrl.replace(/\/$/, '')}/api/v5/auth/magic/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, returnTo: redirectTo }),
+        credentials: 'include',
+        mode: 'cors',
+      });
+
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || data?.success === false) {
+        const msg = data?.error || 'Failed to send magic link';
+        setMagicStatus(null);
+        setError(msg);
+        showError(msg);
+        return;
+      }
+
+      setMagicStatus('sent');
+      showSuccess('Magic link sent! Check your email.');
+      setMagicLinkCooldown(60);
     } catch (magicError) {
       const authError = handleAuthError(magicError, 'magic_link_signin', { email });
       setError(authError.message);
@@ -449,6 +478,40 @@ function SignInForm() {
             </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3">
+              {/* Google OAuth */}
+              <button
+                onClick={() => {
+                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+                  if (!backendUrl) {
+                    setError('Missing backend configuration');
+                    return;
+                  }
+                  const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/google/start?returnTo=${encodeURIComponent(redirectTo)}`;
+                  window.location.href = url;
+                }}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                title="Sign in with Google"
+              >
+                Continue with Google
+              </button>
+
+              {/* Apple OAuth */}
+              <button
+                onClick={() => {
+                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+                  if (!backendUrl) {
+                    setError('Missing backend configuration');
+                    return;
+                  }
+                  const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/apple/start?returnTo=${encodeURIComponent(redirectTo)}`;
+                  window.location.href = url;
+                }}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                title="Sign in with Apple"
+              >
+                Continue with Apple
+              </button>
+
               {/* Magic Link Sign-in */}
               <button
                 onClick={handleMagicLinkSignIn}

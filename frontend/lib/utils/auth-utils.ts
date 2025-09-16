@@ -83,18 +83,6 @@ export async function transformSupabaseUser(
 
 // Note: Server-only HMAC constants moved to auth-utils.server.ts to prevent client bundle inclusion
 
-/**
- * DEPRECATED: Use validateRedirectUrl instead
- * This function was removed due to security concerns - it was too permissive
- * and could allow accidental misuse. All call sites should use validateRedirectUrl
- * which has stricter validation and better security.
- * 
- * WARNING: Do not introduce alternative sanitizers. Use validateRedirectUrl only.
- */
-export function sanitizeRedirectUrl(url: string | null | undefined): string {
-  // DEPRECATED: sanitizeRedirectUrl is deprecated. Use validateRedirectUrl instead. Removal target: 2026-01-31
-  return validateRedirectUrl(url);
-}
 
 // Import trusted CDN IPs from centralized configuration
 import { TRUSTED_CDN_IPS } from '@/lib/config/environment';

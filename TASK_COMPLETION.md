@@ -28,6 +28,38 @@ Docs Updated
 Follow-ups
 - (empty)
 
+## 2025-09-16 — Codebase Cleanup and Organization
+- ID: 2025-09-16-CODEBASE-CLEANUP
+- Owner: Claude Sonnet 4
+- Links: `AGENTS.md`
+
+Reason Why — User requested comprehensive codebase cleanup following AGENTS.md guidelines. Systematic removal of temporary files, deprecated code, and unused documentation while fixing linting issues and organizing file structure.
+
+Change Summary
+- **Removed temporary test files**: 10 verification/test .txt files from root directory
+- **Removed deprecated files**: `lib/utils/admin.ts`, `lib/admin/auth.ts`, `lib/auth/canonical.ts` 
+- **Cleaned up deprecated functions**: Removed `sanitizeRedirectUrl` from auth-utils.ts
+- **Fixed linting issues**: Fixed unused variables in magic page test and component
+- **Cleaned up documentation**: Removed outdated ESLint progress reports and analysis files
+- **Updated TASKS.md**: Simplified format, removed empty table structure
+
+Risks & Mitigations
+- Verified deprecated files had no imports before deletion. No runtime risk.
+- Linting fixes maintain functionality while cleaning code quality.
+- Documentation cleanup removes outdated information to prevent confusion.
+
+Tests
+- Frontend linting passes with 0 errors/warnings after fixes.
+- No functional code changes that require additional testing.
+
+Docs Updated
+- Updated `TASKS.md` with cleaner format
+- Removed outdated documentation files
+- Maintained current and relevant documentation
+
+Follow-ups
+- (empty)
+
 Pre-Change Safety Checklist
 - Reused existing code/config/docs: yes
 - Smallest diff that satisfies acceptance: yes

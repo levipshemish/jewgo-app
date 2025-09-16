@@ -2,9 +2,7 @@
 
 Status: open — add new tasks here. Flip to Status: working before edits. Remove on completion and log in `TASK_COMPLETION.md`.
 
-| ID | Title | Status | Owner | Created | Updated | Links |
-|----|-------|--------|-------|---------|---------|-------|
-| —  | —     | —      | —     | —       | —       | —     |
+*Currently no open tasks.*
 
 ## Status Conventions
 - open: planned and not started
