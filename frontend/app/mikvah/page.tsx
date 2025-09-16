@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { generateMockMikvah, type MockMikvah } from "@/lib/mockData/mikvah"
 import LocationAwarePage from "@/components/LocationAwarePage"
 import { ModernFilterPopup } from "@/components/filters/ModernFilterPopup"
+import { transformMikvahToGridCard, type RealMikvah } from "@/lib/types/mikvah"
 
 // Mikvah type
 interface _Mikvah {
@@ -238,60 +239,84 @@ function MikvahPageContent() {
     setShowFilters(false)
   }, [setFilter, clearFilter, clearAllFilters, activeFilters])
 
-  // Transform mikvah data for UnifiedCard with distance calculation
-  const transformMikvahToCardData = (mikvahFacility: MockMikvah) => {
-    const rating = mikvahFacility.rating || mikvahFacility.star_rating || mikvahFacility.google_rating;
-    const ratingText = rating ? rating.toFixed(1) : undefined;
-    const mikvahType = mikvahFacility.mikvah_type && mikvahFacility.mikvah_type.trim() !== '' ? mikvahFacility.mikvah_type : '';
-    
-    // Calculate distance if user location and mikvah coordinates are available
-    let distanceText = '';
-    const hasUserLocation = !!(userLocation?.latitude && userLocation?.longitude);
-    const hasMikvahLocation = !!(mikvahFacility.latitude && mikvahFacility.longitude && 
-      mikvahFacility.latitude !== 0 && mikvahFacility.longitude !== 0);
-    
-    if (hasUserLocation && hasMikvahLocation) {
-      // Calculate distance using Haversine formula
-      const R = 3959; // Earth's radius in miles
-      const dLat = (mikvahFacility.latitude! - userLocation!.latitude) * Math.PI / 180;
-      const dLon = (mikvahFacility.longitude! - userLocation!.longitude) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(userLocation!.latitude * Math.PI / 180) * Math.cos(mikvahFacility.latitude! * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const distance = R * c;
-      
-      // Format distance (same as eatery/shul pages)
-      if (distance < 0.1) {
-        distanceText = `${Math.round(distance * 5280)}ft`;
-      } else if (distance < 1) {
-        distanceText = `${Math.round(distance * 10) / 10}mi`;
-      } else if (distance < 10) {
-        distanceText = `${distance.toFixed(1)}mi`;
-      } else {
-        distanceText = `${Math.round(distance)}mi`;
-      }
-    } else {
-      // Fallback to zip code or city if no distance can be calculated
-      distanceText = mikvahFacility.zip_code || mikvahFacility.city || '';
-    }
-    
-    return {
-      id: String(mikvahFacility.id),
-      imageUrl: mikvahFacility.image_url,
-      imageTag: mikvahFacility.kosher_certification,
-      title: mikvahFacility.name,
-      badge: ratingText,
-      subtitle: mikvahType,
-      additionalText: distanceText,
-      showHeart: true,
-      isLiked: false,
-      kosherCategory: mikvahFacility.kosher_certification,
-      rating,
-      reviewCount: mikvahFacility.reviewcount,
+  // Transform mikvah data using the new specialized MikvahGridCard type
+  const transformMikvahToCardData = (mikvahFacility: MockMikvah | RealMikvah) => {
+    // Convert to RealMikvah format for the transformer (handles both mock and real data)
+    const realMikvah: RealMikvah = {
+      id: mikvahFacility.id,
+      name: mikvahFacility.name,
+      description: mikvahFacility.description,
+      address: mikvahFacility.address,
       city: mikvahFacility.city,
-      distance: distanceText,
+      state: mikvahFacility.state,
+      zip_code: mikvahFacility.zip_code,
+      phone_number: mikvahFacility.phone_number,
+      website: mikvahFacility.website,
+      email: mikvahFacility.email,
+      mikvah_type: mikvahFacility.mikvah_type,
+      mikvah_category: mikvahFacility.mikvah_category,
+      business_hours: mikvahFacility.business_hours,
+      requires_appointment: mikvahFacility.requires_appointment,
+      appointment_phone: mikvahFacility.appointment_phone,
+      appointment_website: mikvahFacility.appointment_website,
+      walk_in_available: mikvahFacility.walk_in_available,
+      advance_booking_days: mikvahFacility.advance_booking_days,
+      distance: mikvahFacility.distance,
+      distance_miles: mikvahFacility.distance_miles,
+      rating: mikvahFacility.rating,
+      reviewcount: mikvahFacility.reviewcount,
+      star_rating: mikvahFacility.star_rating,
+      google_rating: mikvahFacility.google_rating,
+      image_url: mikvahFacility.image_url,
+      logo_url: mikvahFacility.logo_url,
+      has_changing_rooms: mikvahFacility.has_changing_rooms,
+      has_shower_facilities: mikvahFacility.has_shower_facilities,
+      has_towels_provided: mikvahFacility.has_towels_provided,
+      has_soap_provided: mikvahFacility.has_soap_provided,
+      has_hair_dryers: mikvahFacility.has_hair_dryers,
+      has_private_entrance: mikvahFacility.has_private_entrance,
+      has_disabled_access: mikvahFacility.has_disabled_access,
+      has_parking: mikvahFacility.has_parking,
+      rabbinical_supervision: mikvahFacility.rabbinical_supervision,
+      kosher_certification: mikvahFacility.kosher_certification,
+      community_affiliation: mikvahFacility.community_affiliation,
+      religious_authority: mikvahFacility.religious_authority,
+      fee_amount: mikvahFacility.fee_amount,
+      fee_currency: mikvahFacility.fee_currency,
+      accepts_credit_cards: mikvahFacility.accepts_credit_cards,
+      accepts_cash: mikvahFacility.accepts_cash,
+      accepts_checks: mikvahFacility.accepts_checks,
+      is_active: mikvahFacility.is_active,
+      is_verified: mikvahFacility.is_verified,
+      created_at: mikvahFacility.created_at,
+      updated_at: mikvahFacility.updated_at,
+      tags: mikvahFacility.tags,
+      admin_notes: mikvahFacility.admin_notes,
+      specials: mikvahFacility.specials,
+      listing_type: mikvahFacility.listing_type,
+      latitude: mikvahFacility.latitude,
+      longitude: mikvahFacility.longitude
+    };
+
+    // Use the specialized transformer
+    const mikvahGridCard = transformMikvahToGridCard(realMikvah, userLocation);
+    
+    // Convert to Card component format
+    return {
+      id: String(realMikvah.id),
+      imageUrl: mikvahGridCard.imageUrl,
+      imageTag: mikvahGridCard.imageTag,
+      title: mikvahGridCard.title,
+      badge: mikvahGridCard.badge ? `${mikvahGridCard.badge.rating.toFixed(1)}` : undefined,
+      subtitle: mikvahGridCard.subtitle,
+      additionalText: mikvahGridCard.additionalText,
+      showHeart: mikvahGridCard.showHeart,
+      isLiked: mikvahGridCard.isLiked,
+      kosherCategory: mikvahGridCard.mikvahCategory,
+      rating: mikvahGridCard.badge?.rating,
+      reviewCount: mikvahGridCard.badge?.reviewCount,
+      city: mikvahGridCard.city,
+      distance: mikvahGridCard.additionalText,
     };
   };
 

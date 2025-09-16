@@ -93,7 +93,7 @@ function MikvahDetailContent() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/v5/mikvahs/${mikvahId}`);
+        const response = await fetch(`/api/mikvahs/${mikvahId}`);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -101,6 +101,11 @@ function MikvahDetailContent() {
         }
 
         const data = await response.json();
+        
+        if (!data.success || !data.data) {
+          throw new Error('Invalid response format');
+        }
+        
         setMikvah(data.data);
       } catch (err) {
         console.error('Error fetching mikvah:', err);
@@ -200,18 +205,6 @@ function MikvahDetailContent() {
   }
 
   const listingData = mapMikvahToListingData(mikvah, parsedHours, distance);
-
-  // Debug: Log the enhanced mikvah data structure
-  console.log('🏛️ Enhanced Mikvah Data:', {
-    id: listingData.id,
-    title: listingData.title,
-    tags: listingData.tags,
-    pricing: listingData.pricing,
-    rabbinicAuthority: listingData.rabbinicAuthority,
-    amenitiesSelected: listingData.amenitiesSelected,
-    policies: listingData.policies,
-    moderation: listingData.moderation
-  });
 
   return (
     <div>

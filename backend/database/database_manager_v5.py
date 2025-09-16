@@ -418,6 +418,82 @@ class DatabaseManagerV5:
             logger.error(f"Error getting shuls for geocoding: {e}")
             return []
 
+    def get_mikvah_by_id(self, mikvah_id: int) -> Optional[Dict[str, Any]]:
+        """Get a specific mikvah by ID."""
+        try:
+            with self.get_session() as session:
+                query = """
+                    SELECT * FROM mikvah 
+                    WHERE id = :mikvah_id AND is_active = true
+                """
+                result = session.execute(text(query), {"mikvah_id": mikvah_id})
+                row = result.first()
+                return dict(row._mapping) if row else None
+                
+        except Exception as e:
+            logger.error(f"Error getting mikvah {mikvah_id}: {e}")
+            return None
+
+    def update_mikvah_coordinates(self, mikvah_id: int, latitude: float, longitude: float) -> bool:
+        """Update mikvah coordinates."""
+        try:
+            with self.get_session() as session:
+                query = """
+                    UPDATE mikvah 
+                    SET latitude = :latitude, longitude = :longitude, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = :mikvah_id
+                """
+                result = session.execute(text(query), {
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "mikvah_id": mikvah_id
+                })
+                session.commit()
+                
+                if result.rowcount > 0:
+                    logger.info(f"Updated coordinates for mikvah {mikvah_id}: ({latitude}, {longitude})")
+                    return True
+                else:
+                    logger.warning(f"No mikvah found with ID {mikvah_id}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error updating mikvah coordinates: {e}")
+            return False
+
+    def get_mikvahs_for_geocoding(self, limit: int = 50, include_with_coordinates: bool = False) -> List[Dict[str, Any]]:
+        """Get mikvahs that need geocoding (or all if include_with_coordinates=True)."""
+        try:
+            with self.get_session() as session:
+                if include_with_coordinates:
+                    # Get all mikvahs
+                    query = """
+                        SELECT id, name, address, city, state, zip_code, country, latitude, longitude
+                        FROM mikvah 
+                        WHERE is_active = true 
+                        AND (address IS NOT NULL OR city IS NOT NULL)
+                        ORDER BY created_at DESC
+                        LIMIT :limit
+                    """
+                else:
+                    # Get only mikvahs without coordinates
+                    query = """
+                        SELECT id, name, address, city, state, zip_code, country, latitude, longitude
+                        FROM mikvah 
+                        WHERE is_active = true 
+                        AND (latitude IS NULL OR longitude IS NULL OR latitude = 0 OR longitude = 0)
+                        AND (address IS NOT NULL OR city IS NOT NULL)
+                        ORDER BY created_at DESC
+                        LIMIT :limit
+                    """
+                
+                result = session.execute(text(query), {"limit": limit})
+                return [dict(row._mapping) for row in result]
+                
+        except Exception as e:
+            logger.error(f"Error getting mikvahs for geocoding: {e}")
+            return []
+
     def close(self):
         """Close database connections and cleanup."""
         if self.engine:

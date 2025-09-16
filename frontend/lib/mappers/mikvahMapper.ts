@@ -1,7 +1,7 @@
 import { ListingData } from '@/types/listing';
 
 // Enhanced mikvah-specific data structure based on your example
-export interface MikvahListingData extends ListingData {
+export interface MikvahListingData extends Omit<ListingData, 'hours' | 'tags'> {
   backButton?: boolean;
   tags?: {
     types?: string[]; // ["Women", "Keilim", "Men"]

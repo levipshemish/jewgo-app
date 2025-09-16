@@ -4,6 +4,7 @@
 export * from '@/lib/types/restaurant';
 export * from '@/lib/types/marketplace';
 export * from '@/lib/types/shul';
+export * from '@/lib/types/mikvah';
 export * from '@/lib/validators/review';
 
 // Analytics and tracking types
