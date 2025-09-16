@@ -1,28 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { apiClient } from '@/lib/api/index-v5';
 
 export async function GET(_request: NextRequest) {
   try {
-    // Call the v5 API with include_filter_options=true to get filter options
-    const response = await apiClient.getEntities(
-      'synagogues',
-      {}, // no filters
-      {
-        limit: 1, // minimal data needed
-        includeFilterOptions: true
-      }
-    );
+    // Make direct call to backend to get filter options
+    const url = 'https://api.jewgo.app/api/v5/synagogues?limit=1&include_filter_options=true';
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (!response) {
-      return NextResponse.json(
-        { error: 'Failed to fetch filter options' },
-        { status: 500 }
-      );
+    if (!response.ok) {
+      throw new Error(`Backend responded with status: ${response.status}`);
     }
 
-    // The API client returns response.data, which contains the full backend response
-    // The filterOptions should be at the top level of the response
-    const filterOptions = response.filterOptions || {};
+    const data = await response.json();
+
+    // Extract filter options from backend response
+    const filterOptions = data.filterOptions || {};
 
     return NextResponse.json({
       success: true,

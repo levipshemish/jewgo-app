@@ -225,8 +225,8 @@ class PostgresAuthManager:
                 # Assign default user role
                 session.execute(
                     text("""
-                        INSERT INTO user_roles (user_id, role, level, granted_at, is_active)
-                        VALUES (:user_id, 'user', 1, NOW(), TRUE)
+                        INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
+                        VALUES (:user_id, 'user', 1, NOW(), 'system', TRUE, NOW(), NOW())
                     """),
                     {'user_id': user_id}
                 )
@@ -682,8 +682,8 @@ class PostgresAuthManager:
                 # Assign guest role with level 0
                 session.execute(
                     text("""
-                        INSERT INTO user_roles (user_id, role, level, granted_at, is_active)
-                        VALUES (:user_id, 'guest', 0, NOW(), TRUE)
+                        INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
+                        VALUES (:user_id, 'guest', 0, NOW(), 'system', TRUE, NOW(), NOW())
                     """),
                     {'user_id': user_id}
                 )
@@ -918,10 +918,10 @@ class PostgresAuthManager:
                 session.execute(
                     text(
                         """
-                        INSERT INTO user_roles (user_id, role, level, granted_at, is_active)
-                        VALUES (:uid, 'user', 1, NOW(), TRUE)
+                        INSERT INTO user_roles (user_id, role, level, granted_at, granted_by, is_active, created_at, updated_at)
+                        VALUES (:uid, 'user', 1, NOW(), 'system', TRUE, NOW(), NOW())
                         ON CONFLICT (user_id, role)
-                        DO UPDATE SET is_active = TRUE, level = EXCLUDED.level
+                        DO UPDATE SET is_active = TRUE, level = EXCLUDED.level, updated_at = NOW()
                         """
                     ),
                     { 'uid': user_id }
