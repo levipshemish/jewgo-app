@@ -17,6 +17,7 @@ import ComingSoonModal from '@/components/ui/ComingSoonModal';
 function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailAutoFilled, setEmailAutoFilled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [_isLoading, _setIsLoading] = useState(false); // TODO: Implement loading state
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -36,6 +37,25 @@ function SignInForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  // Check for browser auto-fill on mount
+  useEffect(() => {
+    const checkAutoFill = () => {
+      // Check if email field was auto-filled with test email
+      if (typeof window !== 'undefined') {
+        const emailInput = document.getElementById('email-address') as HTMLInputElement;
+        if (emailInput && emailInput.value && emailInput.value.toLowerCase().includes('test@gmail.com')) {
+          setEmail(emailInput.value);
+          setEmailAutoFilled(true);
+          console.log('[Auto-fill] Detected browser auto-fill:', emailInput.value);
+        }
+      }
+    };
+    
+    // Check after a short delay to allow browser auto-fill to complete
+    const timer = setTimeout(checkAutoFill, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Check if reCAPTCHA is ready
   useEffect(() => {
@@ -415,6 +435,24 @@ function SignInForm() {
 
           {/* Success toast handled via useToast */}
 
+          {/* Auto-fill Warning */}
+          {emailAutoFilled && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded relative">
+              <div className="flex items-center justify-between">
+                <span>⚠️ Browser auto-filled email detected. Please verify this is your email address.</span>
+                <button
+                  onClick={() => {
+                    setEmail('');
+                    setEmailAutoFilled(false);
+                  }}
+                  className="ml-4 text-yellow-600 hover:text-yellow-800 underline text-sm"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Success Message */}
           {magicStatus === 'sent' && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
@@ -432,12 +470,21 @@ function SignInForm() {
                   id="email-address"
                   name="email"
                   type="email"
-                  autoComplete="email"
+                  autoComplete="off"
                   required
                   className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
+                  placeholder="Enter your email address"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailAutoFilled(false); // User is manually typing
+                  }}
+                  onFocus={() => {
+                    // Check if field was auto-filled when user focuses
+                    if (email && email.toLowerCase().includes('test@gmail.com')) {
+                      setEmailAutoFilled(true);
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -530,7 +577,11 @@ function SignInForm() {
               <button
                 onClick={handleMagicLinkSignIn}
                 disabled={magicLinkCooldown > 0 || magicStatus === 'sending' || !email.trim()}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full inline-flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+                  emailAutoFilled 
+                    ? 'border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100' 
+                    : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                }`}
               >
                 {magicLinkCooldown > 0 ? (
                   `Wait ${magicLinkCooldown}s`
@@ -538,8 +589,10 @@ function SignInForm() {
                   'Sending magic link...'
                 ) : !email.trim() ? (
                   'Enter email for magic link'
+                ) : emailAutoFilled ? (
+                  `Send to ${email}? (auto-filled)`
                 ) : (
-                  "Send magic link"
+                  `Send magic link to ${email}`
                 )}
               </button>
 
