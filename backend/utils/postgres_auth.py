@@ -316,7 +316,7 @@ class PostgresAuthManager:
             with self.db.session_scope() as session:
                 row = session.execute(
                     text("""
-                        SELECT u.id, u.name, u.email, u.email_verified,
+                        SELECT u.id, u.name, u.email, u.email_verified, u.image,
                                u."createdAt", u."updatedAt", u.oauth_provider, u.oauth_provider_id
                         FROM users u
                         WHERE u.id = :user_id
@@ -333,6 +333,8 @@ class PostgresAuthManager:
                     'email': row.email,
                     'name': row.name,
                     'email_verified': row.email_verified,
+                    'image': row.image,  # Include profile image
+                    'avatar_url': row.image,  # Alias for frontend compatibility
                     'created_at': row.createdAt.isoformat() if row.createdAt else None,
                     'updated_at': row.updatedAt.isoformat() if row.updatedAt else None,
                     'oauth_provider': row.oauth_provider,  # Include OAuth provider

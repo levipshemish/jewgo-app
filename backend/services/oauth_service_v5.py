@@ -191,7 +191,7 @@ class OAuthService:
                         f"Linking {provider} account to existing user: {email[:3]}***@{email.split('@')[1]}"
                     )
                     
-                    # Update existing user with OAuth information
+                    # Update existing user with OAuth information including profile image
                     session.execute(
                         text(
                             """
@@ -199,6 +199,7 @@ class OAuthService:
                             SET oauth_provider = :provider,
                                 oauth_provider_id = :provider_id,
                                 oauth_raw_profile = :raw_profile,
+                                image = :avatar_url,
                                 "updatedAt" = NOW()
                             WHERE id = :user_id
                             """
@@ -208,21 +209,22 @@ class OAuthService:
                             'provider': provider,
                             'provider_id': provider_id,
                             'raw_profile': json.dumps(raw_profile) if raw_profile else None,
+                            'avatar_url': avatar_url,  # Update profile image URL
                         },
                     )
                 else:
-                    # Create new user with OAuth information
+                    # Create new user with OAuth information including profile image
                     user_id = secrets.token_hex(16)
                     session.execute(
                         text(
                             """
                             INSERT INTO users (
-                                id, name, email, email_verified, "isSuperAdmin",
+                                id, name, email, email_verified, "isSuperAdmin", image,
                                 oauth_provider, oauth_provider_id, oauth_raw_profile,
                                 "createdAt", "updatedAt"
                             )
                             VALUES (
-                                :user_id, :name, :email, :email_verified, FALSE,
+                                :user_id, :name, :email, :email_verified, FALSE, :avatar_url,
                                 :provider, :provider_id, :raw_profile,
                                 NOW(), NOW()
                             )
@@ -233,6 +235,7 @@ class OAuthService:
                             'name': name or email.split('@')[0],
                             'email': email.lower(),
                             'email_verified': email_verified,
+                            'avatar_url': avatar_url,  # Add profile image URL
                             'provider': provider,
                             'provider_id': provider_id,
                             'raw_profile': json.dumps(raw_profile) if raw_profile else None,
