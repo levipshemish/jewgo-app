@@ -170,14 +170,59 @@ class Analytics {
 
     // Or send to custom analytics endpoint
     try {
-      await fetch('/api/analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(event),
-      });
-    } catch {
+      const payload = JSON.stringify(event);
+      const payloadSize = new TextEncoder().encode(payload).length;
+      
+      // Check payload size and truncate if necessary
+      if (payloadSize > 500000) { // 500KB threshold for individual events
+        console.warn(`[Analytics] Large event payload (${Math.round(payloadSize / 1024)}KB), truncating properties`);
+        const truncatedEvent = {
+          ...event,
+          properties: this.truncateProperties(event.properties || {})
+        };
+        
+        await fetch('/api/analytics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(truncatedEvent),
+        });
+      } else {
+        await fetch('/api/analytics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        });
+      }
+    } catch (error: any) {
+      // Handle REQUEST_TOO_LARGE errors gracefully
+      if (error?.message?.includes('413') || error?.message?.includes('REQUEST_TOO_LARGE')) {
+        console.warn('[Analytics] Request too large, event dropped');
+      }
       // console.error('[Analytics] Failed to send event:', error);
     }
+  }
+
+  private truncateProperties(properties: Record<string, any>): Record<string, any> {
+    const truncated: Record<string, any> = {};
+    
+    for (const [key, value] of Object.entries(properties)) {
+      if (typeof value === 'string' && value.length > 500) {
+        // Truncate long strings
+        truncated[key] = value.substring(0, 500) + '... [truncated]';
+      } else if (typeof value === 'object' && value !== null) {
+        // For objects, keep only essential fields
+        if (Array.isArray(value)) {
+          truncated[key] = value.slice(0, 10); // Limit arrays to 10 items
+        } else {
+          // Recursively truncate nested objects
+          truncated[key] = this.truncateProperties(value);
+        }
+      } else {
+        truncated[key] = value;
+      }
+    }
+    
+    return truncated;
   }
 }
 

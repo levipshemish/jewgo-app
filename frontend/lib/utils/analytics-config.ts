@@ -51,7 +51,7 @@ export function getAnalyticsConfig(): AnalyticsConfig {
     
     // API Configuration
     apiEndpoint: process.env.NEXT_PUBLIC_ANALYTICS_API_ENDPOINT || '/api/analytics',
-    batchSize: parseInt(process.env.NEXT_PUBLIC_ANALYTICS_BATCH_SIZE || '10', 10),
+    batchSize: parseInt(process.env.NEXT_PUBLIC_ANALYTICS_BATCH_SIZE || '5', 10), // Reduced from 10 to prevent REQUEST_TOO_LARGE errors
     flushInterval: parseInt(process.env.NEXT_PUBLIC_ANALYTICS_FLUSH_INTERVAL || '30000', 10),
   };
 }
@@ -102,8 +102,8 @@ export function validateAnalyticsConfig(): { valid: boolean; errors: string[] } 
       errors.push('Analytics API endpoint must be a relative path');
     }
     
-    if (config.batchSize < 1 || config.batchSize > 100) {
-      errors.push('Analytics batch size must be between 1 and 100');
+    if (config.batchSize < 1 || config.batchSize > 20) {
+      errors.push('Analytics batch size must be between 1 and 20 to prevent REQUEST_TOO_LARGE errors');
     }
     
     if (config.flushInterval < 1000 || config.flushInterval > 300000) {

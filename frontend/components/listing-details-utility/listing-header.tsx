@@ -112,30 +112,32 @@ export function ListingHeader({
         {kosherAgency && (
           <>
             <div className="w-2 flex-shrink-0" />
-            {(() => {
-              const lowerAgency = kosherAgency.toLowerCase()
-              const isClickable = kosherAgencyWebsite || 
-                lowerAgency.includes('orb') || 
-                lowerAgency.includes('orthodox rabbinical board') ||
-                lowerAgency.includes('kosher miami') || 
-                lowerAgency.includes('vaad hakashrus') ||
-                lowerAgency.includes('vaad') ||
-                lowerAgency.includes('miami-dade')
-              
-              return isClickable ? (
-                <button
-                  onClick={handleAgencyClick}
-                  className="text-base font-medium text-gray-600 hover:text-blue-600 underline transition-colors rounded p-1 m-0 truncate min-w-0"
-                  title={kosherAgency}
-                >
-                  {kosherAgency}
-                </button>
-              ) : (
-                <span className="text-base font-medium text-gray-600 m-0 truncate min-w-0" title={kosherAgency}>
-                  {kosherAgency}
-                </span>
-              )
-            })()}
+            <div className="min-w-0 max-w-32 flex-shrink">
+              {(() => {
+                const lowerAgency = kosherAgency.toLowerCase()
+                const isClickable = kosherAgencyWebsite || 
+                  lowerAgency.includes('orb') || 
+                  lowerAgency.includes('orthodox rabbinical board') ||
+                  lowerAgency.includes('kosher miami') || 
+                  lowerAgency.includes('vaad hakashrus') ||
+                  lowerAgency.includes('vaad') ||
+                  lowerAgency.includes('miami-dade')
+                
+                return isClickable ? (
+                  <button
+                    onClick={handleAgencyClick}
+                    className="text-base font-medium text-gray-600 hover:text-blue-600 underline transition-colors rounded p-1 m-0 truncate w-full text-left"
+                    title={kosherAgency}
+                  >
+                    {kosherAgency}
+                  </button>
+                ) : (
+                  <span className="text-base font-medium text-gray-600 m-0 truncate block" title={kosherAgency}>
+                    {kosherAgency}
+                  </span>
+                )
+              })()}
+            </div>
           </>
         )}
 

@@ -308,3 +308,39 @@ Follow-ups
 - Move database credentials to environment variables for security
 - Implement connection pooling for better performance
 - Replace direct database access with proper backend API once authentication is resolved
+
+## 2025-09-17 — Fix Analytics REQUEST_TOO_LARGE Error
+- ID: 2025-09-17-ANALYTICS-REQUEST-SIZE-FIX
+- Owner: Claude Sonnet 4
+- Links: `frontend/lib/services/analytics-service.ts`, `frontend/utils/analytics.ts`, `frontend/lib/utils/analytics-config.ts`, `frontend/lib/config/infiniteScroll.constants.ts`
+
+Reason Why — Frontend view tracking was generating "REQUEST_TOO_LARGE" errors due to analytics service batching too many events (up to 60 events with 10 per batch) that exceeded the backend's 1MB JSON size limit in security middleware. Each analytics event contains extensive properties (user agent, screen resolution, viewport size, timestamps, event data) that accumulate to large payloads when batched.
+
+Change Summary
+- **Reduced default batch size**: Lowered from 10 to 5 events per request to prevent large payloads
+- **Added payload size validation**: Implemented `calculatePayloadSize()` and `splitEventsBatch()` methods with 800KB threshold
+- **Enhanced error handling**: Added specific handling for REQUEST_TOO_LARGE errors with automatic batch splitting
+- **Implemented progressive batching**: Large payloads automatically split into smaller 400KB batches
+- **Added property truncation**: Long strings and large objects truncated to prevent oversized events
+- **Reduced analytics budgets**: Further lowered IS_ANALYTICS_MAX_EVENTS from 60 to 30 events per session
+- **Updated validation limits**: Batch size validation reduced from max 100 to max 20 events
+
+Risks & Mitigations
+- More frequent network requests due to smaller batches, but prevents request failures
+- Event truncation may lose some detail, but preserves essential analytics data
+- Re-queuing limited to 25 events maximum to prevent infinite growth
+- Graceful degradation when payload size limits are exceeded
+
+Tests
+- All modified files pass linting with 0 errors
+- Payload size calculation uses TextEncoder for accurate byte measurement
+- Batch splitting logic handles edge cases (single oversized events, empty batches)
+- Error recovery prevents infinite loops with request size limits
+
+Docs Updated
+- Added comprehensive inline documentation for new payload management methods
+- Updated analytics configuration comments explaining size limits
+- Documented truncation behavior and error handling strategies
+
+Follow-ups
+- (empty)

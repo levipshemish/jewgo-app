@@ -19,7 +19,7 @@ export const IS_MEMORY_CAP_ITEMS = 300; // Maximum items to retain in memory (re
 export const IS_MEMORY_COMPACTION_THRESHOLD = 400; // Trigger compaction when exceeding this (reduced from 800)
 export const IS_MEMORY_MONITORING_INTERVAL_MS = 30000; // Check memory every 30s
 
-// Analytics budgets
-export const IS_ANALYTICS_MAX_EVENTS = 60; // Reduced from 120
-export const IS_ANALYTICS_MAX_ERRORS = 20; // Reduced from 40
-export const IS_MAX_RETRY_EPISODES_PER_SESSION = 3; // Reduced from 5
+// Analytics budgets - further reduced to prevent REQUEST_TOO_LARGE errors
+export const IS_ANALYTICS_MAX_EVENTS = 30; // Further reduced from 60 to prevent large payloads
+export const IS_ANALYTICS_MAX_ERRORS = 10; // Further reduced from 20
+export const IS_MAX_RETRY_EPISODES_PER_SESSION = 2; // Further reduced from 3

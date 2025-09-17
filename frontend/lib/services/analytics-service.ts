@@ -411,6 +411,133 @@ class AnalyticsService {
   }
 
   /**
+   * Calculate the approximate size of a payload in bytes
+   */
+  private calculatePayloadSize(events: AnalyticsEvent[]): number {
+    const payload = {
+      events,
+      batch_size: events.length,
+      timestamp: Date.now(),
+    };
+    return new TextEncoder().encode(JSON.stringify(payload)).length;
+  }
+
+  /**
+   * Split events into smaller batches if they exceed size limits
+   */
+  private splitEventsBatch(events: AnalyticsEvent[], maxSizeBytes: number = 800000): AnalyticsEvent[][] {
+    const batches: AnalyticsEvent[][] = [];
+    let currentBatch: AnalyticsEvent[] = [];
+    
+    for (const event of events) {
+      const testBatch = [...currentBatch, event];
+      const testSize = this.calculatePayloadSize(testBatch);
+      
+      if (testSize > maxSizeBytes && currentBatch.length > 0) {
+        // Current batch would exceed limit, start a new batch
+        batches.push(currentBatch);
+        currentBatch = [event];
+      } else {
+        currentBatch.push(event);
+      }
+    }
+    
+    if (currentBatch.length > 0) {
+      batches.push(currentBatch);
+    }
+    
+    return batches.length > 0 ? batches : [[]];
+  }
+
+  /**
+   * Send a batch of events to the analytics API
+   */
+  private async sendBatch(events: AnalyticsEvent[]): Promise<boolean> {
+    try {
+      const payload = {
+        events,
+        batch_size: events.length,
+        timestamp: Date.now(),
+      };
+      
+      const response = await fetch(this.config.apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        console.warn(`[Analytics] Failed to send batch (${response.status}):`, responseText);
+        
+        // Handle REQUEST_TOO_LARGE error by splitting batch further
+        if (response.status === 413 || responseText.includes('REQUEST_TOO_LARGE')) {
+          console.warn('[Analytics] Request too large, attempting to split batch further');
+          
+          if (events.length === 1) {
+            // Single event is too large, truncate its properties
+            const truncatedEvent = this.truncateEventProperties(events[0]);
+            return await this.sendBatch([truncatedEvent]);
+          } else {
+            // Split batch into smaller pieces
+            const smallerBatches = this.splitEventsBatch(events, 400000); // Even smaller batches
+            let allSucceeded = true;
+            
+            for (const smallBatch of smallerBatches) {
+              const success = await this.sendBatch(smallBatch);
+              if (!success) allSucceeded = false;
+            }
+            
+            return allSucceeded;
+          }
+        }
+        
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.warn('[Analytics] Error sending batch:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Truncate event properties to reduce payload size
+   */
+  private truncateEventProperties(event: AnalyticsEvent): AnalyticsEvent {
+    const truncatedEvent: AnalyticsEvent = {
+      ...event,
+      properties: event.properties ? this.truncateProperties(event.properties) : undefined,
+    };
+    
+    return truncatedEvent;
+  }
+
+  /**
+   * Recursively truncate properties to reduce size
+   */
+  private truncateProperties(properties: Record<string, unknown>): Record<string, unknown> {
+    const truncated: Record<string, unknown> = {};
+    
+    for (const [key, value] of Object.entries(properties)) {
+      if (typeof value === 'string' && value.length > 1000) {
+        // Truncate long strings
+        truncated[key] = value.substring(0, 1000) + '... [truncated]';
+      } else if (typeof value === 'object' && value !== null) {
+        // Recursively truncate nested objects, but limit depth
+        truncated[key] = this.truncateProperties(value as Record<string, unknown>);
+      } else {
+        truncated[key] = value;
+      }
+    }
+    
+    return truncated;
+  }
+
+  /**
    * Flush queued events to the analytics API
    */
   async flush(): Promise<void> {
@@ -420,27 +547,43 @@ class AnalyticsService {
     this.queue = [];
 
     try {
-      const response = await fetch(this.config.apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          events: eventsToSend,
-          batch_size: eventsToSend.length,
-          timestamp: Date.now(),
-        }),
-      });
-
-      if (!response.ok) {
-        console.warn('[Analytics] Failed to flush events:', response.status);
-        // Re-queue failed events
-        this.queue.unshift(...eventsToSend);
+      // Check payload size and split if necessary
+      const payloadSize = this.calculatePayloadSize(eventsToSend);
+      console.debug(`[Analytics] Flushing ${eventsToSend.length} events (${Math.round(payloadSize / 1024)}KB)`);
+      
+      if (payloadSize > 800000) { // 800KB threshold (below 1MB limit)
+        console.warn(`[Analytics] Large payload detected (${Math.round(payloadSize / 1024)}KB), splitting into batches`);
+        const batches = this.splitEventsBatch(eventsToSend);
+        
+        let failedEvents: AnalyticsEvent[] = [];
+        
+        for (const batch of batches) {
+          const success = await this.sendBatch(batch);
+          if (!success) {
+            failedEvents.push(...batch);
+          }
+        }
+        
+        // Re-queue failed events (but limit to prevent infinite growth)
+        if (failedEvents.length > 0 && this.queue.length < 50) {
+          this.queue.unshift(...failedEvents.slice(0, 25)); // Limit re-queued events
+        }
+      } else {
+        // Send as single batch
+        const success = await this.sendBatch(eventsToSend);
+        
+        if (!success && this.queue.length < 50) {
+          // Re-queue failed events (but limit to prevent infinite growth)
+          this.queue.unshift(...eventsToSend.slice(0, 25));
+        }
       }
     } catch (error) {
-      console.warn('[Analytics] Error flushing events:', error);
-      // Re-queue failed events
-      this.queue.unshift(...eventsToSend);
+      console.warn('[Analytics] Error during flush:', error);
+      
+      // Re-queue some events on error (but limit to prevent infinite growth)
+      if (this.queue.length < 50) {
+        this.queue.unshift(...eventsToSend.slice(0, 10));
+      }
     }
   }
 
