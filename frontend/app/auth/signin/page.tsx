@@ -233,10 +233,15 @@ function SignInForm() {
       setMagicStatus('sending');
       setError(null);
 
+      // Debug: Log the email being used
+      console.log('[Magic Link] Email being sent to:', email);
+      appLogger.info('Magic link request', { email: email?.substring(0, 3) + '***' });
+
       // Basic email format validation
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         setMagicStatus(null);
-        setError('Enter a valid email to receive a magic link');
+        setError('Please enter a valid email address to receive a magic link');
+        showError('Please enter a valid email address to receive a magic link');
         return;
       }
 
@@ -265,8 +270,11 @@ function SignInForm() {
       }
 
       setMagicStatus('sent');
-      showSuccess('Magic link sent! Check your email.');
+      showSuccess(`Magic link sent to ${email}! Check your email.`);
       setMagicLinkCooldown(60);
+      
+      // Clear the email field to prevent confusion
+      // setEmail(''); // Commented out - user might want to try again
     } catch (magicError) {
       const authError = handleAuthError(magicError, 'magic_link_signin', { email });
       setError(authError.message);
@@ -521,13 +529,17 @@ function SignInForm() {
               {/* Magic Link Sign-in */}
               <button
                 onClick={handleMagicLinkSignIn}
-                disabled={magicLinkCooldown > 0}
+                disabled={magicLinkCooldown > 0 || magicStatus === 'sending' || !email.trim()}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {magicLinkCooldown > 0 ? (
                   `Wait ${magicLinkCooldown}s`
+                ) : magicStatus === 'sending' ? (
+                  'Sending magic link...'
+                ) : !email.trim() ? (
+                  'Enter email for magic link'
                 ) : (
-                  "Sign in with magic link"
+                  "Send magic link"
                 )}
               </button>
 
