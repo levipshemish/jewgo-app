@@ -208,8 +208,8 @@ class MagicLinkService:
                     text(
                         """
                         UPDATE magic_links_v5
-                        SET consumed_at = NOW()
-                        WHERE email = :email AND consumed_at IS NULL AND id != :link_id
+                        SET used_at = NOW(), is_used = TRUE
+                        WHERE email = :email AND (used_at IS NULL OR is_used = FALSE) AND id != :link_id
                         """
                     ),
                     {'email': email, 'link_id': link_id},
