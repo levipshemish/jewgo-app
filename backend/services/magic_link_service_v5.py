@@ -171,7 +171,7 @@ class MagicLinkService:
                         WHERE id = :link_id
                           AND email = :email
                           AND expires_at > NOW()
-                          AND consumed_at IS NULL
+                          AND (used_at IS NULL OR is_used = FALSE)
                         FOR UPDATE
                         """
                     ),
@@ -192,8 +192,8 @@ class MagicLinkService:
                     text(
                         """
                         UPDATE magic_links_v5
-                        SET consumed_at = NOW()
-                        WHERE id = :link_id AND consumed_at IS NULL
+                        SET used_at = NOW(), is_used = TRUE
+                        WHERE id = :link_id AND (used_at IS NULL OR is_used = FALSE)
                         RETURNING id
                         """
                     ),

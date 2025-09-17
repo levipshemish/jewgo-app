@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
  * Force logout endpoint that aggressively clears all auth state
  * This is a nuclear option when normal logout isn't working
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     console.log('Force logout: Starting aggressive logout...');
     
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
               ...(domain && { domain }),
               path
             });
-          } catch (e) {
+          } catch (_e) {
             // Ignore individual cookie clear failures
           }
         }

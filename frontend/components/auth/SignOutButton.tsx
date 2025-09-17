@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuth as useAuthContext } from "@/contexts/AuthContext";
 
@@ -26,7 +25,6 @@ export default function SignOutButton({
   ...rest
 }: SignOutButtonProps) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { signOut } = useAuth();
   const authContext = useAuthContext();
 
@@ -83,8 +81,8 @@ export default function SignOutButton({
           sessionStorage.clear();
           
           // Clear visible cookies
-          document.cookie.split(";").forEach(function(c) { 
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          document.cookie.split(";").forEach((c) => { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${  new Date().toUTCString()  };path=/`); 
           });
           
           console.log('SignOutButton: Browser state cleared');

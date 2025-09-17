@@ -545,6 +545,8 @@ class AuthServiceV5:
                     'name': user_data.get('name'),
                     'provider': provider,  # Add provider information
                     'oauth_provider': user_data.get('oauth_provider'),  # Keep OAuth provider info
+                    'image': user_data.get('image'),  # Profile image URL
+                    'avatar_url': user_data.get('image') or user_data.get('avatar_url'),  # Alias for frontend
                     'roles': user_data.get('roles', [{'role': 'user', 'level': 1}]),
                     'permissions': user_data.get('permissions', []),
                     'email_verified': user_data.get('email_verified', False),

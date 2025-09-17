@@ -79,7 +79,7 @@ export function ListingHeader({
   return (
     <div className="flex justify-center px-4">
       {/* Header bar with consistent spacing and better visual hierarchy */}
-      <div className="inline-flex items-center px-4 py-2.5 rounded-full mt-8 shadow-lg max-w-fit backdrop-blur-md bg-white/80 border border-white/20 dark:bg-white/14 dark:border-white/22 whitespace-nowrap" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}>
+      <div className="inline-flex items-center px-4 py-2.5 rounded-full mt-8 shadow-lg max-w-full backdrop-blur-md bg-white/80 border border-white/20 dark:bg-white/14 dark:border-white/22 overflow-hidden" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}>
         {/* Back button */}
         {onBack && (
           <Button 
@@ -125,12 +125,13 @@ export function ListingHeader({
               return isClickable ? (
                 <button
                   onClick={handleAgencyClick}
-                  className="text-base font-medium text-gray-600 hover:text-blue-600 underline transition-colors rounded p-1 m-0 whitespace-nowrap flex-shrink-0"
+                  className="text-base font-medium text-gray-600 hover:text-blue-600 underline transition-colors rounded p-1 m-0 truncate min-w-0"
+                  title={kosherAgency}
                 >
                   {kosherAgency}
                 </button>
               ) : (
-                <span className="text-base font-medium text-gray-600 m-0 whitespace-nowrap flex-shrink-0">
+                <span className="text-base font-medium text-gray-600 m-0 truncate min-w-0" title={kosherAgency}>
                   {kosherAgency}
                 </span>
               )

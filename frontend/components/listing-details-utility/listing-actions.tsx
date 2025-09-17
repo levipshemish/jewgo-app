@@ -250,26 +250,32 @@ export function ListingActions({
               >
                 {bottomAction.hoursInfo && <Clock size={16} />}
                 <div className="flex items-center justify-center gap-1.5">
-                  <span className="text-sm font-medium">Hours:</span>
-                  <span className={`text-sm font-semibold ${(() => {
-                    const status = getRestaurantStatus(bottomAction.hoursInfo?.hours || [])
-                    return status.statusColor
-                  })()}`}>
-                    {(() => {
-                      const status = getRestaurantStatus(bottomAction.hoursInfo?.hours || [])
-                      return status.statusText
-                    })()}
-                  </span>
                   {(() => {
                     const status = getRestaurantStatus(bottomAction.hoursInfo?.hours || [])
-                    if (status.nextTime && status.nextTimeLabel) {
+                    
+                    // If no hours available, just show "Hours not available"
+                    if (status.status === 'unknown' || !bottomAction.hoursInfo?.hours || bottomAction.hoursInfo.hours.length === 0) {
                       return (
-                        <span className="text-sm text-gray-600 font-medium">
-                          {status.nextTimeLabel}: {status.nextTime}
+                        <span className="text-sm font-medium text-gray-500">
+                          Hours not available
                         </span>
                       )
                     }
-                    return null
+                    
+                    // Otherwise show the full status with label
+                    return (
+                      <>
+                        <span className="text-sm font-medium">Hours:</span>
+                        <span className={`text-sm font-semibold ${status.statusColor}`}>
+                          {status.statusText}
+                        </span>
+                        {status.nextTime && status.nextTimeLabel && (
+                          <span className="text-sm text-gray-600 font-medium">
+                            {status.nextTimeLabel}: {status.nextTime}
+                          </span>
+                        )}
+                      </>
+                    )
                   })()}
                 </div>
                 {bottomAction.hoursInfo && (
