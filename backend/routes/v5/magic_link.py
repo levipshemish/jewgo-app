@@ -8,6 +8,7 @@ from flask import request, redirect, make_response, jsonify
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from middleware.auth_decorators import rate_limit_by_user
+from middleware.csrf_v5 import csrf_exempt
 from services.magic_link_service_v5 import MagicLinkService, MagicLinkError
 from services.auth_service_v5 import AuthServiceV5
 from services.auth.cookies import set_auth
@@ -34,6 +35,7 @@ def _get_magic_link_service():
 
 
 @magic_link_bp.route('/send', methods=['POST'])
+@csrf_exempt  # Magic link authentication should be exempt from CSRF protection
 @rate_limit_by_user(max_requests=10, window_minutes=15)
 def magic_link_send():
     """Create a magic link and send via email."""
