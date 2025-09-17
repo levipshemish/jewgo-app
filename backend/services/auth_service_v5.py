@@ -532,10 +532,19 @@ class AuthServiceV5:
                 created_at = user_data.get('created_at') or user_data.get('createdAt')
                 updated_at = user_data.get('updated_at') or user_data.get('updatedAt')
                 
+                # Determine authentication provider
+                provider = 'email'  # default
+                if user_data.get('oauth_provider'):
+                    provider = user_data.get('oauth_provider')
+                elif user_data.get('provider'):
+                    provider = user_data.get('provider')
+
                 return {
                     'id': user_data.get('user_id') or user_data.get('id'),
                     'email': user_data['email'],
                     'name': user_data.get('name'),
+                    'provider': provider,  # Add provider information
+                    'oauth_provider': user_data.get('oauth_provider'),  # Keep OAuth provider info
                     'roles': user_data.get('roles', [{'role': 'user', 'level': 1}]),
                     'permissions': user_data.get('permissions', []),
                     'email_verified': user_data.get('email_verified', False),

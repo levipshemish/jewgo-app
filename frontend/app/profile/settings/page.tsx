@@ -351,7 +351,9 @@ function AccountSettings({ user }: { user: AuthUser }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Authentication Provider</label>
-          <p className="mt-1 text-sm text-gray-900 capitalize">{currentUser.provider || 'PostgreSQL'}</p>
+          <p className="mt-1 text-sm text-gray-900 capitalize">
+            {currentUser.oauth_provider || currentUser.provider || 'Email'}
+          </p>
         </div>
       </div>
     </div>

@@ -317,7 +317,7 @@ class PostgresAuthManager:
                 row = session.execute(
                     text("""
                         SELECT u.id, u.name, u.email, u.email_verified,
-                               u."createdAt", u."updatedAt"
+                               u."createdAt", u."updatedAt", u.oauth_provider, u.oauth_provider_id
                         FROM users u
                         WHERE u.id = :user_id
                     """),
@@ -335,6 +335,8 @@ class PostgresAuthManager:
                     'email_verified': row.email_verified,
                     'created_at': row.createdAt.isoformat() if row.createdAt else None,
                     'updated_at': row.updatedAt.isoformat() if row.updatedAt else None,
+                    'oauth_provider': row.oauth_provider,  # Include OAuth provider
+                    'oauth_provider_id': row.oauth_provider_id,  # Include OAuth provider ID
                     'roles': [{'role': 'user', 'level': 1}],  # Default role
                     'permissions': []
                 }
