@@ -55,9 +55,28 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
 
         const result = await getCurrentProfile();
 
-        if (result.success) {
-          // PostgreSQL auth - profile data not available yet
-          // Set default form values
+        if (result.success && result.data) {
+          // PostgreSQL auth - populate form with actual profile data
+          const profile = result.data;
+          setValue("username", profile.username || "");
+          setValue("displayName", profile.full_name || "");
+          setValue("bio", profile.bio || "");
+          setValue("location", profile.location || "");
+          setValue("website", profile.website || "");
+          setValue("phone", profile.phone || "");
+          setValue("dateOfBirth", profile.date_of_birth || "");
+          setValue("emailNotifications", profile.preferences?.email_notifications ?? true);
+          setValue("pushNotifications", profile.preferences?.push_notifications ?? true);
+          setValue("marketingEmails", profile.preferences?.marketing_emails ?? false);
+          setValue("publicProfile", profile.preferences?.public_profile ?? true);
+          setValue("showLocation", profile.preferences?.show_location ?? false);
+          
+          // Set username for validation
+          setUsername(profile.username || "");
+          
+          setIsInitialized(true);
+        } else if (result.success) {
+          // Success but no data - set defaults
           setValue("username", "");
           setValue("displayName", "");
           setValue("bio", "");
@@ -71,13 +90,11 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
           setValue("publicProfile", true);
           setValue("showLocation", false);
           
-          // Set username for validation
           setUsername("");
-          
           setIsInitialized(true);
         } else {
-          console.error('Failed to load profile:', result.error);
-          showError("Failed to load profile data");
+          console.error('Failed to load profile:', result.error || result.message);
+          showError(result.message || "Failed to load profile data");
           // Still set as initialized so we show the form
           setIsInitialized(true);
         }

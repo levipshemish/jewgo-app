@@ -347,6 +347,21 @@ class PostgresAuthClient {
   private clearTokens(): void {
     this.accessToken = null;
     this.refreshToken = null;
+    this.csrfToken = null;
+    this._profilePromise = null;
+    
+    // Clear any cached authentication state
+    if (typeof window !== 'undefined') {
+      // Clear any visible auth-related cookies (best effort)
+      try {
+        // Note: HttpOnly cookies can't be cleared from client-side
+        document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      } catch (e) {
+        console.warn('Failed to clear some cookies:', e);
+      }
+    }
   }
 
   /**
@@ -417,15 +432,18 @@ class PostgresAuthClient {
    */
   async logout(): Promise<void> {
     try {
+      console.log('PostgresAuth: Starting logout...');
       try { await this.getCsrf(); } catch {}
       // Call logout endpoint (for audit logging)
       await this.request('/logout', {
         method: 'POST',
       });
+      console.log('PostgresAuth: Backend logout successful');
     } catch (error) {
-      console.warn('Logout request failed:', error);
+      console.warn('PostgresAuth: Logout request failed:', error);
       // Continue with local logout even if API call fails
     } finally {
+      console.log('PostgresAuth: Clearing tokens and local state');
       this.clearTokens();
     }
   }
@@ -708,13 +726,16 @@ class PostgresAuthClient {
    */
   async signOut(): Promise<void> {
     try {
+      console.log('PostgresAuth: Starting signOut...');
       try { await this.getCsrf(); } catch {}
       await this.request('/logout', { method: 'POST' });
+      console.log('PostgresAuth: Backend signOut successful');
     } catch (error) {
       // Even if the backend call fails, we should clear local tokens
-      console.warn('Backend logout failed, but clearing local tokens:', error);
+      console.warn('PostgresAuth: Backend logout failed, but clearing local tokens:', error);
     } finally {
       // Always clear local tokens
+      console.log('PostgresAuth: Clearing tokens and local state in signOut');
       this.clearTokens();
     }
   }

@@ -85,10 +85,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      console.log('AuthContext: Starting logout process...');
       await postgresAuth.logout();
+      console.log('AuthContext: Backend logout completed, clearing user state');
       setUser(null);
+      setLoading(false);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('AuthContext: Logout error:', error);
+      // Even if logout fails, clear the user state
+      console.log('AuthContext: Clearing user state despite logout error');
+      setUser(null);
+      setLoading(false);
     }
   };
 

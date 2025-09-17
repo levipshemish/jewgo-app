@@ -18,25 +18,71 @@ export async function POST(request: NextRequest) {
   const baseHeaders = getCORSHeaders(origin || undefined);
 
   try {
-    // Redirect the browser to backend logout so HttpOnly cookies on that domain are cleared
+    // Call backend logout API directly and return JSON response
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
-    const url = new URL(request.url);
-    const returnTo = url.searchParams.get('returnTo') || '/';
-    const backendLogoutUrl = `${backendUrl}/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
-    const redirect = NextResponse.redirect(backendLogoutUrl, 302);
-    // Best effort: also clear any same-site cookies that may be set on this domain
+    if (!backendUrl) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Backend URL not configured' 
+      }, { status: 500, headers: baseHeaders });
+    }
+
+    // Forward the logout request to the backend
+    const backendResponse = await fetch(`${backendUrl}/api/v5/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward any authorization headers
+        ...(request.headers.get('authorization') && {
+          'Authorization': request.headers.get('authorization')!
+        })
+      },
+      // Forward cookies to backend
+      credentials: 'include'
+    });
+
+    // Clear frontend cookies regardless of backend response
+    const cookieStore = await cookies();
     try {
-      const cookieStore = await cookies();
       cookieStore.set('access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
       cookieStore.set('refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
       cookieStore.set('auth_access_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
       cookieStore.set('auth_refresh_token', '', { maxAge: 0, httpOnly: true, secure: true, sameSite: 'lax' });
-    } catch {}
-    Object.entries(baseHeaders).forEach(([k, v]) => redirect.headers.set(k, v));
-    return redirect;
+    } catch (cookieError) {
+      console.warn('Failed to clear some cookies:', cookieError);
+    }
+
+    // Return the backend response or success if backend call failed
+    if (backendResponse.ok) {
+      const backendData = await backendResponse.json().catch(() => ({}));
+      return NextResponse.json({
+        success: true,
+        message: backendData.message || 'Logout successful'
+      }, { status: 200, headers: baseHeaders });
+    } else {
+      // Even if backend logout fails, we've cleared frontend cookies
+      console.warn('Backend logout failed, but frontend cookies cleared');
+      return NextResponse.json({
+        success: true,
+        message: 'Logout completed (frontend cookies cleared)'
+      }, { status: 200, headers: baseHeaders });
+    }
 
   } catch (error) {
     console.error('Sign out error:', error);
-    return NextResponse.json({ error: 'INTERNAL_ERROR' }, { status: 500, headers: baseHeaders });
+    
+    // Even on error, try to clear cookies
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set('access_token', '', { maxAge: 0 });
+      cookieStore.set('refresh_token', '', { maxAge: 0 });
+      cookieStore.set('auth_access_token', '', { maxAge: 0 });
+      cookieStore.set('auth_refresh_token', '', { maxAge: 0 });
+    } catch {}
+    
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Sign out failed' 
+    }, { status: 500, headers: baseHeaders });
   }
 }

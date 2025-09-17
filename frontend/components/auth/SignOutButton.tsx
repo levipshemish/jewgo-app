@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SignOutButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label?: string;
@@ -25,16 +26,37 @@ export default function SignOutButton({
 }: SignOutButtonProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { signOut } = useAuth();
 
   const handleClick = async () => {
-    if (loading) {return;}
+    if (loading) return;
     setLoading(true);
+    
     try {
-      await fetch("/api/auth/signout", { method: "POST", credentials: "include" });
+      // Use the auth context's signOut method which properly clears state
+      await signOut();
       onSignedOut?.();
+      
+      // Force navigation to redirect URL
       router.push(redirectTo);
+      
+      // Also force a page reload to ensure all state is cleared
+      setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 100);
+      
     } catch (e) {
       console.error("Sign out failed", e);
+      
+      // Even if signOut fails, try to clear state and redirect
+      onSignedOut?.();
+      router.push(redirectTo);
+      
+      // Force reload as fallback
+      setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 100);
+      
     } finally {
       setLoading(false);
     }

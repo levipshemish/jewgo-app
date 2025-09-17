@@ -66,15 +66,53 @@ export async function getCurrentProfile() {
     // Check if PostgreSQL auth is configured
     if (!isPostgresAuthConfigured()) {
       appLogger.warn('PostgreSQL auth not configured, skipping profile fetch');
-      return { success: false, message: 'Authentication not configured' };
+      return { success: false, message: 'Authentication not configured', error: 'Authentication not configured' };
     }
 
-    appLogger.info('Profile fetch not implemented for PostgreSQL auth');
+    // Get profile via backend API
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+    if (!backendUrl) {
+      return { 
+        success: false, 
+        message: 'Backend URL not configured',
+        error: 'Backend URL not configured'
+      };
+    }
+
+    const response = await fetch(`${backendUrl}/api/v5/auth/profile`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { 
+        success: false, 
+        message: errorData.error || `Profile fetch failed with status ${response.status}`,
+        error: errorData.error || 'Profile fetch failed'
+      };
+    }
+
+    const result = await response.json();
     
-    return { 
-      success: false, 
-      message: 'Profile fetch not implemented for PostgreSQL auth' 
-    };
+    if (result.success && result.user) {
+      appLogger.info('Profile fetched successfully via PostgreSQL auth');
+      
+      return { 
+        success: true, 
+        data: result.user,
+        message: 'Profile loaded successfully'
+      };
+    } else {
+      return { 
+        success: false, 
+        message: result.error || 'Failed to load profile',
+        error: result.error || 'Failed to load profile'
+      };
+    }
     
   } catch (error) {
     appLogger.error('Profile fetch failed', { error });
