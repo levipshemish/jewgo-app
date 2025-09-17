@@ -36,6 +36,9 @@ export interface PageViewProperties {
   searchQuery?: string;
   category?: string;
   tags?: string[];
+  source?: string;
+  user_id?: string;
+  session_id?: string;
 }
 
 export interface EcommerceProperties {
