@@ -609,6 +609,9 @@ def create_app(config_class=None):
         try:
             from routes.v5.magic_link import magic_link_bp
             app.register_blueprint(magic_link_bp)     # /api/v5/auth/magic/*
+            
+            from routes.v5.two_factor_api import two_factor_bp
+            app.register_blueprint(two_factor_bp)     # /api/v5/auth/2fa/*
             logger.info("Magic Link blueprint registered successfully")
         except ImportError as e:
             logger.warning(f"Could not import Magic Link blueprint: {e}")
