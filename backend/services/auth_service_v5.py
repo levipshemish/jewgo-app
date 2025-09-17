@@ -528,7 +528,10 @@ class AuthServiceV5:
                     if not user_data:
                         return None
                 
-                # Return sanitized profile data in consistent format
+                # Return sanitized profile data in consistent format (both snake_case and camelCase for compatibility)
+                created_at = user_data.get('created_at') or user_data.get('createdAt')
+                updated_at = user_data.get('updated_at') or user_data.get('updatedAt')
+                
                 return {
                     'id': user_data.get('user_id') or user_data.get('id'),
                     'email': user_data['email'],
@@ -536,8 +539,11 @@ class AuthServiceV5:
                     'roles': user_data.get('roles', [{'role': 'user', 'level': 1}]),
                     'permissions': user_data.get('permissions', []),
                     'email_verified': user_data.get('email_verified', False),
-                    'created_at': user_data.get('created_at'),
-                    'updated_at': user_data.get('updated_at'),
+                    # Include both formats for frontend compatibility
+                    'created_at': created_at,
+                    'updated_at': updated_at,
+                    'createdAt': created_at,  # camelCase for frontend
+                    'updatedAt': updated_at,  # camelCase for frontend
                     'last_login': user_data.get('last_login')
                 }
                 

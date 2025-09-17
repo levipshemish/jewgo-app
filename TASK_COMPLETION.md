@@ -143,6 +143,41 @@ Docs Updated
 Follow-ups
 - (empty)
 
+## 2025-09-16 — Avatar Upload and Profile Settings Fix
+- ID: 2025-09-16-AVATAR-PROFILE-FIX
+- Owner: Claude Sonnet 4
+- Links: `frontend/app/actions/upload-avatar.ts`, `backend/routes/v5/auth_api.py`, `backend/services/auth_service_v5.py`, `frontend/app/profile/settings/page.tsx`, `frontend/app/login/page.tsx`
+
+Reason Why — User reported that avatar upload was not implemented for PostgreSQL auth and that the profile settings page was loading infinitely. Additionally fixed build errors related to useSearchParams() Suspense boundary requirements.
+
+Change Summary
+- **Implemented Avatar Upload for PostgreSQL Auth**: Complete end-to-end avatar upload functionality with file validation, secure storage, and URL generation
+- **Added Backend Avatar Endpoints**: `/api/v5/auth/avatar/upload`, `/api/v5/auth/avatar/delete`, `/api/v5/auth/avatar/<filename>` for full CRUD operations
+- **Enhanced AuthServiceV5**: Added `upload_user_avatar()` and `delete_user_avatar()` methods with security validation
+- **Fixed Profile Settings Infinite Loading**: Added proper error handling for 503 Service Unavailable errors to prevent infinite loading states
+- **Fixed Build Errors**: Wrapped useSearchParams() in Suspense boundary in login redirect page to resolve Next.js build failures
+
+Risks & Mitigations
+- **File Upload Security**: Implemented strict file type validation, size limits (5MB), filename sanitization, and directory traversal prevention
+- **Storage Management**: Avatar files stored in `backend/uploads/avatars/` with unique UUIDs to prevent conflicts and ensure security
+- **Error Handling**: Comprehensive error handling prevents infinite loading and provides user-friendly error messages
+- **Backward Compatibility**: All changes maintain existing functionality while adding new features
+
+Tests
+- **Frontend Build**: ✅ Next.js build passes with no errors after Suspense fix
+- **TypeScript**: ✅ All type checking passes (`npx tsc --noEmit`)
+- **ESLint**: ✅ All linting issues resolved with auto-fix
+- **Backend Imports**: ✅ All Python modules import successfully with no syntax errors
+- **File Validation**: Avatar upload includes comprehensive validation for type, size, and security
+
+Docs Updated
+- **Inline Documentation**: Added comprehensive documentation for all new avatar methods and endpoints
+- **Error Messages**: Updated user-facing error messages for better UX during service unavailability
+
+Follow-ups
+- Deploy backend changes to make avatar upload functionality live
+- Configure `FRONTEND_URL` environment variable for OAuth redirects
+
 ## 2025-09-16 — Fix TypeScript and Syntax Issues for Vercel Deployment
 - ID: 2025-09-16-VERCEL-DEPLOYMENT-FIX
 - Owner: Claude Sonnet 4
