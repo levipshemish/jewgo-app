@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuth as useAuthContext } from "@/contexts/AuthContext";
 
 interface SignOutButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label?: string;
@@ -27,35 +28,83 @@ export default function SignOutButton({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { signOut } = useAuth();
+  const authContext = useAuthContext();
 
   const handleClick = async () => {
     if (loading) return;
     setLoading(true);
     
     try {
-      // Use the auth context's signOut method which properly clears state
-      await signOut();
+      console.log('SignOutButton: Starting direct logout...');
+      
+      // Try normal signout first, then force logout if needed
+      try {
+        const response = await fetch("/api/auth/signout", { 
+          method: "POST", 
+          credentials: "include" 
+        });
+        const result = await response.json().catch(() => ({}));
+        console.log('SignOutButton: Normal signout response:', result);
+        
+        // If normal signout fails, try force logout
+        if (!result.success) {
+          console.log('SignOutButton: Normal signout failed, trying force logout...');
+          const forceResponse = await fetch("/api/auth/force-logout", { 
+            method: "POST", 
+            credentials: "include" 
+          });
+          const forceResult = await forceResponse.json().catch(() => ({}));
+          console.log('SignOutButton: Force logout response:', forceResult);
+        }
+      } catch (apiError) {
+        console.warn('SignOutButton: All API signout attempts failed:', apiError);
+      }
+      
+      // Call both auth contexts to ensure all state is cleared
+      try {
+        await signOut();
+        console.log('SignOutButton: useAuth signOut completed');
+      } catch (e) {
+        console.warn('SignOutButton: useAuth signOut failed:', e);
+      }
+      
+      try {
+        await authContext.logout();
+        console.log('SignOutButton: AuthContext logout completed');
+      } catch (e) {
+        console.warn('SignOutButton: AuthContext logout failed:', e);
+      }
+      
+      // Clear any remaining browser state aggressively
+      try {
+        if (typeof window !== 'undefined') {
+          // Clear all storage
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          // Clear visible cookies
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
+          
+          console.log('SignOutButton: Browser state cleared');
+        }
+      } catch (e) {
+        console.warn('SignOutButton: Failed to clear browser state:', e);
+      }
+      
       onSignedOut?.();
+      console.log('SignOutButton: Forcing complete page reload to', redirectTo);
       
-      // Force navigation to redirect URL
-      router.push(redirectTo);
-      
-      // Also force a page reload to ensure all state is cleared
-      setTimeout(() => {
-        window.location.href = redirectTo;
-      }, 100);
+      // Force complete page reload to ensure all state is cleared
+      window.location.href = redirectTo;
       
     } catch (e) {
-      console.error("Sign out failed", e);
+      console.error("SignOutButton: Complete sign out failed", e);
       
-      // Even if signOut fails, try to clear state and redirect
+      // Nuclear option: force redirect regardless
       onSignedOut?.();
-      router.push(redirectTo);
-      
-      // Force reload as fallback
-      setTimeout(() => {
-        window.location.href = redirectTo;
-      }, 100);
+      window.location.href = redirectTo;
       
     } finally {
       setLoading(false);
