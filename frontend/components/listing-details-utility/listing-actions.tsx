@@ -251,10 +251,32 @@ export function ListingActions({
                 {bottomAction.hoursInfo && <Clock size={16} />}
                 <div className="flex items-center justify-center gap-1.5">
                   {(() => {
-                    const status = getRestaurantStatus(bottomAction.hoursInfo?.hours || [])
+                    // Check for no hours data first, before calling getRestaurantStatus
+                    if (!bottomAction.hoursInfo?.hours || bottomAction.hoursInfo.hours.length === 0) {
+                      return (
+                        <span className="text-sm font-medium text-gray-500">
+                          Hours not available
+                        </span>
+                      )
+                    }
                     
-                    // If no hours available, just show "Hours not available"
-                    if (status.status === 'unknown' || !bottomAction.hoursInfo?.hours || bottomAction.hoursInfo.hours.length === 0) {
+                    // Check if all hours are empty or invalid
+                    const hasValidHours = bottomAction.hoursInfo.hours.some(h => 
+                      h && h.day && h.time && h.time.trim() !== ''
+                    )
+                    
+                    if (!hasValidHours) {
+                      return (
+                        <span className="text-sm font-medium text-gray-500">
+                          Hours not available
+                        </span>
+                      )
+                    }
+                    
+                    const status = getRestaurantStatus(bottomAction.hoursInfo.hours)
+                    
+                    // If status function still returns unknown, show "Hours not available"
+                    if (status.status === 'unknown') {
                       return (
                         <span className="text-sm font-medium text-gray-500">
                           Hours not available

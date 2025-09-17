@@ -20,6 +20,7 @@ interface RegistrationMetrics {
 
 class Analytics {
   private queue: AnalyticsEventData[] = [];
+  private sentEvents = new Set<string>(); // Track sent events to prevent duplicates
   private metrics: RegistrationMetrics = {
     totalAttempts: 0,
     successfulRegistrations: 0,
@@ -28,8 +29,26 @@ class Analytics {
     rateLimitHits: 0,
   };
 
-  // Track a generic event
+  // Track a generic event with deduplication
   track(event: string, properties?: Record<string, any>) {
+    // Create unique key for deduplication (event + key properties)
+    const eventKey = this.createEventKey(event, properties);
+    
+    // Check if we've already sent this event recently
+    if (this.sentEvents.has(eventKey)) {
+      console.debug(`[Analytics] Duplicate event skipped: ${event}`);
+      return;
+    }
+    
+    // Mark event as sent
+    this.sentEvents.add(eventKey);
+    
+    // Clean up old event keys every 100 events to prevent memory leak
+    if (this.sentEvents.size > 100) {
+      const keysArray = Array.from(this.sentEvents);
+      keysArray.slice(0, 50).forEach(key => this.sentEvents.delete(key));
+    }
+
     const analyticsEvent: AnalyticsEventData = {
       event,
       properties,
@@ -42,7 +61,19 @@ class Analytics {
     if (process.env.NODE_ENV === 'production') {
       this.sendToAnalyticsService(analyticsEvent);
     } else {
-      }
+      console.debug(`[Analytics] Event tracked: ${event}`, properties);
+    }
+  }
+
+  // Create unique key for event deduplication
+  private createEventKey(event: string, properties?: Record<string, any>): string {
+    const keyProps = properties ? {
+      page: properties.page,
+      userId: properties.userId,
+      timestamp: Math.floor((properties.timestamp || Date.now()) / 60000) // Group by minute
+    } : {};
+    
+    return `${event}:${JSON.stringify(keyProps)}`;
   }
 
   // Registration-specific tracking methods

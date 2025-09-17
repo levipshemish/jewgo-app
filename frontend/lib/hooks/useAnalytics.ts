@@ -12,16 +12,28 @@ export function useAnalytics() {
   const { user } = useAuth();
   const _router = useRouter();
   const lastPageRef = useRef<string>('');
+  const trackingDisabledRef = useRef<boolean>(false);
 
-  // Track page views automatically
+  // Track page views automatically (but let analyticsService handle deduplication)
   useEffect(() => {
+    // Skip if tracking is disabled to prevent conflicts with Analytics component
+    if (trackingDisabledRef.current) return;
+    
+    // Skip if Analytics component is active to prevent duplicates
+    if (typeof window !== 'undefined' && (window as any).ANALYTICS_COMPONENT_ACTIVE) {
+      console.debug('[useAnalytics] Skipping auto-tracking - Analytics component is active');
+      return;
+    }
+    
     const currentPage = window.location.pathname;
     
     if (currentPage !== lastPageRef.current) {
+      // Let analyticsService handle session-based deduplication
       analyticsService.trackPageView(currentPage, {
         page: currentPage,
         title: document.title,
         referrer: lastPageRef.current || document.referrer,
+        source: 'useAnalytics_hook'
       });
       lastPageRef.current = currentPage;
     }
@@ -224,10 +236,27 @@ export function useAnalytics() {
     });
   }, []);
 
+  // Provide method to disable automatic page tracking (useful when Analytics component is present)
+  const disableAutoTracking = useCallback(() => {
+    trackingDisabledRef.current = true;
+    console.debug('[useAnalytics] Auto page tracking disabled');
+  }, []);
+
+  const enableAutoTracking = useCallback(() => {
+    trackingDisabledRef.current = false;
+    console.debug('[useAnalytics] Auto page tracking enabled');
+  }, []);
+
   return {
     // Core tracking
     trackEvent,
     trackPageView: analyticsService.trackPageView.bind(analyticsService),
+    
+    // Session management
+    disableAutoTracking,
+    enableAutoTracking,
+    getSessionInfo: analyticsService.getSessionInfo.bind(analyticsService),
+    resetSession: analyticsService.resetSession.bind(analyticsService),
     
     // Restaurant tracking
     trackRestaurantView,

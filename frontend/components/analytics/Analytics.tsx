@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { analyticsService } from '@/lib/services/analytics-service';
 
 interface AnalyticsEvent {
   event: string;
@@ -16,6 +17,20 @@ interface AnalyticsProps {
 
 export default function Analytics({ userId, sessionId, pageName }: AnalyticsProps) {
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Disable useAnalytics hook auto-tracking to prevent duplicates
+  useEffect(() => {
+    // Signal to other components that Analytics component is handling tracking
+    if (typeof window !== 'undefined') {
+      (window as any).ANALYTICS_COMPONENT_ACTIVE = true;
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        (window as any).ANALYTICS_COMPONENT_ACTIVE = false;
+      }
+    };
+  }, []);
 
   const initializeAnalytics = useCallback(() => {
     // Initialize Google Analytics if available and properly configured
@@ -50,13 +65,40 @@ export default function Analytics({ userId, sessionId, pageName }: AnalyticsProp
     }
   }, []);
 
-  // Initialize analytics
+  // Initialize analytics and track page view
   useEffect(() => {
     if (typeof window !== 'undefined' && !isInitialized) {
       initializeAnalytics();
+      
+      // Track initial page view through analyticsService (with deduplication)
+      const currentPage = window.location.pathname;
+      analyticsService.trackPageView(currentPage, {
+        page: currentPage,
+        title: pageName || document.title,
+        source: 'Analytics_component',
+        user_id: userId,
+        session_id: sessionId
+      });
+      
       setIsInitialized(true);
     }
-  }, [isInitialized, initializeAnalytics]);
+  }, [isInitialized, initializeAnalytics, pageName, userId, sessionId]);
+
+  // Track page changes
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    const currentPage = window.location.pathname;
+    
+    // Track page view through analyticsService (with deduplication)
+    analyticsService.trackPageView(currentPage, {
+      page: currentPage,
+      title: pageName || document.title,
+      source: 'Analytics_component_navigation',
+      user_id: userId,
+      session_id: sessionId
+    });
+  }, [pageName, isInitialized, userId, sessionId]);
 
   const trackEvent = useCallback((eventName: string, properties?: Record<string, unknown>) => {
     const event: AnalyticsEvent = {

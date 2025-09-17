@@ -65,8 +65,20 @@ export default function EnhancedHoursDisplay({
       
       if (response.ok) {
         const data = await response.json();
+        
+        // If the API returns closed but no actual hours data, treat as unknown
+        let status = data.status || 'unknown';
+        if (status === 'closed' && (!data.message || data.message === 'Closed')) {
+          // Check if this is actually "no hours available" vs "closed with hours"
+          if (!data.today_hours && !data.formatted_hours && !data.next_open_time) {
+            status = 'unknown';
+          }
+        }
+        
         const normalized = {
           ...data,
+          status: status,
+          message: status === 'unknown' ? 'Hours not available' : data.message,
           formatted_hours: Array.isArray(data?.formatted_hours) ? data.formatted_hours : [],
         } as HoursStatus;
         setHoursStatus(normalized);
@@ -176,11 +188,16 @@ export default function EnhancedHoursDisplay({
         return close ? `Open now - closes ${close}` : 'Open now';
       case 'closed':
       case 'closed_today':
-        return open ? `Closed - opens ${open}` : 'Closed';
+        // Only show "Closed" if we have actual hours data, otherwise show "Hours not available"
+        if (open || hoursStatus?.formatted_hours?.length > 0) {
+          return open ? `Closed - opens ${open}` : 'Closed';
+        } else {
+          return 'Hours not available';
+        }
       case 'unknown':
       case 'error':
       default:
-        return (hoursStatus?.message?.trim() || 'Hours unavailable');
+        return (hoursStatus?.message?.trim() || 'Hours not available');
     }
   })();
 

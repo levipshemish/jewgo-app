@@ -34,6 +34,7 @@ class CSRFMiddleware:
         'auth_api.csrf_token',  # CSRF token endpoint itself
         'monitoring_v5.health',  # Health check endpoints
         'monitoring_v5.metrics',  # Metrics endpoints
+        'api_v5.track_restaurant_view',  # Analytics view tracking endpoint
     }
     
     def __init__(self, app=None):

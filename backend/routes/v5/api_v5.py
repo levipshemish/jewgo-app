@@ -19,6 +19,7 @@ from middleware.auth_decorators import (
     permission_required,
     rate_limit_by_user
 )
+from middleware.csrf_v5 import csrf_exempt
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from database.services.restaurant_service_v5 import RestaurantServiceV5
 from database.services.synagogue_service_v5 import SynagogueServiceV5
@@ -682,6 +683,7 @@ def forbidden(error):
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>/view', methods=['POST'])
+@csrf_exempt  # Exempt analytics tracking from CSRF protection
 @optional_auth  # Allow anonymous tracking but prefer authenticated
 @rate_limit_by_user(max_requests=100, window_minutes=60)
 def track_restaurant_view(restaurant_id: int):

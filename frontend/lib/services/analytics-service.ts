@@ -66,9 +66,51 @@ class AnalyticsService {
   private isInitialized = false;
   private flushTimer: NodeJS.Timeout | null = null;
   private config = getAnalyticsConfig();
+  private viewedPages = new Set<string>(); // Track viewed pages per session
+  private sessionId: string;
 
   constructor() {
+    // Generate or retrieve session ID
+    this.sessionId = this.getOrCreateSessionId();
     this.initialize();
+  }
+
+  /**
+   * Get or create a session ID for deduplication
+   */
+  private getOrCreateSessionId(): string {
+    if (typeof window === 'undefined') return 'server-session';
+    
+    const STORAGE_KEY = 'jewgo_analytics_session';
+    const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes
+    
+    try {
+      const stored = sessionStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const { sessionId, timestamp } = JSON.parse(stored);
+        
+        // Check if session is still valid
+        if (Date.now() - timestamp < SESSION_DURATION) {
+          return sessionId;
+        }
+      }
+    } catch (e) {
+      // Ignore storage errors
+    }
+    
+    // Create new session
+    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        sessionId: newSessionId,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      // Ignore storage errors
+    }
+    
+    return newSessionId;
   }
 
   /**
@@ -82,7 +124,7 @@ class AnalyticsService {
     // Set up periodic flushing
     this.setupFlushTimer();
     
-    // Track initial page view
+    // Track initial page view (will be deduplicated)
     this.trackPageView(window.location.pathname);
     
     this.isInitialized = true;
@@ -128,10 +170,24 @@ class AnalyticsService {
   }
 
   /**
-   * Track page view
+   * Track page view with session-based deduplication
    */
   trackPageView(page: string, properties?: PageViewProperties): void {
     if (!this.isInitialized) return;
+
+    // Create unique key for this page view (page + session)
+    const pageKey = `${page}:${this.sessionId}`;
+    
+    // Check if we've already tracked this page in this session
+    if (this.viewedPages.has(pageKey)) {
+      console.debug(`[Analytics] Page view already tracked for ${page} in session ${this.sessionId}`);
+      return;
+    }
+    
+    // Mark this page as viewed in this session
+    this.viewedPages.add(pageKey);
+    
+    console.debug(`[Analytics] Tracking new page view: ${page} (session: ${this.sessionId})`);
 
     const pageViewEvent: AnalyticsEvent = {
       event: 'page_view',
@@ -140,6 +196,8 @@ class AnalyticsService {
         title: document.title,
         referrer: document.referrer,
         searchQuery: this.getSearchQuery(),
+        session_id: this.sessionId,
+        is_duplicate: false,
         ...properties,
       },
       timestamp: Date.now(),
@@ -588,6 +646,25 @@ class AnalyticsService {
   }
 
   /**
+   * Reset session tracking (useful for testing or manual session reset)
+   */
+  resetSession(): void {
+    this.viewedPages.clear();
+    this.sessionId = this.getOrCreateSessionId();
+    console.debug(`[Analytics] Session reset: ${this.sessionId}`);
+  }
+
+  /**
+   * Get current session info for debugging
+   */
+  getSessionInfo(): { sessionId: string; viewedPages: string[] } {
+    return {
+      sessionId: this.sessionId,
+      viewedPages: Array.from(this.viewedPages)
+    };
+  }
+
+  /**
    * Clean up the service
    */
   destroy(): void {
@@ -598,6 +675,9 @@ class AnalyticsService {
     
     // Flush any remaining events
     this.flush();
+    
+    // Clear session tracking
+    this.viewedPages.clear();
   }
 }
 

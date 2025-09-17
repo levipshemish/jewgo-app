@@ -46,7 +46,7 @@ export function ListingImage({
         onImagesProcessed={handleImagesProcessed}
       />
       {totalImages > 0 && (
-        <div className="absolute bottom-3 right-3 bg-white/80 backdrop-blur-md text-gray-800 text-xs font-medium px-2 py-1 rounded-full border border-white/20 shadow-lg">
+        <div className="absolute bottom-3 right-3 bg-background/80 dark:bg-background/60 border border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur shadow-md text-foreground text-xs font-medium px-2 py-1 rounded-full">
           {currentImageIndex + 1}/{totalImages}
         </div>
       )}

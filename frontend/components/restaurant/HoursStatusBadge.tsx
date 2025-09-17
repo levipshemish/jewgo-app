@@ -38,9 +38,18 @@ export default function HoursStatusBadge({
         
         if (response.ok) {
           const data = await response.json();
+          // If the API returns closed but no actual hours data, treat as unknown
+          let status = data.status || 'unknown';
+          if (status === 'closed' && (!data.message || data.message === 'Closed')) {
+            // Check if this is actually "no hours available" vs "closed with hours"
+            if (!data.today_hours && !data.formatted_hours && !data.next_open_time) {
+              status = 'unknown';
+            }
+          }
+          
           setHoursStatus({
-            status: data.status || 'unknown',
-            message: data.message || 'Hours not available',
+            status: status,
+            message: status === 'unknown' ? 'Hours not available' : (data.message || 'Hours not available'),
             is_open: data.is_open || false
           });
         } else {
@@ -106,7 +115,7 @@ export default function HoursStatusBadge({
       <span className="font-medium">
         {hoursStatus.status === 'open' ? 'Open' : 
          hoursStatus.status === 'closed' ? 'Closed' : 
-         'Hours N/A'}
+         'Hours not available'}
       </span>
     </div>
   );
