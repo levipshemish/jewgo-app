@@ -411,7 +411,8 @@ class RestaurantServiceV5:
         Returns:
             Restaurant dictionary or None if not found
         """
-        return self.get_restaurant_by_id(entity_id)
+        # Use fresh data to ensure interaction counts are up-to-date
+        return self.get_restaurant_by_id(entity_id, use_cache=False)
 
     def track_view(self, restaurant_id: int) -> Dict[str, Any]:
         """
