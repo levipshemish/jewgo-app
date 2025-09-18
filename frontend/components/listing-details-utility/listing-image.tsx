@@ -48,7 +48,7 @@ export function ListingImage({
       />
       
       {/* Image Count Tag - Bottom Right */}
-      {totalImages > 1 && (
+      {totalImages >= 1 && (
         <div 
           className="absolute bottom-3 right-3 text-foreground text-xs font-medium px-2 py-1 rounded-full flex items-center z-20"
           style={{

@@ -449,3 +449,31 @@ Docs Updated
 
 Follow-ups
 - (empty)
+
+## 2025-09-17 — Fix Image Count Tag Not Showing for Single Images
+- ID: 2025-09-17-IMAGE-COUNT-TAG-FIX
+- Owner: Claude Sonnet 4
+- Links: `frontend/components/listing-details-utility/listing-image.tsx`
+
+Reason Why — User reported that the image count tag (e.g., "1/1") was not displaying on the restaurant details page when only 1 image exists. The component was only showing the count tag when `totalImages > 1`, hiding it for single-image listings.
+
+Change Summary
+- **Fixed image count tag visibility**: Changed condition from `totalImages > 1` to `totalImages >= 1` to show count tag for all listings with images
+- **Maintained existing styling**: Preserved all glassmorphism styling and positioning of the image count tag
+- **No functional changes**: Only modified the visibility condition without affecting other behavior
+
+Risks & Mitigations
+- Minimal change with no risk to existing functionality
+- Count tag now shows consistently for all image listings (1/1, 2/3, etc.)
+- Existing styling and positioning preserved
+
+Tests
+- All modified files pass linting with 0 errors
+- Image count tag now displays for single images showing "1/1"
+- No changes to existing multi-image functionality
+
+Docs Updated
+- No documentation changes required for this UI fix
+
+Follow-ups
+- (empty)
