@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { Eye } from 'lucide-react';
 import ImageCarousel from '@/components/restaurant/ImageCarousel';
 
 interface ListingImageProps {
@@ -22,7 +23,7 @@ export function ListingImage({
   className = '',
   restaurantName = 'Restaurant',
   allImages = [],
-  viewCount: _viewCount
+  viewCount
 }: ListingImageProps) {
   const images = allImages.length > 0 ? allImages : src ? [src] : [];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -45,6 +46,44 @@ export function ListingImage({
         onIndexChange={handleIndexChange}
         onImagesProcessed={handleImagesProcessed}
       />
+      
+      {/* View Count Tag - Bottom Left */}
+      {typeof viewCount === "number" && viewCount >= 0 && (
+        <div 
+          className="absolute bottom-3 left-3 text-foreground text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1"
+          style={{
+            // Same glassmorphism as header bar
+            backgroundColor: 'rgba(255, 255, 255, 0.25)',
+            backdropFilter: 'blur(16px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+            isolation: 'isolate',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
+            position: 'relative',
+          }}
+        >
+          {/* Dark background layer for backdrop-filter */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.08) 100%)',
+              zIndex: -1,
+            }}
+          />
+          {/* Glass highlight overlay */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)',
+              borderRadius: 'inherit',
+            }}
+          />
+          <Eye className="h-3 w-3 text-blue-500 relative z-10 flex-shrink-0" />
+          <span className="relative z-10 tabular-nums">{viewCount.toLocaleString()}</span>
+        </div>
+      )}
+
+      {/* Image Navigation Tag - Bottom Right */}
       {totalImages > 0 && (
         <div 
           className="absolute bottom-3 right-3 text-foreground text-xs font-medium px-2 py-1 rounded-full"
