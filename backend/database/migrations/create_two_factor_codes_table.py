@@ -5,7 +5,7 @@ Migration to create two_factor_codes table for email-based 2FA.
 import os
 from sqlalchemy import text
 from utils.logging_config import get_logger
-from database.unified_connection_manager import get_db_connection
+from database.unified_connection_manager import get_unified_connection_manager
 
 logger = get_logger(__name__)
 
@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 def create_two_factor_codes_table():
     """Create the two_factor_codes table for 2FA code management."""
     try:
-        db_connection = get_db_connection()
+        db_connection = get_unified_connection_manager()
         
         with db_connection.session_scope() as session:
             logger.info("Creating two_factor_codes table...")
@@ -80,7 +80,7 @@ def create_two_factor_codes_table():
 def rollback_two_factor_codes_table():
     """Rollback the two_factor_codes table creation."""
     try:
-        db_connection = get_db_connection()
+        db_connection = get_unified_connection_manager()
         
         with db_connection.session_scope() as session:
             logger.info("Rolling back two_factor_codes table...")
