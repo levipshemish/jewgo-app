@@ -425,6 +425,10 @@ export function ListingHeader({
   // Toast state
   const [toasts, setToasts] = useState<Array<{ id: string; text: string }>>([]);
   const toastTimeoutsRef = useRef(new Map<string, NodeJS.Timeout>());
+  
+  // Debouncing state to prevent multiple rapid API calls
+  const [isProcessingShare, setIsProcessingShare] = useState(false);
+  const [isProcessingFavorite, setIsProcessingFavorite] = useState(false);
 
   // Animated numbers
   const animatedViews = useAnimatedNumber(internalViewCount);
@@ -582,7 +586,14 @@ export function ListingHeader({
   }, []);
 
   const handleShare = useCallback(async () => {
+    // Prevent multiple rapid clicks
+    if (isProcessingShare) {
+      console.log(`⏸️ [LISTING HEADER] Share already processing, ignoring click`);
+      return;
+    }
+    
     console.log(`🔄 [LISTING HEADER] handleShare called for restaurant ${restaurantId}`);
+    setIsProcessingShare(true);
     
     const url = typeof window !== "undefined" ? window.location.href : ""
     
@@ -622,28 +633,33 @@ export function ListingHeader({
       if (error.name !== 'AbortError') {
         addToast("Share failed");
       }
+    } finally {
+      // Always reset processing state
+      setIsProcessingShare(false);
     }
-  }, [restaurantId, callShareAPI, onShared, addToast])
+  }, [restaurantId, callShareAPI, onShared, addToast, isProcessingShare])
 
   const handleFavorite = useCallback(async (_e: React.MouseEvent) => {
+    // Prevent multiple rapid clicks
+    if (isProcessingFavorite) {
+      console.log(`⏸️ [LISTING HEADER] Favorite already processing, ignoring click`);
+      return;
+    }
+    
+    console.log(`💖 [LISTING HEADER] handleFavorite called for restaurant ${restaurantId}`);
+    setIsProcessingFavorite(true);
+    
     const newFavoriteState = !internalIsFavorited;
     setInternalIsFavorited(newFavoriteState);
-    
-    // Optimistic update - update favorite count immediately
-    if (newFavoriteState) {
-      setInternalFavoriteCount(prev => prev + 1);
-    } else {
-      setInternalFavoriteCount(prev => Math.max(0, prev - 1));
-    }
     
     hapticFeedback(newFavoriteState ? 'success' : 'light');
     
     try {
-      // Call backend API to track the favorite/unfavorite
+      // Call backend API to track the favorite/unfavorite FIRST, then update count
       if (restaurantId) {
         const apiFavoriteCount = await callFavoriteAPI(restaurantId, newFavoriteState);
         if (apiFavoriteCount !== null) {
-          // Update with real count from backend
+          // Update with real count from backend (no optimistic update)
           setInternalFavoriteCount(apiFavoriteCount);
         }
       }
@@ -653,16 +669,14 @@ export function ListingHeader({
       // Call original callback
       onFavorite?.();
     } catch (_error) {
-      // Revert changes if API call failed
+      // Revert favorite state on error
       setInternalIsFavorited(!newFavoriteState);
-      if (newFavoriteState) {
-        setInternalFavoriteCount(prev => Math.max(0, prev - 1));
-      } else {
-        setInternalFavoriteCount(prev => prev + 1);
-      }
       addToast("Action failed, please try again");
+    } finally {
+      // Always reset processing state
+      setIsProcessingFavorite(false);
     }
-  }, [restaurantId, internalIsFavorited, callFavoriteAPI, onFavorite, addToast]);
+  }, [restaurantId, internalIsFavorited, callFavoriteAPI, onFavorite, addToast, isProcessingFavorite]);
 
   const handleViewsClick = useCallback(() => {
     setInternalViewCount(prev => prev + Math.floor(1 + Math.random() * 3));
