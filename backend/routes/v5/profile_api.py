@@ -26,7 +26,11 @@ def _get_profile_service():
 
 def _get_oauth_service():
     """Get OAuth service instance."""
-    return OAuthService()
+    from flask import current_app
+    db_manager = current_app.config.get('DB_MANAGER')
+    if not db_manager:
+        raise RuntimeError("Database manager not configured")
+    return OAuthService(db_manager)
 
 @profile_bp.route('/me', methods=['GET'])
 @auth_required
