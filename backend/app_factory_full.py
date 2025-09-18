@@ -609,21 +609,38 @@ def create_app(config_class=None):
         try:
             from routes.v5.magic_link import magic_link_bp
             app.register_blueprint(magic_link_bp)     # /api/v5/auth/magic/*
+            logger.info("Magic Link blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import Magic Link blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register Magic Link blueprint: {e}")
             
+        try:
             from routes.v5.two_factor_api import two_factor_bp
             app.register_blueprint(two_factor_bp)     # /api/v5/auth/2fa/*
+            logger.info("Two Factor blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import Two Factor blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register Two Factor blueprint: {e}")
             
+        try:
             from routes.v5.security_audit_api import security_audit_bp
             app.register_blueprint(security_audit_bp) # /api/v5/security/*
+            logger.info("Security Audit blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import Security Audit blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register Security Audit blueprint: {e}")
             
+        try:
             from routes.v5.profile_api import profile_bp
             app.register_blueprint(profile_bp)        # /api/v5/profile/*
-            
-            logger.info("Magic Link, 2FA, Security Audit, and Profile blueprints registered successfully")
+            logger.info("Profile blueprint registered successfully")
         except ImportError as e:
-            logger.warning(f"Could not import v5 blueprints: {e}")
+            logger.warning(f"Could not import Profile blueprint: {e}")
         except Exception as e:
-            logger.warning(f"Could not register v5 blueprints: {e}")
+            logger.warning(f"Could not register Profile blueprint: {e}")
         
         # Register v5 search API
         if feature_flags_v5.is_enabled('search_api_v5', default=True):
