@@ -51,7 +51,7 @@ export function ListingImage({
       {/* Image Count Tag - Bottom Right */}
       {totalImages > 1 && (
         <div 
-          className="absolute bottom-3 right-3 text-foreground text-xs font-medium px-2 py-1 rounded-full inline-flex items-center"
+          className="absolute bottom-3 right-3 text-foreground text-xs font-medium px-2 py-1 rounded-full flex items-center z-20"
           style={{
             // Glassmorphism styling
             backgroundColor: 'rgba(255, 255, 255, 0.25)',
@@ -60,9 +60,6 @@ export function ListingImage({
             isolation: 'isolate',
             border: '1px solid rgba(255, 255, 255, 0.18)',
             boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
-            position: 'relative',
-            minWidth: 'fit-content',
-            width: 'auto',
           }}
         >
           {/* Dark background layer for backdrop-filter */}
