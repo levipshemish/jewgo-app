@@ -70,8 +70,8 @@ class MagicLinkService:
                     session.execute(
                         text(
                             """
-                            INSERT INTO users (id, name, email, email_verified, is_guest, "createdAt", "updatedAt")
-                            VALUES (:user_id, :name, :email, FALSE, FALSE, NOW(), NOW())
+                            INSERT INTO users (id, name, email, email_verified, "createdAt", "updatedAt")
+                            VALUES (:user_id, :name, :email, FALSE, NOW(), NOW())
                             """
                         ),
                         {
