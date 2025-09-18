@@ -1234,6 +1234,13 @@ class RestaurantServiceV5:
                 elif isinstance(formatted[field], datetime):
                     formatted[field] = formatted[field].isoformat()
         
+        # Add stats object for frontend compatibility
+        formatted['stats'] = {
+            'view_count': formatted.get('view_count', 0),
+            'share_count': formatted.get('share_count', 0),
+            'favorite_count': formatted.get('favorite_count', 0)
+        }
+        
         # Remove sensitive internal fields
         internal_fields = ['deleted_at', 'deleted_by', 'internal_notes']
         for field in internal_fields:
