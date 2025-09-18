@@ -586,8 +586,11 @@ def create_app(config_class=None):
             logger.warning(f"Could not register auth compatibility API blueprint: {e}")
 
         # Register OAuth and Magic Link blueprints (non-breaking additions)
+        logger.info("DEBUG: Starting OAuth blueprint registration")
         try:
+            logger.info("DEBUG: Importing OAuth Google blueprint")
             from routes.v5.oauth_google import google_oauth_bp
+            logger.info("DEBUG: OAuth Google blueprint imported, now registering")
             app.register_blueprint(google_oauth_bp)   # /api/v5/auth/google/*
             logger.info("Google OAuth blueprint registered successfully")
         except ImportError as e:
@@ -606,8 +609,11 @@ def create_app(config_class=None):
         #     logger.warning(f"Could not register Apple OAuth blueprint: {e}")
         logger.info("Apple OAuth blueprint disabled")
 
+        logger.info("DEBUG: Starting Magic Link blueprint registration")
         try:
+            logger.info("DEBUG: Importing Magic Link blueprint")
             from routes.v5.magic_link import magic_link_bp
+            logger.info("DEBUG: Magic Link blueprint imported, now registering")
             app.register_blueprint(magic_link_bp)     # /api/v5/auth/magic/*
             logger.info("Magic Link blueprint registered successfully")
         except ImportError as e:
