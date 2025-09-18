@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import { Eye } from 'lucide-react';
 import ImageCarousel from '@/components/restaurant/ImageCarousel';
 
 interface ListingImageProps {
@@ -23,7 +22,7 @@ export function ListingImage({
   className = '',
   restaurantName = 'Restaurant',
   allImages = [],
-  viewCount
+  viewCount: _viewCount
 }: ListingImageProps) {
   const images = allImages.length > 0 ? allImages : src ? [src] : [];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);

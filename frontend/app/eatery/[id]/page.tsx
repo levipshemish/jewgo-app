@@ -482,7 +482,14 @@ function EateryIdPageContent() {
     if (!eatery) return null
     
     try {
+      // Debug: Check what stats data we have
+      console.log(`🔍 [EATERY PAGE] Eatery stats for ${eatery.id}:`, eatery.stats);
+      console.log(`🔍 [EATERY PAGE] Direct counts - view: ${eatery.stats?.view_count}, share: ${eatery.stats?.share_count}, favorite: ${eatery.stats?.favorite_count}`);
+      
       const listingData = mapEateryToListingData(eatery, legacyUserLocation, reviews, requestLocation, permissionStatus === 'unsupported' ? 'unknown' : permissionStatus)
+      
+      // Debug: Check what header data was mapped
+      console.log(`🔍 [EATERY PAGE] Mapped header counts:`, listingData.header);
       
       // Override the favorite state and handler with reactive versions
       if (listingData.header) {

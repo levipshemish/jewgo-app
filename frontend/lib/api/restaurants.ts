@@ -241,8 +241,15 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
 
 export async function getRestaurant(id: number): Promise<Restaurant | null> {
   try {
-    // Use V5 API client for restaurant details
-    const response = await v5ApiClient.getEntity(id.toString(), V5_ENTITY_TYPES.RESTAURANTS);
+    // Use V5 API client for restaurant details with cache disabled to get fresh data
+    const response = await v5ApiClient.getEntity(id.toString(), V5_ENTITY_TYPES.RESTAURANTS, { 
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
 
     if (!response.success) {
       if (response.error?.includes('404') || response.error?.includes('not found')) {

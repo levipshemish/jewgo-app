@@ -104,9 +104,9 @@ export function mapEateryToListingData(
       restaurantId: parseInt(eatery.id),
       kosherType: eatery.kosher_type,
       kosherAgency: eatery.kosher_agency,
-      viewCount: eatery.stats.view_count,
-      shareCount: eatery.stats.share_count,
-      favoriteCount: eatery.stats.favorite_count,
+      viewCount: eatery.stats?.view_count || 0,
+      shareCount: eatery.stats?.share_count || 0,
+      favoriteCount: eatery.stats?.favorite_count || 0,
       onBack: () => {
         // This would typically use Next.js router
         if (typeof window !== 'undefined') {
