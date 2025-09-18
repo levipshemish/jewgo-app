@@ -716,9 +716,9 @@ def track_restaurant_view(restaurant_id: int):
         return jsonify({'error': 'Failed to track view'}), 500
 
 
-@api_v5_bp.route('/restaurants/<int:restaurant_id>/share', methods=['POST'])
-@limiter.limit("30 per minute")
-@require_api_key
+@api_v5.route('/restaurants/<int:restaurant_id>/share', methods=['POST'])
+@optional_auth
+@rate_limit_by_user(max_requests=30, window_minutes=1)
 def track_restaurant_share(restaurant_id):
     """Track a restaurant share."""
     try:
@@ -748,9 +748,9 @@ def track_restaurant_share(restaurant_id):
         return jsonify({'error': 'Failed to track share'}), 500
 
 
-@api_v5_bp.route('/restaurants/<int:restaurant_id>/favorite', methods=['POST'])
-@limiter.limit("60 per minute")
-@require_api_key
+@api_v5.route('/restaurants/<int:restaurant_id>/favorite', methods=['POST'])
+@optional_auth
+@rate_limit_by_user(max_requests=60, window_minutes=1)
 def track_restaurant_favorite(restaurant_id):
     """Track a restaurant favorite (add to favorites)."""
     try:
@@ -780,9 +780,9 @@ def track_restaurant_favorite(restaurant_id):
         return jsonify({'error': 'Failed to track favorite'}), 500
 
 
-@api_v5_bp.route('/restaurants/<int:restaurant_id>/unfavorite', methods=['POST'])
-@limiter.limit("60 per minute")
-@require_api_key
+@api_v5.route('/restaurants/<int:restaurant_id>/unfavorite', methods=['POST'])
+@optional_auth
+@rate_limit_by_user(max_requests=60, window_minutes=1)
 def track_restaurant_unfavorite(restaurant_id):
     """Track a restaurant unfavorite (remove from favorites)."""
     try:

@@ -230,6 +230,8 @@ function SignInForm() {
       }, 100);
       return () => clearTimeout(timer);
     }
+    // Return undefined explicitly for the else case
+    return undefined;
   }, [showMagicLinkModal]);
   
   // Rate limiting for magic link requests
@@ -252,7 +254,7 @@ function SignInForm() {
 
       // Debug: Log the email being used
       console.log('[Magic Link] Email being sent to:', magicEmail);
-      appLogger.info('Magic link request', { email: magicEmail?.substring(0, 3) + '***' });
+      appLogger.info('Magic link request', { email: `${magicEmail?.substring(0, 3)}***` });
 
       // Basic email format validation
       if (!magicEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(magicEmail)) {
@@ -391,7 +393,7 @@ function SignInForm() {
             </div>
             
             <p className="text-sm text-gray-600 mb-4">
-              Enter your email address and we'll send you a secure link to sign in without a password.
+              Enter your email address and we&apos;ll send you a secure link to sign in without a password.
             </p>
 
             {/* Magic Link Email Input */}

@@ -77,7 +77,7 @@ export default function EnhancedHoursDisplay({
         
         const normalized = {
           ...data,
-          status: status,
+          status,
           message: status === 'unknown' ? 'Hours not available' : data.message,
           formatted_hours: Array.isArray(data?.formatted_hours) ? data.formatted_hours : [],
         } as HoursStatus;

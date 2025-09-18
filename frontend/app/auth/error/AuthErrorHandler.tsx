@@ -51,7 +51,7 @@ export default function AuthErrorHandler() {
   const debugInfo = {
     error_code: code,
     error_details: details,
-    timestamp: timestamp,
+    timestamp,
     url_params: Object.fromEntries(params.entries()),
     user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',
     current_time: new Date().toISOString()

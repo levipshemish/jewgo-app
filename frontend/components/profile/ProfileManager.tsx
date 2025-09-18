@@ -61,7 +61,7 @@ export default function ProfileManager() {
       loadProfile();
       loadOAuthStatus();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadProfile, loadOAuthStatus]);
 
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';

@@ -179,7 +179,7 @@ const SpringButton = memo(({
   children, 
   className = "", 
   isActive = false,
-  glowColor = 'white',
+  glowColor: _glowColor = 'white',
   'aria-label': ariaLabel,
   ...props 
 }: {
@@ -276,6 +276,7 @@ const SpringButton = memo(({
     </button>
   );
 });
+SpringButton.displayName = 'SpringButton';
 
 // Report Modal Component
 const ReportModal = memo(({ 
@@ -314,7 +315,7 @@ const ReportModal = memo(({
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-900 mb-1">Report Content</h2>
-          <p className="text-sm text-gray-600">Help us understand what's wrong with this content</p>
+          <p className="text-sm text-gray-600">Help us understand what&apos;s wrong with this content</p>
         </div>
 
         {/* Content */}
@@ -357,6 +358,7 @@ const ReportModal = memo(({
     </div>
   );
 });
+ReportModal.displayName = 'ReportModal';
 
 // Toast Container Component
 const ToastContainer = memo(({ toasts }: { toasts: Array<{ id: string; text: string }> }) => {
@@ -381,6 +383,7 @@ const ToastContainer = memo(({ toasts }: { toasts: Array<{ id: string; text: str
     </div>
   );
 });
+ToastContainer.displayName = 'ToastContainer';
 
 interface ListingHeaderProps {
   shareCount?: number
@@ -457,8 +460,9 @@ export function ListingHeader({
 
   // Cleanup toasts on unmount
   useEffect(() => {
+    const timeouts = toastTimeoutsRef.current;
     return () => {
-      toastTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      timeouts.forEach(timeout => clearTimeout(timeout));
     };
   }, []);
 
@@ -482,7 +486,7 @@ export function ListingHeader({
       setShowReportModal(false);
       setSelectedReportReason('');
       addToast("Content reported. Thank you for the feedback.");
-    } catch (error) {
+    } catch (_error) {
       addToast("Report failed. Please try again.");
     } finally {
       setIsSubmittingReport(false);
@@ -528,7 +532,7 @@ export function ListingHeader({
     }
   }, [onShared, addToast])
 
-  const handleFavorite = useCallback(async (e: React.MouseEvent) => {
+  const handleFavorite = useCallback(async (_e: React.MouseEvent) => {
     const newFavoriteState = !internalIsFavorited;
     setInternalIsFavorited(newFavoriteState);
     hapticFeedback(newFavoriteState ? 'success' : 'light');
@@ -548,16 +552,21 @@ export function ListingHeader({
   return (
     <div className="px-3">
       <div
-        className="flex items-center justify-center gap-2 py-2 px-2 rounded-full w-full overflow-hidden bg-background/80 dark:bg-background/60 border border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur shadow-md"
+        className="flex items-center justify-center gap-1 sm:gap-2 py-2 px-2 rounded-full w-full overflow-hidden bg-background/80 dark:bg-background/60 border border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur shadow-md"
+        style={{
+          // Match the image container width exactly
+          width: '100%',
+          maxWidth: '100%',
+        }}
       >
         {/* Back */}
         {onBack && (
           <SpringButton
             onClick={onBack}
             aria-label="Go back"
-            className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+            className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
           >
-            <ArrowLeft className="h-5 w-5 text-black transition-all duration-200 group-hover:-translate-x-1" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-black transition-all duration-200 group-hover:-translate-x-1" />
           </SpringButton>
         )}
 
@@ -565,9 +574,9 @@ export function ListingHeader({
         <SpringButton
           onClick={handleReport}
           aria-label="Report content"
-          className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+          className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
         >
-          <Flag className="h-4 w-4 text-black transition-all duration-200 group-hover:-translate-y-1" />
+          <Flag className="h-3 w-3 sm:h-4 sm:w-4 text-black transition-all duration-200 group-hover:-translate-y-1" />
         </SpringButton>
 
         {/* View count */}
@@ -575,10 +584,10 @@ export function ListingHeader({
           <SpringButton
             onClick={handleViewsClick}
             aria-label={`${formatCount(animatedViews)} views`}
-            className="h-10 px-3 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
+            className="h-8 sm:h-10 px-2 sm:px-3 rounded-full flex items-center gap-1 sm:gap-1.5 min-w-0 flex-shrink-0"
           >
-            <Eye className="h-4 w-4 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
-            <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+            <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-bold tabular-nums text-black whitespace-nowrap">
               {formatCount(animatedViews)}
             </span>
           </SpringButton>
@@ -589,10 +598,10 @@ export function ListingHeader({
           <SpringButton
               onClick={handleShare}
             aria-label={`Share (${formatCount(animatedShares)} shares)`}
-            className="h-10 px-3 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
+            className="h-8 sm:h-10 px-2 sm:px-3 rounded-full flex items-center gap-1 sm:gap-1.5 min-w-0 flex-shrink-0"
           >
-            <Share className="h-4 w-4 text-black transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
-            <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+            <Share className="h-3 w-3 sm:h-4 sm:w-4 text-black transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-bold tabular-nums text-black whitespace-nowrap">
               {formatCount(animatedShares)}
             </span>
           </SpringButton>
@@ -604,11 +613,11 @@ export function ListingHeader({
             onClick={handleFavorite}
             isActive={internalIsFavorited}
             aria-label={internalIsFavorited ? "Remove from favorites" : "Add to favorites"}
-            className="h-10 w-10 p-0 rounded-full flex items-center justify-center"
+            className="h-8 w-8 sm:h-10 sm:w-10 p-0 rounded-full flex items-center justify-center"
           >
             <div className="relative flex-shrink-0">
               <Heart
-                className={`h-5 w-5 transition-all duration-300 group-hover:scale-125
+                className={`h-4 w-4 sm:h-5 sm:w-5 transition-all duration-300 group-hover:scale-125
                            ${internalIsFavorited 
                              ? 'text-rose-600 fill-rose-500 animate-pulse' 
                              : 'text-black group-hover:text-rose-500'

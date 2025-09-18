@@ -48,7 +48,7 @@ export default function HoursStatusBadge({
           }
           
           setHoursStatus({
-            status: status,
+            status,
             message: status === 'unknown' ? 'Hours not available' : (data.message || 'Hours not available'),
             is_open: data.is_open || false
           });

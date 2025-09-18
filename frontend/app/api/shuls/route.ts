@@ -50,7 +50,7 @@ async function fetchShulsFromDatabase(
     // Get total count
     let countQuery = `SELECT COUNT(*) FROM shuls WHERE is_active = true`;
     const countParams: any[] = [];
-    let countParamIndex = 1;
+    const countParamIndex = 1;
 
     if (searchQuery && searchQuery.trim()) {
       countQuery += ` AND (name ILIKE $${countParamIndex} OR city ILIKE $${countParamIndex} OR address ILIKE $${countParamIndex})`;

@@ -157,15 +157,11 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
       <Stack gap={10}>
         {/* Header above the image */}
         <ListingHeader
-          kosherType={safeData.header?.kosherType}
-          kosherAgency={safeData.header?.kosherAgency}
-          kosherAgencyWebsite={safeData.header?.kosherAgencyWebsite}
           shareCount={safeData.header?.shareCount}
           viewCount={safeData.header?.viewCount}
           onBack={safeData.header?.onBack}
           onFavorite={safeData.header?.onFavorite}
           isFavorited={safeData.header?.isFavorited}
-          tags={safeData.actions?.tags || []}
         />
 
         {/* Image */}
