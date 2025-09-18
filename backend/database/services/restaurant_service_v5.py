@@ -440,7 +440,8 @@ class RestaurantServiceV5:
             updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
             view_count_after = updated_restaurant.get('view_count', 0) if updated_restaurant else view_count_before
             
-            # Note: Cache invalidation would be handled by the repository layer
+            # Invalidate restaurant caches to ensure fresh data on next request
+            self._invalidate_restaurant_caches(restaurant_id)
             
             return {
                 'view_count': view_count_after,
@@ -482,6 +483,9 @@ class RestaurantServiceV5:
             updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
             share_count_after = updated_restaurant.get('share_count', 0) if updated_restaurant else share_count_before
             
+            # Invalidate restaurant caches to ensure fresh data on next request
+            self._invalidate_restaurant_caches(restaurant_id)
+            
             return {
                 'share_count': share_count_after,
                 'share_count_before': share_count_before,
@@ -522,6 +526,9 @@ class RestaurantServiceV5:
             updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
             favorite_count_after = updated_restaurant.get('favorite_count', 0) if updated_restaurant else favorite_count_before
             
+            # Invalidate restaurant caches to ensure fresh data on next request
+            self._invalidate_restaurant_caches(restaurant_id)
+            
             return {
                 'favorite_count': favorite_count_after,
                 'favorite_count_before': favorite_count_before,
@@ -561,6 +568,9 @@ class RestaurantServiceV5:
             # Get updated favorite count
             updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
             favorite_count_after = updated_restaurant.get('favorite_count', 0) if updated_restaurant else favorite_count_before
+            
+            # Invalidate restaurant caches to ensure fresh data on next request
+            self._invalidate_restaurant_caches(restaurant_id)
             
             return {
                 'favorite_count': favorite_count_after,
