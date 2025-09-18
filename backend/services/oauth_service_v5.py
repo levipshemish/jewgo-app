@@ -47,7 +47,7 @@ class OAuthService:
 
         logger.info(f"OAuthService initialized with frontend: {self.frontend_url}")
 
-    def generate_secure_state(self, provider: str, return_to: str = '/') -> str:
+    def generate_secure_state(self, provider: str, return_to: str = '/', extra_data: Optional[Dict[str, Any]] = None) -> str:
         """Generate cryptographically secure state parameter."""
         # Only allow relative paths - reject absolute URLs
         return_to = self._validate_return_to_relative_only(return_to)
@@ -58,6 +58,10 @@ class OAuthService:
             'timestamp': int(time.time()),
             'nonce': secrets.token_hex(16)
         }
+        
+        # Add extra data if provided
+        if extra_data:
+            state_data.update(extra_data)
 
         state_json = json.dumps(state_data, separators=(',', ':'))
         signature = hmac.new(self.state_key, state_json.encode(), hashlib.sha256).hexdigest()
@@ -86,8 +90,8 @@ class OAuthService:
 
         return state_token
 
-    def validate_and_consume_state(self, state_token: str, provider: str) -> Optional[str]:
-        """Validate OAuth state and return return_to URL."""
+    def validate_and_consume_state(self, state_token: str, provider: str) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+        """Validate OAuth state and return return_to URL and extra data."""
         try:
             with self.db.connection_manager.session_scope() as session:
                 result = session.execute(
@@ -99,14 +103,15 @@ class OAuthService:
                           AND provider = :provider
                           AND expires_at > NOW()
                           AND consumed_at IS NULL
-                        RETURNING return_to
+                        RETURNING return_to, extra_data
                         """
                     ),
                     {'state_token': state_token, 'provider': provider}
                 ).fetchone()
 
                 if result:
-                    return result[0]
+                    extra_data = result[1] if result[1] else {}
+                    return result[0], extra_data
                 else:
                     # Audit log failed state validation
                     try:
@@ -119,11 +124,11 @@ class OAuthService:
                         )
                     except Exception:
                         pass
-                    return None
+                    return None, None
 
         except Exception as e:
             logger.error(f"State validation error: {e}")
-            return None
+            return None, None
 
     def _validate_return_to_relative_only(self, return_to: str) -> str:
         """Validate return_to as relative path only - reject absolute URLs."""
@@ -191,7 +196,7 @@ class OAuthService:
                         f"Linking {provider} account to existing user: {email[:3]}***@{email.split('@')[1]}"
                     )
                     
-                    # Update existing user with OAuth information including profile image
+                    # Update existing user with OAuth information including profile image and name
                     session.execute(
                         text(
                             """
@@ -200,6 +205,8 @@ class OAuthService:
                                 oauth_provider_id = :provider_id,
                                 oauth_raw_profile = :raw_profile,
                                 image = :avatar_url,
+                                name = COALESCE(:name, name),  -- Update name if provided, keep existing if not
+                                email_verified = :email_verified,  -- Update verification status from OAuth
                                 "updatedAt" = NOW()
                             WHERE id = :user_id
                             """
@@ -210,6 +217,8 @@ class OAuthService:
                             'provider_id': provider_id,
                             'raw_profile': json.dumps(raw_profile) if raw_profile else None,
                             'avatar_url': avatar_url,  # Update profile image URL
+                            'name': name,  # Update name from OAuth provider
+                            'email_verified': email_verified,  # Update verification status
                         },
                     )
                 else:
@@ -232,7 +241,7 @@ class OAuthService:
                         ),
                         {
                             'user_id': user_id,
-                            'name': name or email.split('@')[0],
+                            'name': name or email.split('@')[0],  # Use full name from OAuth or email prefix
                             'email': email.lower(),
                             'email_verified': email_verified,
                             'avatar_url': avatar_url,  # Add profile image URL
@@ -305,8 +314,95 @@ class OAuthService:
             logger.error(f"OAuth user creation/linking failed: {e}")
             raise OAuthError(f"Failed to process OAuth user: {str(e)}")
 
+    def link_oauth_to_existing_user(
+        self,
+        user_id: str,
+        provider: str,
+        provider_id: str,
+        email: str,
+        name: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+        raw_profile: Optional[Dict[str, Any]] = None,
+        email_verified: bool = False,
+    ) -> Dict[str, Any]:
+        """Link OAuth account to an existing user."""
+        try:
+            with self.db.session_scope() as session:
+                # Verify the user exists
+                existing_user = session.execute(
+                    text("SELECT id, email, oauth_provider FROM users WHERE id = :user_id"),
+                    {'user_id': user_id}
+                ).fetchone()
+                
+                if not existing_user:
+                    raise OAuthError(f"User {user_id} not found for OAuth linking")
+                
+                # Check if user already has OAuth linked
+                if existing_user.oauth_provider:
+                    raise OAuthError(f"User already has {existing_user.oauth_provider} account linked")
+                
+                # Check if this OAuth account is already linked to another user
+                oauth_conflict = session.execute(
+                    text("""
+                        SELECT id, email FROM users 
+                        WHERE oauth_provider = :provider AND oauth_provider_id = :provider_id
+                    """),
+                    {'provider': provider, 'provider_id': provider_id}
+                ).fetchone()
+                
+                if oauth_conflict:
+                    raise OAuthError(f"This {provider} account is already linked to another user")
+                
+                # Check if OAuth email matches user email
+                if existing_user.email.lower() != email.lower():
+                    logger.warning(f"OAuth email {email} doesn't match user email {existing_user.email} for linking")
+                    # Allow linking but log the discrepancy
+                
+                # Update user with OAuth information
+                session.execute(
+                    text("""
+                        UPDATE users 
+                        SET oauth_provider = :provider,
+                            oauth_provider_id = :provider_id,
+                            oauth_raw_profile = :raw_profile,
+                            image = COALESCE(:avatar_url, image),  -- Update image if provided
+                            name = COALESCE(:name, name),  -- Update name if provided
+                            email_verified = CASE 
+                                WHEN :email_verified = TRUE THEN TRUE 
+                                ELSE email_verified 
+                            END,  -- Only upgrade verification, never downgrade
+                            "updatedAt" = NOW()
+                        WHERE id = :user_id
+                    """),
+                    {
+                        'user_id': user_id,
+                        'provider': provider,
+                        'provider_id': provider_id,
+                        'raw_profile': json.dumps(raw_profile) if raw_profile else None,
+                        'avatar_url': avatar_url,
+                        'name': name,
+                        'email_verified': email_verified
+                    }
+                )
+                
+                logger.info(f"Successfully linked {provider} account to user {user_id}")
+                
+                return {
+                    'id': user_id,
+                    'name': name or existing_user.email.split('@')[0],
+                    'email': existing_user.email,
+                    'email_verified': email_verified or False,
+                    'is_new': False,
+                    'is_linked': True,
+                    'image': avatar_url
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to link OAuth account to user {user_id}: {e}")
+            raise OAuthError(f"Failed to link OAuth account: {str(e)}")
+
     # Google OAuth methods
-    def get_google_auth_url(self, return_to: str = '/') -> str:
+    def get_google_auth_url(self, return_to: str = '/', link_user_id: Optional[str] = None) -> str:
         """Generate Google OAuth authorization URL."""
         client_id = os.getenv('GOOGLE_CLIENT_ID')
         redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
@@ -316,7 +412,9 @@ class OAuthService:
         if not redirect_uri:
             raise OAuthError("Google OAuth not configured - missing GOOGLE_REDIRECT_URI")
 
-        state = self.generate_secure_state('google', return_to)
+        # Include link_user_id in state if provided
+        extra_data = {'link_user_id': link_user_id} if link_user_id else None
+        state = self.generate_secure_state('google', return_to, extra_data)
 
         params = {
             'client_id': client_id,
@@ -347,13 +445,16 @@ class OAuthService:
         # Step 1: Validate state
         logger.info(f"[{callback_id}] Validating OAuth state")
         try:
-            return_to = self.validate_and_consume_state(state, 'google')
+            return_to, extra_data = self.validate_and_consume_state(state, 'google')
             if not return_to:
                 logger.error(f"[{callback_id}] Invalid or expired OAuth state")
                 raise OAuthError("Invalid or expired OAuth state")
+            
+            link_user_id = extra_data.get('link_user_id') if extra_data else None
             logger.info(f"[{callback_id}] OAuth state validated successfully", extra={
                 'callback_id': callback_id,
-                'return_to': return_to
+                'return_to': return_to,
+                'link_user_id': link_user_id
             })
         except Exception as e:
             logger.error(f"[{callback_id}] State validation failed: {e}", exc_info=True)
@@ -396,32 +497,50 @@ class OAuthService:
                 }, exc_info=True)
                 raise
 
-            # Step 4: Find or create user
+            # Step 4: Find or create user (or link to existing user)
             logger.info(f"[{callback_id}] Finding or creating user account")
             try:
                 # Only set email_verified=True if Google confirms it
                 email_verified = bool(profile.get('email_verified'))
 
-                user = self.find_or_create_user_from_oauth(
-                    provider='google',
-                    provider_id=profile['sub'],
-                    email=profile['email'],
-                    name=profile.get('name'),
-                    avatar_url=profile.get('picture'),
-                    raw_profile=profile,
-                    email_verified=email_verified,
-                )
+                if link_user_id:
+                    # Account linking mode - link OAuth to existing user
+                    logger.info(f"[{callback_id}] Linking OAuth account to existing user {link_user_id}")
+                    user = self.link_oauth_to_existing_user(
+                        user_id=link_user_id,
+                        provider='google',
+                        provider_id=profile['sub'],
+                        email=profile['email'],
+                        name=profile.get('name'),
+                        avatar_url=profile.get('picture'),
+                        raw_profile=profile,
+                        email_verified=email_verified,
+                    )
+                else:
+                    # Normal OAuth sign-in/sign-up
+                    user = self.find_or_create_user_from_oauth(
+                        provider='google',
+                        provider_id=profile['sub'],
+                        email=profile['email'],
+                        name=profile.get('name'),
+                        avatar_url=profile.get('picture'),
+                        raw_profile=profile,
+                        email_verified=email_verified,
+                    )
+                
                 logger.info(f"[{callback_id}] User account processed successfully", extra={
                     'callback_id': callback_id,
                     'user_id': user.get('id'),
                     'is_new_user': user.get('is_new', False),
+                    'is_linking': bool(link_user_id),
                     'email_verified': email_verified
                 })
             except Exception as e:
                 logger.error(f"[{callback_id}] User account processing failed: {e}", extra={
                     'callback_id': callback_id,
                     'exception_type': type(e).__name__,
-                    'profile_email': profile.get('email')
+                    'profile_email': profile.get('email'),
+                    'link_user_id': link_user_id
                 }, exc_info=True)
                 raise
 

@@ -615,11 +615,15 @@ def create_app(config_class=None):
             
             from routes.v5.security_audit_api import security_audit_bp
             app.register_blueprint(security_audit_bp) # /api/v5/security/*
-            logger.info("Magic Link and 2FA blueprints registered successfully")
+            
+            from routes.v5.profile_api import profile_bp
+            app.register_blueprint(profile_bp)        # /api/v5/profile/*
+            
+            logger.info("Magic Link, 2FA, Security Audit, and Profile blueprints registered successfully")
         except ImportError as e:
-            logger.warning(f"Could not import Magic Link blueprint: {e}")
+            logger.warning(f"Could not import v5 blueprints: {e}")
         except Exception as e:
-            logger.warning(f"Could not register Magic Link blueprint: {e}")
+            logger.warning(f"Could not register v5 blueprints: {e}")
         
         # Register v5 search API
         if feature_flags_v5.is_enabled('search_api_v5', default=True):
