@@ -12,7 +12,7 @@ from enum import Enum
 
 from sqlalchemy import text
 from utils.logging_config import get_logger
-from database.unified_connection_manager import get_db_connection
+from database.unified_connection_manager import get_unified_connection_manager
 
 logger = get_logger(__name__)
 
@@ -85,7 +85,7 @@ class SecurityAuditService:
     """Enhanced security audit logging service."""
     
     def __init__(self):
-        self.db_connection = get_db_connection()
+        self.db_connection = get_unified_connection_manager()
         
         # Configuration
         self.retention_days = int(os.getenv('AUDIT_LOG_RETENTION_DAYS', '365'))
