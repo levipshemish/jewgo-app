@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, List
 from sqlalchemy import text
 
 from utils.logging_config import get_logger
-from database.unified_connection_manager import get_db_connection
+from database.unified_connection_manager import get_unified_connection_manager
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,7 @@ class ProfileService:
     """Service for managing user profiles and usernames."""
 
     def __init__(self):
-        self.db = get_db_connection()
+        self.db = get_unified_connection_manager()
         
         # Username validation rules
         self.username_min_length = int(os.getenv('USERNAME_MIN_LENGTH', '3'))
