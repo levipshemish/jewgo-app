@@ -151,8 +151,11 @@ curl "https://api.jewgo.app/api/v5/search/?q=synagogue&limit=5"
 # Test shuls API  
 curl "https://api.jewgo.app/api/v5/search/?q=shul&limit=5"
 
-# Check database directly
-ssh -i .secrets/ssh-key-2025-09-08.key ubuntu@129.80.190.110 "PGPASSWORD=Jewgo123 psql -h localhost -U app_user -d jewgo_db -c \"SELECT name, city, state FROM shuls LIMIT 5;\""
+# Check database directly (redacted; example only)
+# Use environment variables and configured SSH host aliases. Do not embed secrets/IPs.
+# Example:
+# PGPASSWORD is read from the environment; SSH key and host configured in your SSH config.
+# ssh db-host "PGPASSWORD=$PGPASSWORD psql -h $PGHOST -U $PGUSER -d $PGDATABASE -c 'SELECT name, city, state FROM shuls LIMIT 5;'"
 ```
 
 ## Next Steps

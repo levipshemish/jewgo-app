@@ -167,6 +167,8 @@ export interface Restaurant {
   quality_rating?: number;
   review_count?: number;
   view_count?: number;
+  share_count?: number;
+  favorite_count?: number;
   google_rating?: number | string;
   google_review_count?: number;
   google_reviews?: string;

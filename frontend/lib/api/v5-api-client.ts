@@ -112,7 +112,6 @@ export class V5ApiClient {
     } = { ...this.defaultOptions, ...options };
 
     const url = this.cleanDuplicateParams(`${this.baseUrl}${endpoint}`);
-    console.log('V5 API Client making request to:', url);
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= retryAttempts!; attempt++) {
@@ -149,7 +148,6 @@ export class V5ApiClient {
         }
 
         const data = await response.json();
-        console.log('V5 API Client response data:', data);
         
         // Backend returns {data: [], next_cursor: null, prev_cursor: null, total_count: 207}
         // Extract the actual data array and return in expected frontend format

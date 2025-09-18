@@ -230,12 +230,11 @@ const SpringButton = memo(({
         transition-all duration-200 overflow-hidden
         ${isActive 
           ? `bg-gradient-to-br from-rose-100 to-rose-50` 
-          : ''
+          : 'bg-white'
         }
         ${className}
       `}
       style={{
-        backgroundColor: isActive ? undefined : 'transparent',
         border: 'none',
         transform: `translate(${springX}px, ${springY}px) scale(${springScale})`,
       }}
@@ -417,6 +416,11 @@ export function ListingHeader({
   const [lastRestaurantId, setLastRestaurantId] = useState<number | undefined>(undefined);
   const [internalIsFavorited, setInternalIsFavorited] = useState(isFavorited);
   
+  // Sync internal favorite state with prop changes
+  useEffect(() => {
+    setInternalIsFavorited(isFavorited || false);
+  }, [isFavorited]);
+  
   // Report modal state
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState('');
@@ -438,7 +442,6 @@ export function ListingHeader({
   // Reset initialization when restaurant changes
   useEffect(() => {
     if (restaurantId && restaurantId !== lastRestaurantId) {
-      console.log(`🔄 [LISTING HEADER] Restaurant changed from ${lastRestaurantId} to ${restaurantId}, resetting initialization`);
       setCountsInitialized(false);
       setLastRestaurantId(restaurantId);
     }
@@ -446,25 +449,29 @@ export function ListingHeader({
 
   // Initialize counts only once when props are first received for each restaurant
   // After initialization, internal state takes precedence over props to prevent auto-increments
+  // BUT allow updates if the incoming data is higher than current internal state (from API increments)
   useEffect(() => {
     if (!countsInitialized && restaurantId && (viewCount !== undefined || shareCount !== undefined || favoriteCount !== undefined)) {
-      console.log(`🎯 [LISTING HEADER] FIRST TIME initializing counts for restaurant ${restaurantId} - Views: ${viewCount}, Shares: ${shareCount}, Favorites: ${favoriteCount}`);
-      
       if (viewCount !== undefined) setInternalViewCount(viewCount);
       if (shareCount !== undefined) setInternalShareCount(shareCount);
       if (favoriteCount !== undefined) setInternalFavoriteCount(favoriteCount);
       
       setCountsInitialized(true);
+    } else if (countsInitialized && restaurantId) {
+      // After initialization, only update if the incoming count is higher (from API increments)
+      // This prevents stale data from overriding fresh interactions while allowing API updates
+      if (viewCount !== undefined && viewCount > internalViewCount) {
+        setInternalViewCount(viewCount);
+      }
+      if (shareCount !== undefined && shareCount > internalShareCount) {
+        setInternalShareCount(shareCount);
+      }
+      if (favoriteCount !== undefined && favoriteCount > internalFavoriteCount) {
+        setInternalFavoriteCount(favoriteCount);
+      }
     }
-  }, [viewCount, shareCount, favoriteCount, countsInitialized, restaurantId]);
+  }, [viewCount, shareCount, favoriteCount, countsInitialized, restaurantId, internalViewCount, internalShareCount, internalFavoriteCount]);
 
-  // Debug log to confirm restaurantId is being passed and track prop changes
-  useEffect(() => {
-    if (restaurantId) {
-      console.log(`🏷️ [LISTING HEADER] Props changed - Restaurant ID: ${restaurantId}, Counts - Views: ${viewCount}, Shares: ${shareCount}, Favorites: ${favoriteCount}`);
-      console.log(`📊 [LISTING HEADER] Internal state - Views: ${internalViewCount}, Shares: ${internalShareCount}, Favorites: ${internalFavoriteCount}`);
-    }
-  }, [restaurantId, viewCount, shareCount, favoriteCount, internalViewCount, internalShareCount, internalFavoriteCount]);
 
   // Heart particles for favorite animation
   const heartParticles = useMemo(() => {
@@ -497,7 +504,6 @@ export function ListingHeader({
 
   // API call functions
   const callShareAPI = useCallback(async (apiRestaurantId: number) => {
-    console.log(`📤 [LISTING HEADER] Calling share API for restaurant ${apiRestaurantId}`);
     try {
       const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${apiRestaurantId}/share`, {
         method: 'POST',
@@ -521,7 +527,6 @@ export function ListingHeader({
   }, []);
 
   const callFavoriteAPI = useCallback(async (apiRestaurantId: number, isFavoriting: boolean) => {
-    console.log(`💖 [LISTING HEADER] Calling ${isFavoriting ? 'favorite' : 'unfavorite'} API for restaurant ${apiRestaurantId}`);
     try {
       const endpoint = isFavoriting ? 'favorite' : 'unfavorite';
       const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${apiRestaurantId}/${endpoint}`, {
@@ -588,11 +593,9 @@ export function ListingHeader({
   const handleShare = useCallback(async () => {
     // Prevent multiple rapid clicks
     if (isProcessingShare) {
-      console.log(`⏸️ [LISTING HEADER] Share already processing, ignoring click`);
       return;
     }
     
-    console.log(`🔄 [LISTING HEADER] handleShare called for restaurant ${restaurantId}`);
     setIsProcessingShare(true);
     
     const url = typeof window !== "undefined" ? window.location.href : ""
@@ -642,11 +645,9 @@ export function ListingHeader({
   const handleFavorite = useCallback(async (_e: React.MouseEvent) => {
     // Prevent multiple rapid clicks
     if (isProcessingFavorite) {
-      console.log(`⏸️ [LISTING HEADER] Favorite already processing, ignoring click`);
       return;
     }
     
-    console.log(`💖 [LISTING HEADER] handleFavorite called for restaurant ${restaurantId}`);
     setIsProcessingFavorite(true);
     
     const newFavoriteState = !internalIsFavorited;

@@ -111,39 +111,36 @@ class RestaurantRepository(BaseRepository[Restaurant]):
         limit: int = 50,
         offset: int = 0,
     ) -> List[Restaurant]:
-        """Get restaurants near a specific location using Haversine formula."""
+        """Get restaurants near a specific location using PostGIS/earthdistance."""
         try:
             with self.connection_manager.session_scope() as session:
-                # Convert radius from km to miles for Haversine calculation
-                radius_miles = radius_km * 0.621371
-                
-                # Haversine formula for distance calculation
-                haversine_formula = (
-                    3959 * func.acos(
-                        func.cos(func.radians(latitude))
-                        * func.cos(func.radians(Restaurant.latitude))
-                        * func.cos(func.radians(Restaurant.longitude) - func.radians(longitude))
-                        + func.sin(func.radians(latitude))
-                        * func.sin(func.radians(Restaurant.latitude))
-                    )
+                # Use earthdistance with ll_to_earth; distance in meters
+                radius_meters = radius_km * 1000.0
+
+                distance_expr = func.earth_distance(
+                    func.ll_to_earth(Restaurant.latitude, Restaurant.longitude),
+                    func.ll_to_earth(latitude, longitude),
                 )
-                
-                restaurants = (
+
+                query = (
                     session.query(Restaurant)
                     .filter(
                         and_(
                             Restaurant.latitude.isnot(None),
                             Restaurant.longitude.isnot(None),
                             Restaurant.status == "active",
-                            haversine_formula <= radius_miles,
+                            func.earth_box(func.ll_to_earth(latitude, longitude), radius_meters).op("@>")(
+                                func.ll_to_earth(Restaurant.latitude, Restaurant.longitude)
+                            ),
+                            distance_expr <= radius_meters,
                         )
                     )
-                    .order_by(haversine_formula)
+                    .order_by(distance_expr.asc())
                     .limit(limit)
                     .offset(offset)
-                    .all()
                 )
-                return restaurants
+
+                return query.all()
         except Exception as e:
             self.logger.exception(
                 "Error searching restaurants near location", error=str(e)
@@ -157,10 +154,7 @@ class RestaurantRepository(BaseRepository[Restaurant]):
         radius_miles: float = 10.0,
         limit: int = 50,
     ) -> List[Restaurant]:
-        """Alias for DatabaseManager compatibility (expects miles).
-
-        Delegates to get_restaurants_near_location after converting miles to km.
-        """
+        """Compatibility alias (radius in miles); delegates to PostGIS path."""
         try:
             radius_km = radius_miles / 0.621371 if radius_miles is not None else 10.0
         except Exception:

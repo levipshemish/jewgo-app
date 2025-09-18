@@ -696,8 +696,7 @@ def serve_avatar(filename):
         return send_from_directory(
             abs_uploads_dir,
             filename,
-            as_attachment=False,
-            mimetype='image/jpeg'  # Let Flask auto-detect based on file extension
+            as_attachment=False
         )
         
     except Exception as e:
