@@ -240,9 +240,7 @@ export class V5ApiClient {
    */
   async getEntity(id: string, entityType: V5EntityType, options?: V5ApiRequestOptions): Promise<V5ApiResponse> {
     const endpoint = V5_API_ENDPOINTS.ENTITY_DETAILS(entityType, id);
-    // Add cache-busting timestamp to force fresh data
-    const cacheBustEndpoint = `${endpoint}?_t=${Date.now()}`;
-    return this.makeRequest(cacheBustEndpoint, options);
+    return this.makeRequest(endpoint, options);
   }
 
   /**
