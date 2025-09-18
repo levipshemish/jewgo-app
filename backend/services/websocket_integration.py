@@ -302,23 +302,18 @@ class WebSocketIntegration:
         return None
 
     def _calculate_distance(self, loc1: Dict[str, float], loc2: Dict[str, float]) -> float:
-        """Calculate distance between two locations in kilometers."""
-        from math import radians, cos, sin, asin, sqrt
-        
-        # Haversine formula
-        lat1, lon1 = radians(loc1['latitude']), radians(loc1['longitude'])
-        lat2, lon2 = radians(loc2['latitude']), radians(loc2['longitude'])
-        
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-        
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-        c = 2 * asin(sqrt(a))
-        
-        # Earth's radius in kilometers
-        r = 6371
-        
-        return c * r
+        """Calculate distance between two locations in kilometers using shared DB helper."""
+        try:
+            from utils.distance import distance_km
+            return distance_km(
+                float(loc1['latitude']),
+                float(loc1['longitude']),
+                float(loc2['latitude']),
+                float(loc2['longitude']),
+            )
+        except Exception as e:
+            logger.warning(f"Distance calculation failed: {e}")
+            return float("inf")
 
     def _cleanup_connection_subscriptions(self, connection_id: str):
         """Clean up all subscriptions for a connection."""

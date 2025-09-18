@@ -230,7 +230,7 @@ const SpringButton = memo(({
         transition-all duration-200 overflow-hidden
         ${isActive 
           ? `bg-gradient-to-br from-rose-100 to-rose-50` 
-          : 'bg-white'
+          : 'bg-[#ffffff]'
         }
         ${className}
       `}
@@ -697,7 +697,6 @@ export function ListingHeader({
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
           isolation: 'isolate',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
           boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
           position: 'relative',
         }}
@@ -730,7 +729,7 @@ export function ListingHeader({
                 aria-label="Go back"
                 className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
               >
-                <ArrowLeft className="h-4 w-4 text-black transition-all duration-200 group-hover:-translate-x-1" />
+                <ArrowLeft className="h-4 w-4 text-gray-600 transition-all duration-200 group-hover:-translate-x-1" />
               </SpringButton>
             )}
 
@@ -740,7 +739,7 @@ export function ListingHeader({
               aria-label="Report content"
               className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
             >
-              <Flag className="h-4 w-4 text-black transition-all duration-200 group-hover:-translate-y-1" />
+              <Flag className="h-4 w-4 text-gray-600 transition-all duration-200 group-hover:-translate-y-1" />
             </SpringButton>
 
             {/* View count */}
@@ -751,7 +750,7 @@ export function ListingHeader({
                 className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
               >
                 <Eye className="h-4 w-4 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
-                <span className="text-xs font-bold tabular-nums text-black whitespace-nowrap">
+                <span className="text-xs font-bold tabular-nums text-gray-600 whitespace-nowrap">
                   {formatCount(animatedViews)}
                 </span>
               </SpringButton>
@@ -764,8 +763,8 @@ export function ListingHeader({
                 aria-label={`Share (${formatCount(animatedShares)} shares)`}
                 className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
               >
-                <Share className="h-4 w-4 text-black transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
-                <span className="text-xs font-bold tabular-nums text-black whitespace-nowrap">
+                <Share className="h-4 w-4 text-gray-600 transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
+                <span className="text-xs font-bold tabular-nums text-gray-600 whitespace-nowrap">
                   {formatCount(animatedShares)}
                 </span>
               </SpringButton>
@@ -784,7 +783,7 @@ export function ListingHeader({
                     className={`h-4 w-4 transition-all duration-300 group-hover:scale-125
                                ${internalIsFavorited 
                                  ? 'text-rose-600 fill-rose-500 animate-pulse' 
-                                 : 'text-black group-hover:text-rose-500'
+                                 : 'text-gray-600 group-hover:text-rose-500'
                                }`} 
                   />
                   
@@ -804,7 +803,7 @@ export function ListingHeader({
                     </div>
                   ))}
                 </div>
-                <span className="text-xs font-bold tabular-nums text-black whitespace-nowrap">
+                <span className="text-xs font-bold tabular-nums text-gray-600 whitespace-nowrap">
                   {formatCount(animatedFavorites)}
                 </span>
               </SpringButton>
@@ -822,7 +821,7 @@ export function ListingHeader({
                   aria-label="Go back"
                   className="h-12 w-12 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
                 >
-                  <ArrowLeft className="h-6 w-6 text-black transition-all duration-200 group-hover:-translate-x-1" />
+                  <ArrowLeft className="h-6 w-6 text-gray-600 transition-all duration-200 group-hover:-translate-x-1" />
                 </SpringButton>
               )}
 
@@ -832,7 +831,7 @@ export function ListingHeader({
                 aria-label="Report content"
                 className="h-12 w-12 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
               >
-                <Flag className="h-5 w-5 text-black transition-all duration-200 group-hover:-translate-y-1" />
+                <Flag className="h-5 w-5 text-gray-600 transition-all duration-200 group-hover:-translate-y-1" />
               </SpringButton>
             </div>
 
@@ -845,7 +844,7 @@ export function ListingHeader({
                   className="h-12 px-5 rounded-full flex items-center gap-2 min-w-0 flex-shrink-0"
                 >
                   <Eye className="h-5 w-5 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
-                  <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+                  <span className="text-sm font-bold tabular-nums text-gray-600 whitespace-nowrap">
                     {formatCount(animatedViews)}
                   </span>
                 </SpringButton>
@@ -861,8 +860,8 @@ export function ListingHeader({
                   aria-label={`Share (${formatCount(animatedShares)} shares)`}
                   className="h-12 px-4 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
                 >
-                  <Share className="h-5 w-5 text-black transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
-                  <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+                  <Share className="h-5 w-5 text-gray-600 transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
+                  <span className="text-sm font-bold tabular-nums text-gray-600 whitespace-nowrap">
                     {formatCount(animatedShares)}
                   </span>
                 </SpringButton>
@@ -881,7 +880,7 @@ export function ListingHeader({
                       className={`h-5 w-5 transition-all duration-300 group-hover:scale-125
                                  ${internalIsFavorited 
                                    ? 'text-rose-600 fill-rose-500 animate-pulse' 
-                                   : 'text-black group-hover:text-rose-500'
+                                   : 'text-gray-600 group-hover:text-rose-500'
                                  }`} 
                     />
                     
@@ -901,7 +900,7 @@ export function ListingHeader({
                       </div>
                     ))}
                   </div>
-                  <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+                  <span className="text-sm font-bold tabular-nums text-gray-600 whitespace-nowrap">
                     {formatCount(animatedFavorites)}
                   </span>
                 </SpringButton>

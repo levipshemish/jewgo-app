@@ -13,6 +13,7 @@ from utils.logging_config import get_logger
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from cache.redis_manager_v5 import RedisManagerV5
 from utils.feature_flags_v5 import FeatureFlagsV5
+from utils.distance import distance_km
 
 logger = get_logger(__name__)
 
@@ -970,27 +971,12 @@ class StoreServiceV5:
             self.logger.warning("Failed to send low stock alert", error=str(e))
 
     def _calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """Calculate distance between two coordinates using Haversine formula.
-        
-        Args:
-            lat1, lon1: First coordinate
-            lat2, lon2: Second coordinate
-            
-        Returns:
-            Distance in kilometers
-        """
-        from math import radians, sin, cos, sqrt, atan2
-        
-        R = 6371  # Earth's radius in kilometers
-        
-        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-        
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-        c = 2 * atan2(sqrt(a), sqrt(1-a))
-        
-        return R * c
+        """Calculate distance between two coordinates (km) using shared DB helper."""
+        try:
+            return distance_km(float(lat1), float(lon1), float(lat2), float(lon2))
+        except Exception as e:
+            self.logger.warning("Distance calculation failed", error=str(e))
+            return float("inf")
 
     def _invalidate_store_caches(self, store_id: Optional[int] = None):
         """Invalidate store-related caches.

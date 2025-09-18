@@ -19,7 +19,7 @@ function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [_isLoading, _setIsLoading] = useState(false); // TODO: Implement loading state
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   const [isEmailSigningIn, setIsEmailSigningIn] = useState(false);
   const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
   const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
@@ -74,18 +74,28 @@ function SignInForm() {
     }
   }, [siteKey]);
 
-  // Check if user is already authenticated and redirect
+  // Check if user is already authenticated and redirect (non-blocking)
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        // Quick check if auth is available
+        if (!postgresAuth.isAuthenticated()) {
+          // No auth token, stay on signin form
+          return;
+        }
+        
+        // Add timeout to prevent hanging indefinitely
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Auth check timeout')), 3000);
+        });
+        
         // Probe backend: if profile returns 200, redirect
-        await postgresAuth.getProfile();
+        await Promise.race([postgresAuth.getProfile(), timeoutPromise]);
         router.push(redirectTo);
         return;
       } catch (err: any) {
         console.log('Auth check failed:', err);
-        // Not authenticated; show form (handle all auth errors gracefully)
-        setIsCheckingAuth(false);
+        // Not authenticated; stay on form (handle all auth errors gracefully)
         
         // Show cookie-size hint if 413 is encountered
         if (err instanceof PostgresAuthError && err.status === 413) {
@@ -98,11 +108,10 @@ function SignInForm() {
         if (err instanceof PostgresAuthError && err.status === 503) {
           console.warn('Auth service temporarily unavailable, showing sign-in form');
         }
-      } finally {
-        // Ensure isCheckingAuth is always set to false after the check
-        setIsCheckingAuth(false);
       }
     };
+    
+    // Run auth check in background, don't block the form
     checkAuthStatus();
   }, [router, redirectTo]);
 
@@ -218,6 +227,7 @@ function SignInForm() {
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
   const [magicLinkCooldown, setMagicLinkCooldown] = useState<number>(0);
   const [showMagicLinkModal, setShowMagicLinkModal] = useState(false);
+  
   
   // Auto-focus magic link email input when modal opens
   useEffect(() => {
@@ -373,93 +383,6 @@ function SignInForm() {
             <p className="mt-4 text-gray-600">Checking authentication...</p>
         </div>
       </div>
-
-      {/* Magic Link Modal */}
-      {showMagicLinkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Magic Link Sign-in</h3>
-              <button
-                onClick={() => {
-                  setShowMagicLinkModal(false);
-                  setMagicEmail('');
-                  setMagicStatus(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-4">
-              Enter your email address and we&apos;ll send you a secure link to sign in without a password.
-            </p>
-
-            {/* Magic Link Email Input */}
-            <div className="mb-4">
-              <label htmlFor="modal-magic-email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                id="modal-magic-email"
-                name="modal-magic-email"
-                type="email"
-                autoComplete="off"
-                placeholder="Enter your email address"
-                value={magicEmail}
-                onChange={(e) => setMagicEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && magicEmail.trim() && magicLinkCooldown === 0 && magicStatus !== 'sending') {
-                    handleMagicLinkSignIn();
-                  } else if (e.key === 'Escape') {
-                    setShowMagicLinkModal(false);
-                    setMagicEmail('');
-                    setMagicStatus(null);
-                  }
-                }}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              />
-            </div>
-
-            {/* Success/Error Messages */}
-            {magicStatus === 'sent' && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded mb-4 text-sm">
-                ✅ Magic link sent! Check your email.
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowMagicLinkModal(false);
-                  setMagicEmail('');
-                  setMagicStatus(null);
-                }}
-                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleMagicLinkSignIn}
-                disabled={magicLinkCooldown > 0 || magicStatus === 'sending' || !magicEmail.trim()}
-                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {magicLinkCooldown > 0 ? (
-                  `Wait ${magicLinkCooldown}s`
-                ) : magicStatus === 'sending' ? (
-                  'Sending...'
-                ) : !magicEmail.trim() ? (
-                  'Enter Email'
-                ) : (
-                  'Send Magic Link'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -720,6 +643,93 @@ function SignInForm() {
       </div>
 
       {/* Coming Soon Modal for Apple Sign-In */}
+      {/* Magic Link Modal */}
+      {showMagicLinkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Magic Link Sign-in</h3>
+              <button
+                onClick={() => {
+                  setShowMagicLinkModal(false);
+                  setMagicEmail('');
+                  setMagicStatus(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Enter your email address and we'll send you a secure magic link to sign in.
+            </p>
+
+            {/* Magic Link Email Input */}
+            <div className="mb-4">
+              <label htmlFor="modal-magic-email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                id="modal-magic-email"
+                name="modal-magic-email"
+                type="email"
+                autoComplete="off"
+                placeholder="Enter your email address"
+                value={magicEmail}
+                onChange={(e) => setMagicEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && magicEmail.trim() && magicLinkCooldown === 0 && magicStatus !== 'sending') {
+                    handleMagicLinkSignIn();
+                  } else if (e.key === 'Escape') {
+                    setShowMagicLinkModal(false);
+                    setMagicEmail('');
+                    setMagicStatus(null);
+                  }
+                }}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              />
+            </div>
+
+            {/* Success/Error Messages */}
+            {magicStatus === 'sent' && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded mb-4 text-sm">
+                ✅ Magic link sent! Check your email.
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowMagicLinkModal(false);
+                  setMagicEmail('');
+                  setMagicStatus(null);
+                }}
+                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMagicLinkSignIn}
+                disabled={magicLinkCooldown > 0 || magicStatus === 'sending' || !magicEmail.trim()}
+                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {magicLinkCooldown > 0 ? (
+                  `Wait ${magicLinkCooldown}s`
+                ) : magicStatus === 'sending' ? (
+                  'Sending...'
+                ) : !magicEmail.trim() ? (
+                  'Enter Email'
+                ) : (
+                  'Send Magic Link'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ComingSoonModal
         isOpen={showAppleComingSoon}
         onClose={() => setShowAppleComingSoon(false)}

@@ -1243,26 +1243,20 @@ class EntityRepositoryV5(BaseRepository):
             if hasattr(entity, 'name') and 'mizrachi' in entity.name.lower():
                 logger.warning(f"Mizrachi restaurant found: {entity.name} at coordinates ({entity_lat}, {entity_lng})")
             
-            # Simple distance calculation (Haversine formula would be more accurate)
-            import math
-            
-            lat_diff = math.radians(entity_lat - user_lat)
-            lng_diff = math.radians(entity_lng - user_lng)
-            
-            a = (math.sin(lat_diff / 2) * math.sin(lat_diff / 2) +
-                 math.cos(math.radians(user_lat)) * math.cos(math.radians(entity_lat)) *
-                 math.sin(lng_diff / 2) * math.sin(lng_diff / 2))
-            
-            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-            distance_miles = 3958.756 * c  # Earth's radius in miles
-            
-            logger.debug(f"Calculated distance: {distance_miles:.2f} miles")
+            # Calculate via DB for accuracy and consistency
+            try:
+                from utils.distance import distance_miles as _distance_miles
+                dist_miles = _distance_miles(user_lat, user_lng, entity_lat, entity_lng)
+                logger.debug(f"Calculated distance (DB): {dist_miles:.2f} miles")
+            except Exception as e:
+                logger.warning(f"Distance calculation failed: {e}")
+                return None
             
             # Special debug for Mizrachi restaurants
             if hasattr(entity, 'name') and 'mizrachi' in entity.name.lower():
-                logger.warning(f"Mizrachi restaurant distance calculation: {entity.name} = {distance_miles:.2f} miles")
+                logger.warning(f"Mizrachi restaurant distance calculation: {entity.name} = {dist_miles:.2f} miles")
             
-            return round(distance_miles, 2)
+            return round(dist_miles, 2)
             
         except Exception as e:
             logger.warning(f"Error calculating distance: {e}")

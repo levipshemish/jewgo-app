@@ -375,23 +375,13 @@ class WebSocketService:
     def _calculate_distance(
         self, lat1: float, lon1: float, lat2: float, lon2: float
     ) -> float:
-        """Calculate distance between two points in miles."""
-        import math
-
-        # Convert to radians
-        lat1_rad = math.radians(lat1)
-        lon1_rad = math.radians(lon1)
-        lat2_rad = math.radians(lat2)
-        lon2_rad = math.radians(lon2)
-        # Haversine formula
-        dlat = lat2_rad - lat1_rad
-        dlon = lon2_rad - lon1_rad
-        a = (
-            math.sin(dlat / 2) ** 2
-            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
-        )
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-        return 3959 * c  # Earth's radius in miles
+        """Calculate distance between two points in miles using shared DB helper."""
+        try:
+            from utils.distance import distance_miles
+            return distance_miles(float(lat1), float(lon1), float(lat2), float(lon2))
+        except Exception as e:
+            logger.warning(f"Distance calculation failed: {e}")
+            return float("inf")
 
     async def _cleanup_inactive_connections(self):
         """Clean up inactive connections."""
