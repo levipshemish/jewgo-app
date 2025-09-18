@@ -717,6 +717,7 @@ def track_restaurant_view(restaurant_id: int):
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>/share', methods=['POST'])
+@csrf_exempt  # Exempt analytics tracking from CSRF protection
 @optional_auth
 @rate_limit_by_user(max_requests=30, window_minutes=1)
 def track_restaurant_share(restaurant_id):
@@ -749,6 +750,7 @@ def track_restaurant_share(restaurant_id):
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>/favorite', methods=['POST'])
+@csrf_exempt  # Exempt analytics tracking from CSRF protection
 @optional_auth
 @rate_limit_by_user(max_requests=60, window_minutes=1)
 def track_restaurant_favorite(restaurant_id):
@@ -781,6 +783,7 @@ def track_restaurant_favorite(restaurant_id):
 
 
 @api_v5.route('/restaurants/<int:restaurant_id>/unfavorite', methods=['POST'])
+@csrf_exempt  # Exempt analytics tracking from CSRF protection
 @optional_auth
 @rate_limit_by_user(max_requests=60, window_minutes=1)
 def track_restaurant_unfavorite(restaurant_id):
