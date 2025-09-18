@@ -97,7 +97,7 @@ class AnalyticsService {
           return sessionId;
         }
       }
-    } catch (e) {
+    } catch (_e) {
       // Ignore storage errors
     }
     
@@ -109,7 +109,7 @@ class AnalyticsService {
         sessionId: newSessionId,
         timestamp: Date.now()
       }));
-    } catch (e) {
+    } catch (_e) {
       // Ignore storage errors
     }
     
@@ -183,14 +183,14 @@ class AnalyticsService {
     
     // Check if we've already tracked this page in this session
     if (this.viewedPages.has(pageKey)) {
-      console.debug(`[Analytics] Page view already tracked for ${page} in session ${this.sessionId}`);
+      console.info(`[Analytics] Page view already tracked for ${page} in session ${this.sessionId}`);
       return;
     }
     
     // Mark this page as viewed in this session
     this.viewedPages.add(pageKey);
     
-    console.debug(`[Analytics] Tracking new page view: ${page} (session: ${this.sessionId})`);
+    console.info(`[Analytics] Tracking new page view: ${page} (session: ${this.sessionId})`);
 
     const pageViewEvent: AnalyticsEvent = {
       event: 'page_view',
@@ -586,7 +586,7 @@ class AnalyticsService {
     for (const [key, value] of Object.entries(properties)) {
       if (typeof value === 'string' && value.length > 1000) {
         // Truncate long strings
-        truncated[key] = value.substring(0, 1000) + '... [truncated]';
+        truncated[key] = `${value.substring(0, 1000)}... [truncated]`;
       } else if (typeof value === 'object' && value !== null) {
         // Recursively truncate nested objects, but limit depth
         truncated[key] = this.truncateProperties(value as Record<string, unknown>);
@@ -610,13 +610,13 @@ class AnalyticsService {
     try {
       // Check payload size and split if necessary
       const payloadSize = this.calculatePayloadSize(eventsToSend);
-      console.debug(`[Analytics] Flushing ${eventsToSend.length} events (${Math.round(payloadSize / 1024)}KB)`);
+      console.info(`[Analytics] Flushing ${eventsToSend.length} events (${Math.round(payloadSize / 1024)}KB)`);
       
       if (payloadSize > 800000) { // 800KB threshold (below 1MB limit)
         console.warn(`[Analytics] Large payload detected (${Math.round(payloadSize / 1024)}KB), splitting into batches`);
         const batches = this.splitEventsBatch(eventsToSend);
         
-        let failedEvents: AnalyticsEvent[] = [];
+        const failedEvents: AnalyticsEvent[] = [];
         
         for (const batch of batches) {
           const success = await this.sendBatch(batch);
@@ -654,7 +654,7 @@ class AnalyticsService {
   resetSession(): void {
     this.viewedPages.clear();
     this.sessionId = this.getOrCreateSessionId();
-    console.debug(`[Analytics] Session reset: ${this.sessionId}`);
+    console.info(`[Analytics] Session reset: ${this.sessionId}`);
   }
 
   /**

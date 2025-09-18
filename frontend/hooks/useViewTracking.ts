@@ -45,7 +45,7 @@ export function useViewTracking({
           return sessionId
         }
       }
-    } catch (e) {
+    } catch (_e) {
       // Ignore storage errors
     }
     
@@ -59,7 +59,7 @@ export function useViewTracking({
         timestamp: Date.now(),
         viewedRestaurants: []
       }))
-    } catch (e) {
+    } catch (_e) {
       // Ignore storage errors
     }
     
@@ -77,7 +77,7 @@ export function useViewTracking({
         timestamp: Date.now(),
         viewedRestaurants: Array.from(viewedRestaurants)
       }))
-    } catch (e) {
+    } catch (_e) {
       // Ignore storage errors
     }
   }, [])
@@ -126,7 +126,8 @@ export function useViewTracking({
         source: 'frontend_view_tracking'
       }
       
-      const url = `/api/v5/restaurants/${restaurantId}/view`
+      const baseUrl = 'https://api.jewgo.app'
+      const url = `${baseUrl}/api/v5/restaurants/${restaurantId}/view`
       console.log(`📡 [FRONTEND VIEW TRACKING] Making POST request to: ${url}`)
       console.log(`📦 [FRONTEND VIEW TRACKING] Payload size: ${JSON.stringify(payload).length} bytes`)
       
@@ -163,7 +164,7 @@ export function useViewTracking({
             console.error(`❌ [FRONTEND VIEW TRACKING] Payload too large (${JSON.stringify(payload).length} bytes)`)
             console.error(`❌ [FRONTEND VIEW TRACKING] Payload:`, payload)
           }
-        } catch (e) {
+        } catch (_e) {
           // Ignore parsing errors
         }
         

@@ -36,7 +36,7 @@ class Analytics {
     
     // Check if we've already sent this event recently
     if (this.sentEvents.has(eventKey)) {
-      console.debug(`[Analytics] Duplicate event skipped: ${event}`);
+      console.info(`[Analytics] Duplicate event skipped: ${event}`);
       return;
     }
     
@@ -61,7 +61,7 @@ class Analytics {
     if (process.env.NODE_ENV === 'production') {
       this.sendToAnalyticsService(analyticsEvent);
     } else {
-      console.debug(`[Analytics] Event tracked: ${event}`, properties);
+      console.info(`[Analytics] Event tracked: ${event}`, properties);
     }
   }
 
@@ -239,7 +239,7 @@ class Analytics {
     for (const [key, value] of Object.entries(properties)) {
       if (typeof value === 'string' && value.length > 500) {
         // Truncate long strings
-        truncated[key] = value.substring(0, 500) + '... [truncated]';
+        truncated[key] = `${value.substring(0, 500)}... [truncated]`;
       } else if (typeof value === 'object' && value !== null) {
         // For objects, keep only essential fields
         if (Array.isArray(value)) {

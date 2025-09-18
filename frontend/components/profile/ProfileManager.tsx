@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Profile {
@@ -56,13 +56,6 @@ export default function ProfileManager() {
   } | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (isAuthenticated()) {
-      loadProfile();
-      loadOAuthStatus();
-    }
-  }, [isAuthenticated, loadProfile, loadOAuthStatus]);
-
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
     const response = await fetch(`${backendUrl}/api/v5/profile${endpoint}`, {
@@ -81,7 +74,7 @@ export default function ProfileManager() {
     return data;
   };
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiCall('/me');
@@ -103,16 +96,23 @@ export default function ProfileManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadOAuthStatus = async () => {
+  const loadOAuthStatus = useCallback(async () => {
     try {
       const data = await apiCall('/oauth/status');
       setOAuthStatus(data.oauth_status);
     } catch (err: any) {
       console.error('Failed to load OAuth status:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      loadProfile();
+      loadOAuthStatus();
+    }
+  }, [isAuthenticated, loadProfile, loadOAuthStatus]);
 
   const checkUsername = async (username: string) => {
     if (!username.trim()) {

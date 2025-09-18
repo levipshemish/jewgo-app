@@ -216,7 +216,7 @@ const SpringButton = memo(({
         );
       }
     }
-  }, [isDragging, addParticle]);
+  }, [isDragging, addParticle]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <button
