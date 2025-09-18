@@ -7,9 +7,9 @@
 
 import { getApiBaseUrl } from '../api-config';
 
-// V5 API Base URL - use relative URLs in development to leverage Next.js proxy
+// V5 API Base URL - always use production API URL
 const isDevelopment = process.env.NODE_ENV === 'development';
-export const V5_API_BASE_URL = isDevelopment ? '' : getApiBaseUrl();
+export const V5_API_BASE_URL = getApiBaseUrl(); // Always use production API
 
 // V5 API Endpoints
 export const V5_API_ENDPOINTS = {
@@ -115,10 +115,10 @@ export interface V5EntityParams {
 // V5 API Client Configuration
 export const V5_API_CONFIG = {
   BASE_URL: V5_API_BASE_URL,
-  TIMEOUT: 10000, // 10 seconds
-  RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000, // 1 second
-  CACHE_TTL: 2 * 60 * 1000, // 2 minutes
+  TIMEOUT: 15000, // 15 seconds
+  RETRY_ATTEMPTS: 2, // Reduce retries to avoid rate limiting
+  RETRY_DELAY: 2000, // 2 seconds - longer delay between retries
+  CACHE_TTL: 5 * 60 * 1000, // 5 minutes - longer cache to reduce API calls
 } as const;
 
 // Helper function to build V5 API URLs

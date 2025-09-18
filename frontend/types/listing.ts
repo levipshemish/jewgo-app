@@ -239,6 +239,7 @@ export interface EateryDB {
   stats: {
     view_count: number
     share_count: number
+    favorite_count: number
   }
   reviews?: {
     google_reviews?: string
@@ -306,6 +307,7 @@ export interface ShulDB {
   stats: {
     view_count: number
     share_count: number
+    favorite_count: number
   }
   // Shul-specific fields
   has_daily_minyan?: boolean
@@ -402,6 +404,7 @@ export interface StoreDB {
   stats: {
     view_count: number
     share_count: number
+    favorite_count: number
   }
   // Store-specific fields
   has_parking?: boolean
@@ -474,6 +477,7 @@ export interface MikvahDB {
   stats: {
     view_count: number
     share_count: number
+    favorite_count: number
   }
   // Mikvah-specific fields
   requires_appointment?: boolean

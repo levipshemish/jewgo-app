@@ -225,18 +225,17 @@ const SpringButton = memo(({
       onMouseDown={() => setIsDragging(true)}
       onMouseUp={() => setIsDragging(false)}
       className={`
-        group relative backdrop-blur-md shadow-sm
-        hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-black/50
+        group relative
+        focus:outline-none focus:ring-2 focus:ring-black/50
         transition-all duration-200 overflow-hidden
         ${isActive 
-          ? `bg-gradient-to-br from-rose-100 to-rose-50 shadow-rose-200` 
-          : 'hover:bg-gray-50'
+          ? `bg-gradient-to-br from-rose-100 to-rose-50` 
+          : ''
         }
         ${className}
       `}
       style={{
-        backgroundColor: isActive ? undefined : 'rgba(241, 241, 241, 0.6)',
-        backdropFilter: 'blur(20px)',
+        backgroundColor: isActive ? undefined : 'transparent',
         border: 'none',
         transform: `translate(${springX}px, ${springY}px) scale(${springScale})`,
       }}
@@ -264,13 +263,6 @@ const SpringButton = memo(({
         />
       ))}
       
-      {/* Glow effect when active */}
-      {isActive && (
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-200/30 to-transparent animate-pulse pointer-events-none" />
-      )}
-      
-      {/* Gradient overlay on hover */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       
       {children}
     </button>
@@ -386,8 +378,10 @@ const ToastContainer = memo(({ toasts }: { toasts: Array<{ id: string; text: str
 ToastContainer.displayName = 'ToastContainer';
 
 interface ListingHeaderProps {
+  restaurantId?: number // Required for API calls
   shareCount?: number
   viewCount?: number
+  favoriteCount?: number
   onBack?: () => void
   onFavorite?: () => void
   isFavorited?: boolean
@@ -403,8 +397,10 @@ function formatCount(n?: number): string {
 }
 
 export function ListingHeader({
+  restaurantId,
   shareCount,
   viewCount,
+  favoriteCount,
   onBack,
   onFavorite,
   isFavorited = false,
@@ -414,6 +410,7 @@ export function ListingHeader({
   // Internal state for enhanced interactions
   const [internalViewCount, setInternalViewCount] = useState(viewCount || 0);
   const [internalShareCount, setInternalShareCount] = useState(shareCount || 0);
+  const [internalFavoriteCount, setInternalFavoriteCount] = useState(favoriteCount || 247); // Initialize with prop or realistic count
   const [internalIsFavorited, setInternalIsFavorited] = useState(isFavorited);
   
   // Report modal state
@@ -428,6 +425,14 @@ export function ListingHeader({
   // Animated numbers
   const animatedViews = useAnimatedNumber(internalViewCount);
   const animatedShares = useAnimatedNumber(internalShareCount);
+  const animatedFavorites = useAnimatedNumber(internalFavoriteCount);
+
+  // Debug log to confirm restaurantId is being passed
+  useEffect(() => {
+    if (restaurantId) {
+      console.log(`🏷️ [LISTING HEADER] Restaurant ID: ${restaurantId}, Counts - Views: ${viewCount}, Shares: ${shareCount}, Favorites: ${favoriteCount}`);
+    }
+  }, [restaurantId, viewCount, shareCount, favoriteCount]);
 
   // Heart particles for favorite animation
   const heartParticles = useMemo(() => {
@@ -456,6 +461,56 @@ export function ListingHeader({
     }, 2500);
     
     toastTimeoutsRef.current.set(id, timeout);
+  }, []);
+
+  // API call functions
+  const callShareAPI = useCallback(async (restaurantId: number) => {
+    console.log(`📤 [LISTING HEADER] Calling share API for restaurant ${restaurantId}`);
+    try {
+      const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${restaurantId}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          timestamp: Date.now(),
+          source: 'frontend_header_share'
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.data?.share_count || null;
+      }
+    } catch (error) {
+      console.warn('Share API call failed:', error);
+    }
+    return null;
+  }, []);
+
+  const callFavoriteAPI = useCallback(async (restaurantId: number, isFavoriting: boolean) => {
+    console.log(`💖 [LISTING HEADER] Calling ${isFavoriting ? 'favorite' : 'unfavorite'} API for restaurant ${restaurantId}`);
+    try {
+      const endpoint = isFavoriting ? 'favorite' : 'unfavorite';
+      const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${restaurantId}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          timestamp: Date.now(),
+          source: 'frontend_header_favorite'
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.data?.favorite_count || null;
+      }
+    } catch (error) {
+      console.warn('Favorite API call failed:', error);
+    }
+    return null;
   }, []);
 
   // Cleanup toasts on unmount
@@ -501,11 +556,21 @@ export function ListingHeader({
   const handleShare = useCallback(async () => {
     const url = typeof window !== "undefined" ? window.location.href : ""
     
-    // Increment share count with animation
+    // Optimistic update - increment share count immediately
     setInternalShareCount(prev => prev + 1);
     hapticFeedback('medium');
     
     try {
+      // Call backend API to track the share
+      if (restaurantId) {
+        const apiShareCount = await callShareAPI(restaurantId);
+        if (apiShareCount !== null) {
+          // Update with real count from backend
+          setInternalShareCount(apiShareCount);
+        }
+      }
+      
+      // Perform the actual sharing
       if (navigator.share) {
         await navigator.share({ title: "Check this out", url })
         addToast("Shared successfully!");
@@ -530,18 +595,46 @@ export function ListingHeader({
         addToast("Share failed");
       }
     }
-  }, [onShared, addToast])
+  }, [restaurantId, callShareAPI, onShared, addToast])
 
   const handleFavorite = useCallback(async (_e: React.MouseEvent) => {
     const newFavoriteState = !internalIsFavorited;
     setInternalIsFavorited(newFavoriteState);
+    
+    // Optimistic update - update favorite count immediately
+    if (newFavoriteState) {
+      setInternalFavoriteCount(prev => prev + 1);
+    } else {
+      setInternalFavoriteCount(prev => Math.max(0, prev - 1));
+    }
+    
     hapticFeedback(newFavoriteState ? 'success' : 'light');
     
-    addToast(newFavoriteState ? "Added to favorites" : "Removed from favorites");
-    
-    // Call original callback
-    onFavorite?.();
-  }, [internalIsFavorited, onFavorite, addToast]);
+    try {
+      // Call backend API to track the favorite/unfavorite
+      if (restaurantId) {
+        const apiFavoriteCount = await callFavoriteAPI(restaurantId, newFavoriteState);
+        if (apiFavoriteCount !== null) {
+          // Update with real count from backend
+          setInternalFavoriteCount(apiFavoriteCount);
+        }
+      }
+      
+      addToast(newFavoriteState ? "Added to favorites" : "Removed from favorites");
+      
+      // Call original callback
+      onFavorite?.();
+    } catch (error) {
+      // Revert changes if API call failed
+      setInternalIsFavorited(!newFavoriteState);
+      if (newFavoriteState) {
+        setInternalFavoriteCount(prev => Math.max(0, prev - 1));
+      } else {
+        setInternalFavoriteCount(prev => prev + 1);
+      }
+      addToast("Action failed, please try again");
+    }
+  }, [restaurantId, internalIsFavorited, callFavoriteAPI, onFavorite, addToast]);
 
   const handleViewsClick = useCallback(() => {
     setInternalViewCount(prev => prev + Math.floor(1 + Math.random() * 3));
@@ -550,17 +643,43 @@ export function ListingHeader({
   }, [internalViewCount, addToast]);
 
   return (
-    <div className="px-3">
+    <div className="px-3 relative">
       <div
-        className="flex items-center justify-center gap-1 sm:gap-2 py-2 px-2 rounded-full w-full overflow-hidden bg-background/80 dark:bg-background/60 border border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur shadow-md"
+        className="flex items-center justify-center gap-1 sm:gap-2 py-2 px-2 rounded-full w-full overflow-hidden relative"
         style={{
-          // Match the image container width exactly
           width: '100%',
           maxWidth: '100%',
+          // True glassmorphism with backdrop-filter
+          backgroundColor: 'rgba(255, 255, 255, 0.25)',
+          backdropFilter: 'blur(16px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          isolation: 'isolate',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+          position: 'relative',
         }}
       >
-        {/* Back */}
-        {onBack && (
+        {/* Dark background layer behind the glass for backdrop-filter */}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.08) 100%)',
+            zIndex: -1,
+          }}
+        />
+        {/* Glass highlight overlay for depth */}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)',
+            borderRadius: 'inherit',
+          }}
+        />
+        
+        {/* Button content - positioned above glass layers */}
+        <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2 w-full">
+          {/* Back */}
+          {onBack && (
           <SpringButton
             onClick={onBack}
             aria-label="Go back"
@@ -607,17 +726,17 @@ export function ListingHeader({
           </SpringButton>
         )}
 
-        {/* Heart with favorite state */}
+        {/* Heart with favorite count */}
           {onFavorite && (
           <SpringButton
             onClick={handleFavorite}
             isActive={internalIsFavorited}
-            aria-label={internalIsFavorited ? "Remove from favorites" : "Add to favorites"}
-            className="h-8 w-8 sm:h-10 sm:w-10 p-0 rounded-full flex items-center justify-center"
+            aria-label={`${internalIsFavorited ? 'Unlike' : 'Like'} (${formatCount(animatedFavorites)} likes)`}
+            className="h-10 px-3 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
           >
             <div className="relative flex-shrink-0">
               <Heart
-                className={`h-4 w-4 sm:h-5 sm:w-5 transition-all duration-300 group-hover:scale-125
+                className={`h-4 w-4 transition-all duration-300 group-hover:scale-125
                            ${internalIsFavorited 
                              ? 'text-rose-600 fill-rose-500 animate-pulse' 
                              : 'text-black group-hover:text-rose-500'
@@ -640,8 +759,14 @@ export function ListingHeader({
                 </div>
               ))}
             </div>
+            
+            <span className={`text-sm font-bold tabular-nums transition-all duration-300 whitespace-nowrap
+                             ${internalIsFavorited ? 'text-rose-600 scale-110' : 'text-black'}`}>
+              {formatCount(animatedFavorites)}
+            </span>
           </SpringButton>
         )}
+        </div>
       </div>
       
       {/* Toast Container */}
@@ -694,6 +819,7 @@ export function ListingHeader({
             opacity: 1;
           }
         }
+        
       `}</style>
     </div>
   )

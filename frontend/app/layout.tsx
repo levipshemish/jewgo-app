@@ -138,7 +138,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="h-full antialiased font-sans">
+      <body className="h-full antialiased font-sans" style={{ backgroundColor: '#f1f1f1' }}>
         <CustomHead />
         <ErrorBoundary>
           <ThemeProvider>

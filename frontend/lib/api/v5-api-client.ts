@@ -43,6 +43,8 @@ export class V5ApiError extends Error {
 export class V5ApiClient {
   private baseUrl: string;
   private defaultOptions: V5ApiRequestOptions;
+  private lastRequestTime: number = 0;
+  private minRequestInterval: number = 150; // Minimum 150ms between requests to avoid rate limiting
 
   constructor(baseUrl: string = V5_API_CONFIG.BASE_URL) {
     this.baseUrl = baseUrl;
@@ -78,12 +80,30 @@ export class V5ApiClient {
   }
 
   /**
-   * Make a request to the V5 API with retry logic
+   * Rate limiting helper - ensures minimum interval between requests
+   */
+  private async enforceRateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const waitTime = this.minRequestInterval - timeSinceLastRequest;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    this.lastRequestTime = Date.now();
+  }
+
+  /**
+   * Make a request to the V5 API with retry logic and rate limiting
    */
   public async makeRequest<T>(
     endpoint: string,
     options: V5ApiRequestOptions = {}
   ): Promise<V5ApiResponse<T>> {
+    // Enforce rate limiting
+    await this.enforceRateLimit();
+    
     const {
       timeout = this.defaultOptions.timeout,
       retryAttempts = this.defaultOptions.retryAttempts,

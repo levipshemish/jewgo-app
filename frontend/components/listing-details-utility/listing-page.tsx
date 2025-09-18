@@ -57,8 +57,10 @@ export interface ListingData {
     kosherType?: string
     kosherAgency?: string
     kosherAgencyWebsite?: string
+    restaurantId?: number
     viewCount?: number
     shareCount?: number
+    favoriteCount?: number
     onBack?: () => void
     onFavorite?: () => void
     onShare?: () => void
@@ -157,8 +159,10 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
       <Stack gap={10}>
         {/* Header above the image */}
         <ListingHeader
+          restaurantId={safeData.header?.restaurantId}
           shareCount={safeData.header?.shareCount}
           viewCount={safeData.header?.viewCount}
+          favoriteCount={safeData.header?.favoriteCount}
           onBack={safeData.header?.onBack}
           onFavorite={safeData.header?.onFavorite}
           isFavorited={safeData.header?.isFavorited}
