@@ -217,6 +217,20 @@ function SignInForm() {
   const [magicEmail, setMagicEmail] = useState(""); // Separate email for magic link
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
   const [magicLinkCooldown, setMagicLinkCooldown] = useState<number>(0);
+  const [showMagicLinkModal, setShowMagicLinkModal] = useState(false);
+  
+  // Auto-focus magic link email input when modal opens
+  useEffect(() => {
+    if (showMagicLinkModal) {
+      const timer = setTimeout(() => {
+        const input = document.getElementById('modal-magic-email');
+        if (input) {
+          (input as HTMLInputElement).focus();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [showMagicLinkModal]);
   
   // Rate limiting for magic link requests
   useEffect(() => {
@@ -275,6 +289,13 @@ function SignInForm() {
       setMagicStatus('sent');
       showSuccess(`Magic link sent to ${magicEmail}! Check your email.`);
       setMagicLinkCooldown(60);
+      
+      // Close modal and reset email after successful send
+      setTimeout(() => {
+        setShowMagicLinkModal(false);
+        setMagicEmail('');
+        setMagicStatus(null);
+      }, 2000);
       
       // Clear the email field to prevent confusion
       // setEmail(''); // Commented out - user might want to try again
@@ -348,11 +369,98 @@ function SignInForm() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Checking authentication...</p>
-          </div>
         </div>
       </div>
-    );
-  }
+
+      {/* Magic Link Modal */}
+      {showMagicLinkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Magic Link Sign-in</h3>
+              <button
+                onClick={() => {
+                  setShowMagicLinkModal(false);
+                  setMagicEmail('');
+                  setMagicStatus(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Enter your email address and we'll send you a secure link to sign in without a password.
+            </p>
+
+            {/* Magic Link Email Input */}
+            <div className="mb-4">
+              <label htmlFor="modal-magic-email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                id="modal-magic-email"
+                name="modal-magic-email"
+                type="email"
+                autoComplete="off"
+                placeholder="Enter your email address"
+                value={magicEmail}
+                onChange={(e) => setMagicEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && magicEmail.trim() && magicLinkCooldown === 0 && magicStatus !== 'sending') {
+                    handleMagicLinkSignIn();
+                  } else if (e.key === 'Escape') {
+                    setShowMagicLinkModal(false);
+                    setMagicEmail('');
+                    setMagicStatus(null);
+                  }
+                }}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              />
+            </div>
+
+            {/* Success/Error Messages */}
+            {magicStatus === 'sent' && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded mb-4 text-sm">
+                ✅ Magic link sent! Check your email.
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowMagicLinkModal(false);
+                  setMagicEmail('');
+                  setMagicStatus(null);
+                }}
+                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMagicLinkSignIn}
+                disabled={magicLinkCooldown > 0 || magicStatus === 'sending' || !magicEmail.trim()}
+                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {magicLinkCooldown > 0 ? (
+                  `Wait ${magicLinkCooldown}s`
+                ) : magicStatus === 'sending' ? (
+                  'Sending...'
+                ) : !magicEmail.trim() ? (
+                  'Enter Email'
+                ) : (
+                  'Send Magic Link'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
   return (
     <>
@@ -531,37 +639,16 @@ function SignInForm() {
                 Continue with Apple
               </button>
 
-              {/* Magic Link Email Input */}
-              <div className="mt-4">
-                <label htmlFor="magic-email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email for Magic Link (Passwordless Sign-in)
-                </label>
-                <input
-                  id="magic-email"
-                  name="magic-email"
-                  type="email"
-                  autoComplete="off"
-                  placeholder="Enter email for magic link"
-                  value={magicEmail}
-                  onChange={(e) => setMagicEmail(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                />
-              </div>
-
-              {/* Magic Link Sign-in Button */}
+              {/* Magic Link Button - Opens Modal */}
               <button
-                onClick={handleMagicLinkSignIn}
-                disabled={magicLinkCooldown > 0 || magicStatus === 'sending' || !magicEmail.trim()}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                onClick={() => setShowMagicLinkModal(true)}
+                disabled={magicLinkCooldown > 0}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
               >
                 {magicLinkCooldown > 0 ? (
-                  `Wait ${magicLinkCooldown}s`
-                ) : magicStatus === 'sending' ? (
-                  'Sending magic link...'
-                ) : !magicEmail.trim() ? (
-                  'Enter email above for magic link'
+                  `Magic link sent - wait ${magicLinkCooldown}s`
                 ) : (
-                  `Send magic link to ${magicEmail}`
+                  '🔗 Sign in with Magic Link'
                 )}
               </button>
 
