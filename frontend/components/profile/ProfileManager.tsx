@@ -72,7 +72,7 @@ export default function ProfileManager() {
       throw new Error(data.error || `HTTP ${response.status}`);
     }
     return data;
-  }, [apiCall]);
+  }, []);
 
   const loadProfile = useCallback(async () => {
     try {

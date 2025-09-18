@@ -66,6 +66,7 @@ const mockEateryData: Record<string, EateryDB> = {
     stats: {
       view_count: 1250,
       share_count: 89,
+      favorite_count: 247,
     },
   },
   "eatery-456": {
@@ -120,6 +121,7 @@ const mockEateryData: Record<string, EateryDB> = {
     stats: {
       view_count: 890,
       share_count: 45,
+      favorite_count: 156,
     },
   }
 }

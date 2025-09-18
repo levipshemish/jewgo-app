@@ -46,8 +46,36 @@ export function ListingImage({
         onImagesProcessed={handleImagesProcessed}
       />
       {totalImages > 0 && (
-        <div className="absolute bottom-3 right-3 bg-background/80 dark:bg-background/60 border border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur shadow-md text-foreground text-xs font-medium px-2 py-1 rounded-full">
-          {currentImageIndex + 1}/{totalImages}
+        <div 
+          className="absolute bottom-3 right-3 text-foreground text-xs font-medium px-2 py-1 rounded-full"
+          style={{
+            // Same glassmorphism as header bar
+            backgroundColor: 'rgba(255, 255, 255, 0.25)',
+            backdropFilter: 'blur(16px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+            isolation: 'isolate',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
+            position: 'relative',
+          }}
+        >
+          {/* Dark background layer for backdrop-filter */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.08) 100%)',
+              zIndex: -1,
+            }}
+          />
+          {/* Glass highlight overlay */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)',
+              borderRadius: 'inherit',
+            }}
+          />
+          <span className="relative z-10">{currentImageIndex + 1}/{totalImages}</span>
         </div>
       )}
     </div>

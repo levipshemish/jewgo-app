@@ -101,10 +101,12 @@ export function mapEateryToListingData(
   const result = {
     // Header Section - Remove title from header, only show kosher info and stats
     header: {
+      restaurantId: parseInt(eatery.id),
       kosherType: eatery.kosher_type,
       kosherAgency: eatery.kosher_agency,
       viewCount: eatery.stats.view_count,
       shareCount: eatery.stats.share_count,
+      favoriteCount: eatery.stats.favorite_count,
       onBack: () => {
         // This would typically use Next.js router
         if (typeof window !== 'undefined') {
@@ -457,6 +459,7 @@ export function createMockEateryData(): EateryDB {
     stats: {
       view_count: 1250,
       share_count: 89,
+      favorite_count: 247,
     },
   }
 }
@@ -512,6 +515,7 @@ export function createMockEateryDataNoEmail(): EateryDB {
     stats: {
       view_count: 890,
       share_count: 45,
+      favorite_count: 156,
     },
   }
 }

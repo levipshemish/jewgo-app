@@ -8,7 +8,6 @@
 import { getApiBaseUrl } from '../api-config';
 
 // V5 API Base URL - always use production API URL
-const isDevelopment = process.env.NODE_ENV === 'development';
 export const V5_API_BASE_URL = getApiBaseUrl(); // Always use production API
 
 // V5 API Endpoints

@@ -410,7 +410,11 @@ export function ListingHeader({
   // Internal state for enhanced interactions
   const [internalViewCount, setInternalViewCount] = useState(viewCount || 0);
   const [internalShareCount, setInternalShareCount] = useState(shareCount || 0);
-  const [internalFavoriteCount, setInternalFavoriteCount] = useState(favoriteCount || 247); // Initialize with prop or realistic count
+  const [internalFavoriteCount, setInternalFavoriteCount] = useState(favoriteCount || 0); // Initialize with prop or 0
+  
+  // Track if we've initialized the counts to prevent re-initialization
+  const [countsInitialized, setCountsInitialized] = useState(false);
+  const [lastRestaurantId, setLastRestaurantId] = useState<number | undefined>(undefined);
   const [internalIsFavorited, setInternalIsFavorited] = useState(isFavorited);
   
   // Report modal state
@@ -427,12 +431,36 @@ export function ListingHeader({
   const animatedShares = useAnimatedNumber(internalShareCount);
   const animatedFavorites = useAnimatedNumber(internalFavoriteCount);
 
-  // Debug log to confirm restaurantId is being passed
+  // Reset initialization when restaurant changes
+  useEffect(() => {
+    if (restaurantId && restaurantId !== lastRestaurantId) {
+      console.log(`🔄 [LISTING HEADER] Restaurant changed from ${lastRestaurantId} to ${restaurantId}, resetting initialization`);
+      setCountsInitialized(false);
+      setLastRestaurantId(restaurantId);
+    }
+  }, [restaurantId, lastRestaurantId]);
+
+  // Initialize counts only once when props are first received for each restaurant
+  // After initialization, internal state takes precedence over props to prevent auto-increments
+  useEffect(() => {
+    if (!countsInitialized && restaurantId && (viewCount !== undefined || shareCount !== undefined || favoriteCount !== undefined)) {
+      console.log(`🎯 [LISTING HEADER] FIRST TIME initializing counts for restaurant ${restaurantId} - Views: ${viewCount}, Shares: ${shareCount}, Favorites: ${favoriteCount}`);
+      
+      if (viewCount !== undefined) setInternalViewCount(viewCount);
+      if (shareCount !== undefined) setInternalShareCount(shareCount);
+      if (favoriteCount !== undefined) setInternalFavoriteCount(favoriteCount);
+      
+      setCountsInitialized(true);
+    }
+  }, [viewCount, shareCount, favoriteCount, countsInitialized, restaurantId]);
+
+  // Debug log to confirm restaurantId is being passed and track prop changes
   useEffect(() => {
     if (restaurantId) {
-      console.log(`🏷️ [LISTING HEADER] Restaurant ID: ${restaurantId}, Counts - Views: ${viewCount}, Shares: ${shareCount}, Favorites: ${favoriteCount}`);
+      console.log(`🏷️ [LISTING HEADER] Props changed - Restaurant ID: ${restaurantId}, Counts - Views: ${viewCount}, Shares: ${shareCount}, Favorites: ${favoriteCount}`);
+      console.log(`📊 [LISTING HEADER] Internal state - Views: ${internalViewCount}, Shares: ${internalShareCount}, Favorites: ${internalFavoriteCount}`);
     }
-  }, [restaurantId, viewCount, shareCount, favoriteCount]);
+  }, [restaurantId, viewCount, shareCount, favoriteCount, internalViewCount, internalShareCount, internalFavoriteCount]);
 
   // Heart particles for favorite animation
   const heartParticles = useMemo(() => {
@@ -464,10 +492,10 @@ export function ListingHeader({
   }, []);
 
   // API call functions
-  const callShareAPI = useCallback(async (restaurantId: number) => {
-    console.log(`📤 [LISTING HEADER] Calling share API for restaurant ${restaurantId}`);
+  const callShareAPI = useCallback(async (apiRestaurantId: number) => {
+    console.log(`📤 [LISTING HEADER] Calling share API for restaurant ${apiRestaurantId}`);
     try {
-      const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${restaurantId}/share`, {
+      const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${apiRestaurantId}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -488,11 +516,11 @@ export function ListingHeader({
     return null;
   }, []);
 
-  const callFavoriteAPI = useCallback(async (restaurantId: number, isFavoriting: boolean) => {
-    console.log(`💖 [LISTING HEADER] Calling ${isFavoriting ? 'favorite' : 'unfavorite'} API for restaurant ${restaurantId}`);
+  const callFavoriteAPI = useCallback(async (apiRestaurantId: number, isFavoriting: boolean) => {
+    console.log(`💖 [LISTING HEADER] Calling ${isFavoriting ? 'favorite' : 'unfavorite'} API for restaurant ${apiRestaurantId}`);
     try {
       const endpoint = isFavoriting ? 'favorite' : 'unfavorite';
-      const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${restaurantId}/${endpoint}`, {
+      const response = await fetch(`https://api.jewgo.app/api/v5/restaurants/${apiRestaurantId}/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -554,18 +582,18 @@ export function ListingHeader({
   }, []);
 
   const handleShare = useCallback(async () => {
+    console.log(`🔄 [LISTING HEADER] handleShare called for restaurant ${restaurantId}`);
+    
     const url = typeof window !== "undefined" ? window.location.href : ""
     
-    // Optimistic update - increment share count immediately
-    setInternalShareCount(prev => prev + 1);
     hapticFeedback('medium');
     
     try {
-      // Call backend API to track the share
+      // Call backend API to track the share FIRST, then update UI
       if (restaurantId) {
         const apiShareCount = await callShareAPI(restaurantId);
         if (apiShareCount !== null) {
-          // Update with real count from backend
+          // Update with real count from backend (no optimistic update)
           setInternalShareCount(apiShareCount);
         }
       }
@@ -624,7 +652,7 @@ export function ListingHeader({
       
       // Call original callback
       onFavorite?.();
-    } catch (error) {
+    } catch (_error) {
       // Revert changes if API call failed
       setInternalIsFavorited(!newFavoriteState);
       if (newFavoriteState) {
@@ -645,7 +673,7 @@ export function ListingHeader({
   return (
     <div className="px-3 relative">
       <div
-        className="flex items-center justify-center gap-1 sm:gap-2 py-2 px-2 rounded-full w-full overflow-hidden relative"
+        className="flex items-center gap-0.5 sm:gap-1 py-2 px-2 rounded-full w-full overflow-hidden relative"
         style={{
           width: '100%',
           maxWidth: '100%',
@@ -655,7 +683,7 @@ export function ListingHeader({
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
           isolation: 'isolate',
           border: '1px solid rgba(255, 255, 255, 0.18)',
-          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+          boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
           position: 'relative',
         }}
       >
@@ -677,95 +705,194 @@ export function ListingHeader({
         />
         
         {/* Button content - positioned above glass layers */}
-        <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2 w-full">
-          {/* Back */}
-          {onBack && (
-          <SpringButton
-            onClick={onBack}
-            aria-label="Go back"
-            className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
-          >
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-black transition-all duration-200 group-hover:-translate-x-1" />
-          </SpringButton>
-        )}
+        <div className="relative z-10 flex items-center w-full px-1">
+          {/* Mobile: Single flow with even spacing */}
+          <div className="flex items-center justify-between w-full sm:hidden">
+            {/* Back */}
+            {onBack && (
+              <SpringButton
+                onClick={onBack}
+                aria-label="Go back"
+                className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+              >
+                <ArrowLeft className="h-4 w-4 text-black transition-all duration-200 group-hover:-translate-x-1" />
+              </SpringButton>
+            )}
 
-        {/* Report Flag */}
-        <SpringButton
-          onClick={handleReport}
-          aria-label="Report content"
-          className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
-        >
-          <Flag className="h-3 w-3 sm:h-4 sm:w-4 text-black transition-all duration-200 group-hover:-translate-y-1" />
-        </SpringButton>
+            {/* Report Flag */}
+            <SpringButton
+              onClick={handleReport}
+              aria-label="Report content"
+              className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+            >
+              <Flag className="h-4 w-4 text-black transition-all duration-200 group-hover:-translate-y-1" />
+            </SpringButton>
 
-        {/* View count */}
-        {typeof viewCount === "number" && viewCount >= 0 && (
-          <SpringButton
-            onClick={handleViewsClick}
-            aria-label={`${formatCount(animatedViews)} views`}
-            className="h-8 sm:h-10 px-2 sm:px-3 rounded-full flex items-center gap-1 sm:gap-1.5 min-w-0 flex-shrink-0"
-          >
-            <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-bold tabular-nums text-black whitespace-nowrap">
-              {formatCount(animatedViews)}
-            </span>
-          </SpringButton>
-        )}
+            {/* View count */}
+            {typeof viewCount === "number" && viewCount >= 0 && (
+              <SpringButton
+                onClick={handleViewsClick}
+                aria-label={`${formatCount(animatedViews)} views`}
+                className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
+              >
+                <Eye className="h-4 w-4 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
+                <span className="text-xs font-bold tabular-nums text-black whitespace-nowrap">
+                  {formatCount(animatedViews)}
+                </span>
+              </SpringButton>
+            )}
 
-        {/* Share with count */}
-          {typeof shareCount !== "undefined" && (
-          <SpringButton
-              onClick={handleShare}
-            aria-label={`Share (${formatCount(animatedShares)} shares)`}
-            className="h-8 sm:h-10 px-2 sm:px-3 rounded-full flex items-center gap-1 sm:gap-1.5 min-w-0 flex-shrink-0"
-          >
-            <Share className="h-3 w-3 sm:h-4 sm:w-4 text-black transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-bold tabular-nums text-black whitespace-nowrap">
-              {formatCount(animatedShares)}
-            </span>
-          </SpringButton>
-        )}
+            {/* Share with count */}
+            {typeof shareCount !== "undefined" && (
+              <SpringButton
+                onClick={handleShare}
+                aria-label={`Share (${formatCount(animatedShares)} shares)`}
+                className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
+              >
+                <Share className="h-4 w-4 text-black transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
+                <span className="text-xs font-bold tabular-nums text-black whitespace-nowrap">
+                  {formatCount(animatedShares)}
+                </span>
+              </SpringButton>
+            )}
 
-        {/* Heart with favorite count */}
-          {onFavorite && (
-          <SpringButton
-            onClick={handleFavorite}
-            isActive={internalIsFavorited}
-            aria-label={`${internalIsFavorited ? 'Unlike' : 'Like'} (${formatCount(animatedFavorites)} likes)`}
-            className="h-10 px-3 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
-          >
-            <div className="relative flex-shrink-0">
-              <Heart
-                className={`h-4 w-4 transition-all duration-300 group-hover:scale-125
-                           ${internalIsFavorited 
-                             ? 'text-rose-600 fill-rose-500 animate-pulse' 
-                             : 'text-black group-hover:text-rose-500'
-                           }`} 
-              />
-              
-              {internalIsFavorited && heartParticles.map(particle => (
-                <div
-                  key={particle.id}
-                  className="absolute left-1/2 top-1/2 pointer-events-none"
-                  style={{
-                    transform: `translate(-50%, -50%) translate(${particle.x}px, ${particle.y}px) rotate(${particle.rotation}deg)`,
-                    animation: `heartBounce ${particle.duration}s ease-out ${particle.delay}s both`
-                  }}
-                >
-                  <Heart 
-                    className="text-rose-400 fill-rose-400" 
-                    style={{ width: particle.size, height: particle.size }} 
+            {/* Heart with favorite count */}
+            {onFavorite && (
+              <SpringButton
+                onClick={handleFavorite}
+                isActive={internalIsFavorited}
+                aria-label={`${internalIsFavorited ? 'Unlike' : 'Like'} (${formatCount(animatedFavorites)} likes)`}
+                className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
+              >
+                <div className="relative flex-shrink-0">
+                  <Heart
+                    className={`h-4 w-4 transition-all duration-300 group-hover:scale-125
+                               ${internalIsFavorited 
+                                 ? 'text-rose-600 fill-rose-500 animate-pulse' 
+                                 : 'text-black group-hover:text-rose-500'
+                               }`} 
                   />
+                  
+                  {internalIsFavorited && heartParticles.map(particle => (
+                    <div
+                      key={particle.id}
+                      className="absolute left-1/2 top-1/2 pointer-events-none"
+                      style={{
+                        transform: `translate(-50%, -50%) translate(${particle.x}px, ${particle.y}px) rotate(${particle.rotation}deg)`,
+                        animation: `heartBounce ${particle.duration}s ease-out ${particle.delay}s both`
+                      }}
+                    >
+                      <Heart 
+                        className="text-rose-400 fill-rose-400" 
+                        style={{ width: particle.size, height: particle.size }} 
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+                <span className="text-xs font-bold tabular-nums text-black whitespace-nowrap">
+                  {formatCount(animatedFavorites)}
+                </span>
+              </SpringButton>
+            )}
+          </div>
+
+          {/* Desktop: Three groups with proper spacing */}
+          <div className="hidden sm:flex items-center justify-between w-full">
+            {/* Left group - Back and Flag */}
+            <div className="flex items-center gap-1">
+              {/* Back */}
+              {onBack && (
+                <SpringButton
+                  onClick={onBack}
+                  aria-label="Go back"
+                  className="h-12 w-12 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+                >
+                  <ArrowLeft className="h-6 w-6 text-black transition-all duration-200 group-hover:-translate-x-1" />
+                </SpringButton>
+              )}
+
+              {/* Report Flag */}
+              <SpringButton
+                onClick={handleReport}
+                aria-label="Report content"
+                className="h-12 w-12 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+              >
+                <Flag className="h-5 w-5 text-black transition-all duration-200 group-hover:-translate-y-1" />
+              </SpringButton>
             </div>
-            
-            <span className={`text-sm font-bold tabular-nums transition-all duration-300 whitespace-nowrap
-                             ${internalIsFavorited ? 'text-rose-600 scale-110' : 'text-black'}`}>
-              {formatCount(animatedFavorites)}
-            </span>
-          </SpringButton>
-        )}
+
+            {/* Center group - View count */}
+            <div className="flex items-center justify-center">
+              {typeof viewCount === "number" && viewCount >= 0 && (
+                <SpringButton
+                  onClick={handleViewsClick}
+                  aria-label={`${formatCount(animatedViews)} views`}
+                  className="h-12 px-5 rounded-full flex items-center gap-2 min-w-0 flex-shrink-0"
+                >
+                  <Eye className="h-5 w-5 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
+                  <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+                    {formatCount(animatedViews)}
+                  </span>
+                </SpringButton>
+              )}
+            </div>
+
+            {/* Right group - Share and Heart */}
+            <div className="flex items-center gap-1">
+              {/* Share with count */}
+              {typeof shareCount !== "undefined" && (
+                <SpringButton
+                  onClick={handleShare}
+                  aria-label={`Share (${formatCount(animatedShares)} shares)`}
+                  className="h-12 px-4 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
+                >
+                  <Share className="h-5 w-5 text-black transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
+                  <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+                    {formatCount(animatedShares)}
+                  </span>
+                </SpringButton>
+              )}
+
+              {/* Heart with favorite count */}
+              {onFavorite && (
+                <SpringButton
+                  onClick={handleFavorite}
+                  isActive={internalIsFavorited}
+                  aria-label={`${internalIsFavorited ? 'Unlike' : 'Like'} (${formatCount(animatedFavorites)} likes)`}
+                  className="h-12 px-4 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
+                >
+                  <div className="relative flex-shrink-0">
+                    <Heart
+                      className={`h-5 w-5 transition-all duration-300 group-hover:scale-125
+                                 ${internalIsFavorited 
+                                   ? 'text-rose-600 fill-rose-500 animate-pulse' 
+                                   : 'text-black group-hover:text-rose-500'
+                                 }`} 
+                    />
+                    
+                    {internalIsFavorited && heartParticles.map(particle => (
+                      <div
+                        key={particle.id}
+                        className="absolute left-1/2 top-1/2 pointer-events-none"
+                        style={{
+                          transform: `translate(-50%, -50%) translate(${particle.x}px, ${particle.y}px) rotate(${particle.rotation}deg)`,
+                          animation: `heartBounce ${particle.duration}s ease-out ${particle.delay}s both`
+                        }}
+                      >
+                        <Heart 
+                          className="text-rose-400 fill-rose-400" 
+                          style={{ width: particle.size, height: particle.size }} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-sm font-bold tabular-nums text-black whitespace-nowrap">
+                    {formatCount(animatedFavorites)}
+                  </span>
+                </SpringButton>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       

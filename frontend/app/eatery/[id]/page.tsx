@@ -420,6 +420,7 @@ function EateryIdPageContent() {
           stats: {
             view_count: restaurantData.view_count || 0,
             share_count: 0, // TODO: Get from backend
+            favorite_count: 0, // TODO: Get from backend when available
           },
           google_reviews: restaurantData.google_reviews,
           admin_settings: {
@@ -485,10 +486,6 @@ function EateryIdPageContent() {
       
       // Override the favorite state and handler with reactive versions
       if (listingData.header) {
-        listingData.header.restaurantId = parseInt(eatery.id)
-        listingData.header.favoriteCount = eatery.stats?.favorite_count || 0
-        listingData.header.shareCount = eatery.stats?.share_count || 0
-        listingData.header.viewCount = eatery.stats?.view_count || 0
         listingData.header.isFavorited = isFavorite(eatery.id)
         listingData.header.onFavorite = () => {
           if (eatery) {
