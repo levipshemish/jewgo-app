@@ -1641,6 +1641,120 @@ class EntityRepositoryV5(BaseRepository):
             logger.exception(f"Failed to increment view count for restaurant {restaurant_id}", error=str(e))
             return False
 
+    def increment_share_count(self, restaurant_id: int) -> bool:
+        """
+        Increment the share count for a restaurant.
+        
+        Args:
+            restaurant_id: Restaurant ID to increment share count for
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            from database.models import Restaurant
+            
+            with self.connection_manager.session_scope() as session:
+                # Get the restaurant
+                restaurant = session.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+                if not restaurant:
+                    logger.warning(f"Restaurant {restaurant_id} not found for share count increment")
+                    return False
+                
+                # Increment share count
+                if restaurant.share_count is None:
+                    restaurant.share_count = 1
+                else:
+                    restaurant.share_count += 1
+                
+                # Update the updated_at timestamp
+                from datetime import datetime, timezone
+                restaurant.updated_at = datetime.now(timezone.utc)
+                
+                session.commit()
+                logger.info(f"Incremented share count for restaurant {restaurant_id} to {restaurant.share_count}")
+                return True
+                
+        except Exception as e:
+            logger.exception(f"Failed to increment share count for restaurant {restaurant_id}", error=str(e))
+            return False
+
+    def increment_favorite_count(self, restaurant_id: int) -> bool:
+        """
+        Increment the favorite count for a restaurant.
+        
+        Args:
+            restaurant_id: Restaurant ID to increment favorite count for
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            from database.models import Restaurant
+            
+            with self.connection_manager.session_scope() as session:
+                # Get the restaurant
+                restaurant = session.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+                if not restaurant:
+                    logger.warning(f"Restaurant {restaurant_id} not found for favorite count increment")
+                    return False
+                
+                # Increment favorite count
+                if restaurant.favorite_count is None:
+                    restaurant.favorite_count = 1
+                else:
+                    restaurant.favorite_count += 1
+                
+                # Update the updated_at timestamp
+                from datetime import datetime, timezone
+                restaurant.updated_at = datetime.now(timezone.utc)
+                
+                session.commit()
+                logger.info(f"Incremented favorite count for restaurant {restaurant_id} to {restaurant.favorite_count}")
+                return True
+                
+        except Exception as e:
+            logger.exception(f"Failed to increment favorite count for restaurant {restaurant_id}", error=str(e))
+            return False
+
+    def decrement_favorite_count(self, restaurant_id: int) -> bool:
+        """
+        Decrement the favorite count for a restaurant.
+        
+        Args:
+            restaurant_id: Restaurant ID to decrement favorite count for
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            from database.models import Restaurant
+            
+            with self.connection_manager.session_scope() as session:
+                # Get the restaurant
+                restaurant = session.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+                if not restaurant:
+                    logger.warning(f"Restaurant {restaurant_id} not found for favorite count decrement")
+                    return False
+                
+                # Decrement favorite count (don't go below 0)
+                if restaurant.favorite_count is None or restaurant.favorite_count <= 0:
+                    restaurant.favorite_count = 0
+                else:
+                    restaurant.favorite_count -= 1
+                
+                # Update the updated_at timestamp
+                from datetime import datetime, timezone
+                restaurant.updated_at = datetime.now(timezone.utc)
+                
+                session.commit()
+                logger.info(f"Decremented favorite count for restaurant {restaurant_id} to {restaurant.favorite_count}")
+                return True
+                
+        except Exception as e:
+            logger.exception(f"Failed to decrement favorite count for restaurant {restaurant_id}", error=str(e))
+            return False
+
 
 # Convenience functions for common operations
 def get_entity_repository_v5(connection_manager: Optional[DatabaseConnectionManager] = None) -> EntityRepositoryV5:

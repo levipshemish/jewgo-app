@@ -449,6 +449,126 @@ class RestaurantServiceV5:
             }
             
         except Exception as e:
+            logger.exception(f"Failed to increment view count for restaurant {restaurant_id}", error=str(e))
+            raise
+
+    def increment_share_count(self, restaurant_id: int) -> dict:
+        """
+        Increment share count for a restaurant.
+        
+        Args:
+            restaurant_id: ID of the restaurant to increment share count for
+            
+        Returns:
+            Dictionary with share count information
+            
+        Raises:
+            ValueError: If restaurant not found or increment fails
+        """
+        try:
+            # Get current restaurant data
+            current_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            if not current_restaurant:
+                raise ValueError(f"Restaurant {restaurant_id} not found")
+            
+            share_count_before = current_restaurant.get('share_count', 0)
+            
+            # Increment share count in database
+            success = self.repository.increment_share_count(restaurant_id)
+            if not success:
+                raise ValueError(f"Failed to increment share count for restaurant {restaurant_id}")
+            
+            # Get updated share count
+            updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            share_count_after = updated_restaurant.get('share_count', 0) if updated_restaurant else share_count_before
+            
+            return {
+                'share_count': share_count_after,
+                'share_count_before': share_count_before,
+                'increment': share_count_after - share_count_before
+            }
+            
+        except Exception as e:
+            logger.exception(f"Failed to increment share count for restaurant {restaurant_id}", error=str(e))
+            raise
+
+    def increment_favorite_count(self, restaurant_id: int) -> dict:
+        """
+        Increment favorite count for a restaurant.
+        
+        Args:
+            restaurant_id: ID of the restaurant to increment favorite count for
+            
+        Returns:
+            Dictionary with favorite count information
+            
+        Raises:
+            ValueError: If restaurant not found or increment fails
+        """
+        try:
+            # Get current restaurant data
+            current_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            if not current_restaurant:
+                raise ValueError(f"Restaurant {restaurant_id} not found")
+            
+            favorite_count_before = current_restaurant.get('favorite_count', 0)
+            
+            # Increment favorite count in database
+            success = self.repository.increment_favorite_count(restaurant_id)
+            if not success:
+                raise ValueError(f"Failed to increment favorite count for restaurant {restaurant_id}")
+            
+            # Get updated favorite count
+            updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            favorite_count_after = updated_restaurant.get('favorite_count', 0) if updated_restaurant else favorite_count_before
+            
+            return {
+                'favorite_count': favorite_count_after,
+                'favorite_count_before': favorite_count_before,
+                'increment': favorite_count_after - favorite_count_before
+            }
+            
+        except Exception as e:
+            logger.exception(f"Failed to increment favorite count for restaurant {restaurant_id}", error=str(e))
+            raise
+
+    def decrement_favorite_count(self, restaurant_id: int) -> dict:
+        """
+        Decrement favorite count for a restaurant.
+        
+        Args:
+            restaurant_id: ID of the restaurant to decrement favorite count for
+            
+        Returns:
+            Dictionary with favorite count information
+            
+        Raises:
+            ValueError: If restaurant not found or decrement fails
+        """
+        try:
+            # Get current restaurant data
+            current_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            if not current_restaurant:
+                raise ValueError(f"Restaurant {restaurant_id} not found")
+            
+            favorite_count_before = current_restaurant.get('favorite_count', 0)
+            
+            # Decrement favorite count in database
+            success = self.repository.decrement_favorite_count(restaurant_id)
+            if not success:
+                raise ValueError(f"Failed to decrement favorite count for restaurant {restaurant_id}")
+            
+            # Get updated favorite count
+            updated_restaurant = self.get_restaurant_by_id(restaurant_id, include_relations=False, use_cache=False)
+            favorite_count_after = updated_restaurant.get('favorite_count', 0) if updated_restaurant else favorite_count_before
+            
+            return {
+                'favorite_count': favorite_count_after,
+                'favorite_count_before': favorite_count_before,
+                'decrement': favorite_count_before - favorite_count_after
+            }
+            
+        except Exception as e:
             logger.exception("Failed to track restaurant view", restaurant_id=restaurant_id, error=str(e))
             raise
 

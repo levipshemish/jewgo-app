@@ -716,6 +716,102 @@ def track_restaurant_view(restaurant_id: int):
         return jsonify({'error': 'Failed to track view'}), 500
 
 
+@api_v5_bp.route('/restaurants/<int:restaurant_id>/share', methods=['POST'])
+@limiter.limit("30 per minute")
+@require_api_key
+def track_restaurant_share(restaurant_id):
+    """Track a restaurant share."""
+    try:
+        service = RestaurantServiceV5()
+        
+        # Get restaurant to verify it exists
+        restaurant = service.get_restaurant_by_id(restaurant_id, include_relations=False)
+        if not restaurant:
+            return jsonify({'error': 'Restaurant not found'}), 404
+        
+        # Track the share
+        result = service.increment_share_count(restaurant_id)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'restaurant_id': restaurant_id,
+                'restaurant_name': restaurant.get('name', 'Unknown'),
+                'share_count': result['share_count'],
+                'share_count_before': result['share_count_before'],
+                'increment': result['increment']
+            }
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to track restaurant share", restaurant_id=restaurant_id, error=str(e))
+        return jsonify({'error': 'Failed to track share'}), 500
+
+
+@api_v5_bp.route('/restaurants/<int:restaurant_id>/favorite', methods=['POST'])
+@limiter.limit("60 per minute")
+@require_api_key
+def track_restaurant_favorite(restaurant_id):
+    """Track a restaurant favorite (add to favorites)."""
+    try:
+        service = RestaurantServiceV5()
+        
+        # Get restaurant to verify it exists
+        restaurant = service.get_restaurant_by_id(restaurant_id, include_relations=False)
+        if not restaurant:
+            return jsonify({'error': 'Restaurant not found'}), 404
+        
+        # Track the favorite
+        result = service.increment_favorite_count(restaurant_id)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'restaurant_id': restaurant_id,
+                'restaurant_name': restaurant.get('name', 'Unknown'),
+                'favorite_count': result['favorite_count'],
+                'favorite_count_before': result['favorite_count_before'],
+                'increment': result['increment']
+            }
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to track restaurant favorite", restaurant_id=restaurant_id, error=str(e))
+        return jsonify({'error': 'Failed to track favorite'}), 500
+
+
+@api_v5_bp.route('/restaurants/<int:restaurant_id>/unfavorite', methods=['POST'])
+@limiter.limit("60 per minute")
+@require_api_key
+def track_restaurant_unfavorite(restaurant_id):
+    """Track a restaurant unfavorite (remove from favorites)."""
+    try:
+        service = RestaurantServiceV5()
+        
+        # Get restaurant to verify it exists
+        restaurant = service.get_restaurant_by_id(restaurant_id, include_relations=False)
+        if not restaurant:
+            return jsonify({'error': 'Restaurant not found'}), 404
+        
+        # Track the unfavorite
+        result = service.decrement_favorite_count(restaurant_id)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'restaurant_id': restaurant_id,
+                'restaurant_name': restaurant.get('name', 'Unknown'),
+                'favorite_count': result['favorite_count'],
+                'favorite_count_before': result['favorite_count_before'],
+                'decrement': result['decrement']
+            }
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to track restaurant unfavorite", restaurant_id=restaurant_id, error=str(e))
+        return jsonify({'error': 'Failed to track unfavorite'}), 500
+
+
 # Simple reviews endpoint as fallback
 @api_v5.route('/reviews', methods=['GET'])
 @optional_auth

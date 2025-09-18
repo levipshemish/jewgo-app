@@ -155,9 +155,21 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
   return (
     <div className={`w-full max-w-sm sm:max-w-none mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 ${className}`}>
       <Stack gap={10}>
-        {/* Header overlaying the image */}
-        <div className="relative p-3">
-          {/* Image */}
+        {/* Header above the image */}
+        <ListingHeader
+          kosherType={safeData.header?.kosherType}
+          kosherAgency={safeData.header?.kosherAgency}
+          kosherAgencyWebsite={safeData.header?.kosherAgencyWebsite}
+          shareCount={safeData.header?.shareCount}
+          viewCount={safeData.header?.viewCount}
+          onBack={safeData.header?.onBack}
+          onFavorite={safeData.header?.onFavorite}
+          isFavorited={safeData.header?.isFavorited}
+          tags={safeData.actions?.tags || []}
+        />
+
+        {/* Image */}
+        <div className="p-3">
           {safeData.image && (
             <ListingImage
               src={safeData.image.src}
@@ -169,21 +181,6 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
               viewCount={safeData.header?.viewCount}
             />
           )}
-
-          {/* Header */}
-          <div className="absolute top-0 left-0 right-0 z-10">
-            <ListingHeader
-              kosherType={safeData.header?.kosherType}
-              kosherAgency={safeData.header?.kosherAgency}
-              kosherAgencyWebsite={safeData.header?.kosherAgencyWebsite}
-              shareCount={safeData.header?.shareCount}
-              viewCount={safeData.header?.viewCount}
-              onBack={safeData.header?.onBack}
-              onFavorite={safeData.header?.onFavorite}
-              isFavorited={safeData.header?.isFavorited}
-              tags={safeData.actions?.tags || []}
-            />
-          </div>
         </div>
 
         {/* Content sections */}

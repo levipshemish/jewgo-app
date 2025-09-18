@@ -96,6 +96,8 @@ class Restaurant(Base):
     google_rating = Column(Float)  # Google rating (1-5)
     google_review_count = Column(Integer)  # Number of Google reviews
     view_count = Column(Integer, default=0, nullable=False)  # Number of page views
+    share_count = Column(Integer, default=0, nullable=False)  # Number of shares
+    favorite_count = Column(Integer, default=0, nullable=False)  # Number of favorites
     business_types = Column(Text)  # Business types from Google
     review_snippets = Column(Text)  # Review snippets
     
