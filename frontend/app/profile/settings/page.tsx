@@ -10,6 +10,7 @@ import { postgresAuth } from "@/lib/auth/postgres-auth";
 import { type AuthUser } from "@/lib/auth/postgres-auth";
 import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
+import ProfileManager from "@/components/profile/ProfileManager";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SignOutButton } from "@/components/auth";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -183,6 +184,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: "account", name: "Account", icon: "👤" },
     { id: "profile", name: "Profile", icon: "📝" },
+    { id: "username", name: "Username", icon: "🏷️" },
     { id: "security", name: "Security", icon: "🔒" },
     { id: "notifications", name: "Notifications", icon: "🔔" },
     { id: "privacy", name: "Privacy", icon: "🛡️" },
@@ -238,6 +240,9 @@ export default function SettingsPage() {
             )}
             {activeTab === "profile" && (
               <ProfileSettings user={user} />
+            )}
+            {activeTab === "username" && (
+              <ProfileManager />
             )}
                           {activeTab === "security" && (
                 <SecuritySettings />
