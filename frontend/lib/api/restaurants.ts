@@ -89,8 +89,17 @@ export async function fetchRestaurants({
       throw new Error(response.error || 'Failed to fetch restaurants');
     }
 
+    // Debug the V5 API response
+    console.log('🔍 V5 API Response - first restaurant:', response.data?.[0]);
+    console.log('🔍 V5 API Response - distance field:', response.data?.[0]?.distance);
+    
     // Handle V5 API response format - V5 API returns data array directly
     const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
+    
+    // Debug after sanitization
+    console.log('🔍 After sanitization - first restaurant:', restaurants[0]);
+    console.log('🔍 After sanitization - distance field:', restaurants[0]?.distance);
+    
     const total = response.data?.total || response.pagination?.total || restaurants.length;
     const safeLimit = limit > 0 ? limit : 1;
 
