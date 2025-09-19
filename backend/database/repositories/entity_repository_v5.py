@@ -201,27 +201,29 @@ class EntityRepositoryV5(BaseRepository):
                 
                 # Execute query to get all entities, attempting distance projection when applicable
                 use_projection = False
-                try:
-                    if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                        lat = float(filters['latitude'])
-                        lng = float(filters['longitude'])
-                        distance_expr = func.earth_distance(
-                            func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                            func.ll_to_earth(lat, lng)
-                        ).label('distance_meters')
-                        query = query.add_columns(distance_expr)
-                        use_projection = True
-                    all_entities = query.all()
-                    logger.info(f"Distance pagination: Loaded {len(all_entities)} total entities for {entity_type}")
-                except Exception as e:
-                    logger.warning(f"Distance projection failed or query error: {e}")
-                    use_projection = False
-                    try:
-                        # Fallback: run without projection
-                        all_entities = session.query(model_class).all()
-                    except Exception as ee:
-                        logger.error(f"Query execution failed: {ee}")
-                        return [], None, None
+                # TEMPORARY: Disable distance projection to test basic sorting
+                logger.info("🚧 TEMPORARY: Skipping distance projection to test basic query")
+                # try:
+                #     if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                #         lat = float(filters['latitude'])
+                #         lng = float(filters['longitude'])
+                #         distance_expr = func.earth_distance(
+                #             func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                #             func.ll_to_earth(lat, lng)
+                #         ).label('distance_meters')
+                #         query = query.add_columns(distance_expr)
+                #         use_projection = True
+                all_entities = query.all()
+                logger.info(f"Distance pagination: Loaded {len(all_entities)} total entities for {entity_type}")
+                # except Exception as e:
+                #     logger.warning(f"Distance projection failed or query error: {e}")
+                #     use_projection = False
+                #     try:
+                #         # Fallback: run without projection
+                #         all_entities = session.query(model_class).all()
+                #     except Exception as ee:
+                #         logger.error(f"Query execution failed: {ee}")
+                #         return [], None, None
                 
                 # Convert to dictionaries and add distance (batch computed)
                 result_entities = []
