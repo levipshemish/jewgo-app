@@ -109,8 +109,8 @@ async function apiRequest<T>(
   } catch (fetchError) {
     console.error('🚨 Fetch Error Details:', {
       error: fetchError,
-      message: fetchError.message,
-      name: fetchError.name,
+      message: fetchError instanceof Error ? fetchError.message : 'Unknown error',
+      name: fetchError instanceof Error ? fetchError.name : 'UnknownError',
       url,
       method: options.method || 'GET'
     });
@@ -182,7 +182,7 @@ export async function getReviews(
       entity_type: entityType,
       entity_id: entityId.toString(),
       limit: limit.toString(),
-      cursor: cursor,
+      cursor
     });
     
     const response = await apiRequest<{

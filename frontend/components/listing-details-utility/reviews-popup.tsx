@@ -73,7 +73,7 @@ export function ReviewsPopup({
   loading = false,
   onSubmitReview,
 }: ReviewsPopupProps) {
-  const { user, isAuthenticated } = useAuth()
+  const { user: _user, isAuthenticated } = useAuth()
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
@@ -81,7 +81,7 @@ export function ReviewsPopup({
   const [reviewComment, setReviewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [_submitSuccess, setSubmitSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 

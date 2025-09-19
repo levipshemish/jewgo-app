@@ -24,7 +24,7 @@ function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [_isLoading, _setIsLoading] = useState(false); // TODO: Implement loading state
-  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+  const [isCheckingAuth, _setIsCheckingAuth] = useState(false);
   const [isEmailSigningIn, setIsEmailSigningIn] = useState(false);
   const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
   const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
@@ -37,7 +37,7 @@ function SignInForm() {
   const [magicLinkCooldown, setMagicLinkCooldown] = useState<number>(0);
   const [showMagicLinkModal, setShowMagicLinkModal] = useState(false);
 
-  const { showSuccess, showError } = useToast();
+  const { showSuccess: _showSuccess, showError } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
@@ -348,7 +348,7 @@ function SignInForm() {
                       <Button type="button" variant="outline" size="sm" onClick={handleLogVisibleCookies} title="Logs JS-visible cookie names to the console">
                         Log visible cookie names
                       </Button>
-                      <span className="text-xs text-gray-600">(HttpOnly auth cookies won't appear here)</span>
+                      <span className="text-xs text-gray-600">(HttpOnly auth cookies won&apos;t appear here)</span>
                     </div>
                   </AlertDescription>
                 </Alert>

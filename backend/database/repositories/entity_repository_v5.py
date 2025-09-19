@@ -191,13 +191,15 @@ class EntityRepositoryV5(BaseRepository):
                 
                 # Apply geospatial filtering if needed
                 logger.info(f"DEBUG: Distance pagination - geospatial={mapping.get('geospatial')}, has_filters={bool(filters)}, has_lat={bool(filters and filters.get('latitude'))}, has_lng={bool(filters and filters.get('longitude'))}")
-                # TEMPORARY: Disable geospatial filtering to test distance sorting without radius filtering
-                logger.info("🚧 TEMPORARY: Skipping geospatial filtering to debug distance sorting")
-                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                #     logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
-                #     query = self._apply_geospatial_filter(query, model_class, filters)
-                # else:
-                #     logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
+                    try:
+                        query = self._apply_geospatial_filter(query, model_class, filters)
+                        logger.info("✅ Geospatial filter applied successfully")
+                    except Exception as geo_error:
+                        logger.warning(f"Geospatial filter failed, continuing without radius filtering: {geo_error}")
+                else:
+                    logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
                 
                 # Execute query to get all entities, attempting distance projection when applicable
                 use_projection = False
@@ -225,10 +227,72 @@ class EntityRepositoryV5(BaseRepository):
                 #         logger.error(f"Query execution failed: {ee}")
                 #         return [], None, None
                 
-                # Convert to dictionaries and add distance (batch computed)
+                # Convert to dictionaries and add distance (calculated safely in Python)
                 result_entities = []
-                distance_map = {}
+                
+                # Calculate distances in Python for all entities when location is provided
                 if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    lat = float(filters['latitude'])
+                    lng = float(filters['longitude'])
+                    
+                    for entity in all_entities:
+                        try:
+                            entity_dict = self._entity_to_dict(entity, include_relations)
+                            
+                            # Calculate distance if entity has coordinates
+                            entity_lat = entity_dict.get('latitude')
+                            entity_lng = entity_dict.get('longitude')
+                            
+                            if entity_lat is not None and entity_lng is not None:
+                                # Calculate distance using haversine formula (miles)
+                                from math import radians, cos, sin, asin, sqrt
+                                
+                                # Convert to radians
+                                lat1, lng1, lat2, lng2 = map(radians, [lat, lng, float(entity_lat), float(entity_lng)])
+                                
+                                # Haversine formula
+                                dlat = lat2 - lat1
+                                dlng = lng2 - lng1
+                                a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
+                                c = 2 * asin(sqrt(a))
+                                
+                                # Radius of earth in miles
+                                r = 3956
+                                distance_miles = c * r
+                                
+                                entity_dict['distance'] = round(distance_miles, 2)
+                            else:
+                                entity_dict['distance'] = None
+                            
+                            result_entities.append(entity_dict)
+                        except Exception as e:
+                            logger.warning(f"Error processing entity for distance calculation: {e}")
+                            # Still add the entity without distance rather than failing completely
+                            try:
+                                entity_dict = self._entity_to_dict(entity, include_relations)
+                                entity_dict['distance'] = None
+                                result_entities.append(entity_dict)
+                            except Exception as e2:
+                                logger.error(f"Failed to convert entity to dict: {e2}")
+                                continue
+                else:
+                    # No location provided, just convert entities normally
+                    for entity in all_entities:
+                        try:
+                            entity_dict = self._entity_to_dict(entity, include_relations)
+                            result_entities.append(entity_dict)
+                        except Exception as e:
+                            logger.error(f"Error converting entity to dict: {e}")
+                            continue
+                
+                # Apply distance sorting in application layer if needed
+                if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
+                    # Sort by distance (entities without distance go to end)
+                    result_entities.sort(key=lambda x: x.get('distance') if x.get('distance') is not None else float('inf'))
+                    logger.info(f"Applied application-layer distance sorting to {len(result_entities)} entities")
+                
+                # Skip the old logic that was causing issues
+                if False:
                     try:
                         if use_projection and all_entities and isinstance(all_entities[0], tuple):
                             # Build distance map from projected column

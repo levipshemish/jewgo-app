@@ -28,20 +28,20 @@ export default function ProfilePage() {
       try {
         // Check if user is authenticated via PostgreSQL auth
         const isAuth = postgresAuth.isAuthenticated();
-        appLogger.info('Profile page: isAuthenticated check:', isAuth);
+        appLogger.info('Profile page: isAuthenticated check:', { isAuth });
         
         // Try to get profile regardless of cookie check, as HttpOnly cookies aren't visible to client
         appLogger.info('Profile page: Attempting to get profile...');
         
         try {
           const profile = await postgresAuth.getProfile();
-          appLogger.info('Profile page: Profile loaded successfully:', !!profile);
+          appLogger.info('Profile page: Profile loaded successfully:', { hasProfile: !!profile });
           
           if (profile) {
             // Check if user is a guest user (no email, provider unknown)
             // Guest users should be redirected to sign in for protected pages
             const isGuest = !profile.email || profile.is_guest === true;
-            appLogger.info('Profile page: Is guest user:', isGuest);
+            appLogger.info('Profile page: Is guest user:', { isGuest });
             
             if (isGuest) {
               // Guest users should sign in to access profile
@@ -61,7 +61,7 @@ export default function ProfilePage() {
             return;
           }
         } catch (profileError) {
-          appLogger.error('Profile page: Failed to get profile:', profileError);
+          appLogger.error('Profile page: Failed to get profile:', { error: profileError });
           // Re-throw to be handled by outer catch block
           throw profileError;
         }
@@ -72,7 +72,7 @@ export default function ProfilePage() {
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile');
       } catch (error) {
-        appLogger.error('Error loading user:', error);
+        appLogger.error('Error loading user:', { error });
         
         // Enhanced error logging for debugging
         if (error && typeof error === 'object' && 'status' in error) {
@@ -223,14 +223,14 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Account Created</label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
+                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Last Updated</label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {user.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : 'Unknown'}
+                    {user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Unknown'}
                   </p>
                 </div>
 

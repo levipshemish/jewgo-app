@@ -1,5 +1,30 @@
 # Task Completion Log
 
+## 2025-09-19 — Restaurant Page Duplication Consolidation
+- ID: 2025-09-19-RESTAURANT-DUPLICATE-CONSOLIDATION  
+- Owner: Claude Sonnet 4 AI Agent
+- Links: `frontend/app/restaurants/`, `frontend/app/restaurant/[id]/`, `frontend/lib/data/restaurant-dataset.ts`, `frontend/components/restaurant/RestaurantCard.tsx`
+
+**Reason Why** — User identified duplicate restaurant pages (`/restaurants/`, `/restaurant/[id]/`, `/eatery/`, `/eatery/[id]/`) that served similar functionality. Analysis revealed the legacy pages used static sample data while modern pages used real API data, creating confusion and maintenance overhead.
+
+**Change Summary**
+- **Removed Legacy Restaurant Pages**: Deleted `frontend/app/restaurants/page.tsx` and `frontend/app/restaurant/[id]/page.tsx` that used static sample data
+- **Removed Sample Dataset**: Deleted `frontend/lib/data/restaurant-dataset.ts` containing SAMPLE_RESTAURANT_DATASET that was only used by legacy pages  
+- **Removed Legacy Component**: Deleted `frontend/components/restaurant/RestaurantCard.tsx` that was specific to sample data format
+- **Updated Component Index**: Removed RestaurantCard export from `frontend/components/restaurant/index.ts`
+- **Verified No Navigation**: Confirmed no navigation links pointed to legacy `/restaurants/` or `/restaurant/[id]/` routes
+
+**Risks & Mitigations**
+- **No Breaking Changes**: Analysis confirmed no components or navigation referenced the deleted legacy pages
+- **Modern Implementation Preserved**: `/eatery/` and `/eatery/[id]/` pages remain fully functional with real API data
+- **TypeScript Validation**: Confirmed no import errors after cleanup
+
+**Tests** — TypeScript compilation passes with no errors related to deleted files
+
+**Docs Updated** — No documentation updates needed as legacy pages were not documented
+
+**Follow-ups** — None required; consolidation is complete
+
 ## 2025-09-19 — Auth Endpoint Configuration Audit and Fix
 - ID: 2025-09-19-AUTH-ENDPOINT-CONFIG-FIX
 - Owner: Claude Sonnet 4 AI Agent
@@ -98,8 +123,7 @@
 - **Inline Documentation**: Enhanced code comments explaining PostGIS sorting logic and fallback chain
 
 **Follow-ups**
-- Monitor backend logs for debug messages to confirm distance sorting is working after deployment
-- Remove debug logging once sorting is confirmed working in production
+- None required - PostGIS distance sorting is now fully functional with distance values and radius filtering
 
 * [x] Auth UI Polish — Consistent, accessible UI for sign-in/sign-up pages using shared components; added password visibility toggles and polished modal/buttons
 

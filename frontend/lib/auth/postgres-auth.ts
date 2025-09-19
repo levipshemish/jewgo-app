@@ -16,6 +16,7 @@ interface AuthUser {
   is_guest?: boolean;
   is_verified?: boolean;
   created_at?: string;
+  updated_at?: string;
   provider?: string;
   roles: Array<{
     role: string;
@@ -60,7 +61,7 @@ class PostgresAuthClient {
   // Deprecated in cookie-mode. Kept for compatibility but unused.
   public accessToken: string | null = null;
   private refreshToken: string | null = null;
-  private csrfToken: string | null = null;
+  public csrfToken: string | null = null;
   private _csrfPromise: Promise<string> | null = null;
   
   // Enhanced auth client properties for loop guards and deduplication
@@ -153,7 +154,7 @@ class PostgresAuthClient {
           const bodyData = JSON.parse(config.body as string);
           bodyData.csrf_token = this.csrfToken;
           config.body = JSON.stringify(bodyData);
-        } catch (e) {
+        } catch (_e) {
           // If body is not JSON, fall back to header (shouldn't happen with our API)
           (config.headers as Record<string, string>)['X-CSRF-Token'] = this.csrfToken;
         }
