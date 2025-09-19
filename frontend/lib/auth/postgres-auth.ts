@@ -143,12 +143,20 @@ class PostgresAuthClient {
     // Inject CSRF token for mutating requests (double-submit)
     const method = (config.method || 'GET').toString().toUpperCase();
     const unsafe = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-    if (unsafe) {
+    if (unsafe && config.body) {
       if (!this.csrfToken) {
         try { await this.getCsrf(); } catch { /* ignore in dev */ }
       }
       if (this.csrfToken) {
-        (config.headers as Record<string, string>)['X-CSRF-Token'] = this.csrfToken;
+        // Add CSRF token to request body instead of headers to reduce header size
+        try {
+          const bodyData = JSON.parse(config.body as string);
+          bodyData.csrf_token = this.csrfToken;
+          config.body = JSON.stringify(bodyData);
+        } catch (e) {
+          // If body is not JSON, fall back to header (shouldn't happen with our API)
+          (config.headers as Record<string, string>)['X-CSRF-Token'] = this.csrfToken;
+        }
       }
     }
 

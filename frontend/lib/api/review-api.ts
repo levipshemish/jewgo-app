@@ -45,27 +45,14 @@ export interface ReviewError {
 }
 
 /**
- * Get the current user's JWT token for API authentication
- */
-async function getAuthToken(): Promise<string | null> {
-  try {
-    return postgresAuth.accessToken || null;
-  } catch (error) {
-    console.error('Failed to get auth token:', error);
-    return null;
-  }
-}
-
-/**
- * Make an authenticated API request
+ * Make an authenticated API request using cookie-based authentication
  */
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = await getAuthToken();
-  
-  if (!token) {
+  // Check if user is authenticated using the postgresAuth system
+  if (!postgresAuth.isAuthenticated()) {
     throw new Error('Authentication required. Please log in to submit a review.');
   }
 
@@ -75,9 +62,10 @@ async function apiRequest<T>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
       ...options.headers,
     },
+    // Include credentials to send HttpOnly cookies
+    credentials: 'include',
   });
 
   if (!response.ok) {

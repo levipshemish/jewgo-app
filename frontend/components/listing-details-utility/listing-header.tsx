@@ -12,18 +12,21 @@ function useSpring(target: number, config: { stiffness?: number; damping?: numbe
 
   useEffect(() => {
     const animate = () => {
-      const displacement = target - value;
-      const force = displacement * stiffness;
-      const dampingForce = velocity.current * damping;
-      const acceleration = (force - dampingForce) / mass;
-      
-      velocity.current += acceleration * 0.016;
-      const newValue = value + velocity.current * 0.016;
-      setValue(newValue);
+      setValue(currentValue => {
+        const displacement = target - currentValue;
+        const force = displacement * stiffness;
+        const dampingForce = velocity.current * damping;
+        const acceleration = (force - dampingForce) / mass;
+        
+        velocity.current += acceleration * 0.016;
+        const newValue = currentValue + velocity.current * 0.016;
 
-      if (Math.abs(displacement) > 0.01 || Math.abs(velocity.current) > 0.01) {
-        rafRef.current = requestAnimationFrame(animate);
-      }
+        if (Math.abs(displacement) > 0.01 || Math.abs(velocity.current) > 0.01) {
+          rafRef.current = requestAnimationFrame(animate);
+        }
+
+        return newValue;
+      });
     };
 
     rafRef.current = requestAnimationFrame(animate);
@@ -31,7 +34,7 @@ function useSpring(target: number, config: { stiffness?: number; damping?: numbe
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [target, stiffness, damping, mass, value]);
+  }, [target, stiffness, damping, mass]);
 
   return value;
 }
@@ -118,7 +121,7 @@ function useParticleTrail() {
   useEffect(() => {
     const interval = setInterval(updateParticles, 16);
     return () => clearInterval(interval);
-  }, [updateParticles]);
+  }, []);
 
   return { particles, addParticle };
 }

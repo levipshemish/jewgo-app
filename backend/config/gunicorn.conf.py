@@ -35,10 +35,10 @@ tmp_upload_dir = None
 # SSL (if needed)
 # keyfile = "/path/to/keyfile"
 # certfile = "/path/to/certfile"
-# Security
-limit_request_line = 4094
+# Security - increased limits to handle large CSRF tokens and headers
+limit_request_line = 16384          # 16 KB (was 4 KB)
 limit_request_fields = 100
-limit_request_field_size = 8190
+limit_request_field_size = 32768     # 32 KB (was 8 KB)
 # Performance optimizations for Render
 worker_tmp_dir = "/dev/shm"
 worker_exit_on_app_exit = True

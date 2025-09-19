@@ -11,11 +11,26 @@ import hmac
 import hashlib
 import secrets
 import time
+import base64
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+
+def _base64url_encode(data: bytes) -> str:
+    """Encode bytes to base64url without padding."""
+    return base64.urlsafe_b64encode(data).rstrip(b'=').decode('ascii')
+
+
+def _base64url_decode(data: str) -> bytes:
+    """Decode base64url string to bytes, adding padding if needed."""
+    # Add padding if needed
+    missing_padding = len(data) % 4
+    if missing_padding:
+        data += '=' * (4 - missing_padding)
+    return base64.urlsafe_b64decode(data)
 
 
 class CSRFManager:
@@ -39,36 +54,37 @@ class CSRFManager:
     
     def generate_token(self, session_id: str, user_agent: str) -> str:
         """
-        Generate HMAC-based CSRF token with day bucket.
+        Generate optimized HMAC-based CSRF token with day bucket.
+        
+        Uses HMAC-SHA256 over (session_id || day_bucket) and encodes as base64url
+        for a compact ~43 character token instead of ~97 characters.
         
         Args:
             session_id: Session identifier
-            user_agent: User agent string
+            user_agent: User agent string (used for additional entropy)
             
         Returns:
-            CSRF token string
+            CSRF token string (~43 characters)
         """
         try:
             # Create day bucket for token rotation
-            day_bucket = datetime.utcnow().strftime(self.day_bucket_format)
+            day_bucket = int(time.time() // 86400)  # Days since epoch
             
-            # Generate random nonce
-            nonce = secrets.token_urlsafe(self.token_length)
+            # Create message to sign (session_id + day_bucket + user_agent hash)
+            user_agent_hash = hashlib.sha256(user_agent.encode()).digest()[:8]  # First 8 bytes
+            message = f"{session_id}.{day_bucket}".encode('utf-8') + user_agent_hash
             
-            # Create message to sign
-            message = f"{session_id}:{user_agent}:{day_bucket}:{nonce}"
-            
-            # Generate HMAC signature
+            # Generate HMAC signature (32 bytes)
             signature = hmac.new(
                 self.secret_key.encode('utf-8'),
-                message.encode('utf-8'),
+                message,
                 hashlib.sha256
-            ).hexdigest()
+            ).digest()
             
-            # Combine nonce and signature
-            token = f"{nonce}:{signature}"
+            # Encode as base64url (removes padding, ~43 characters)
+            token = _base64url_encode(signature)
             
-            logger.debug(f"CSRF token generated for session {session_id[:8]}...")
+            logger.debug(f"CSRF token generated for session {session_id[:8]}... (length: {len(token)})")
             return token
             
         except Exception as e:
@@ -77,10 +93,10 @@ class CSRFManager:
     
     def validate_token(self, token: str, session_id: str, user_agent: str) -> bool:
         """
-        Validate CSRF token with timing attack protection.
+        Validate optimized CSRF token with timing attack protection.
         
         Args:
-            token: CSRF token to validate
+            token: CSRF token to validate (~43 characters)
             session_id: Session identifier
             user_agent: User agent string
             
@@ -91,27 +107,31 @@ class CSRFManager:
             # Use constant-time comparison to prevent timing attacks
             start_time = time.time()
             
-            # Parse token
-            if ':' not in token:
+            # Validate token format (should be base64url, ~43 characters)
+            if not token or len(token) < 40 or len(token) > 50:
                 return self._constant_time_false(start_time)
             
-            nonce, provided_signature = token.split(':', 1)
-            if len(nonce) < 20 or len(provided_signature) != 64:  # SHA256 hex length
+            # Decode the token
+            try:
+                provided_signature = _base64url_decode(token)
+                if len(provided_signature) != 32:  # SHA256 digest length
+                    return self._constant_time_false(start_time)
+            except Exception:
                 return self._constant_time_false(start_time)
             
             # Try current day bucket first
-            day_bucket = datetime.utcnow().strftime(self.day_bucket_format)
+            current_day_bucket = int(time.time() // 86400)
             is_valid = self._validate_token_for_bucket(
-                nonce, provided_signature, session_id, user_agent, day_bucket
+                provided_signature, session_id, user_agent, current_day_bucket
             )
             
             if is_valid:
                 return self._constant_time_true(start_time)
             
             # Try previous day bucket (for clock skew tolerance)
-            prev_day = (datetime.utcnow() - timedelta(days=1)).strftime(self.day_bucket_format)
+            prev_day_bucket = current_day_bucket - 1
             is_valid = self._validate_token_for_bucket(
-                nonce, provided_signature, session_id, user_agent, prev_day
+                provided_signature, session_id, user_agent, prev_day_bucket
             )
             
             return self._constant_time_true(start_time) if is_valid else self._constant_time_false(start_time)
@@ -120,19 +140,20 @@ class CSRFManager:
             logger.error(f"CSRF token validation error: {e}")
             return False
     
-    def _validate_token_for_bucket(self, nonce: str, provided_signature: str, 
-                                 session_id: str, user_agent: str, day_bucket: str) -> bool:
+    def _validate_token_for_bucket(self, provided_signature: bytes, session_id: str, 
+                                 user_agent: str, day_bucket: int) -> bool:
         """Validate token for a specific day bucket."""
         try:
-            # Recreate message
-            message = f"{session_id}:{user_agent}:{day_bucket}:{nonce}"
+            # Recreate message (same format as generation)
+            user_agent_hash = hashlib.sha256(user_agent.encode()).digest()[:8]  # First 8 bytes
+            message = f"{session_id}.{day_bucket}".encode('utf-8') + user_agent_hash
             
             # Generate expected signature
             expected_signature = hmac.new(
                 self.secret_key.encode('utf-8'),
-                message.encode('utf-8'),
+                message,
                 hashlib.sha256
-            ).hexdigest()
+            ).digest()
             
             # Constant-time comparison
             return hmac.compare_digest(provided_signature, expected_signature)

@@ -121,15 +121,26 @@ class CSRFMiddleware:
         Extract CSRF token from request.
         
         Checks multiple sources in order of preference:
-        1. X-CSRF-Token header
-        2. X-CSRFToken header (alternative name)
-        3. csrf_token form field
-        4. _csrf_token cookie (double-submit pattern)
+        1. csrf_token in JSON body (preferred - reduces header size)
+        2. csrf_token form field
+        3. X-CSRF-Token header (fallback)
+        4. X-CSRFToken header (alternative name)
+        5. _csrf_token cookie (double-submit pattern)
         
         Returns:
             CSRF token string or None if not found
         """
-        # Check headers first (preferred method)
+        # Check JSON body first (preferred method to reduce header size)
+        if request.is_json:
+            json_data = request.get_json(silent=True)
+            if json_data and 'csrf_token' in json_data:
+                return json_data['csrf_token']
+        
+        # Check form data
+        if request.form and 'csrf_token' in request.form:
+            return request.form['csrf_token']
+        
+        # Check headers (fallback for non-JSON requests)
         token = request.headers.get('X-CSRF-Token')
         if token:
             return token
