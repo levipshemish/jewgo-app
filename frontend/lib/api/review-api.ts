@@ -77,6 +77,24 @@ async function apiRequest<T>(
     isAuthenticated: authCheckCallback ? authCheckCallback() : postgresAuth.isAuthenticated()
   });
   
+  // Parse cookies for better debugging
+  const cookieObj = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    if (key) acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+  
+  console.log('🍪 Cookie Analysis:', {
+    totalCookies: Object.keys(cookieObj).length,
+    cookieNames: Object.keys(cookieObj),
+    hasAuthCookie: Object.keys(cookieObj).some(key => 
+      key.includes('auth') || key.includes('session') || key.includes('token')
+    ),
+    authCookies: Object.keys(cookieObj).filter(key => 
+      key.includes('auth') || key.includes('session') || key.includes('token')
+    )
+  });
+  
   // Get CSRF token for POST requests
   const method = (options.method || 'GET').toString().toUpperCase();
   const isPostRequest = method === 'POST';
