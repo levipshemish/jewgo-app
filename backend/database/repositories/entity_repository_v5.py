@@ -203,6 +203,7 @@ class EntityRepositoryV5(BaseRepository):
 
                 lat = lng = None
                 distance_expr = None
+                distance_label = None
                 geospatial_enabled = mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude')
                 if geospatial_enabled:
                     query = self._apply_geospatial_filter(query, model_class, filters)
@@ -211,7 +212,8 @@ class EntityRepositoryV5(BaseRepository):
                         lng = float(filters['longitude'])
                         distance_expr = self._build_distance_expression(model_class, lat, lng)
                         if distance_expr is not None:
-                            query = query.add_columns(distance_expr.label('distance_meters'))
+                            distance_label = 'distance_meters'
+                            query = query.add_columns(distance_expr.label(distance_label))
                     except (TypeError, ValueError):
                         logger.warning("Invalid coordinates supplied; skipping distance projection")
                         distance_expr = None
@@ -223,13 +225,8 @@ class EntityRepositoryV5(BaseRepository):
 
                 result_entities: List[Dict[str, Any]] = []
 
-                def split_row(row):
-                    if distance_expr is not None and isinstance(row, tuple):
-                        return row[0], row[1]
-                    return row, None
-
                 for row in rows:
-                    entity_obj, dist_value = split_row(row)
+                    entity_obj, dist_value = self._extract_entity_and_distance(row, distance_label)
                     entity_dict = self._entity_to_dict(entity_obj, include_relations)
                     if distance_expr is not None:
                         raw_miles = None
@@ -317,6 +314,7 @@ class EntityRepositoryV5(BaseRepository):
                 geospatial_enabled = mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude')
                 lat = lng = None
                 distance_expr = None
+                distance_label = None
                 if geospatial_enabled:
                     query = self._apply_geospatial_filter(query, model_class, filters)
                     try:
@@ -324,7 +322,8 @@ class EntityRepositoryV5(BaseRepository):
                         lng = float(filters['longitude'])
                         distance_expr = self._build_distance_expression(model_class, lat, lng)
                         if distance_expr is not None:
-                            query = query.add_columns(distance_expr.label('distance_meters'))
+                            distance_label = 'distance_meters'
+                            query = query.add_columns(distance_expr.label(distance_label))
                     except (TypeError, ValueError):
                         logger.warning("Invalid coordinates supplied; skipping distance projection")
                         distance_expr = None
@@ -341,22 +340,18 @@ class EntityRepositoryV5(BaseRepository):
 
                 result_entities: List[Dict[str, Any]] = []
 
-                def split_row(row):
-                    if distance_expr is not None and isinstance(row, tuple):
-                        return row[0], row[1]
-                    return row, None
-
                 for row in rows:
-                    entity_obj, dist_value = split_row(row)
+                    entity_obj, dist_value = self._extract_entity_and_distance(row, distance_label)
                     entity_dict = self._entity_to_dict(entity_obj, include_relations)
                     if distance_expr is not None:
-                        miles = None
+                        raw_miles = None
                         if dist_value is not None:
                             try:
-                                miles = float(dist_value) / 1609.344
+                                raw_miles = float(dist_value) / 1609.344
                             except (TypeError, ValueError):
-                                miles = None
-                        entity_dict['distance'] = None if miles is None else round(miles, 2)
+                                raw_miles = None
+                        entity_dict['distance_raw'] = raw_miles
+                        entity_dict['distance'] = None if raw_miles is None else round(raw_miles, 2)
                     result_entities.append(entity_dict)
 
                 if distance_expr is None and geospatial_enabled:
@@ -953,6 +948,35 @@ class EntityRepositoryV5(BaseRepository):
                 cursor_position = None
 
         return query, cursor_position
+
+    def _extract_entity_and_distance(self, row, distance_label: Optional[str]):
+        """Extract entity object and distance value from a SQLAlchemy row."""
+        if not distance_label:
+            return row, None
+
+        entity_obj = row
+        distance_value = None
+
+        mapping = getattr(row, '_mapping', None)
+
+        if hasattr(row, '__getitem__'):
+            try:
+                entity_obj = row[0]
+            except Exception:
+                entity_obj = row
+            if distance_value is None:
+                try:
+                    distance_value = row[1]
+                except Exception:
+                    distance_value = None
+
+        if distance_value is None and mapping is not None:
+            distance_value = mapping.get(distance_label)
+
+        if distance_value is None and hasattr(row, distance_label):
+            distance_value = getattr(row, distance_label)
+
+        return entity_obj, distance_value
 
     def _build_distance_expression(self, model_class, lat: float, lng: float):
         """Construct a database-side distance expression in meters."""

@@ -81,7 +81,7 @@ class OAuthService:
                         'state_token': state_token,
                         'provider': provider,
                         'return_to': return_to,
-                        'expires_at': datetime.utcnow() + timedelta(minutes=10)
+                        'expires_at': datetime.utcnow() + timedelta(minutes=30)
                     }
                 )
         except Exception as e:

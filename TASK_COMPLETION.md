@@ -15,6 +15,16 @@
 
 * [x] **Authentication System Audit — refresh safety hardening** — Fixed refresh rotation compatibility, blacklist enforcement, and CSRF secret checks.
 
+* [x] **Eatery Distance Sort — restore PostGIS ordering** — Re-enabled server-side distance projection and ordering for eateries using PostGIS/earthdistance and removed legacy client-side fallbacks.
+
+  * Outcome: ✅ Distance sorting now computed in Postgres with consistent ordering and radius filtering.
+  * Key Achievements:
+    - Reinforced `EntityRepositoryV5` to apply `ST_DWithin`/`ST_Distance` filters and ordering when coordinates provided, with earthdistance fallback only for non-PostGIS environments.
+    - Eliminated Python haversine pagination paths and temporary logging toggles so all pagination variants share the DB-driven path.
+    - Added `backend/tests/unit/test_entity_repository_distance.py` to cover distance ordering behavior and ensure `_apply_sorting` uses geospatial expressions.
+  * Tests: `pytest backend/tests/unit/test_entity_repository_distance.py`
+  * Docs Updated: `/plans/IMP_eatery_distance_sort.md`
+
 
 ## 2025-09-19 — Restaurant Page Duplication Consolidation
 - ID: 2025-09-19-RESTAURANT-DUPLICATE-CONSOLIDATION  

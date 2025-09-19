@@ -95,10 +95,21 @@ def test_get_entities_with_cursor_computes_distance(monkeypatch, repo_base):
     query_mock.filter.return_value = query_mock
 
     limit_holder = MagicMock()
+    class RowLike:
+        def __init__(self, entity, distance):
+            self._data = (entity, distance)
+            self._mapping = {'distance_meters': distance}
+
+        def __getitem__(self, idx):
+            return self._data[idx]
+
+        def __len__(self):
+            return len(self._data)
+
     limit_holder.all.return_value = [
-        (SimpleNamespace(id=1, name="A"), 1609.344),
-        (SimpleNamespace(id=2, name="B"), 3218.688),
-        (SimpleNamespace(id=3, name="C"), 4828.032),
+        RowLike(SimpleNamespace(id=1, name="A"), 1609.344),
+        RowLike(SimpleNamespace(id=2, name="B"), 3218.688),
+        RowLike(SimpleNamespace(id=3, name="C"), 4828.032),
     ]
     query_mock.limit.return_value = limit_holder
 
