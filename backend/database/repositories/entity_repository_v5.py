@@ -1140,6 +1140,74 @@ class EntityRepositoryV5(BaseRepository):
             logger.error(f"earthdistance expression failed: {earth_error}")
             return None
 
+    def _bulk_distance_miles(self, session, model_class, ids, lat: float, lng: float) -> Dict[int, float]:
+        """Compute distances for a list of IDs, returning miles."""
+        if not ids:
+            return {}
+
+        result: Dict[int, float] = {}
+        from sqlalchemy import func
+
+        # Attempt database-side distance calculation first
+        try:
+            distance_expr = self._build_distance_expression(model_class, lat, lng)
+            if distance_expr is not None:
+                rows = (
+                    session.query(model_class.id, distance_expr.label('distance_meters'))
+                    .filter(model_class.id.in_(ids))
+                    .all()
+                )
+                for row in rows:
+                    entity_id, distance_meters = row[0], row[1]
+                    if entity_id is None or distance_meters is None:
+                        continue
+                    try:
+                        result[int(entity_id)] = float(distance_meters) / 1609.344
+                    except (TypeError, ValueError):
+                        continue
+                return result
+        except Exception as db_error:
+            logger.warning(f"Bulk distance DB computation failed: {db_error}")
+
+        # Fallback: compute in Python using haversine
+        try:
+            rows = (
+                session.query(
+                    model_class.id,
+                    getattr(model_class, 'latitude').label('lat'),
+                    getattr(model_class, 'longitude').label('lng'),
+                )
+                .filter(model_class.id.in_(ids))
+                .all()
+            )
+        except Exception as fetch_error:
+            logger.warning(f"Bulk distance fallback fetch failed: {fetch_error}")
+            return result
+
+        from math import radians, cos, sin, asin, sqrt
+
+        lat1 = radians(lat)
+        lng1 = radians(lng)
+
+        for row in rows:
+            entity_id, lat2, lng2 = row
+            if entity_id is None or lat2 is None or lng2 is None:
+                continue
+            try:
+                lat2_rad = radians(float(lat2))
+                lng2_rad = radians(float(lng2))
+            except (TypeError, ValueError):
+                continue
+
+            dlat = lat2_rad - lat1
+            dlng = lng2_rad - lng1
+            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2_rad) * sin(dlng / 2) ** 2
+            c = 2 * asin(sqrt(a))
+            miles = 3958.8 * c  # Earth's radius in miles
+            result[int(entity_id)] = round(miles, 4)
+
+        return result
+
     def _apply_sorting(self, query, model_class, sort_key: str, filters: Optional[Dict[str, Any]] = None):
         """Apply sorting to query."""
         strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])

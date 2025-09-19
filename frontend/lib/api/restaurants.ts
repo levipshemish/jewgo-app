@@ -59,12 +59,13 @@ export async function fetchRestaurants({
   signal?: AbortSignal;
   includeFilterOptions?: boolean;
 }): Promise<RestaurantsResponse> {
+  // Normalize distance: if distanceMi/maxDistanceMi present and location provided, attach radius (km)
+  const normalizedFilters = { ...filters } as Record<string, any>;
+  let locationPayload = location as any;
+  const requestedSort = filters?.sort ?? (location ? 'distance_asc' : undefined);
+  const distanceMi = (filters as any).distanceMi ?? (filters as any).maxDistanceMi ?? undefined;
+  
   try {
-    // Normalize distance: if distanceMi/maxDistanceMi present and location provided, attach radius (km)
-    const normalizedFilters = { ...filters } as Record<string, any>;
-    let locationPayload = location as any;
-    const requestedSort = filters?.sort ?? (location ? 'distance_asc' : undefined);
-    const distanceMi = (filters as any).distanceMi ?? (filters as any).maxDistanceMi ?? undefined;
     if (location && distanceMi) {
       const radiusKm = Number(distanceMi) * 1.60934;
       // Provide radius to both filters (for generic parsing) and location (for v5 client convenience)
