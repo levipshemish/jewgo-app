@@ -2,6 +2,17 @@
 
 Status: open — add new tasks here. Flip to Status: working before edits. Remove on completion and log in `TASK_COMPLETION.md`.
 
+* [ ] OAuth Error Analysis — investigate OAuth failure patterns and authentication flow
+
+  * Status: open
+  * Notes: User experiencing OAuth failures with error code `oauth_failed` and auth token clearing. Analysis completed.
+    - OAuth error flow: Backend redirects to `/auth/error?error=oauth_failed` from multiple failure points in `backend/routes/v5/oauth_google.py`
+    - Error page: `frontend/app/auth/error/AuthErrorHandler.tsx` logs detailed debug info and provides session clearing
+    - Auth sync: `frontend/lib/auth/postgres-auth.ts` calls `/sync-user` endpoint to validate tokens
+    - Token clearing: When sync-user returns `authenticated: false` and `guest: undefined`, tokens are cleared automatically
+    - Root cause: OAuth failures occur at multiple stages (service init, callback processing, token exchange, session creation)
+    - Monitoring: Error details are logged with debug info including error_code, timestamp, url_params, and user_agent
+
 * [ ] Security Remediation — address critical audit findings
 
   * Status: open

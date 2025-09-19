@@ -92,7 +92,6 @@ export async function fetchRestaurants({
     // Debug the V5 API response
     console.log('🔍 V5 API Response - first restaurant:', response.data?.[0]);
     console.log('🔍 V5 API Response - distance field:', response.data?.[0]?.distance);
-    console.log('🔍 V5 API Response - full URL called:', response.url || 'URL not available');
     
     // Handle V5 API response format - V5 API returns data array directly
     const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];

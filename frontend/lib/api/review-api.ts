@@ -16,10 +16,15 @@ export function setAuthCheckCallback(callback: () => boolean) {
 }
 
 // Base API configuration
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  process.env.BACKEND_URL ||
-  'https://api.jewgo.app';
+// Use the same base URL as postgresAuth to ensure cookie domain consistency
+const API_BASE_URL = (() => {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+  if (backendUrl) {
+    return backendUrl;
+  }
+  // Use production backend as fallback
+  return 'https://api.jewgo.app';
+})();
 
 export interface ReviewSubmissionData {
   rating: number;
@@ -198,13 +203,35 @@ async function apiRequest<T>(
  */
 export async function submitReview(reviewData: ReviewSubmissionData): Promise<ReviewResponse> {
   try {
-    console.log('🚀 Review submission v2.0 - using apiRequest with /api/v5/reviews/');
-    const response = await apiRequest<ReviewResponse>('/api/v5/reviews/', {
-      method: 'POST',
-      body: JSON.stringify(reviewData),
-    });
+    console.log('🚀 Review submission v2.1 - trying apiRequest first, then postgresAuth fallback');
     
-    return response;
+    try {
+      // Try our custom apiRequest first
+      const response = await apiRequest<ReviewResponse>('/api/v5/reviews/', {
+        method: 'POST',
+        body: JSON.stringify(reviewData),
+      });
+      
+      console.log('✅ Review submission successful via apiRequest');
+      return response;
+    } catch (apiError) {
+      console.log('⚠️ apiRequest failed, trying postgresAuth.request() as fallback:', apiError);
+      
+      // Fallback: Use postgresAuth.request() which handles authentication properly
+      const response = await postgresAuth.request('/reviews', {
+        method: 'POST',
+        body: JSON.stringify(reviewData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to submit review: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Review submission successful via postgresAuth.request()');
+      return result;
+    }
   } catch (error) {
     console.error('Review submission error:', error);
     throw error;
