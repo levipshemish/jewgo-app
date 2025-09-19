@@ -174,6 +174,7 @@ async function apiRequest<T>(
  */
 export async function submitReview(reviewData: ReviewSubmissionData): Promise<ReviewResponse> {
   try {
+    console.log('🚀 Review submission v2.0 - using apiRequest with /api/v5/reviews/');
     const response = await apiRequest<ReviewResponse>('/api/v5/reviews/', {
       method: 'POST',
       body: JSON.stringify(reviewData),
