@@ -2,6 +2,24 @@
 
 Status: open — add new tasks here. Flip to Status: working before edits. Remove on completion and log in `TASK_COMPLETION.md`.
 
+* [ ] **Specials System Implementation** — create complete specials system for restaurants
+
+  * Status: working
+  * Notes: Comprehensive specials system implementation completed with database schema, API endpoints, and frontend components.
+    - ✅ Requirements: `plans/REQ_specials_system.md` - Complete requirements with acceptance criteria
+    - ✅ Design: `plans/DES_specials_system.md` - Database schema with lookup tables, GiST indexes, and materialized views
+    - ✅ Implementation: `plans/IMP_specials_system.md` - Migration strategy and rollback plan
+    - ✅ Database Migration: `backend/database/migrations/create_specials_system.py` - Complete schema with constraints
+    - ✅ SQLAlchemy Models: `backend/database/specials_models.py` - All model definitions with relationships
+    - ✅ API Routes: `backend/routes/specials_routes.py` - RESTful endpoints for CRUD operations
+    - ✅ Frontend Types: `frontend/types/specials.ts` - Complete TypeScript interfaces
+    - ✅ API Client: `frontend/lib/api/specials.ts` - Client functions with error handling
+    - ✅ React Hooks: `frontend/hooks/use-specials.ts` - State management hooks
+    - ✅ React Components: `frontend/components/specials/` - Complete UI components for display and management
+    - ⏳ Next: Run database migration and test API endpoints
+    - ⏳ Next: Integrate with restaurant detail pages
+    - ⏳ Next: Test complete system end-to-end
+
 * [ ] OAuth Error Analysis — investigate OAuth failure patterns and authentication flow
 
   * Status: open
