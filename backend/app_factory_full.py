@@ -914,6 +914,13 @@ def create_app(config_class=None):
             logger.warning(f"Could not import geocoding API blueprint: {e}")
         except Exception as e:
             logger.warning(f"Could not register geocoding API blueprint: {e}")
+        
+        # Register specials API - temporarily disabled due to import issues
+        # TODO: Fix specials blueprint import issues and re-enable
+        try:
+            logger.info("Specials API blueprint temporarily disabled - skipping registration")
+        except Exception as e:
+            logger.warning(f"Specials API note: {e}")
                 
     except ImportError as e:
         logger.warning(f"Could not import v5 feature flags: {e}")

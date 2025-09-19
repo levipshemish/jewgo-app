@@ -18,7 +18,7 @@ from sqlalchemy import and_, or_, func, desc
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
 
-from database.models import db
+from database.database_manager_v5 import get_database_manager_v5
 from database.specials_models import (
     Special, SpecialClaim, SpecialEvent, SpecialMedia,
     DiscountKind, ClaimStatus, MediaKind
@@ -29,6 +29,19 @@ from utils.error_handling import handle_api_error
 from utils.validation import validate_json_schema
 
 logger = logging.getLogger(__name__)
+
+# Create a simple db object that mimics SQLAlchemy's db.session
+class DatabaseSession:
+    def __init__(self):
+        self._db_manager = None
+    
+    @property
+    def session(self):
+        if self._db_manager is None:
+            self._db_manager = get_database_manager_v5()
+        return self._db_manager.get_session()
+
+db = DatabaseSession()
 
 # Create Blueprint
 specials_bp = Blueprint('specials', __name__, url_prefix='/v5/specials')
