@@ -73,7 +73,7 @@ export class ErrorBoundary extends ReactComponent<Props, State> {
 
   private handleGoHome = (): void => {
     if (typeof window !== 'undefined') {
-      // TEMPORARILY DISABLED: window.location.href = '/';
+      window.location.href = '/specials';
     }
   };
 

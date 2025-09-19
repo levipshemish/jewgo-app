@@ -550,7 +550,7 @@ function EateryIdPageContent() {
                 </Link>
                 <br />
                 <Link 
-                  href="/" 
+                  href="/specials" 
                   className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   Go to Homepage

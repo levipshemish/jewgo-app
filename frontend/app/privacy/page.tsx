@@ -6,7 +6,7 @@ export default function PrivacyPolicyPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <Link 
-            href="/"
+            href="/specials"
             className="text-jewgo-400 hover:text-jewgo-300 transition-colors"
           >
             ← Back to JewGo

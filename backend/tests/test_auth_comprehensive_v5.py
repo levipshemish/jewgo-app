@@ -172,7 +172,7 @@ class MockSession:
                 'revoked_at': None,
             }
             self.db.sessions[session_data['id']] = session_data
-            return MockResult([])
+            return []
 
         if 'select id, revoked_at, expires_at' in query_lower:
             session = self.db.sessions.get(params['sid'])
@@ -182,14 +182,14 @@ class MockSession:
                     'revoked_at': session['revoked_at'],
                     'expires_at': session['expires_at'],
                 }
-                return MockResult([MockRow(row)])
-            return MockResult([])
+                return [MockRow(row)]
+            return []
 
         if 'select 1 from auth_sessions' in query_lower and 'refresh_token_hash' in query_lower:
             session = self.db.sessions.get(params['sid'])
             if session and session['refresh_token_hash'] == params['h'] and session['revoked_at'] is None:
-                return MockResult([MockRow({'result': 1})])
-            return MockResult([])
+                return [MockRow({'result': 1})]
+            return []
 
         if 'update auth_sessions set revoked_at = now(), last_used = now() where id' in query_lower:
             session = self.db.sessions.get(params['sid'])
@@ -198,7 +198,7 @@ class MockSession:
                 session['revoked_at'] = datetime.utcnow()
                 session['last_used'] = datetime.utcnow()
                 updated = 1
-            return MockResult([None] * updated)
+            return [None] * updated
 
         if 'update auth_sessions set revoked_at = now() where family_id' in query_lower:
             updated = 0
@@ -206,7 +206,7 @@ class MockSession:
                 if session['family_id'] == params['fid'] and session['revoked_at'] is None:
                     session['revoked_at'] = datetime.utcnow()
                     updated += 1
-            return MockResult([None] * updated)
+            return [None] * updated
 
         if 'update auth_sessions set revoked_at = now() where id = :sid' in query_lower and 'family_id' not in query_lower:
             session = self.db.sessions.get(params['sid'])
@@ -214,16 +214,16 @@ class MockSession:
             if session and session['revoked_at'] is None:
                 session['revoked_at'] = datetime.utcnow()
                 updated = 1
-            return MockResult([None] * updated)
+            return [None] * updated
 
         if 'select id, family_id' in query_lower and 'from auth_sessions' in query_lower:
             rows = []
             for session in self.db.sessions.values():
                 if session['user_id'] == params.get('uid'):
                     rows.append(MockRow(session.copy()))
-            return MockResult(rows)
+            return rows
 
-        return MockResult([])
+        return []
 
 
 class MockRow:

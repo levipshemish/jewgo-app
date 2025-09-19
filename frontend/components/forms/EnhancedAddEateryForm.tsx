@@ -1517,7 +1517,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
               <button
                 onClick={() => {
                   setShowSuccessModal(false);
-                  router.push('/');
+                  router.push('/specials');
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-md font-medium hover:bg-gray-600 transition-colors"
               >

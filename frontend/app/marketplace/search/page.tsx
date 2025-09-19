@@ -56,7 +56,7 @@ function MarketplaceSearchContent() {
                   Back to Marketplace
                 </Link>
                 <Link
-                  href="/"
+                  href="/specials"
                   className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition-colors"
                 >
                   Go Home

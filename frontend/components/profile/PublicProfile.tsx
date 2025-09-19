@@ -76,7 +76,7 @@ export default function PublicProfile({ profile, stats, username }: PublicProfil
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/"
+            href="/specials"
             className="text-blue-600 hover:text-blue-700 font-medium text-sm"
           >
             ← Back to JewGo

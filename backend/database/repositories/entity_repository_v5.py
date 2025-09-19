@@ -157,223 +157,18 @@ class EntityRepositoryV5(BaseRepository):
         filters: Optional[Dict[str, Any]] = None,
         include_relations: bool = False,
         user_context: Optional[Dict[str, Any]] = None
-    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
-        """
-        Get entities with distance sorting using offset-based pagination.
-        
-        This method loads all entities, sorts them by distance, then returns
-        the appropriate page slice. This is necessary because distance sorting
-        is done in the application layer after the database query.
-        """
-        try:
-            model_class = self.get_model_class(entity_type)
-            if not model_class:
-                logger.error(f"Unknown entity type: {entity_type}")
-                return [], None, None
-            
-            mapping = self.get_entity_mapping(entity_type)
-            if not mapping:
-                logger.error(f"No mapping for entity type: {entity_type}")
-                return [], None, None
-            
-            with self.connection_manager.session_scope() as session:
-                # Build base query to get ALL entities (no limit)
-                query = session.query(model_class)
-                
-                # Apply eager loading if relations requested
-                if include_relations and mapping.get('relations'):
-                    for relation in mapping['relations']:
-                        if hasattr(model_class, relation):
-                            query = query.options(joinedload(getattr(model_class, relation)))
-                
-                # Apply filters
-                query = self._apply_filters(query, model_class, filters, mapping)
-                
-                # Apply geospatial filtering if needed
-                logger.info(f"DEBUG: Distance pagination - geospatial={mapping.get('geospatial')}, has_filters={bool(filters)}, has_lat={bool(filters and filters.get('latitude'))}, has_lng={bool(filters and filters.get('longitude'))}")
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
-                    try:
-                        query = self._apply_geospatial_filter(query, model_class, filters)
-                        logger.info("✅ Geospatial filter applied successfully")
-                    except Exception as geo_error:
-                        logger.warning(f"Geospatial filter failed, continuing without radius filtering: {geo_error}")
-                else:
-                    logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
-                
-                # Execute query to get all entities, attempting distance projection when applicable
-                use_projection = False
-                # TEMPORARY: Disable distance projection to test basic sorting
-                logger.info("🚧 TEMPORARY: Skipping distance projection to test basic query")
-                # try:
-                #     if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                #         lat = float(filters['latitude'])
-                #         lng = float(filters['longitude'])
-                #         distance_expr = func.earth_distance(
-                #             func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                #             func.ll_to_earth(lat, lng)
-                #         ).label('distance_meters')
-                #         query = query.add_columns(distance_expr)
-                #         use_projection = True
-                all_entities = query.all()
-                logger.info(f"Distance pagination: Loaded {len(all_entities)} total entities for {entity_type}")
-                # except Exception as e:
-                #     logger.warning(f"Distance projection failed or query error: {e}")
-                #     use_projection = False
-                #     try:
-                #         # Fallback: run without projection
-                #         all_entities = session.query(model_class).all()
-                #     except Exception as ee:
-                #         logger.error(f"Query execution failed: {ee}")
-                #         return [], None, None
-                
-                # Convert to dictionaries and add distance (calculated safely in Python)
-                result_entities = []
-                
-                # Calculate distances in Python for all entities when location is provided
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    lat = float(filters['latitude'])
-                    lng = float(filters['longitude'])
-                    
-                    for entity in all_entities:
-                        try:
-                            entity_dict = self._entity_to_dict(entity, include_relations)
-                            
-                            # Calculate distance if entity has coordinates
-                            entity_lat = entity_dict.get('latitude')
-                            entity_lng = entity_dict.get('longitude')
-                            
-                            if entity_lat is not None and entity_lng is not None:
-                                # Calculate distance using haversine formula (miles)
-                                from math import radians, cos, sin, asin, sqrt
-                                
-                                # Convert to radians
-                                lat1, lng1, lat2, lng2 = map(radians, [lat, lng, float(entity_lat), float(entity_lng)])
-                                
-                                # Haversine formula
-                                dlat = lat2 - lat1
-                                dlng = lng2 - lng1
-                                a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
-                                c = 2 * asin(sqrt(a))
-                                
-                                # Radius of earth in miles
-                                r = 3956
-                                distance_miles = c * r
-                                
-                                entity_dict['distance'] = round(distance_miles, 2)
-                            else:
-                                entity_dict['distance'] = None
-                            
-                            result_entities.append(entity_dict)
-                        except Exception as e:
-                            logger.warning(f"Error processing entity for distance calculation: {e}")
-                            # Still add the entity without distance rather than failing completely
-                            try:
-                                entity_dict = self._entity_to_dict(entity, include_relations)
-                                entity_dict['distance'] = None
-                                result_entities.append(entity_dict)
-                            except Exception as e2:
-                                logger.error(f"Failed to convert entity to dict: {e2}")
-                                continue
-                else:
-                    # No location provided, just convert entities normally
-                    for entity in all_entities:
-                        try:
-                            entity_dict = self._entity_to_dict(entity, include_relations)
-                            result_entities.append(entity_dict)
-                        except Exception as e:
-                            logger.error(f"Error converting entity to dict: {e}")
-                            continue
-                
-                # Apply distance sorting in application layer if needed
-                if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
-                    # Sort by distance (entities without distance go to end)
-                    result_entities.sort(key=lambda x: x.get('distance') if x.get('distance') is not None else float('inf'))
-                    logger.info(f"Applied application-layer distance sorting to {len(result_entities)} entities")
-                
-                # Skip the old logic that was causing issues
-                if False:
-                    try:
-                        if use_projection and all_entities and isinstance(all_entities[0], tuple):
-                            # Build distance map from projected column
-                            for row in all_entities:
-                                entity_obj, dist_meters = row[0], row[1]
-                                if entity_obj is None:
-                                    continue
-                                try:
-                                    entity_id = int(getattr(entity_obj, 'id'))
-                                    if dist_meters is not None:
-                                        distance_map[entity_id] = float(dist_meters) / 1609.344
-                                except Exception:
-                                    continue
-                            # Replace rows with just entities for downstream processing
-                            all_entities = [row[0] for row in all_entities]
-                        else:
-                            lat = float(filters['latitude'])
-                            lng = float(filters['longitude'])
-                            ids = [getattr(e, 'id', None) for e in all_entities]
-                            ids = [i for i in ids if i is not None]
-                            distance_map = self._bulk_distance_miles(session, model_class, ids, lat, lng)
-                    except Exception as e:
-                        logger.warning(f"Bulk distance/projection computation failed: {e}")
+    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str], int]:
+        """Delegate to generic page pagination with distance-aware sorting."""
+        return self._get_entities_with_page_pagination(
+            entity_type=entity_type,
+            page=page,
+            limit=limit,
+            sort_key='distance_asc',
+            filters=filters,
+            include_relations=include_relations,
+            user_context=user_context,
+        )
 
-                for entity in all_entities:
-                    entity_dict = self._entity_to_dict(entity, include_relations)
-                    
-                    # Add computed distance field
-                    if mapping.get('geospatial') and filters and filters.get('latitude'):
-                        dist = distance_map.get(getattr(entity, 'id', None))
-                        entity_dict['distance'] = None if dist is None else round(dist, 2)
-                        # Strict application-layer radius enforcement (fallback or double-check)
-                        radius_km = None
-                        if filters.get('_radius_km') is not None:
-                            radius_km = float(filters.get('_radius_km'))
-                        elif filters.get('radius') is not None:
-                            # radius from query is in km
-                            radius_km = float(filters.get('radius'))
-                        if radius_km is not None:
-                            distance_miles = entity_dict.get('distance', float('inf')) or float('inf')
-                            radius_miles = radius_km * 0.621371
-                            if distance_miles > radius_miles:
-                                continue  # Drop out-of-radius entities
-                    
-                    result_entities.append(entity_dict)
-                
-                # Sort by distance
-                if filters and filters.get('latitude') and filters.get('longitude'):
-                    result_entities.sort(key=lambda x: x.get('distance', float('inf')))
-                
-                # Calculate pagination
-                total_count = len(result_entities)
-                offset = (page - 1) * limit
-                end_offset = offset + limit
-                
-                
-                # Get the page slice
-                page_entities = result_entities[offset:end_offset]
-                
-                
-                # Generate pagination info
-                has_next = end_offset < total_count
-                has_prev = page > 1
-                
-                next_cursor = None
-                prev_cursor = None
-                
-                if has_next:
-                    next_cursor = f"page_{page + 1}"
-                if has_prev:
-                    prev_cursor = f"page_{page - 1}"
-                
-                
-                logger.info(f"Distance pagination: Page {page}, offset {offset}-{end_offset}, returned {len(page_entities)} entities, total: {total_count}")
-                
-                return page_entities, next_cursor, prev_cursor, total_count
-                
-        except Exception as e:
-            logger.error(f"Error getting {entity_type} with distance pagination: {e}")
-            return [], None, None, 0
-    
     def _get_entities_with_page_pagination(
         self,
         entity_type: str,
@@ -383,144 +178,99 @@ class EntityRepositoryV5(BaseRepository):
         filters: Optional[Dict[str, Any]] = None,
         include_relations: bool = False,
         user_context: Optional[Dict[str, Any]] = None
-    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
-        """
-        Get entities with page-based pagination for non-distance sorting.
-        
-        This method provides consistent page-based pagination for all sorting types
-        when the page parameter is provided, similar to distance sorting.
-        """
+    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str], int]:
+        """Get entities with page-based pagination for any sort strategy."""
         try:
             model_class = self.get_model_class(entity_type)
             if not model_class:
                 logger.error(f"Unknown entity type: {entity_type}")
                 return [], None, None
-            
+
             mapping = self.get_entity_mapping(entity_type)
             if not mapping:
                 logger.error(f"No mapping for entity type: {entity_type}")
                 return [], None, None
-            
+
             with self.connection_manager.session_scope() as session:
-                # Build base query
                 query = session.query(model_class)
-                
-                # Apply eager loading if relations requested
+
                 if include_relations and mapping.get('relations'):
                     for relation in mapping['relations']:
                         if hasattr(model_class, relation):
                             query = query.options(joinedload(getattr(model_class, relation)))
-                
-                # Apply filters
-                query = self._apply_filters(query, model_class, filters, mapping)
-                
-                # Apply geospatial filtering if needed
-                # TEMPORARY: Disable geospatial filtering to test distance sorting
-                logger.info("🚧 TEMPORARY: Skipping geospatial filtering in cursor pagination")
-                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                #     query = self._apply_geospatial_filter(query, model_class, filters)
-                
-                # Apply sorting
-                query = self._apply_sorting(query, model_class, sort_key, filters)
-                
-                # Calculate offset for page-based pagination
-                offset = (page - 1) * limit
-                
-                # Execute query with page-based pagination, attempt distance projection
-                use_projection = False
-                try:
-                    # TEMPORARY: Disable distance projection to fix entity conversion
-                    logger.info("🚧 TEMPORARY: Skipping distance projection")
-                    # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    #     lat = float(filters['latitude'])
-                    #     lng = float(filters['longitude'])
-                    #     distance_expr = func.earth_distance(
-                    #         func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                    #         func.ll_to_earth(lat, lng)
-                    #     ).label('distance_meters')
-                    #     query = query.add_columns(distance_expr)
-                    #     use_projection = True
-                    entities = query.offset(offset).limit(limit).all()
-                except Exception as e:
-                    logger.warning(f"Distance projection failed (page-based): {e}")
-                    use_projection = False
-                    entities = query.offset(offset).limit(limit).with_entities(model_class).all()
-                
-                # Convert to dictionaries (batch distance computation)
-                result_entities = []
-                distance_map = {}
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    try:
-                        if use_projection and entities and isinstance(entities[0], tuple):
-                            for row in entities:
-                                entity_obj, dist_meters = row[0], row[1]
-                                if entity_obj is None:
-                                    continue
-                                try:
-                                    entity_id = int(getattr(entity_obj, 'id'))
-                                    if dist_meters is not None:
-                                        distance_map[entity_id] = float(dist_meters) / 1609.344
-                                except Exception:
-                                    continue
-                            entities = [row[0] for row in entities]
-                        else:
-                            lat = float(filters['latitude'])
-                            lng = float(filters['longitude'])
-                            ids = [getattr(e, 'id', None) for e in entities]
-                            ids = [i for i in ids if i is not None]
-                            distance_map = self._bulk_distance_miles(session, model_class, ids, lat, lng)
-                    except Exception as e:
-                        logger.warning(f"Bulk distance/projection computation failed: {e}")
 
-                for entity in entities:
-                    entity_dict = self._entity_to_dict(entity, include_relations)
-                    
-                    # Add computed fields
-                    if mapping.get('geospatial') and filters and filters.get('latitude'):
-                        dist = distance_map.get(getattr(entity, 'id', None))
-                        entity_dict['distance'] = None if dist is None else round(dist, 2)
-                        # Strict application-layer radius enforcement (fallback or double-check)
-                        radius_km = None
-                        if filters.get('_radius_km') is not None:
-                            radius_km = float(filters.get('_radius_km'))
-                        elif filters.get('radius') is not None:
-                            radius_km = float(filters.get('radius'))
-                        if radius_km is not None:
-                            distance_miles = entity_dict.get('distance', float('inf')) or float('inf')
-                            radius_miles = radius_km * 0.621371
-                            if distance_miles > radius_miles:
-                                continue  # Drop out-of-radius entities
-                    
+                query = self._apply_filters(query, model_class, filters, mapping)
+
+                lat = lng = None
+                distance_expr = None
+                geospatial_enabled = mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude')
+                if geospatial_enabled:
+                    query = self._apply_geospatial_filter(query, model_class, filters)
+                    try:
+                        lat = float(filters['latitude'])
+                        lng = float(filters['longitude'])
+                        distance_expr = self._build_distance_expression(model_class, lat, lng)
+                        if distance_expr is not None:
+                            query = query.add_columns(distance_expr.label('distance_meters'))
+                    except (TypeError, ValueError):
+                        logger.warning("Invalid coordinates supplied; skipping distance projection")
+                        distance_expr = None
+
+                query = self._apply_sorting(query, model_class, sort_key, filters)
+
+                offset = (page - 1) * limit
+                rows = query.offset(offset).limit(limit).all()
+
+                result_entities: List[Dict[str, Any]] = []
+
+                def split_row(row):
+                    if distance_expr is not None and isinstance(row, tuple):
+                        return row[0], row[1]
+                    return row, None
+
+                for row in rows:
+                    entity_obj, dist_value = split_row(row)
+                    entity_dict = self._entity_to_dict(entity_obj, include_relations)
+                    if distance_expr is not None:
+                        raw_miles = None
+                        if dist_value is not None:
+                            try:
+                                raw_miles = float(dist_value) / 1609.344
+                            except (TypeError, ValueError):
+                                raw_miles = None
+                        entity_dict['distance_raw'] = raw_miles
+                        entity_dict['distance'] = None if raw_miles is None else round(raw_miles, 2)
                     result_entities.append(entity_dict)
-                
-                # Get total count for pagination info
+
+                if distance_expr is None and geospatial_enabled:
+                    for entity_dict in result_entities:
+                        entity_dict.setdefault('distance', None)
+
                 count_query = session.query(model_class)
                 count_query = self._apply_filters(count_query, model_class, filters, mapping)
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                if geospatial_enabled:
                     count_query = self._apply_geospatial_filter(count_query, model_class, filters)
-                
                 total_count = count_query.count()
-                
-                # Generate pagination info
+
                 has_next = offset + limit < total_count
                 has_prev = page > 1
-                
-                next_cursor = None
-                prev_cursor = None
-                
-                if has_next:
-                    next_cursor = f"page_{page + 1}"
-                if has_prev:
-                    prev_cursor = f"page_{page - 1}"
-                
-                logger.info(f"Page pagination: Page {page}, offset {offset}-{offset + len(result_entities)}, returned {len(result_entities)} entities, total: {total_count}")
-                
+                next_cursor = f"page_{page + 1}" if has_next else None
+                prev_cursor = f"page_{page - 1}" if has_prev else None
+
+                logger.info(
+                    f"Page pagination: Page {page}, offset {offset}-{offset + len(result_entities)}, "
+                    f"returned {len(result_entities)} entities, total: {total_count}"
+                )
+
+                for entity_dict in result_entities:
+                    entity_dict.pop('distance_raw', None)
+
                 return result_entities, next_cursor, prev_cursor, total_count
-                
+
         except Exception as e:
             logger.error(f"Error getting {entity_type} with page pagination: {e}")
             return [], None, None, 0
-    
+
     def get_entities_with_cursor(
         self,
         entity_type: str,
@@ -532,209 +282,103 @@ class EntityRepositoryV5(BaseRepository):
         include_relations: bool = False,
         user_context: Optional[Dict[str, Any]] = None
     ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str], int]:
-        """
-        Get entities with enhanced cursor pagination.
-        
-        Args:
-            entity_type: Type of entity to query
-            cursor: Cursor token for pagination
-            page: Page number for offset-based pagination (used with distance sorting)
-            limit: Maximum number of entities to return
-            sort_key: Sorting strategy
-            filters: Filtering criteria
-            include_relations: Whether to include related data
-            user_context: User context for personalization
-            
-        Returns:
-            Tuple of (entities, next_cursor, prev_cursor, total_count)
-        """
+        """Get entities with enhanced cursor pagination."""
         try:
-            
-            # Special handling for distance sorting with page-based pagination
             if sort_key == 'distance_asc' and page is not None:
                 return self._get_entities_with_distance_pagination(
                     entity_type, page, limit, filters, include_relations, user_context
                 )
-            
-            # Handle page-based pagination for all sorting types when page parameter is provided
+
             if page is not None:
                 return self._get_entities_with_page_pagination(
                     entity_type, page, limit, sort_key, filters, include_relations, user_context
                 )
+
             model_class = self.get_model_class(entity_type)
             if not model_class:
                 logger.error(f"Unknown entity type: {entity_type}")
                 return [], None, None, 0
-            
+
             mapping = self.get_entity_mapping(entity_type)
-            logger.info(f"Processing {entity_type} with model: {model_class.__name__}, mapping: {mapping}")
             if not mapping:
                 logger.error(f"No mapping for entity type: {entity_type}")
                 return [], None, None, 0
-            
+
             with self.connection_manager.session_scope() as session:
-                # Build base query
                 query = session.query(model_class)
-                
-                # Apply eager loading if relations requested
+
                 if include_relations and mapping.get('relations'):
                     for relation in mapping['relations']:
                         if hasattr(model_class, relation):
                             query = query.options(joinedload(getattr(model_class, relation)))
-                
-                # Apply filters
-                query = self._apply_filters(query, model_class, filters, mapping)
-                
-                # Apply geospatial filtering if needed
-                # TEMPORARY: Disable geospatial filtering to test distance sorting
-                logger.info("🚧 TEMPORARY: Skipping geospatial filtering in cursor pagination")
-                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                #     query = self._apply_geospatial_filter(query, model_class, filters)
-                
-                # Apply cursor pagination
-                query, cursor_position = self._apply_cursor_pagination(
-                    query, model_class, cursor, sort_key, limit
-                )
-                
-                # Apply sorting
-                query = self._apply_sorting(query, model_class, sort_key, filters)
-                
-                # Execute query with optional distance projection
-                use_projection = False
-                try:
-                    # TEMPORARY: Disable distance projection to fix entity conversion
-                    logger.info("🚧 TEMPORARY: Skipping distance projection")
-                    # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    #     lat = float(filters['latitude'])
-                    #     lng = float(filters['longitude'])
-                    #     distance_expr = func.earth_distance(
-                    #         func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                    #         func.ll_to_earth(lat, lng)
-                    #     ).label('distance_meters')
-                    #     query = query.add_columns(distance_expr)
-                    #     use_projection = True
-                    entities = query.limit(limit + 1).all()  # Get one extra to check for next page
-                    logger.info(f"Query executed successfully: {len(entities)} entities returned for limit={limit}")
-                    logger.info(f"DEBUG PAGINATION: entities count={len(entities)} , limit={limit}, limit+1={limit+1}")
-                except Exception as e:
-                    logger.warning(f"Distance projection failed (cursor-based) or query error: {e}")
-                    use_projection = False
-                    try:
-                        entities = query.with_entities(model_class).limit(limit + 1).all()
-                    except Exception as ee:
-                        logger.error(f"Query execution failed: {ee}")
-                        entities = []
-                
-                # Process results - fetch one extra to check if there are more
-                has_next = len(entities) > limit
-                logger.info(f"DEBUG PAGINATION: has_next={has_next} (entities={len(entities)} > limit={limit})")
-                if has_next:
-                    entities = entities[:limit]  # Keep only the requested limit
-                    logger.info(f"DEBUG PAGINATION: Trimmed entities to {len(entities)} for response")
-                
-                # Prepare distance map (projection-first, fallback to batch)
-                distance_map = {}
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    try:
-                        if use_projection and entities and isinstance(entities[0], tuple):
-                            for row in entities:
-                                entity_obj, dist_meters = row[0], row[1]
-                                if entity_obj is None:
-                                    continue
-                                try:
-                                    entity_id = int(getattr(entity_obj, 'id'))
-                                    if dist_meters is not None:
-                                        distance_map[entity_id] = float(dist_meters) / 1609.344
-                                except Exception:
-                                    continue
-                            # Drop distance column for downstream entity mapping
-                            entities = [row[0] for row in entities]
-                        else:
-                            lat = float(filters['latitude'])
-                            lng = float(filters['longitude'])
-                            ids = [getattr(e, 'id', None) for e in entities]
-                            ids = [i for i in ids if i is not None]
-                            distance_map = self._bulk_distance_miles(session, model_class, ids, lat, lng)
-                    except Exception as e:
-                        logger.warning(f"Bulk distance/projection computation failed: {e}")
 
-                # Convert to dictionaries
-                result_entities = []
-                for entity in entities:
-                    entity_dict = self._entity_to_dict(entity, include_relations)
-                    
-                    # Add computed fields
-                    if mapping.get('geospatial') and filters and filters.get('latitude'):
-                        dist = distance_map.get(getattr(entity, 'id', None))
-                        entity_dict['distance'] = None if dist is None else round(dist, 2)
-                        
-                        # Apply radius filter in application layer if PostGIS failed
-                        if filters.get('_radius_km'):
-                            distance_miles_val = entity_dict['distance'] or float('inf')
-                            radius_miles = filters['_radius_km'] * 0.621371  # Convert km to miles
-                            if distance_miles_val > radius_miles:
-                                continue  # Skip this entity as it's outside the radius
-                        
-                        if entity_dict['distance'] is not None:
-                            logger.debug(f"Added distance {entity_dict['distance']:.2f} miles for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
-                        else:
-                            logger.debug(f"No distance calculated for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
-                    
+                query = self._apply_filters(query, model_class, filters, mapping)
+
+                geospatial_enabled = mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude')
+                lat = lng = None
+                distance_expr = None
+                if geospatial_enabled:
+                    query = self._apply_geospatial_filter(query, model_class, filters)
+                    try:
+                        lat = float(filters['latitude'])
+                        lng = float(filters['longitude'])
+                        distance_expr = self._build_distance_expression(model_class, lat, lng)
+                        if distance_expr is not None:
+                            query = query.add_columns(distance_expr.label('distance_meters'))
+                    except (TypeError, ValueError):
+                        logger.warning("Invalid coordinates supplied; skipping distance projection")
+                        distance_expr = None
+
+                query, cursor_position = self._apply_cursor_pagination(
+                    query, model_class, cursor, sort_key, limit, filters, distance_expr
+                )
+                query = self._apply_sorting(query, model_class, sort_key, filters)
+
+                rows = query.limit(limit + 1).all()
+                has_next = len(rows) > limit
+                if has_next:
+                    rows = rows[:limit]
+
+                result_entities: List[Dict[str, Any]] = []
+
+                def split_row(row):
+                    if distance_expr is not None and isinstance(row, tuple):
+                        return row[0], row[1]
+                    return row, None
+
+                for row in rows:
+                    entity_obj, dist_value = split_row(row)
+                    entity_dict = self._entity_to_dict(entity_obj, include_relations)
+                    if distance_expr is not None:
+                        miles = None
+                        if dist_value is not None:
+                            try:
+                                miles = float(dist_value) / 1609.344
+                            except (TypeError, ValueError):
+                                miles = None
+                        entity_dict['distance'] = None if miles is None else round(miles, 2)
                     result_entities.append(entity_dict)
-                
-                # Apply distance sorting in application layer if needed
-                if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
-                    # Only sort by distance if we have location data
-                    logger.info(f"Before distance sorting: {len(result_entities)} entities")
-                    for i, entity in enumerate(result_entities):
-                        logger.info(f"Entity {i}: title={entity.get('title')}, distance={entity.get('distance')}")
-                    result_entities.sort(key=lambda x: x.get('distance', float('inf')))
-                    logger.info(f"After distance sorting: {len(result_entities)} entities")
-                elif sort_key == 'distance_asc':
-                    # If distance sorting is requested but no location provided, fall back to created_at
-                    result_entities.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-                
-                # Distance sorting is now properly implemented
-                
-                # Debug: Log the number of entities after sorting
-                logger.info(f"After sorting: {len(result_entities)} entities for {entity_type} with sort_key={sort_key}")
-                
-                # Generate cursors
+
+                if distance_expr is None and geospatial_enabled:
+                    for entity_dict in result_entities:
+                        entity_dict.setdefault('distance', None)
+
                 next_cursor = None
                 prev_cursor = None
-                
-                logger.info(f"DEBUG CURSOR: result_entities count={len(result_entities)}, has_next={has_next}")
-                
-                # Disable cursor pagination for distance sorting since it's done in application layer
-                if sort_key == 'distance_asc':
-                    logger.info("DEBUG CURSOR: Distance sorting detected - disabling cursor pagination")
-                elif result_entities:
+                if result_entities:
                     if has_next:
-                        logger.info("DEBUG CURSOR: Generating next_cursor for last entity")
-                        next_cursor = self._generate_cursor(
-                            result_entities[-1], sort_key, 'next', entity_type
-                        )
-                        logger.info(f"DEBUG CURSOR: Generated next_cursor={next_cursor}")
-                    else:
-                        logger.info("DEBUG CURSOR: No next_cursor generated because has_next=False")
-                    
-                    prev_cursor = self._generate_cursor(
-                        result_entities[0], sort_key, 'prev', entity_type
-                    )
-                    logger.info(f"DEBUG CURSOR: Generated prev_cursor={prev_cursor}")
-                else:
-                    logger.info("DEBUG CURSOR: No cursors generated because result_entities is empty")
-                
-                # Get total count for cursor pagination
+                        next_cursor = self._generate_cursor(result_entities[-1], sort_key, 'next', entity_type)
+                    prev_cursor = self._generate_cursor(result_entities[0], sort_key, 'prev', entity_type)
+
                 total_count = self.get_entity_count(entity_type, filters)
-                logger.info(f"Total count for {entity_type}: {total_count}")
-                
+                for entity_dict in result_entities:
+                    entity_dict.pop('distance_raw', None)
                 return result_entities, next_cursor, prev_cursor, total_count
-                
+
         except Exception as e:
             logger.error(f"Error getting {entity_type} with cursor: {e}")
             return [], None, None, 0
-    
+
     def get_entity_by_id(
         self,
         entity_type: str,
@@ -1037,11 +681,8 @@ class EntityRepositoryV5(BaseRepository):
             with self.connection_manager.session_scope() as session:
                 query = session.query(func.count(model_class.id))
                 query = self._apply_filters(query, model_class, filters, mapping)
-                # Include geospatial filtering in counts when applicable
-                # TEMPORARY: Disable geospatial filtering to test distance sorting
-                logger.info("🚧 TEMPORARY: Skipping geospatial filtering in count query")
-                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                #     query = self._apply_geospatial_filter(query, model_class, filters)
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 return query.scalar() or 0
                 
@@ -1148,8 +789,6 @@ class EntityRepositoryV5(BaseRepository):
     def _apply_geospatial_filter(self, query, model_class, filters: Dict[str, Any]):
         """Apply geospatial filtering for location-based queries."""
         try:
-            logger.info(f"DEBUG: _apply_geospatial_filter called with filters: {filters}")
-            # Handle bounds filtering (for map viewport)
             if 'bounds' in filters:
                 bounds = filters['bounds']
                 if isinstance(bounds, dict) and 'ne' in bounds and 'sw' in bounds:
@@ -1157,10 +796,8 @@ class EntityRepositoryV5(BaseRepository):
                     ne_lng = float(bounds['ne']['lng'])
                     sw_lat = float(bounds['sw']['lat'])
                     sw_lng = float(bounds['sw']['lng'])
-                    
-                    # Use PostGIS ST_MakeEnvelope for bounds filtering
+
                     if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
-                        # Use traditional latitude/longitude columns (most common case)
                         query = query.filter(
                             func.ST_Within(
                                 func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326),
@@ -1168,7 +805,6 @@ class EntityRepositoryV5(BaseRepository):
                             )
                         )
                     elif hasattr(model_class, 'geom'):
-                        # Use geom column (PostGIS geometry column)
                         query = query.filter(
                             func.ST_Within(
                                 model_class.geom,
@@ -1176,83 +812,52 @@ class EntityRepositoryV5(BaseRepository):
                             )
                         )
                     elif hasattr(model_class, 'location'):
-                        # Use location column (PostGIS point stored as text)
                         query = query.filter(
                             func.ST_Within(
                                 func.ST_GeogFromText(model_class.location),
                                 func.ST_MakeEnvelope(sw_lng, sw_lat, ne_lng, ne_lat, 4326)
                             )
                         )
-                    
-                    logger.debug(f"Applied bounds filter: ne=({ne_lat}, {ne_lng}), sw=({sw_lat}, {sw_lng})")
                     return query
-            
-            # Handle radius-based filtering (for location-based search)
+
             if 'latitude' in filters and 'longitude' in filters:
                 lat = float(filters['latitude'])
                 lng = float(filters['longitude'])
-                radius_km = float(filters.get('radius', 160))  # Default 160km radius (100mi)
-                # Always set fallback radius for application-layer enforcement
-                filters['_radius_km'] = radius_km
-                
-                # If PostGIS not available, apply coarse bbox filter and mark for app-layer filtering
-                if not getattr(self, '_postgis_available', False) and hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
-                    from math import cos, radians
-                    lat_delta = radius_km / 110.574
+                radius_km = float(filters.get('radius', 160))
+
+                if getattr(self, '_postgis_available', False) and hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
                     try:
-                        lng_delta = radius_km / (111.320 * max(0.1, cos(radians(lat))))
-                    except Exception:
-                        lng_delta = radius_km / 111.320
-                    query = query.filter(
-                        and_(
-                            getattr(model_class, 'latitude').isnot(None),
-                            getattr(model_class, 'longitude').isnot(None),
-                            getattr(model_class, 'latitude') >= (lat - lat_delta),
-                            getattr(model_class, 'latitude') <= (lat + lat_delta),
-                            getattr(model_class, 'longitude') >= (lng - lng_delta),
-                            getattr(model_class, 'longitude') <= (lng + lng_delta),
-                        )
-                    )
-                    filters['_radius_km'] = radius_km
-                    logger.info("Applied bbox geospatial fallback; PostGIS unavailable")
-                elif hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
-                    # Use traditional latitude/longitude columns (most common case)
-                    # Try PostGIS first, fall back to earthdistance if PostGIS fails
-                    try:
-                        # Cast to geography so distance is in meters
                         query = query.filter(
                             func.ST_DWithin(
                                 func.ST_SetSRID(func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')), 4326).cast(text('geography')),
                                 func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326).cast(text('geography')),
-                                radius_km * 1000  # meters
+                                radius_km * 1000
                             )
                         )
-                        logger.info(f"✅ Applied PostGIS geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
+                        return query
                     except Exception as postgis_error:
                         logger.warning(f"PostGIS geospatial filter failed: {postgis_error}")
-                        # Fall back to earthdistance
-                        try:
-                            radius_meters = radius_km * 1000
-                            query = query.filter(
-                                and_(
-                                    getattr(model_class, 'latitude').isnot(None),
-                                    getattr(model_class, 'longitude').isnot(None),
-                                    func.earth_distance(
-                                        func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                                        func.ll_to_earth(lat, lng)
-                                    ) <= radius_meters
-                                )
+
+                if hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                    try:
+                        radius_meters = radius_km * 1000
+                        query = query.filter(
+                            and_(
+                                getattr(model_class, 'latitude').isnot(None),
+                                getattr(model_class, 'longitude').isnot(None),
+                                func.earth_distance(
+                                    func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                                    func.ll_to_earth(lat, lng)
+                                ) <= radius_meters
                             )
-                            logger.info(f"✅ Applied earthdistance geospatial filter fallback: lat={lat}, lng={lng}, radius={radius_km}km")
-                        except Exception as earth_error:
-                            logger.error(f"❌ Both PostGIS and earthdistance geospatial filters failed: {earth_error}")
-                            # Final fallback - use bbox filter
+                        )
+                        return query
+                    except Exception as earth_error:
+                        logger.warning(f"earthdistance geospatial filter failed: {earth_error}")
+                        try:
                             from math import cos, radians
                             lat_delta = radius_km / 110.574
-                            try:
-                                lng_delta = radius_km / (111.320 * max(0.1, cos(radians(lat))))
-                            except Exception:
-                                lng_delta = radius_km / 111.320
+                            lng_delta = radius_km / (111.320 * max(0.1, cos(radians(lat))))
                             query = query.filter(
                                 and_(
                                     getattr(model_class, 'latitude').isnot(None),
@@ -1263,94 +868,72 @@ class EntityRepositoryV5(BaseRepository):
                                     getattr(model_class, 'longitude') <= (lng + lng_delta),
                                 )
                             )
-                            logger.info(f"⚠️  Applied bbox geospatial filter as final fallback: lat={lat}, lng={lng}, radius={radius_km}km")
-                elif hasattr(model_class, 'geom'):
-                    # Use geom column (PostGIS geometry column)
-                    query = query.filter(
-                        func.ST_DWithin(
-                            func.cast(getattr(model_class, 'geom'), text('geography')),
-                            func.cast(func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326), text('geography')),
-                            radius_km * 1000
-                        )
-                    )
-                elif hasattr(model_class, 'location'):
-                    # Use location column (PostGIS point stored as text)
-                    # Cast the location text to geometry and then to geography for distance calculation
-                    query = query.filter(
-                        func.ST_DWithin(
-                            func.ST_GeogFromText(getattr(model_class, 'location')),
-                            func.cast(func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326), text('geography')),
-                            radius_km * 1000
-                        )
-                    )
-                
-                logger.debug(f"Applied geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
-            
-            return query
-            
-        except (ValueError, TypeError) as e:
-            logger.warning(f"Invalid geospatial parameters: {e}")
-            return query
+                            return query
+                        except Exception as bbox_error:
+                            logger.warning(f"Bounding box geospatial fallback failed: {bbox_error}")
 
-    def _bulk_distance_miles(self, session, model_class, ids, lat: float, lng: float) -> Dict[int, float]:
-        """Compute distances for a batch of entity IDs in miles using earthdistance.
+                if hasattr(model_class, 'geom'):
+                    try:
+                        query = query.filter(
+                            func.ST_DWithin(
+                                model_class.geom,
+                                func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                                radius_km * 1000
+                            )
+                        )
+                        return query
+                    except Exception as geom_error:
+                        logger.warning(f"Geom-based geospatial filter failed: {geom_error}")
 
-        Returns a mapping of id -> distance (miles). Missing coordinates or failures return no entry.
-        """
-        try:
-            if not ids:
-                return {}
-            q = (
-                session.query(
-                    getattr(model_class, 'id').label('id'),
-                    func.earth_distance(
-                        func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                        func.ll_to_earth(lat, lng),
-                    ).label('meters'),
-                )
-                .filter(
-                    getattr(model_class, 'id').in_(ids),
-                    getattr(model_class, 'latitude').isnot(None),
-                    getattr(model_class, 'longitude').isnot(None),
-                )
-            )
-            rows = q.all()
-            result: Dict[int, float] = {}
-            for row in rows:
-                try:
-                    meters = float(row.meters)
-                    result[int(row.id)] = meters / 1609.344
-                except Exception:
-                    continue
-            return result
+            return query
         except Exception as e:
-            logger.warning(f"Bulk distance query failed: {e}")
-            return {}
-    
-    def _apply_cursor_pagination(self, query, model_class, cursor: Optional[str], sort_key: str, limit: int):
+            logger.error(f"Error applying geospatial filter: {e}")
+            return query
+
+    def _apply_cursor_pagination(
+        self,
+        query,
+        model_class,
+        cursor: Optional[str],
+        sort_key: str,
+        limit: int,
+        filters: Optional[Dict[str, Any]] = None,
+        distance_expr=None,
+    ):
         """Apply cursor-based pagination to query."""
         cursor_position = None
-        
+
         if cursor:
             try:
                 from utils.cursor_v5 import decode_cursor_v5, extract_cursor_position_v5
+
                 cursor_payload = decode_cursor_v5(cursor)
                 cursor_position = extract_cursor_position_v5(cursor_payload)
-                
-                # Apply cursor conditions based on sort direction
+
                 primary_value, record_id = cursor_position
                 strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
-                
-                # For distance sorting, use created_at field for cursor pagination since distance is calculated in app layer
+
+                primary_field = None
+                direction = strategy['direction']
                 if sort_key == 'distance_asc':
-                    primary_field = getattr(model_class, 'created_at')
-                    direction = 'DESC'  # We sort by created_at DESC for distance sorting
-                else:
+                    if distance_expr is None and filters and filters.get('latitude') and filters.get('longitude'):
+                        distance_expr = self._build_distance_expression(
+                            model_class, filters['latitude'], filters['longitude']
+                        )
+                    if distance_expr is not None:
+                        primary_field = distance_expr
+                        direction = 'ASC'
+                        try:
+                            primary_value = float(primary_value)
+                        except (TypeError, ValueError):
+                            logger.warning("Invalid distance value in cursor; falling back to created_at")
+                            primary_field = getattr(model_class, strategy['field'])
+                            direction = strategy['direction']
+
+                if primary_field is None:
                     primary_field = getattr(model_class, strategy['field'])
-                    direction = strategy['direction']
-                
+
                 if direction == 'DESC':
-                    # For descending, we want records before the cursor
                     query = query.filter(
                         or_(
                             primary_field < primary_value,
@@ -1358,102 +941,71 @@ class EntityRepositoryV5(BaseRepository):
                         )
                     )
                 else:
-                    # For ascending, we want records after the cursor
                     query = query.filter(
                         or_(
                             primary_field > primary_value,
                             and_(primary_field == primary_value, model_class.id > record_id)
                         )
                     )
-                    
+
             except Exception as e:
                 logger.warning(f"Invalid cursor, ignoring: {e}")
                 cursor_position = None
-        
+
         return query, cursor_position
-    
+
+    def _build_distance_expression(self, model_class, lat: float, lng: float):
+        """Construct a database-side distance expression in meters."""
+        try:
+            if not hasattr(model_class, 'latitude') or not hasattr(model_class, 'longitude'):
+                return None
+            lat_val = float(lat)
+            lng_val = float(lng)
+        except (TypeError, ValueError):
+            logger.warning("Invalid latitude/longitude provided for distance expression")
+            return None
+        from sqlalchemy import func
+        try:
+            if getattr(self, '_postgis_available', False):
+                entity_point = func.ST_SetSRID(func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')), 4326).cast(text('geography'))
+                user_point = func.ST_SetSRID(func.ST_MakePoint(lng_val, lat_val), 4326).cast(text('geography'))
+                return func.ST_Distance(entity_point, user_point)
+        except Exception as postgis_error:
+            logger.warning(f"PostGIS distance expression failed: {postgis_error}")
+        try:
+            return func.earth_distance(
+                func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                func.ll_to_earth(lat_val, lng_val)
+            )
+        except Exception as earth_error:
+            logger.error(f"earthdistance expression failed: {earth_error}")
+            return None
+
     def _apply_sorting(self, query, model_class, sort_key: str, filters: Optional[Dict[str, Any]] = None):
         """Apply sorting to query."""
         strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
-        
-        # Handle distance sorting specially
-        if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
-            # Use PostGIS ST_Distance for proper distance sorting
-            lat = filters['latitude']
-            lng = filters['longitude']
-            
-            logger.info(f"DEBUG: Distance sorting requested - lat={lat}, lng={lng}, postgis_available={self._postgis_available}")
-            
-            # TEMPORARY: Skip PostGIS/earthdistance sorting to test basic distance sorting
-            logger.info("🚧 TEMPORARY: Skipping PostGIS/earthdistance sorting, using created_at fallback")
-            primary_field = getattr(model_class, 'created_at')
-            secondary_field = getattr(model_class, 'id')
-            query = query.order_by(desc(primary_field), desc(secondary_field))
-            logger.info(f"⚠️  Applied created_at fallback for distance sorting with lat={lat}, lng={lng}")
-            
-            # if self._postgis_available:
-            #     # Use PostGIS ST_Distance for accurate distance sorting
-            #     try:
-            #         from sqlalchemy import func
-            #         distance_expr = func.ST_Distance(
-            #             func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326).cast(text('geography')),
-            #             func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326).cast(text('geography'))
-            #         )
-            #         query = query.order_by(distance_expr.asc(), model_class.id.asc())
-            #         logger.info(f"✅ Applied PostGIS distance sorting for lat={lat}, lng={lng}")
-            #     except Exception as e:
-            #         logger.error(f"❌ PostGIS distance sorting failed: {e}")
-            #         # Fall back to earthdistance
-            #         try:
-            #             from sqlalchemy import func
-            #             distance_expr = func.earth_distance(
-            #                 func.ll_to_earth(model_class.latitude, model_class.longitude),
-            #                 func.ll_to_earth(lat, lng)
-            #             )
-            #             query = query.order_by(distance_expr.asc(), model_class.id.asc())
-            #             logger.info(f"✅ Applied earthdistance sorting fallback for lat={lat}, lng={lng}")
-            #         except Exception as e2:
-            #             logger.error(f"❌ Earthdistance sorting also failed: {e2}")
-            #             # Final fallback to created_at
-            #             primary_field = getattr(model_class, 'created_at')
-            #             secondary_field = getattr(model_class, 'id')
-            #             query = query.order_by(desc(primary_field), desc(secondary_field))
-            #             logger.info("⚠️  Applied final fallback to created_at sorting")
-            # else:
-            #     # Fallback to earthdistance if PostGIS not available
-            #     try:
-            #         from sqlalchemy import func
-            #         distance_expr = func.earth_distance(
-            #             func.ll_to_earth(model_class.latitude, model_class.longitude),
-            #             func.ll_to_earth(lat, lng)
-            #         )
-            #         query = query.order_by(distance_expr.asc(), model_class.id.asc())
-            #         logger.info(f"✅ Applied earthdistance sorting for lat={lat}, lng={lng}")
-            #     except Exception as e:
-            #         logger.error(f"❌ Earthdistance sorting failed: {e}")
-            #         # Final fallback to created_at
-            #         primary_field = getattr(model_class, 'created_at')
-            #         secondary_field = getattr(model_class, 'id')
-            #         query = query.order_by(desc(primary_field), desc(secondary_field))
-            #         logger.info("⚠️  Applied final fallback to created_at sorting")
-        elif sort_key == 'distance_asc':
-            # No location provided, fall back to created_at
-            logger.info("⚠️  Distance sorting requested but no location provided, falling back to created_at")
-            primary_field = getattr(model_class, 'created_at')
-            secondary_field = getattr(model_class, 'id')
-            query = query.order_by(desc(primary_field), desc(secondary_field))
-        else:
-            # Regular field sorting
-            primary_field = getattr(model_class, strategy['field'])
-            secondary_field = getattr(model_class, strategy['secondary'])
-            
-            if strategy['direction'] == 'DESC':
-                query = query.order_by(desc(primary_field), desc(secondary_field))
+
+        if sort_key == 'distance_asc':
+            if filters and filters.get('latitude') and filters.get('longitude'):
+                distance_expr = self._build_distance_expression(model_class, filters['latitude'], filters['longitude'])
+                if distance_expr is not None:
+                    return query.order_by(distance_expr.asc(), model_class.id.asc())
+                logger.warning("Distance sorting requested but distance expression unavailable; falling back to created_at")
             else:
-                query = query.order_by(asc(primary_field), asc(secondary_field))
-        
-        return query
-    
+                logger.info("Distance sorting requested without coordinates; falling back to created_at")
+            primary_field = getattr(model_class, 'created_at')
+            secondary_field = getattr(model_class, 'id')
+            return query.order_by(desc(primary_field), desc(secondary_field))
+
+        primary_field = getattr(model_class, strategy['field'])
+        secondary_field = getattr(model_class, strategy['secondary'])
+
+        if strategy['direction'] == 'DESC':
+            return query.order_by(desc(primary_field), desc(secondary_field))
+        return query.order_by(asc(primary_field), asc(secondary_field))
+
+
+
     def _entity_to_dict(self, entity, include_relations: bool = False) -> Dict[str, Any]:
         """Convert SQLAlchemy entity to dictionary."""
         try:
@@ -1511,108 +1063,28 @@ class EntityRepositoryV5(BaseRepository):
             logger.error(f"Error validating {entity_type} data: {e}")
             return None
     
-    def _calculate_distance(self, entity, filters: Dict[str, Any]) -> Optional[float]:
-        """Calculate distance from user location to entity.
-
-        Note: Prefer batch computation via _bulk_distance_miles when possible.
-        This method remains for compatibility or single-entity cases.
-        """
-        try:
-            user_lat = float(filters.get('latitude', 0))
-            user_lng = float(filters.get('longitude', 0))
-            
-            # Handle different entity types
-            entity_lat = None
-            entity_lng = None
-            
-            if hasattr(entity, 'latitude') and hasattr(entity, 'longitude'):
-                # Traditional latitude/longitude columns (restaurants table)
-                entity_lat = float(entity.latitude or 0)
-                entity_lng = float(entity.longitude or 0)
-                logger.debug(f"Using lat/lng columns: entity_lat={entity_lat}, entity_lng={entity_lng}")
-            elif hasattr(entity, 'location') and entity.location:
-                # PostGIS location column - extract coordinates
-                # The location field stores PostGIS point as text like "POINT(-80.1918 25.7617)"
-                try:
-                    import re
-                    location_str = str(entity.location)
-                    logger.debug(f"PostGIS location string: {location_str}")
-                    
-                    # Extract coordinates from PostGIS point string
-                    point_match = re.search(r'POINT\(([-\d.]+)\s+([-\d.]+)\)', location_str)
-                    if point_match:
-                        entity_lng = float(point_match.group(1))
-                        entity_lat = float(point_match.group(2))
-                        logger.debug(f"Extracted from PostGIS: entity_lat={entity_lat}, entity_lng={entity_lng}")
-                    else:
-                        logger.warning(f"Could not parse PostGIS location: {location_str}")
-                        return None
-                except Exception as e:
-                    logger.warning(f"Error parsing PostGIS location: {e}")
-                    return None
-            
-            if entity_lat is None or entity_lng is None or entity_lat == 0 or entity_lng == 0:
-                logger.warning(f"Missing or invalid coordinates: entity_lat={entity_lat}, entity_lng={entity_lng}")
-                return None
-            
-            # Additional validation for reasonable coordinate ranges
-            if not (-90 <= entity_lat <= 90) or not (-180 <= entity_lng <= 180):
-                logger.warning(f"Coordinates out of valid range: entity_lat={entity_lat}, entity_lng={entity_lng}")
-                return None
-            
-            if not (-90 <= user_lat <= 90) or not (-180 <= user_lng <= 180):
-                logger.warning(f"User coordinates out of valid range: user_lat={user_lat}, user_lng={user_lng}")
-                return None
-            
-            # Debug logging
-            logger.debug(f"Distance calculation: user=({user_lat}, {user_lng}), entity=({entity_lat}, {entity_lng})")
-            
-            # Special debug for Mizrachi restaurants
-            if hasattr(entity, 'name') and 'mizrachi' in entity.name.lower():
-                logger.warning(f"Mizrachi restaurant found: {entity.name} at coordinates ({entity_lat}, {entity_lng})")
-            
-            # Calculate via DB for accuracy and consistency
-            try:
-                from utils.distance import distance_miles as _distance_miles
-                # Allow reuse of the current session if available on the repository
-                # Fall back to utils internal session management otherwise
-                session = None
-                try:
-                    # Attempt to detect current session from SQLAlchemy object
-                    from sqlalchemy.orm import object_session
-                    session = object_session(entity)
-                except Exception:
-                    session = None
-                dist_miles = _distance_miles(user_lat, user_lng, entity_lat, entity_lng, session=session)
-                logger.debug(f"Calculated distance (DB): {dist_miles:.2f} miles")
-            except Exception as e:
-                logger.warning(f"Distance calculation failed: {e}")
-                return None
-            
-            # Special debug for Mizrachi restaurants
-            if hasattr(entity, 'name') and 'mizrachi' in entity.name.lower():
-                logger.warning(f"Mizrachi restaurant distance calculation: {entity.name} = {dist_miles:.2f} miles")
-            
-            return round(dist_miles, 2)
-            
-        except Exception as e:
-            logger.warning(f"Error calculating distance: {e}")
-            return None
-    
     def _generate_cursor(self, entity: Dict[str, Any], sort_key: str, direction: str, entity_type: str) -> Optional[str]:
         """Generate cursor for pagination."""
         try:
             from utils.cursor_v5 import create_cursor_v5
             
             strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
-            
-            # For distance sorting, use created_at field for cursor generation since distance is calculated in app layer
+
             if sort_key == 'distance_asc':
-                primary_field = 'created_at'
+                primary_value = entity.get('distance_raw', entity.get('distance'))
+                if primary_value is not None:
+                    try:
+                        primary_value = float(primary_value)
+                    except (TypeError, ValueError):
+                        primary_value = None
+                if primary_value is None:
+                    primary_field = 'created_at'
+                    primary_value = entity.get(primary_field)
+                else:
+                    primary_field = 'distance'
             else:
                 primary_field = strategy['field']
-            
-            primary_value = entity.get(primary_field)
+                primary_value = entity.get(primary_field)
             entity_id = entity.get('id')
             
             if primary_value is None or entity_id is None:
@@ -1648,7 +1120,7 @@ class EntityRepositoryV5(BaseRepository):
         cursor: Optional[str] = None,
         limit: int = 20,
         sort_key: str = 'relevance'
-    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str]]:
+    ) -> Tuple[List[Dict[str, Any]], Optional[str], Optional[str], int]:
         """
         Search across multiple entity types with full-text and geospatial search.
         

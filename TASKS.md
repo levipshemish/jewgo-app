@@ -36,6 +36,12 @@ Status: open — add new tasks here. Flip to Status: working before edits. Remov
     - Review use of eval in alerting script; restrict inputs or replace with safe expression evaluator
       - backend/scripts/alerting_system.py:280
 
+* [ ] Eatery Distance Sort — investigate server-side PostGIS ordering issue
+
+  * Status: working
+  * Notes: Eatery page reports incorrect ordering by distance; confirm PostGIS query logic and indexing.
+    - Plans: [/plans/REQ_eatery_distance_sort.md](plans/REQ_eatery_distance_sort.md), [/plans/DES_eatery_distance_sort.md](plans/DES_eatery_distance_sort.md), [/plans/IMP_eatery_distance_sort.md](plans/IMP_eatery_distance_sort.md)
+
 
 
 ## Status Conventions
