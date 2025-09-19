@@ -63,6 +63,7 @@ export async function fetchRestaurants({
     // Normalize distance: if distanceMi/maxDistanceMi present and location provided, attach radius (km)
     const normalizedFilters = { ...filters } as Record<string, any>;
     let locationPayload = location as any;
+    const requestedSort = filters?.sort ?? (location ? 'distance_asc' : undefined);
     const distanceMi = (filters as any).distanceMi ?? (filters as any).maxDistanceMi ?? undefined;
     if (location && distanceMi) {
       const radiusKm = Number(distanceMi) * 1.60934;
@@ -83,6 +84,7 @@ export async function fetchRestaurants({
       } : undefined,
       cursor,
       includeFilterOptions,
+      sort: requestedSort,
     });
 
     if (!response.success) {
@@ -126,18 +128,26 @@ export async function fetchRestaurants({
     searchParams.set('page', String(page));
     searchParams.set('limit', String(limit));
     searchParams.set('offset', String((page - 1) * limit)); // Convert page to offset for backend
-    
+
     // Add filters
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         searchParams.set(key, String(value));
       }
     });
-    
+
     // Add location if available
     if (location) {
-      searchParams.set('lat', String(location.latitude));
-      searchParams.set('lng', String(location.longitude));
+      searchParams.set('latitude', String(location.latitude));
+      searchParams.set('longitude', String(location.longitude));
+      if (normalizedFilters.radius) {
+        searchParams.set('radius', String(normalizedFilters.radius));
+      }
+      searchParams.set('sort', 'distance_asc');
+    }
+
+    if (!searchParams.has('sort') && requestedSort) {
+      searchParams.set('sort', String(requestedSort));
     }
     
     // Add filter options request if needed

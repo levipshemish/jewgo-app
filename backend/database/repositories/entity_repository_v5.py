@@ -256,9 +256,32 @@ class EntityRepositoryV5(BaseRepository):
                         entity_dict['distance'] = None if raw_miles is None else round(raw_miles, 2)
                     result_entities.append(entity_dict)
 
-                if distance_expr is None and geospatial_enabled:
-                    for entity_dict in result_entities:
-                        entity_dict.setdefault('distance', None)
+                if geospatial_enabled:
+                    if distance_expr is None:
+                        # Fallback: compute distances in bulk via earthdistance helper
+                        try:
+                            lat_val = float(filters['latitude']) if filters and filters.get('latitude') else None
+                            lng_val = float(filters['longitude']) if filters and filters.get('longitude') else None
+                        except (TypeError, ValueError):
+                            lat_val = lng_val = None
+
+                        if lat_val is not None and lng_val is not None:
+                            ids = [entity.get('id') for entity in result_entities if entity.get('id') is not None]
+                            if ids:
+                                distance_map = self._bulk_distance_miles(session, model_class, ids, lat_val, lng_val)
+                                for entity_dict in result_entities:
+                                    dist = distance_map.get(entity_dict.get('id'))
+                                    if dist is not None:
+                                        entity_dict['distance'] = round(dist, 2)
+                                    else:
+                                        entity_dict.setdefault('distance', None)
+                        else:
+                            for entity_dict in result_entities:
+                                entity_dict.setdefault('distance', None)
+                    else:
+                        # Normalize distance field when column projection succeeded
+                        for entity_dict in result_entities:
+                            entity_dict.setdefault('distance', None)
 
                 count_query = session.query(model_class)
                 count_query = self._apply_filters(count_query, model_class, filters, mapping)
@@ -371,9 +394,30 @@ class EntityRepositoryV5(BaseRepository):
                         entity_dict['distance'] = None if raw_miles is None else round(raw_miles, 2)
                     result_entities.append(entity_dict)
 
-                if distance_expr is None and geospatial_enabled:
-                    for entity_dict in result_entities:
-                        entity_dict.setdefault('distance', None)
+                if geospatial_enabled:
+                    if distance_expr is None:
+                        try:
+                            lat_val = float(filters['latitude']) if filters and filters.get('latitude') else None
+                            lng_val = float(filters['longitude']) if filters and filters.get('longitude') else None
+                        except (TypeError, ValueError):
+                            lat_val = lng_val = None
+
+                        if lat_val is not None and lng_val is not None:
+                            ids = [entity.get('id') for entity in result_entities if entity.get('id') is not None]
+                            if ids:
+                                distance_map = self._bulk_distance_miles(session, model_class, ids, lat_val, lng_val)
+                                for entity_dict in result_entities:
+                                    dist = distance_map.get(entity_dict.get('id'))
+                                    if dist is not None:
+                                        entity_dict['distance'] = round(dist, 2)
+                                    else:
+                                        entity_dict.setdefault('distance', None)
+                        else:
+                            for entity_dict in result_entities:
+                                entity_dict.setdefault('distance', None)
+                    else:
+                        for entity_dict in result_entities:
+                            entity_dict.setdefault('distance', None)
 
                 next_cursor = None
                 prev_cursor = None
