@@ -421,7 +421,7 @@ export default function EateryGrid({
             if (useRealData && currentRetryCount < 3) {
               // Use page-based pagination for initial load (page 1)
               const response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, 1)
-              setRestaurants(response.restaurants.map((r: any): LightRestaurant => ({
+              const mappedRestaurants = response.restaurants.map((r: any): LightRestaurant => ({
                 id: r.id,
                 name: r.name,
                 address: r.address,
@@ -438,7 +438,12 @@ export default function EateryGrid({
                 latitude: r.latitude,
                 longitude: r.longitude,
                 distance: typeof r.distance === 'string' ? parseFloat(r.distance) : r.distance
-              })))
+              }));
+              
+              // Debug logging to verify distance sorting
+              console.log('🔍 Initial restaurants loaded with distances:', mappedRestaurants.map(r => ({ name: r.name, distance: r.distance })));
+              
+              setRestaurants(mappedRestaurants)
               
               setHasMore(response.hasMore)
               setNextCursor(response.nextCursor || null)

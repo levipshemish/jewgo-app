@@ -105,6 +105,8 @@ async function apiRequest<T>(
       credentials: 'include',
       // Add mode to ensure CORS is handled properly
       mode: 'cors',
+      // Prevent automatic redirects to avoid HTTPS->HTTP redirects
+      redirect: 'manual',
     });
   } catch (fetchError) {
     console.error('🚨 Fetch Error Details:', {
@@ -115,6 +117,35 @@ async function apiRequest<T>(
       method: options.method || 'GET'
     });
     throw fetchError;
+  }
+
+  // Handle manual redirects - if we get a redirect, follow it manually with HTTPS
+  if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+    const location = response.headers.get('location');
+    if (location) {
+      // Convert HTTP redirects to HTTPS
+      const httpsLocation = location.replace(/^http:\/\//, 'https://');
+      console.log('🔄 Following redirect:', { from: location, to: httpsLocation });
+      
+      // Make the request to the HTTPS version
+      try {
+        response = await fetch(httpsLocation, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
+            ...options.headers,
+          },
+          credentials: 'include',
+          mode: 'cors',
+          redirect: 'manual',
+        });
+      } catch (redirectError) {
+        console.error('🚨 Redirect Error:', redirectError);
+        throw redirectError;
+      }
+    }
   }
 
   if (!response.ok) {
