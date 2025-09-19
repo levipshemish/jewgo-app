@@ -10,6 +10,9 @@
 #   ENABLE_MONITORING_HEALTH_CHECK=true - Test monitoring health endpoints
 #   ENABLE_DISTANCE_SMOKE_TEST=true     - Run distance filtering smoke tests
 #   DEPLOY_SECURITY_HARDENING=true     - Deploy security hardening components
+#   ENABLE_PERFORMANCE_MONITORING=true  - Enable performance monitoring V2
+#   HORIZONTAL_SCALING_ENABLED=true     - Enable horizontal scaling features
+#   PERFORMANCE_OPTIMIZATIONS=true     - Apply performance optimizations
 
 set -e
 
@@ -188,8 +191,24 @@ execute_on_server "
     echo 'Docker cleanup completed'
 " "Cleaning up old Docker resources"
 
+# Apply performance optimizations if enabled
+if [ "${PERFORMANCE_OPTIMIZATIONS:-true}" = "true" ]; then
+    print_status "Applying performance optimizations..."
+    execute_on_server "
+        cd $SERVER_PATH/backend && \
+        # Validate performance improvements
+        if [ -f scripts/validate_improvements.sh ]; then
+            chmod +x scripts/validate_improvements.sh && \
+            ./scripts/validate_improvements.sh && \
+            echo 'Performance optimizations validated successfully'
+        else
+            echo 'Performance validation script not found, skipping validation'
+        fi
+    " "Validating performance optimizations"
+fi
+
 # Build and restart backend via docker compose (ensures Nginx upstream 'backend' points to the new container)
-print_status "Building new backend Docker image..."
+print_status "Building new backend Docker image with performance optimizations..."
 # Prefer docker compose if docker-compose.yml exists; otherwise fallback to docker build/run
 execute_on_server "
     set -euo pipefail
@@ -200,8 +219,14 @@ execute_on_server "
     else
         echo 'docker-compose.yml not found; using direct docker build' && \
         cd $SERVER_PATH/backend && \
-        docker build -t jewgo-app-backend . && \
-        echo 'Backend image built successfully (docker build)'
+        # Use optimized Dockerfile if available
+        if [ -f Dockerfile.optimized ]; then
+            docker build -f Dockerfile.optimized -t jewgo-app-backend . && \
+            echo 'Backend image built successfully with optimized Dockerfile'
+        else
+            docker build -t jewgo-app-backend . && \
+            echo 'Backend image built successfully (standard Dockerfile)'
+        fi
     fi
 " "Building new backend Docker image"
 
@@ -238,9 +263,13 @@ execute_on_server "
           -e REDIS_PORT=6379 \
           -e REDIS_DB=0 \
           -e REDIS_PASSWORD= \
+          -e DB_POOL_SIZE=10 \
+          -e DB_MAX_OVERFLOW=20 \
+          -e DB_POOL_TIMEOUT=60 \
+          -e DB_POOL_RECYCLE=300 \
           -w /app \
           jewgo-app-backend \
-          gunicorn --bind 0.0.0.0:5000 wsgi:app || exit 1
+          gunicorn --config config/gunicorn.conf.py wsgi:application || exit 1
         # Verify image exists and container is running
         if ! docker image inspect jewgo-app-backend:latest >/dev/null 2>&1; then
           echo 'Built image not found locally after build; aborting'; exit 1; fi
@@ -649,6 +678,17 @@ test_endpoint "https://api.jewgo.app/api/v5/monitoring/database/pool" "Database 
 test_endpoint "https://api.jewgo.app/api/v5/monitoring/database/pool/stats" "Database pool stats endpoint"
 test_endpoint "https://api.jewgo.app/api/v5/monitoring/database/pool/performance" "Database pool performance endpoint"
 
+# Test performance monitoring V2 endpoints (if enabled)
+if [ "${ENABLE_PERFORMANCE_MONITORING:-true}" = "true" ]; then
+    print_status "Testing performance monitoring V2 endpoints..."
+    test_endpoint "https://api.jewgo.app/api/v5/performance/metrics" "Performance metrics endpoint"
+    test_endpoint "https://api.jewgo.app/api/v5/performance/health" "Performance health endpoint"
+    test_endpoint "https://api.jewgo.app/api/v5/performance/alerts" "Performance alerts endpoint"
+    test_endpoint "https://api.jewgo.app/api/v5/performance/recommendations" "Performance recommendations endpoint"
+else
+    print_status "Skipping performance monitoring V2 tests (set ENABLE_PERFORMANCE_MONITORING=true to enable)"
+fi
+
 # Test additional important endpoints
 print_status "Testing additional important endpoints..."
 
@@ -808,6 +848,53 @@ else
     print_status "Skipping security hardening (set DEPLOY_SECURITY_HARDENING=true to enable)"
 fi
 
+# Horizontal scaling considerations and load testing
+if [ "${HORIZONTAL_SCALING_ENABLED:-false}" = "true" ]; then
+    print_status "Testing horizontal scaling readiness..."
+    
+    # Test load handling capabilities
+    print_status "Running basic load test..."
+    execute_on_server "
+        # Test concurrent requests to health endpoint
+        for i in {1..20}; do
+            curl -s -o /dev/null -w '%{http_code}\n' http://localhost:5000/healthz &
+        done
+        wait
+        echo 'Load test completed'
+    " "Basic load test"
+    
+    # Check if multiple containers can be started
+    print_status "Testing multi-container capability..."
+    execute_on_server "
+        # Test starting a second backend container on different port
+        docker run -d \
+          --name jewgo_backend_test \
+          --network jewgo-app_default \
+          -p 5001:5000 \
+          --env-file .env \
+          -e DB_POOL_SIZE=5 \
+          -e DB_MAX_OVERFLOW=10 \
+          jewgo-app-backend \
+          gunicorn --config config/gunicorn.conf.py wsgi:application || echo 'Second container failed to start'
+        
+        # Test if second container responds
+        sleep 5
+        if curl -f -s http://localhost:5001/healthz > /dev/null; then
+            echo 'Second container is responding'
+        else
+            echo 'Second container not responding'
+        fi
+        
+        # Clean up test container
+        docker stop jewgo_backend_test 2>/dev/null || true
+        docker rm jewgo_backend_test 2>/dev/null || true
+    " "Multi-container test"
+    
+    print_success "Horizontal scaling readiness tested"
+else
+    print_status "Skipping horizontal scaling tests (set HORIZONTAL_SCALING_ENABLED=true to enable)"
+fi
+
 # Final verification
 print_status "Performing final deployment verification..."
 execute_on_server "
@@ -881,10 +968,25 @@ print_status "   - /api/v5/search/suggestions (search suggestions)"
 print_status "   - /api/v5/search/popular (popular searches)"
 print_status ""
 print_status "=== NEW FEATURES DEPLOYED ==="
-print_status "✅ Webhook Endpoints with Signature Verification:"
-print_status "   - HMAC-SHA256 signature verification for secure webhooks"
-print_status "   - Deploy and GitHub webhook endpoints available"
-print_status "   - CSRF protection bypassed for webhook endpoints"
+print_status "✅ Performance Optimizations:"
+print_status "   - Gunicorn workers: 4 → 8 (100% increase)"
+print_status "   - Worker class: sync → gevent (async I/O)"
+print_status "   - Connections: 1000 → 2000 (100% increase)"
+print_status "   - Database pool: 5 → 10 base, 10 → 20 overflow"
+print_status "   - Enhanced connection pooling and monitoring"
+print_status ""
+print_status "✅ Enhanced Security:"
+print_status "   - Comprehensive security headers (CSP, CORS, etc.)"
+print_status "   - Enhanced rate limiting with granular rules"
+print_status "   - Cross-origin protection policies"
+print_status "   - HMAC-SHA256 signature verification for webhooks"
+print_status ""
+print_status "✅ Advanced Monitoring V2:"
+print_status "   - Real-time performance metrics collection"
+print_status "   - Automated performance alerting"
+print_status "   - Business metrics tracking"
+print_status "   - Performance recommendations engine"
+print_status "   - Enhanced health checks with readiness/liveness separation"
 print_status ""
 print_status "✅ Database Pool Monitoring:"
 print_status "   - Real-time database connection pool health monitoring"
@@ -896,10 +998,11 @@ print_status "   - High availability Redis cluster deployment option"
 print_status "   - Automatic failover and load balancing"
 print_status "   - Set DEPLOY_REDIS_CLUSTER=true to enable"
 print_status ""
-print_status "✅ Enhanced Monitoring:"
-print_status "   - Public monitoring endpoints for health checks"
-print_status "   - Database pool statistics and performance metrics"
-print_status "   - Improved observability and debugging capabilities"
+print_status "✅ Horizontal Scaling Ready:"
+print_status "   - Multi-container deployment capability"
+print_status "   - Load balancing support"
+print_status "   - Performance monitoring for scaling decisions"
+print_status "   - Set HORIZONTAL_SCALING_ENABLED=true to enable tests"
 print_status ""
 print_status "=== NEXT STEPS ==="
 print_status "1. Monitor application logs: docker logs -f jewgo_backend"

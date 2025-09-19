@@ -142,24 +142,88 @@ def create_app(config_class=None):
     # Create Flask app
     app = Flask(__name__)
     
-    # Register simple health check routes immediately (before any other configuration)
+    # Register enhanced health check routes
     @app.route('/healthz', methods=['GET'])
     def healthz():
-        """Simple health check - just verify the process is up."""
-        return jsonify({
-            'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat(),
-            'service': 'jewgo-backend',
-            'version': '1.0.0'
-        }), 200
+        """Enhanced health check with comprehensive system status."""
+        try:
+            from services.enhanced_health_service import get_health_service
+            health_service = get_health_service()
+            health_status = health_service.get_overall_status()
+            
+            # Return appropriate HTTP status based on health
+            if health_status['status'] == 'critical':
+                return jsonify(health_status), 503
+            elif health_status['status'] == 'unhealthy':
+                return jsonify(health_status), 503
+            elif health_status['status'] == 'degraded':
+                return jsonify(health_status), 200
+            else:
+                return jsonify(health_status), 200
+                
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return jsonify({
+                'status': 'critical',
+                'message': f'Health check service unavailable: {str(e)}',
+                'timestamp': datetime.utcnow().isoformat()
+            }), 503
     
     @app.route('/readyz', methods=['GET'])
     def readyz():
-        """Simple readiness check."""
-        return jsonify({
-            'status': 'ready',
-            'timestamp': datetime.utcnow().isoformat()
-        }), 200
+        """Readiness check - verifies all critical services are ready."""
+        try:
+            from services.enhanced_health_service import get_health_service
+            health_service = get_health_service()
+            
+            # Only check critical services for readiness
+            critical_results = {}
+            for name, check_info in health_service.checks.items():
+                if check_info['critical']:
+                    try:
+                        result = check_info['function']()
+                        if isinstance(result, tuple):
+                            status, message, details = result
+                        else:
+                            status = 'healthy'
+                            message = 'OK'
+                        
+                        critical_results[name] = {
+                            'status': status.value if hasattr(status, 'value') else str(status),
+                            'message': message
+                        }
+                    except Exception as e:
+                        critical_results[name] = {
+                            'status': 'critical',
+                            'message': f'Check failed: {str(e)}'
+                        }
+            
+            # Check if all critical services are healthy
+            all_healthy = all(
+                result['status'] in ['healthy', 'degraded'] 
+                for result in critical_results.values()
+            )
+            
+            if all_healthy:
+                return jsonify({
+                    'status': 'ready',
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'critical_services': critical_results
+                }), 200
+            else:
+                return jsonify({
+                    'status': 'not_ready',
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'critical_services': critical_results
+                }), 503
+                
+        except Exception as e:
+            logger.error(f"Readiness check failed: {e}")
+            return jsonify({
+                'status': 'not_ready',
+                'message': f'Readiness check failed: {str(e)}',
+                'timestamp': datetime.utcnow().isoformat()
+            }), 503
     
     @app.route('/health', methods=['GET'])
     def health():
@@ -778,6 +842,16 @@ def create_app(config_class=None):
             logger.warning(f"Could not import v5 monitoring API blueprint: {e}")
         except Exception as e:
             logger.warning(f"Could not register v5 monitoring API blueprint: {e}")
+        
+        # Register v5 performance API
+        try:
+            from routes.v5.performance_api import performance_api
+            app.register_blueprint(performance_api)
+            logger.info("V5 performance API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 performance API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 performance API blueprint: {e}")
         
         # Register v5 metrics API
         try:

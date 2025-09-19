@@ -34,15 +34,34 @@ class SecurityMiddleware:
         self.app = app
         self.security_manager = get_security_manager()
         
-        # Security headers configuration
+        # Enhanced security headers configuration
         self.security_headers = {
             'X-Content-Type-Options': 'nosniff',
             'X-Frame-Options': 'DENY',
             'X-XSS-Protection': '1; mode=block',
-            'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+            'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
             'Referrer-Policy': 'strict-origin-when-cross-origin',
-            'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
-            'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
+            'Content-Security-Policy': (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "connect-src 'self' https:; "
+                "font-src 'self' https:; "
+                "object-src 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'"
+            ),
+            'Permissions-Policy': (
+                'geolocation=(), microphone=(), camera=(), '
+                'payment=(), usb=(), magnetometer=(), gyroscope=(), '
+                'accelerometer=(), ambient-light-sensor=()'
+            ),
+            'Cross-Origin-Embedder-Policy': 'require-corp',
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Resource-Policy': 'same-origin',
+            'X-Download-Options': 'noopen',
+            'X-Permitted-Cross-Domain-Policies': 'none'
         }
         
         # CORS configuration
@@ -55,6 +74,15 @@ class SecurityMiddleware:
         # Request size limits
         self.max_content_length = 16 * 1024 * 1024  # 16MB
         self.max_json_size = 1024 * 1024  # 1MB
+        
+        # Enhanced rate limiting configuration
+        self.rate_limit_rules = {
+            'api_general': {'requests': 100, 'window': 60},  # 100 requests per minute
+            'api_auth': {'requests': 10, 'window': 60},       # 10 auth requests per minute
+            'api_upload': {'requests': 5, 'window': 60},     # 5 upload requests per minute
+            'api_search': {'requests': 200, 'window': 60},   # 200 search requests per minute
+            'api_admin': {'requests': 50, 'window': 60},     # 50 admin requests per minute
+        }
         
         if app:
             self.init_app(app)

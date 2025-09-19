@@ -81,11 +81,11 @@ except ImportError:
 
         @staticmethod
         def get_db_pool_size():
-            return int(os.getenv("DB_POOL_SIZE", "5"))
+            return int(os.getenv("DB_POOL_SIZE", "10"))  # Increased from 5
 
         @staticmethod
         def get_db_max_overflow():
-            return int(os.getenv("DB_MAX_OVERFLOW", "10"))
+            return int(os.getenv("DB_MAX_OVERFLOW", "20"))  # Increased from 10
 
         @staticmethod
         def get_db_pool_timeout():

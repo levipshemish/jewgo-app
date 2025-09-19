@@ -8,15 +8,15 @@ port = int(os.environ.get("PORT", 5000))
 # Server socket
 bind = f"0.0.0.0:{port}"
 backlog = 2048
-# Worker processes - optimized for high performance
-# Increased worker count for better throughput
-workers = min(multiprocessing.cpu_count() * 2 + 1, 8)  # Cap at 8 workers
-worker_class = "gevent"  # Use async workers for better I/O performance
-worker_connections = 2000  # Increased connection limit
+# Worker processes - optimized for Oracle Cloud PostgreSQL
+# Start with 2-4 workers as recommended for database connection pooling
+workers = min(multiprocessing.cpu_count() * 2 + 1, 4)  # Cap at 4 workers
+worker_class = "sync"
+worker_connections = 1000
 max_requests = 1000
-max_requests_jitter = 100  # Increased jitter for better distribution
-timeout = 30
-keepalive = 5  # Increased keepalive for better connection reuse
+max_requests_jitter = 50
+timeout = 30  # Reduced timeout for faster startup
+keepalive = 2  # Reduced keepalive for faster startup
 # Restart workers after this many requests, to help prevent memory leaks
 preload_app = True
 # Logging
