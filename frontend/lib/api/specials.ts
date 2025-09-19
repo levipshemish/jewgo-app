@@ -19,7 +19,7 @@ import {
   SpecialsError
 } from '@/types/specials'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://API.jewgo.app'
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://API.jewgo.app'
 
 // Helper function to build query string
 function buildQueryString(params: Record<string, any>): string {
@@ -65,6 +65,23 @@ function getAuthHeaders(): HeadersInit {
 }
 
 /**
+ * Get all specials (for the specials page)
+ */
+export async function getSpecials(params: SpecialsQueryParams = {}): Promise<SpecialsListResponse> {
+  const queryString = buildQueryString(params)
+  const url = `${API_BASE_URL}/api/v5/specials${queryString ? `?${queryString}` : ''}`
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  
+  return handleApiResponse<SpecialsListResponse>(response)
+}
+
+/**
  * Get specials for a restaurant
  */
 export async function getRestaurantSpecials(
@@ -72,7 +89,7 @@ export async function getRestaurantSpecials(
   params: SpecialsQueryParams = {}
 ): Promise<SpecialsListResponse> {
   const queryString = buildQueryString(params)
-  const url = `${API_BASE_URL}/v5/specials/restaurants/${restaurantId}/specials${queryString ? `?${queryString}` : ''}`
+  const url = `${API_BASE_URL}/api/v5/specials${queryString ? `?${queryString}&restaurant_id=${restaurantId}` : `?restaurant_id=${restaurantId}`}`
   
   const response = await fetch(url, {
     method: 'GET',
@@ -88,7 +105,7 @@ export async function getRestaurantSpecials(
  * Create a new special
  */
 export async function createSpecial(data: CreateSpecialRequest): Promise<{ id: string; message: string }> {
-  const url = `${API_BASE_URL}/v5/specials`
+  const url = `${API_BASE_URL}/api/v5/specials`
   
   const response = await fetch(url, {
     method: 'POST',
@@ -106,7 +123,7 @@ export async function updateSpecial(
   specialId: string,
   data: UpdateSpecialRequest
 ): Promise<{ id: string; message: string }> {
-  const url = `${API_BASE_URL}/v5/specials/${specialId}`
+  const url = `${API_BASE_URL}/api/v5/specials/${specialId}`
   
   const response = await fetch(url, {
     method: 'PATCH',
@@ -131,7 +148,7 @@ export async function claimSpecial(
   specialId: string,
   data: ClaimSpecialRequest = {}
 ): Promise<ClaimSpecialResponse> {
-  const url = `${API_BASE_URL}/v5/specials/${specialId}/claim`
+  const url = `${API_BASE_URL}/api/v5/specials/${specialId}/claim`
   
   const response = await fetch(url, {
     method: 'POST',
@@ -149,7 +166,7 @@ export async function redeemClaim(
   specialId: string,
   data: RedeemClaimRequest
 ): Promise<RedeemClaimResponse> {
-  const url = `${API_BASE_URL}/v5/specials/${specialId}/redeem`
+  const url = `${API_BASE_URL}/api/v5/specials/${specialId}/redeem`
   
   const response = await fetch(url, {
     method: 'POST',
@@ -167,7 +184,7 @@ export async function trackSpecialEvent(
   specialId: string,
   data: TrackEventRequest
 ): Promise<TrackEventResponse> {
-  const url = `${API_BASE_URL}/v5/specials/${specialId}/events`
+  const url = `${API_BASE_URL}/api/v5/specials/${specialId}/events`
   
   const response = await fetch(url, {
     method: 'POST',
@@ -182,7 +199,7 @@ export async function trackSpecialEvent(
  * Get available discount kinds
  */
 export async function getDiscountKinds(): Promise<DiscountKindsResponse> {
-  const url = `${API_BASE_URL}/v5/specials/discount-kinds`
+  const url = `${API_BASE_URL}/api/v5/specials/discount-kinds`
   
   const response = await fetch(url, {
     method: 'GET',
@@ -198,7 +215,7 @@ export async function getDiscountKinds(): Promise<DiscountKindsResponse> {
  * Get available media kinds
  */
 export async function getMediaKinds(): Promise<MediaKindsResponse> {
-  const url = `${API_BASE_URL}/v5/specials/media-kinds`
+  const url = `${API_BASE_URL}/api/v5/specials/media-kinds`
   
   const response = await fetch(url, {
     method: 'GET',
@@ -216,7 +233,7 @@ export async function getMediaKinds(): Promise<MediaKindsResponse> {
 export async function getSpecial(specialId: string): Promise<Special> {
   // For now, we'll get it through the restaurant specials endpoint
   // In the future, you might want to add a dedicated endpoint
-  const url = `${API_BASE_URL}/v5/specials/${specialId}`
+  const url = `${API_BASE_URL}/api/v5/specials/${specialId}`
   
   const response = await fetch(url, {
     method: 'GET',

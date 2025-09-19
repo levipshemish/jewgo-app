@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { postgresAuth, type AuthUser } from '@/lib/auth/postgres-auth';
+import { sessionManager } from '@/lib/auth/session-manager';
 
 // Global flag to prevent multiple auth checks across all instances
 // Note: These are currently unused but kept for future optimization
@@ -16,6 +17,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isAuthenticated: () => boolean;
+  sessionExpired: boolean;
+  timeUntilExpiration: number | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +26,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [timeUntilExpiration, setTimeUntilExpiration] = useState<number | null>(null);
   const hasRunRef = useRef(false);
   const checkAuthPromiseRef = useRef<Promise<void> | null>(null);
 
@@ -33,39 +38,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     hasRunRef.current = true;
 
-    const checkAuth = async () => {
-      // Prevent concurrent auth checks
-      if (checkAuthPromiseRef.current) {
-        return checkAuthPromiseRef.current;
-      }
-
-      checkAuthPromiseRef.current = (async () => {
-        try {
-          // Probe backend profile; 200 => authenticated, 401 => not
+    const initializeAuth = async () => {
+      try {
+        // Initialize session manager
+        await sessionManager.initialize();
+        
+        // Set up session state listener
+        const removeListener = sessionManager.addListener((isAuthenticated) => {
+          setSessionExpired(!isAuthenticated);
+          setTimeUntilExpiration(sessionManager.getTimeUntilExpiration());
+          
+          if (!isAuthenticated) {
+            setUser(null);
+          }
+        });
+        
+        // Initial auth check
+        const isActive = await sessionManager.checkSession();
+        if (isActive) {
           const currentUser = await postgresAuth.getProfile();
           setUser(currentUser);
-        } catch (error) {
-          // Handle rate limiting gracefully
-          if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
-            console.warn('Auth rate limit exceeded, treating as unauthenticated');
-          }
-          // Treat any failure as unauthenticated for client UX
-          setUser(null);
-        } finally {
-          setLoading(false);
         }
-      })();
-
-      return checkAuthPromiseRef.current;
+        
+        // Cleanup listener on unmount
+        return removeListener;
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        setUser(null);
+        setSessionExpired(true);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    checkAuth();
+    initializeAuth();
   }, []); // Empty dependency array - only run once on mount
 
   const login = async (email: string, password: string) => {
     try {
       const response = await postgresAuth.login({ email, password });
       setUser(response.user);
+      setSessionExpired(false);
+      // Session manager will automatically detect the new session
+      await sessionManager.checkSession();
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -89,23 +104,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await postgresAuth.logout();
       console.log('AuthContext: Backend logout completed, clearing user state');
       setUser(null);
+      setSessionExpired(false);
+      setTimeUntilExpiration(null);
       setLoading(false);
+      // Stop session manager
+      sessionManager.stop();
     } catch (error) {
       console.error('AuthContext: Logout error:', error);
       // Even if logout fails, clear the user state
       console.log('AuthContext: Clearing user state despite logout error');
       setUser(null);
+      setSessionExpired(false);
+      setTimeUntilExpiration(null);
       setLoading(false);
+      sessionManager.stop();
     }
   };
 
   const refreshUser = async () => {
     try {
+      // Use session manager for refresh to handle retries and session management
+      await sessionManager.refreshSession();
       const currentUser = await postgresAuth.getProfile();
       setUser(currentUser);
+      setSessionExpired(false);
     } catch (_error) {
       // Silently handle auth errors during refresh
       setUser(null);
+      setSessionExpired(true);
     }
   };
 
@@ -122,6 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     refreshUser,
     isAuthenticated,
+    sessionExpired,
+    timeUntilExpiration,
   };
 
   return (

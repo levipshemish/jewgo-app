@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { submitReview, setAuthCheckCallback } from "@/lib/api/review-api"
 import { useAuth } from "@/contexts/AuthContext"
+import { SessionStatus } from "@/components/auth/SessionStatus"
 
 interface Review {
   id: string
@@ -385,6 +386,8 @@ export function ReviewsPopup({
           {showReviewForm ? (
             /* Review Form */
             <div className="space-y-6">
+              {/* Session Status */}
+              <SessionStatus />
               {/* Rating Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-3">

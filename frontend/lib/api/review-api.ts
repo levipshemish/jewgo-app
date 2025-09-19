@@ -7,6 +7,7 @@
  */
 
 import { postgresAuth } from '@/lib/auth/postgres-auth';
+import { sessionManager } from '@/lib/auth/session-manager';
 
 // We'll use a callback to check authentication instead of direct postgresAuth
 let authCheckCallback: (() => boolean) | null = null;
@@ -203,59 +204,18 @@ async function apiRequest<T>(
  */
 export async function submitReview(reviewData: ReviewSubmissionData): Promise<ReviewResponse> {
   try {
-    console.log('🚀 Review submission v2.2 - trying apiRequest first, then direct fetch fallback');
+    console.log('🚀 Review submission v3.0 - using session manager for automatic retry and session management');
     
-    try {
-      // Try our custom apiRequest first
-      const response = await apiRequest<ReviewResponse>('/api/v5/reviews/', {
+    // Use session manager for automatic retry and session management
+    const response = await sessionManager.withSessionRetry(async () => {
+      return await apiRequest<ReviewResponse>('/api/v5/reviews/', {
         method: 'POST',
         body: JSON.stringify(reviewData),
       });
-      
-      console.log('✅ Review submission successful via apiRequest');
-      return response;
-    } catch (apiError) {
-      console.log('⚠️ apiRequest failed, trying postgresAuth.request() as fallback:', apiError);
-      
-      // Fallback: Use direct fetch with postgresAuth authentication handling
-      // postgresAuth.request() is designed for /api/v5/auth endpoints, not /api/v5/reviews
-      console.log('🔄 Using direct fetch fallback with postgresAuth authentication');
-      
-      // Get CSRF token
-      let csrfToken = null;
-      try {
-        if (!postgresAuth.csrfToken) {
-          await postgresAuth.getCsrf();
-        }
-        csrfToken = postgresAuth.csrfToken;
-      } catch (e) {
-        console.warn('⚠️ Failed to get CSRF token for fallback:', e);
-      }
-      
-      const fallbackUrl = `${API_BASE_URL}/api/v5/reviews/`;
-      const response = await fetch(fallbackUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
-          // Try adding Authorization header if available
-          ...(postgresAuth.accessToken && { 'Authorization': `Bearer ${postgresAuth.accessToken}` }),
-        },
-        credentials: 'include',
-        mode: 'cors',
-        body: JSON.stringify(reviewData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed to submit review: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('✅ Review submission successful via postgresAuth.request()');
-      return result;
-    }
+    });
+    
+    console.log('✅ Review submission successful via session manager');
+    return response;
   } catch (error) {
     console.error('Review submission error:', error);
     throw error;
