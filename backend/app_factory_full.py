@@ -169,6 +169,22 @@ def create_app(config_class=None):
                 'timestamp': datetime.utcnow().isoformat()
             }), 503
     
+    @app.route('/api/v5/specials', methods=['GET'])
+    def get_specials():
+        """Temporary specials endpoint until specials blueprint is fixed."""
+        try:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'message': 'Specials endpoint is temporarily disabled. Check back soon!'
+            }), 200
+        except Exception as e:
+            logger.error(f"Error in get_specials: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Internal server error'
+            }), 500
+
     @app.route('/readyz', methods=['GET'])
     def readyz():
         """Readiness check - verifies all critical services are ready."""

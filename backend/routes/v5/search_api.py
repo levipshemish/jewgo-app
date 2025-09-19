@@ -37,7 +37,7 @@ SEARCH_CONFIG = {
     'min_query_length': 2,
     'default_limit': 20,
     'max_limit': 100,
-    'supported_entities': ['restaurants', 'synagogues', 'mikvahs', 'stores'],
+    'supported_entities': ['restaurants', 'synagogues', 'mikvahs', 'stores', 'specials'],
     'search_weights': {
         'name': 1.0,
         'description': 0.8,
@@ -208,6 +208,23 @@ def unified_search():
             'error': 'Search service unavailable'
         }), 503
 
+
+@search_bp.route('/specials', methods=['GET'])
+def get_specials():
+    """Get specials - temporary endpoint until specials blueprint is fixed."""
+    try:
+        # Return empty specials list for now
+        return jsonify({
+            'success': True,
+            'data': [],
+            'message': 'Specials endpoint is temporarily disabled. Check back soon!'
+        }), 200
+    except Exception as e:
+        logger.error(f"Error in get_specials: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
 
 @search_bp.route('/<entity_type>', methods=['GET'])
 def search_by_type(entity_type: str):
