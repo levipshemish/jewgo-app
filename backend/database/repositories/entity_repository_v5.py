@@ -199,22 +199,65 @@ class EntityRepositoryV5(BaseRepository):
                 # else:
                 #     logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
                 
-                # Execute query to get all entities
+                # Execute query to get all entities, attempting distance projection when applicable
+                use_projection = False
                 try:
+                    if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                        lat = float(filters['latitude'])
+                        lng = float(filters['longitude'])
+                        distance_expr = func.earth_distance(
+                            func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                            func.ll_to_earth(lat, lng)
+                        ).label('distance_meters')
+                        query = query.add_columns(distance_expr)
+                        use_projection = True
                     all_entities = query.all()
                     logger.info(f"Distance pagination: Loaded {len(all_entities)} total entities for {entity_type}")
                 except Exception as e:
-                    logger.error(f"Query execution failed: {e}")
-                    return [], None, None
+                    logger.warning(f"Distance projection failed or query error: {e}")
+                    use_projection = False
+                    try:
+                        # Fallback: run without projection
+                        all_entities = session.query(model_class).all()
+                    except Exception as ee:
+                        logger.error(f"Query execution failed: {ee}")
+                        return [], None, None
                 
-                # Convert to dictionaries and add distance
+                # Convert to dictionaries and add distance (batch computed)
                 result_entities = []
+                distance_map = {}
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    try:
+                        if use_projection and all_entities and isinstance(all_entities[0], tuple):
+                            # Build distance map from projected column
+                            for row in all_entities:
+                                entity_obj, dist_meters = row[0], row[1]
+                                if entity_obj is None:
+                                    continue
+                                try:
+                                    entity_id = int(getattr(entity_obj, 'id'))
+                                    if dist_meters is not None:
+                                        distance_map[entity_id] = float(dist_meters) / 1609.344
+                                except Exception:
+                                    continue
+                            # Replace rows with just entities for downstream processing
+                            all_entities = [row[0] for row in all_entities]
+                        else:
+                            lat = float(filters['latitude'])
+                            lng = float(filters['longitude'])
+                            ids = [getattr(e, 'id', None) for e in all_entities]
+                            ids = [i for i in ids if i is not None]
+                            distance_map = self._bulk_distance_miles(session, model_class, ids, lat, lng)
+                    except Exception as e:
+                        logger.warning(f"Bulk distance/projection computation failed: {e}")
+
                 for entity in all_entities:
                     entity_dict = self._entity_to_dict(entity, include_relations)
                     
                     # Add computed distance field
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
-                        entity_dict['distance'] = self._calculate_distance(entity, filters)
+                        dist = distance_map.get(getattr(entity, 'id', None))
+                        entity_dict['distance'] = None if dist is None else round(dist, 2)
                         # Strict application-layer radius enforcement (fallback or double-check)
                         radius_km = None
                         if filters.get('_radius_km') is not None:
@@ -223,7 +266,7 @@ class EntityRepositoryV5(BaseRepository):
                             # radius from query is in km
                             radius_km = float(filters.get('radius'))
                         if radius_km is not None:
-                            distance_miles = entity_dict.get('distance', float('inf'))
+                            distance_miles = entity_dict.get('distance', float('inf')) or float('inf')
                             radius_miles = radius_km * 0.621371
                             if distance_miles > radius_miles:
                                 continue  # Drop out-of-radius entities
@@ -315,18 +358,57 @@ class EntityRepositoryV5(BaseRepository):
                 # Calculate offset for page-based pagination
                 offset = (page - 1) * limit
                 
-                # Execute query with page-based pagination
-                entities = query.offset(offset).limit(limit).all()
+                # Execute query with page-based pagination, attempt distance projection
+                use_projection = False
+                try:
+                    if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                        lat = float(filters['latitude'])
+                        lng = float(filters['longitude'])
+                        distance_expr = func.earth_distance(
+                            func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                            func.ll_to_earth(lat, lng)
+                        ).label('distance_meters')
+                        query = query.add_columns(distance_expr)
+                        use_projection = True
+                    entities = query.offset(offset).limit(limit).all()
+                except Exception as e:
+                    logger.warning(f"Distance projection failed (page-based): {e}")
+                    use_projection = False
+                    entities = query.offset(offset).limit(limit).with_entities(model_class).all()
                 
-                # Convert to dictionaries
+                # Convert to dictionaries (batch distance computation)
                 result_entities = []
+                distance_map = {}
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    try:
+                        if use_projection and entities and isinstance(entities[0], tuple):
+                            for row in entities:
+                                entity_obj, dist_meters = row[0], row[1]
+                                if entity_obj is None:
+                                    continue
+                                try:
+                                    entity_id = int(getattr(entity_obj, 'id'))
+                                    if dist_meters is not None:
+                                        distance_map[entity_id] = float(dist_meters) / 1609.344
+                                except Exception:
+                                    continue
+                            entities = [row[0] for row in entities]
+                        else:
+                            lat = float(filters['latitude'])
+                            lng = float(filters['longitude'])
+                            ids = [getattr(e, 'id', None) for e in entities]
+                            ids = [i for i in ids if i is not None]
+                            distance_map = self._bulk_distance_miles(session, model_class, ids, lat, lng)
+                    except Exception as e:
+                        logger.warning(f"Bulk distance/projection computation failed: {e}")
+
                 for entity in entities:
                     entity_dict = self._entity_to_dict(entity, include_relations)
                     
                     # Add computed fields
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
-                        distance = self._calculate_distance(entity, filters)
-                        entity_dict['distance'] = distance
+                        dist = distance_map.get(getattr(entity, 'id', None))
+                        entity_dict['distance'] = None if dist is None else round(dist, 2)
                         # Strict application-layer radius enforcement (fallback or double-check)
                         radius_km = None
                         if filters.get('_radius_km') is not None:
@@ -334,7 +416,7 @@ class EntityRepositoryV5(BaseRepository):
                         elif filters.get('radius') is not None:
                             radius_km = float(filters.get('radius'))
                         if radius_km is not None:
-                            distance_miles = distance or float('inf')
+                            distance_miles = entity_dict.get('distance', float('inf')) or float('inf')
                             radius_miles = radius_km * 0.621371
                             if distance_miles > radius_miles:
                                 continue  # Drop out-of-radius entities
@@ -445,14 +527,29 @@ class EntityRepositoryV5(BaseRepository):
                 # Apply sorting
                 query = self._apply_sorting(query, model_class, sort_key, filters)
                 
-                # Execute query
+                # Execute query with optional distance projection
+                use_projection = False
                 try:
+                    if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                        lat = float(filters['latitude'])
+                        lng = float(filters['longitude'])
+                        distance_expr = func.earth_distance(
+                            func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                            func.ll_to_earth(lat, lng)
+                        ).label('distance_meters')
+                        query = query.add_columns(distance_expr)
+                        use_projection = True
                     entities = query.limit(limit + 1).all()  # Get one extra to check for next page
                     logger.info(f"Query executed successfully: {len(entities)} entities returned for limit={limit}")
-                    logger.info(f"DEBUG PAGINATION: entities count={len(entities)}, limit={limit}, limit+1={limit+1}")
+                    logger.info(f"DEBUG PAGINATION: entities count={len(entities)} , limit={limit}, limit+1={limit+1}")
                 except Exception as e:
-                    logger.error(f"Query execution failed: {e}")
-                    entities = []
+                    logger.warning(f"Distance projection failed (cursor-based) or query error: {e}")
+                    use_projection = False
+                    try:
+                        entities = query.with_entities(model_class).limit(limit + 1).all()
+                    except Exception as ee:
+                        logger.error(f"Query execution failed: {ee}")
+                        entities = []
                 
                 # Process results - fetch one extra to check if there are more
                 has_next = len(entities) > limit
@@ -461,6 +558,32 @@ class EntityRepositoryV5(BaseRepository):
                     entities = entities[:limit]  # Keep only the requested limit
                     logger.info(f"DEBUG PAGINATION: Trimmed entities to {len(entities)} for response")
                 
+                # Prepare distance map (projection-first, fallback to batch)
+                distance_map = {}
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    try:
+                        if use_projection and entities and isinstance(entities[0], tuple):
+                            for row in entities:
+                                entity_obj, dist_meters = row[0], row[1]
+                                if entity_obj is None:
+                                    continue
+                                try:
+                                    entity_id = int(getattr(entity_obj, 'id'))
+                                    if dist_meters is not None:
+                                        distance_map[entity_id] = float(dist_meters) / 1609.344
+                                except Exception:
+                                    continue
+                            # Drop distance column for downstream entity mapping
+                            entities = [row[0] for row in entities]
+                        else:
+                            lat = float(filters['latitude'])
+                            lng = float(filters['longitude'])
+                            ids = [getattr(e, 'id', None) for e in entities]
+                            ids = [i for i in ids if i is not None]
+                            distance_map = self._bulk_distance_miles(session, model_class, ids, lat, lng)
+                    except Exception as e:
+                        logger.warning(f"Bulk distance/projection computation failed: {e}")
+
                 # Convert to dictionaries
                 result_entities = []
                 for entity in entities:
@@ -468,18 +591,18 @@ class EntityRepositoryV5(BaseRepository):
                     
                     # Add computed fields
                     if mapping.get('geospatial') and filters and filters.get('latitude'):
-                        distance = self._calculate_distance(entity, filters)
-                        entity_dict['distance'] = distance
+                        dist = distance_map.get(getattr(entity, 'id', None))
+                        entity_dict['distance'] = None if dist is None else round(dist, 2)
                         
                         # Apply radius filter in application layer if PostGIS failed
                         if filters.get('_radius_km'):
-                            distance_miles = distance or float('inf')
+                            distance_miles_val = entity_dict['distance'] or float('inf')
                             radius_miles = filters['_radius_km'] * 0.621371  # Convert km to miles
-                            if distance_miles > radius_miles:
+                            if distance_miles_val > radius_miles:
                                 continue  # Skip this entity as it's outside the radius
                         
-                        if distance is not None:
-                            logger.debug(f"Added distance {distance:.2f} miles for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
+                        if entity_dict['distance'] is not None:
+                            logger.debug(f"Added distance {entity_dict['distance']:.2f} miles for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
                         else:
                             logger.debug(f"No distance calculated for entity {entity_dict.get('id', 'unknown')} ({entity_dict.get('name', 'unknown')})")
                     
@@ -1060,6 +1183,41 @@ class EntityRepositoryV5(BaseRepository):
         except (ValueError, TypeError) as e:
             logger.warning(f"Invalid geospatial parameters: {e}")
             return query
+
+    def _bulk_distance_miles(self, session, model_class, ids, lat: float, lng: float) -> Dict[int, float]:
+        """Compute distances for a batch of entity IDs in miles using earthdistance.
+
+        Returns a mapping of id -> distance (miles). Missing coordinates or failures return no entry.
+        """
+        try:
+            if not ids:
+                return {}
+            q = (
+                session.query(
+                    getattr(model_class, 'id').label('id'),
+                    func.earth_distance(
+                        func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                        func.ll_to_earth(lat, lng),
+                    ).label('meters'),
+                )
+                .filter(
+                    getattr(model_class, 'id').in_(ids),
+                    getattr(model_class, 'latitude').isnot(None),
+                    getattr(model_class, 'longitude').isnot(None),
+                )
+            )
+            rows = q.all()
+            result: Dict[int, float] = {}
+            for row in rows:
+                try:
+                    meters = float(row.meters)
+                    result[int(row.id)] = meters / 1609.344
+                except Exception:
+                    continue
+            return result
+        except Exception as e:
+            logger.warning(f"Bulk distance query failed: {e}")
+            return {}
     
     def _apply_cursor_pagination(self, query, model_class, cursor: Optional[str], sort_key: str, limit: int):
         """Apply cursor-based pagination to query."""
@@ -1188,7 +1346,11 @@ class EntityRepositoryV5(BaseRepository):
             return None
     
     def _calculate_distance(self, entity, filters: Dict[str, Any]) -> Optional[float]:
-        """Calculate distance from user location to entity."""
+        """Calculate distance from user location to entity.
+
+        Note: Prefer batch computation via _bulk_distance_miles when possible.
+        This method remains for compatibility or single-entity cases.
+        """
         try:
             user_lat = float(filters.get('latitude', 0))
             user_lng = float(filters.get('longitude', 0))
@@ -1246,7 +1408,16 @@ class EntityRepositoryV5(BaseRepository):
             # Calculate via DB for accuracy and consistency
             try:
                 from utils.distance import distance_miles as _distance_miles
-                dist_miles = _distance_miles(user_lat, user_lng, entity_lat, entity_lng)
+                # Allow reuse of the current session if available on the repository
+                # Fall back to utils internal session management otherwise
+                session = None
+                try:
+                    # Attempt to detect current session from SQLAlchemy object
+                    from sqlalchemy.orm import object_session
+                    session = object_session(entity)
+                except Exception:
+                    session = None
+                dist_miles = _distance_miles(user_lat, user_lng, entity_lat, entity_lng, session=session)
                 logger.debug(f"Calculated distance (DB): {dist_miles:.2f} miles")
             except Exception as e:
                 logger.warning(f"Distance calculation failed: {e}")

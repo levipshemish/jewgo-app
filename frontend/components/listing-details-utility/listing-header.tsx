@@ -225,17 +225,17 @@ const SpringButton = memo(({
       onMouseDown={() => setIsDragging(true)}
       onMouseUp={() => setIsDragging(false)}
       className={`
-        group relative
-        focus:outline-none focus:ring-2 focus:ring-black/50
+        group relative inline-flex items-center justify-center
+        focus:outline-none focus:ring-2 focus:ring-blue-500
         transition-all duration-200 overflow-hidden
+        rounded-full bg-white hover:bg-gray-50
         ${isActive 
-          ? `bg-gradient-to-br from-rose-100 to-rose-50` 
-          : 'bg-[#ffffff]'
+          ? `bg-pink-50` 
+          : 'bg-white'
         }
         ${className}
       `}
       style={{
-        border: 'none',
         transform: `translate(${springX}px, ${springY}px) scale(${springScale})`,
       }}
       aria-label={ariaLabel}
@@ -250,7 +250,7 @@ const SpringButton = memo(({
       {particles.map(particle => (
         <div
           key={particle.id}
-          className="absolute pointer-events-none rounded-full bg-blue-400"
+          className="absolute pointer-events-none rounded-full bg-pink-200"
           style={{
             left: particle.x,
             top: particle.y,
@@ -298,15 +298,15 @@ const ReportModal = memo(({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm">
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-sm w-full max-h-[80vh] overflow-hidden"
+        className="bg-surface border border-border rounded-2xl shadow-elevation max-w-sm w-full max-h-[80vh] overflow-hidden"
         style={{ animation: 'modalSlideIn 0.3s ease-out' }}
       >
         {/* Header */}
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">Report Content</h2>
-          <p className="text-sm text-gray-600">Help us understand what&apos;s wrong with this content</p>
+        <div className="p-6 border-b border-border">
+          <h2 className="text-xl font-semibold text-text mb-1">Report Content</h2>
+          <p className="text-sm text-muted">Help us understand what&apos;s wrong with this content</p>
         </div>
 
         {/* Content */}
@@ -314,7 +314,7 @@ const ReportModal = memo(({
           {reportReasons.map((reason) => (
             <label 
               key={reason}
-              className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+              className="flex items-start gap-3 p-3 rounded-xl hover:bg-surfaceVariant cursor-pointer transition-colors duration-200"
             >
               <input
                 type="radio"
@@ -322,25 +322,25 @@ const ReportModal = memo(({
                 value={reason}
                 checked={selectedReason === reason}
                 onChange={(e) => onReasonSelect(e.target.value)}
-                className="mt-0.5 w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                className="mt-0.5 w-4 h-4 text-accent focus:ring-accent focus:ring-2"
               />
-              <span className="text-sm text-gray-800 leading-relaxed">{reason}</span>
+              <span className="text-sm text-text leading-relaxed">{reason}</span>
             </label>
           ))}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-100 flex gap-3">
+        <div className="p-6 border-t border-border flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors duration-200"
+            className="flex-1 px-4 py-3 text-sm font-medium text-text bg-surfaceVariant border border-border hover:bg-surface rounded-xl transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             onClick={onSubmit}
             disabled={!selectedReason || isSubmitting}
-            className="flex-1 px-4 py-3 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl transition-colors duration-200"
+            className="flex-1 px-4 py-3 text-sm font-medium text-white bg-danger hover:brightness-95 disabled:bg-muted disabled:cursor-not-allowed rounded-xl transition-colors duration-200"
           >
             {isSubmitting ? 'Reporting...' : 'Report'}
           </button>
@@ -360,9 +360,9 @@ const ToastContainer = memo(({ toasts }: { toasts: Array<{ id: string; text: str
       {visibleToasts.map((toast, index) => (
         <div
           key={toast.id}
-          className="pointer-events-auto bg-white/95 backdrop-blur-sm
-                     border border-black/10 rounded-full px-4 py-2 shadow-lg
-                     text-sm font-medium text-gray-800"
+          className="pointer-events-auto bg-accent/10 backdrop-blur-sm
+                     border border-accent/20 rounded-full px-4 py-2 shadow-elevation
+                     text-sm font-medium text-text"
           style={{
             animation: `slideInFromTop 0.3s ease-out ${index * 0.1}s both`,
             transform: `translateY(${index * 4}px)`,
@@ -688,48 +688,18 @@ export function ListingHeader({
   return (
     <div className="px-3 relative">
       <div
-        className="flex items-center gap-0.5 sm:gap-1 py-2 px-2 rounded-full w-full overflow-hidden relative"
-        style={{
-          width: '100%',
-          maxWidth: '100%',
-          // True glassmorphism with backdrop-filter
-          backgroundColor: 'rgba(255, 255, 255, 0.25)',
-          backdropFilter: 'blur(16px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          isolation: 'isolate',
-          boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
-          position: 'relative',
-        }}
+        className="relative bg-white/80 backdrop-blur-md rounded-full px-4 py-3 flex items-center justify-between w-full shadow-lg"
       >
-        {/* Dark background layer behind the glass for backdrop-filter */}
-        <div
-          className="absolute inset-0 rounded-full pointer-events-none"
-          style={{
-            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.08) 100%)',
-            zIndex: -1,
-          }}
-        />
-        {/* Glass highlight overlay for depth */}
-        <div
-          className="absolute inset-0 rounded-full pointer-events-none"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)',
-            borderRadius: 'inherit',
-          }}
-        />
-        
-        {/* Button content - positioned above glass layers */}
-        <div className="relative z-10 flex items-center w-full px-1">
-          {/* Mobile: Single flow with even spacing */}
-          <div className="flex items-center justify-between w-full sm:hidden">
+        {/* Mobile: Single flow with even spacing */}
+        <div className="flex items-center justify-between w-full sm:hidden">
             {/* Back */}
             {onBack && (
               <SpringButton
                 onClick={onBack}
                 aria-label="Go back"
-                className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+                className="p-2 flex-shrink-0"
               >
-                <ArrowLeft className="h-4 w-4 text-gray-600 transition-all duration-200 group-hover:-translate-x-1" />
+                <ArrowLeft className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-all duration-200" />
               </SpringButton>
             )}
 
@@ -737,9 +707,9 @@ export function ListingHeader({
             <SpringButton
               onClick={handleReport}
               aria-label="Report content"
-              className="h-10 w-10 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+              className="p-2 flex-shrink-0"
             >
-              <Flag className="h-4 w-4 text-gray-600 transition-all duration-200 group-hover:-translate-y-1" />
+              <Flag className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-all duration-200" />
             </SpringButton>
 
             {/* View count */}
@@ -747,10 +717,10 @@ export function ListingHeader({
               <SpringButton
                 onClick={handleViewsClick}
                 aria-label={`${formatCount(animatedViews)} views`}
-                className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
+                className="p-2 flex items-center gap-2 flex-shrink-0"
               >
-                <Eye className="h-4 w-4 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
-                <span className="text-xs font-bold tabular-nums text-gray-600 whitespace-nowrap">
+                <Eye className="h-4 w-4 text-blue-500 transition-all duration-200 flex-shrink-0" />
+                <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                   {formatCount(animatedViews)}
                 </span>
               </SpringButton>
@@ -761,10 +731,10 @@ export function ListingHeader({
               <SpringButton
                 onClick={handleShare}
                 aria-label={`Share (${formatCount(animatedShares)} shares)`}
-                className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
+                className="p-2 flex items-center gap-2 flex-shrink-0"
               >
-                <Share className="h-4 w-4 text-gray-600 transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
-                <span className="text-xs font-bold tabular-nums text-gray-600 whitespace-nowrap">
+                <Share className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-all duration-200 flex-shrink-0" />
+                <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                   {formatCount(animatedShares)}
                 </span>
               </SpringButton>
@@ -776,14 +746,14 @@ export function ListingHeader({
                 onClick={handleFavorite}
                 isActive={internalIsFavorited}
                 aria-label={`${internalIsFavorited ? 'Unlike' : 'Like'} (${formatCount(animatedFavorites)} likes)`}
-                className="h-10 px-3 rounded-full flex items-center gap-1 min-w-0 flex-shrink-0"
+                className="p-2 flex items-center gap-2 flex-shrink-0"
               >
                 <div className="relative flex-shrink-0">
                   <Heart
-                    className={`h-4 w-4 transition-all duration-300 group-hover:scale-125
+                    className={`h-4 w-4 transition-all duration-200
                                ${internalIsFavorited 
-                                 ? 'text-rose-600 fill-rose-500 animate-pulse' 
-                                 : 'text-gray-600 group-hover:text-rose-500'
+                                 ? 'text-pink-500 fill-pink-500' 
+                                 : 'text-gray-500 group-hover:text-pink-500'
                                }`} 
                   />
                   
@@ -797,21 +767,21 @@ export function ListingHeader({
                       }}
                     >
                       <Heart 
-                        className="text-rose-400 fill-rose-400" 
+                        className="text-pink-400 fill-pink-400" 
                         style={{ width: particle.size, height: particle.size }} 
                       />
                     </div>
                   ))}
                 </div>
-                <span className="text-xs font-bold tabular-nums text-gray-600 whitespace-nowrap">
+                <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                   {formatCount(animatedFavorites)}
                 </span>
               </SpringButton>
             )}
-          </div>
+        </div>
 
-          {/* Desktop: Three groups with proper spacing */}
-          <div className="hidden sm:flex items-center justify-between w-full">
+        {/* Desktop: Three groups with proper spacing */}
+        <div className="hidden sm:flex items-center justify-between w-full">
             {/* Left group - Back and Flag */}
             <div className="flex items-center gap-1">
               {/* Back */}
@@ -819,9 +789,9 @@ export function ListingHeader({
                 <SpringButton
                   onClick={onBack}
                   aria-label="Go back"
-                  className="h-12 w-12 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+                  className="p-2 flex-shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6 text-gray-600 transition-all duration-200 group-hover:-translate-x-1" />
+                  <ArrowLeft className="h-6 w-6 text-gray-500 group-hover:text-gray-700 transition-all duration-200" />
                 </SpringButton>
               )}
 
@@ -829,9 +799,9 @@ export function ListingHeader({
               <SpringButton
                 onClick={handleReport}
                 aria-label="Report content"
-                className="h-12 w-12 p-0 flex-shrink-0 rounded-full flex items-center justify-center"
+                className="p-2 flex-shrink-0"
               >
-                <Flag className="h-5 w-5 text-gray-600 transition-all duration-200 group-hover:-translate-y-1" />
+                <Flag className="h-5 w-5 text-gray-500 group-hover:text-gray-700 transition-all duration-200" />
               </SpringButton>
             </div>
 
@@ -841,10 +811,10 @@ export function ListingHeader({
                 <SpringButton
                   onClick={handleViewsClick}
                   aria-label={`${formatCount(animatedViews)} views`}
-                  className="h-12 px-5 rounded-full flex items-center gap-2 min-w-0 flex-shrink-0"
+                  className="p-2 flex items-center gap-2 flex-shrink-0"
                 >
-                  <Eye className="h-5 w-5 text-blue-500 transition-all duration-200 group-hover:scale-125 flex-shrink-0" />
-                  <span className="text-sm font-bold tabular-nums text-gray-600 whitespace-nowrap">
+                  <Eye className="h-5 w-5 text-blue-500 transition-all duration-200 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-500 whitespace-nowrap">
                     {formatCount(animatedViews)}
                   </span>
                 </SpringButton>
@@ -858,10 +828,10 @@ export function ListingHeader({
                 <SpringButton
                   onClick={handleShare}
                   aria-label={`Share (${formatCount(animatedShares)} shares)`}
-                  className="h-12 px-4 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
+                  className="p-2 flex items-center gap-2 flex-shrink-0"
                 >
-                  <Share className="h-5 w-5 text-gray-600 transition-all duration-200 group-hover:scale-125 group-hover:rotate-12 flex-shrink-0" />
-                  <span className="text-sm font-bold tabular-nums text-gray-600 whitespace-nowrap">
+                  <Share className="h-5 w-5 text-gray-500 group-hover:text-gray-700 transition-all duration-200 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-500 whitespace-nowrap">
                     {formatCount(animatedShares)}
                   </span>
                 </SpringButton>
@@ -873,14 +843,14 @@ export function ListingHeader({
                   onClick={handleFavorite}
                   isActive={internalIsFavorited}
                   aria-label={`${internalIsFavorited ? 'Unlike' : 'Like'} (${formatCount(animatedFavorites)} likes)`}
-                  className="h-12 px-4 rounded-full flex items-center gap-1.5 min-w-0 flex-shrink-0"
+                  className="p-2 flex items-center gap-2 flex-shrink-0"
                 >
                   <div className="relative flex-shrink-0">
                     <Heart
-                      className={`h-5 w-5 transition-all duration-300 group-hover:scale-125
+                      className={`h-5 w-5 transition-all duration-200
                                  ${internalIsFavorited 
-                                   ? 'text-rose-600 fill-rose-500 animate-pulse' 
-                                   : 'text-gray-600 group-hover:text-rose-500'
+                                   ? 'text-pink-500 fill-pink-500' 
+                                   : 'text-gray-500 group-hover:text-pink-500'
                                  }`} 
                     />
                     
@@ -894,19 +864,18 @@ export function ListingHeader({
                         }}
                       >
                         <Heart 
-                          className="text-rose-400 fill-rose-400" 
+                          className="text-pink-400 fill-pink-400" 
                           style={{ width: particle.size, height: particle.size }} 
                         />
                       </div>
                     ))}
                   </div>
-                  <span className="text-sm font-bold tabular-nums text-gray-600 whitespace-nowrap">
+                  <span className="text-sm font-medium text-gray-500 whitespace-nowrap">
                     {formatCount(animatedFavorites)}
                   </span>
                 </SpringButton>
               )}
             </div>
-          </div>
         </div>
       </div>
       
@@ -923,8 +892,54 @@ export function ListingHeader({
         isSubmitting={isSubmittingReport}
       />
       
-      {/* CSS Animations */}
+      {/* CSS Variables and Animations */}
       <style jsx>{`
+        :global(:root) {
+          --text: #0F172A;
+          --muted: #64748B;
+          --border: #E5E7EB;
+          --surface: #FFFFFF;
+          --surface-variant: #F8FAFC;
+          --overlay: rgba(0,0,0,0.5);
+          --accent: #2563EB;
+          --accent-weak: #3B82F6;
+          --like: #E11D48;
+          --danger: #DC2626;
+          --success: #059669;
+        }
+        
+        :global(.dark) {
+          --text: #E5E7EB;
+          --muted: #94A3B8;
+          --border: #1F2937;
+          --surface: #0B1220;
+          --surface-variant: #0F172A;
+          --overlay: rgba(0,0,0,0.6);
+        }
+        
+        .text-text { color: var(--text); }
+        .text-muted { color: var(--muted); }
+        .text-accent { color: var(--accent); }
+        .text-like { color: var(--like); }
+        .text-danger { color: var(--danger); }
+        
+        .bg-surface { background-color: var(--surface); }
+        .bg-surfaceVariant { background-color: var(--surface-variant); }
+        .bg-overlay { background-color: var(--overlay); }
+        .bg-accent { background-color: var(--accent); }
+        .bg-like { background-color: var(--like); }
+        .bg-danger { background-color: var(--danger); }
+        
+        .border-border { border-color: var(--border); }
+        .border-accent { border-color: var(--accent); }
+        .border-like { border-color: var(--like); }
+        
+        .ring-accent { --tw-ring-color: var(--accent); }
+        
+        .fill-like { fill: var(--like); }
+        
+        .shadow-elevation { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        
         @keyframes heartBounce {
           0% {
             opacity: 1;
