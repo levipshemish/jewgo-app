@@ -64,9 +64,21 @@ class BlueprintFactoryV5:
         },
         'monitoring_api': {
             'rate_limit_tier': 'admin',
-            'auth_required': True,
-            'min_role_level': 10,  # Admin level minimum
-            'special_access': True,
+            'auth_required': False,  # Monitoring endpoints should be public
+            'min_role_level': 0,  # No role requirement
+            'special_access': False,  # No special access required
+        },
+        'metrics_v5': {
+            'rate_limit_tier': 'admin',
+            'auth_required': False,  # Metrics endpoints should be public for monitoring
+            'min_role_level': 0,  # No role requirement
+            'special_access': False,  # No special access required
+        },
+        'webhook_api': {
+            'rate_limit_tier': 'admin',
+            'auth_required': False,  # Webhooks use signature verification instead
+            'min_role_level': 0,  # No role requirement
+            'special_access': False,  # No special access required
         },
     }
     

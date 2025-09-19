@@ -11,15 +11,25 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from sqlalchemy import and_, func, or_, text, desc, asc
+from sqlalchemy import and_, func, or_, text, desc, asc, cast
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.types import UserDefinedType
 
 from database.base_repository import BaseRepository
-from database.connection_manager import DatabaseConnectionManager
+from database.unified_connection_manager import UnifiedConnectionManager
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+
+class Geography(UserDefinedType):
+    """Minimal PostGIS geography type for SQLAlchemy casts."""
+
+    cache_ok = True
+
+    def get_col_spec(self, **_):
+        return "geography"
 
 
 class EntityRepositoryV5(BaseRepository):
@@ -99,7 +109,7 @@ class EntityRepositoryV5(BaseRepository):
         'rating_desc': {'field': 'rating', 'direction': 'DESC', 'secondary': 'id'}
     }
     
-    def __init__(self, connection_manager: DatabaseConnectionManager):
+    def __init__(self, connection_manager: UnifiedConnectionManager):
         """Initialize the enhanced entity repository."""
         # We don't call super().__init__ because we handle models dynamically
         self.connection_manager = connection_manager
@@ -272,6 +282,7 @@ class EntityRepositoryV5(BaseRepository):
                                 for entity_dict in result_entities:
                                     dist = distance_map.get(entity_dict.get('id'))
                                     if dist is not None:
+                                        entity_dict['distance_raw'] = dist
                                         entity_dict['distance'] = round(dist, 2)
                                     else:
                                         entity_dict.setdefault('distance', None)
@@ -409,6 +420,7 @@ class EntityRepositoryV5(BaseRepository):
                                 for entity_dict in result_entities:
                                     dist = distance_map.get(entity_dict.get('id'))
                                     if dist is not None:
+                                        entity_dict['distance_raw'] = dist
                                         entity_dict['distance'] = round(dist, 2)
                                     else:
                                         entity_dict.setdefault('distance', None)
@@ -885,8 +897,17 @@ class EntityRepositoryV5(BaseRepository):
                     try:
                         query = query.filter(
                             func.ST_DWithin(
-                                func.ST_SetSRID(func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')), 4326).cast(text('geography')),
-                                func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326).cast(text('geography')),
+                                cast(
+                                    func.ST_SetSRID(
+                                        func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')),
+                                        4326,
+                                    ),
+                                    Geography(),
+                                ),
+                                cast(
+                                    func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
+                                    Geography(),
+                                ),
                                 radius_km * 1000
                             )
                         )
@@ -946,6 +967,47 @@ class EntityRepositoryV5(BaseRepository):
             logger.error(f"Error applying geospatial filter: {e}")
             return query
 
+    def _bulk_distance_miles(self, session, model_class, ids: List[int], lat: float, lng: float) -> Dict[int, float]:
+        """Compute distances for a batch of entity IDs using database functions."""
+        if not ids:
+            return {}
+
+        try:
+            lat_val = float(lat)
+            lng_val = float(lng)
+        except (TypeError, ValueError):
+            return {}
+
+        try:
+            distance_expr = self._build_distance_expression(model_class, lat_val, lng_val)
+        except Exception as distance_error:
+            logger.warning(f"Failed to construct distance expression for bulk calculation: {distance_error}")
+            distance_expr = None
+
+        if distance_expr is None:
+            return {}
+
+        try:
+            query = (
+                session.query(
+                    model_class.id,
+                    distance_expr.label('distance_meters')
+                )
+                .filter(model_class.id.in_(ids))
+            )
+            results = {}
+            for entity_id, distance_meters in query.all():
+                if distance_meters is None:
+                    continue
+                try:
+                    results[int(entity_id)] = float(distance_meters) / 1609.344
+                except (TypeError, ValueError):
+                    continue
+            return results
+        except Exception as query_error:
+            logger.warning(f"Bulk distance query failed: {query_error}")
+            return {}
+
     def _apply_cursor_pagination(
         self,
         query,
@@ -980,7 +1042,7 @@ class EntityRepositoryV5(BaseRepository):
                         primary_field = distance_expr
                         direction = 'ASC'
                         try:
-                            primary_value = float(primary_value)
+                            primary_value = float(primary_value) * 1609.344
                         except (TypeError, ValueError):
                             logger.warning("Invalid distance value in cursor; falling back to created_at")
                             primary_field = getattr(model_class, strategy['field'])
@@ -1051,18 +1113,23 @@ class EntityRepositoryV5(BaseRepository):
             return None
 
         from sqlalchemy import func
-
-        # Attempt PostGIS distance regardless of cached availability; fallback to earthdistance on failure
-        try:
-            self._check_postgis_availability()
-            entity_point = func.ST_SetSRID(
-                func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')),
-                4326,
-            ).cast(text('geography'))
-            user_point = func.ST_SetSRID(func.ST_MakePoint(lng_val, lat_val), 4326).cast(text('geography'))
-            return func.ST_Distance(entity_point, user_point)
-        except Exception as postgis_error:
-            logger.warning(f"PostGIS distance expression failed: {postgis_error}")
+        postgis_available = self._check_postgis_availability()
+        if postgis_available:
+            try:
+                entity_point = cast(
+                    func.ST_SetSRID(
+                        func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')),
+                        4326,
+                    ),
+                    Geography(),
+                )
+                user_point = cast(
+                    func.ST_SetSRID(func.ST_MakePoint(lng_val, lat_val), 4326),
+                    Geography(),
+                )
+                return func.ST_Distance(entity_point, user_point)
+            except Exception as postgis_error:
+                logger.warning(f"PostGIS distance expression failed: {postgis_error}")
 
         try:
             return func.earth_distance(
@@ -1652,7 +1719,7 @@ class EntityRepositoryV5(BaseRepository):
 
 
 # Convenience functions for common operations
-def get_entity_repository_v5(connection_manager: Optional[DatabaseConnectionManager] = None) -> EntityRepositoryV5:
+def get_entity_repository_v5(connection_manager: Optional[UnifiedConnectionManager] = None) -> EntityRepositoryV5:
     """Get entity repository v5 instance."""
     if not connection_manager:
         from database.connection_manager import get_connection_manager

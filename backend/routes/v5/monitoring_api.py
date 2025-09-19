@@ -17,6 +17,7 @@ from utils.logging_config import get_logger
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from database.database_manager_v5 import get_database_manager_v5
 from utils.feature_flags_v5 import FeatureFlagsV5
+from services.database_pool_monitor import db_pool_monitor
 
 logger = get_logger(__name__)
 
@@ -27,7 +28,7 @@ monitoring_v5 = BlueprintFactoryV5.create_blueprint(
     url_prefix='/api/v5/monitoring',
     config_override={
         'enable_cors': False,  # Disabled - Nginx handles CORS
-        'auth_required': True,
+        'auth_required': False,  # Monitoring endpoints should be public
         'enable_rate_limiting': True,
         'enable_idempotency': False,  # Monitoring data is real-time
         'enable_observability': True,
@@ -636,6 +637,93 @@ def get_container_details(container_name: str) -> Dict[str, Any]:
             'memory_usage': 'unknown',
             'cpu_usage': 'unknown'
         }
+
+
+@monitoring_v5.route('/database/pool', methods=['GET'])
+def get_database_pool_status():
+    """Get database connection pool status and health."""
+    try:
+        health_status = db_pool_monitor.get_health_status()
+        
+        return jsonify({
+            'success': True,
+            'data': health_status,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to get database pool status", error=str(e))
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get database pool status'
+        }), 500
+
+
+@monitoring_v5.route('/database/pool/stats', methods=['GET'])
+def get_database_pool_stats():
+    """Get detailed database connection pool statistics."""
+    try:
+        stats = db_pool_monitor.get_pool_stats()
+        
+        return jsonify({
+            'success': True,
+            'data': stats,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to get database pool stats", error=str(e))
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get database pool stats'
+        }), 500
+
+
+@monitoring_v5.route('/database/pool/history', methods=['GET'])
+def get_database_pool_history():
+    """Get historical database pool statistics."""
+    try:
+        hours = int(request.args.get('hours', 1))
+        hours = min(max(hours, 1), 24)  # Limit between 1 and 24 hours
+        
+        historical_data = db_pool_monitor.get_historical_stats(hours=hours)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'historical_stats': historical_data,
+                'time_range_hours': hours,
+                'data_points': len(historical_data)
+            },
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to get database pool history", error=str(e))
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get database pool history'
+        }), 500
+
+
+@monitoring_v5.route('/database/pool/performance', methods=['GET'])
+def get_database_pool_performance():
+    """Get database pool performance metrics."""
+    try:
+        performance_metrics = db_pool_monitor.get_performance_metrics()
+        
+        return jsonify({
+            'success': True,
+            'data': performance_metrics,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to get database pool performance", error=str(e))
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get database pool performance'
+        }), 500
 
 
 # Error handlers

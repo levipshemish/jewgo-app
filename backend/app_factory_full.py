@@ -171,6 +171,11 @@ def create_app(config_class=None):
             'version': '1.0.0'
         }), 200
     
+    # Add a simple test endpoint
+    @app.route('/test', methods=['GET'])
+    def test():
+        return jsonify({'status': 'ok', 'message': 'Backend is running'})
+    
     logger.info("Simple health check routes registered successfully")
     
     # Load configuration
@@ -441,6 +446,9 @@ def create_app(config_class=None):
     app.config["dependencies"] = deps
     app.config["socketio"] = socketio
     
+    # Make unified connection manager available globally
+    app.config["unified_connection_manager"] = None  # Will be set later
+    
     # Monitoring blueprint registration is handled later after service init
     
     # Register PostgreSQL authentication system
@@ -504,12 +512,21 @@ def create_app(config_class=None):
         from utils.feature_flags_v5 import FeatureFlagsV5
         from cache.redis_manager_v5 import get_redis_manager_v5
         from database.connection_manager import get_connection_manager
+        from database.unified_connection_manager import UnifiedConnectionManager
         
         # Initialize v5 services in dependency order
         try:
-            # 1. Initialize connection manager first (no dependencies)
+            # 1. Initialize unified connection manager first (no dependencies)
+            unified_connection_manager = UnifiedConnectionManager()
+            unified_connection_manager.connect()
+            logger.info("Unified database connection manager initialized")
+            
+            # Make unified connection manager available globally
+            app.config["unified_connection_manager"] = unified_connection_manager
+            
+            # 2. Initialize legacy connection manager for backward compatibility
             connection_manager_v5 = get_connection_manager()
-            logger.info("Database connection manager initialized")
+            logger.info("Legacy database connection manager initialized")
 
             # 2. Initialize Redis manager with proper error handling
             try:
@@ -530,6 +547,18 @@ def create_app(config_class=None):
                 raise RuntimeError("Feature flags not available")
 
             logger.info("All v5 services initialized successfully (Redis disabled)")
+            
+            # 5. Initialize database pool monitoring
+            try:
+                from services.database_pool_monitor import db_pool_monitor
+                if db_pool_monitor.initialize():
+                    db_pool_monitor.start_monitoring()
+                    logger.info("Database pool monitoring started successfully")
+                else:
+                    logger.warning("Database pool monitoring failed to initialize")
+            except Exception as e:
+                logger.warning(f"Failed to initialize database pool monitoring: {e}")
+                
         except Exception as e:
             logger.error(f"Failed to initialize v5 services: {e}")
             raise RuntimeError(f"Critical service initialization failed: {e}") from e
@@ -761,6 +790,16 @@ def create_app(config_class=None):
             logger.warning(f"Could not import v5 metrics API blueprint: {e}")
         except Exception as e:
             logger.warning(f"Could not register v5 metrics API blueprint: {e}")
+        
+        # Register v5 webhook API
+        try:
+            from routes.v5.webhook_api import webhook_api
+            app.register_blueprint(webhook_api)
+            logger.info("V5 webhook API blueprint registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import v5 webhook API blueprint: {e}")
+        except Exception as e:
+            logger.warning(f"Could not register v5 webhook API blueprint: {e}")
         
         # Register v5 feature flags API (always enabled for frontend access)
         try:

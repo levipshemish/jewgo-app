@@ -2,6 +2,14 @@
 
 # Server Deployment Script for Jewgo App
 # This script safely deploys the backend to the server with proper rollback capabilities
+#
+# Environment Variables:
+#   DEPLOY_REDIS_CLUSTER=true          - Deploy Redis cluster for high availability
+#   TEST_WEBHOOK_SIGNATURE=true        - Test webhook signature verification
+#   WEBHOOK_SECRET_KEY=<secret>        - Secret key for webhook signature verification
+#   ENABLE_MONITORING_HEALTH_CHECK=true - Test monitoring health endpoints
+#   ENABLE_DISTANCE_SMOKE_TEST=true     - Run distance filtering smoke tests
+#   DEPLOY_SECURITY_HARDENING=true     - Deploy security hardening components
 
 set -e
 
@@ -122,6 +130,36 @@ fi
 
 print_success "Environment file found on server"
 
+# Check for required environment variables
+print_status "Checking for required environment variables..."
+execute_on_server "
+    cd $SERVER_PATH && \
+    if [ -f .env ]; then
+        # Check for WEBHOOK_SECRET_KEY
+        if ! grep -q '^WEBHOOK_SECRET_KEY=' .env; then
+            echo 'WARNING: WEBHOOK_SECRET_KEY not found in .env file'
+            echo 'Webhook signature verification will not work properly'
+        else
+            echo 'WEBHOOK_SECRET_KEY found in .env file'
+        fi
+        
+        # Check for other critical variables
+        if ! grep -q '^DATABASE_URL=' .env; then
+            echo 'ERROR: DATABASE_URL not found in .env file'
+            exit 1
+        fi
+        
+        if ! grep -q '^REDIS_URL=' .env; then
+            echo 'WARNING: REDIS_URL not found in .env file'
+        fi
+        
+        echo 'Environment variables check completed'
+    else
+        echo 'ERROR: .env file not found'
+        exit 1
+    fi
+" "Checking environment variables"
+
 # Pull latest code from GitHub
 print_status "Pulling latest code from GitHub..."
 execute_on_server "
@@ -212,11 +250,37 @@ execute_on_server "
     fi
 " "Starting new backend container"
 
-# Clear Redis cache
-print_status "Clearing Redis cache..."
-execute_on_server "
-    docker exec jewgo_redis redis-cli FLUSHALL 2>/dev/null || echo 'Redis cache clear failed (container may not be running)'
-" "Clearing Redis cache"
+# Deploy Redis cluster (if enabled)
+if [ "${DEPLOY_REDIS_CLUSTER:-false}" = "true" ]; then
+    print_status "Deploying Redis cluster for high availability..."
+    
+    # Stop old Redis container if running
+    execute_on_server "
+        docker stop jewgo_redis 2>/dev/null || echo 'Old Redis container not running' && \
+        docker rm jewgo_redis 2>/dev/null || echo 'Old Redis container not found'
+    " "Stopping old Redis container"
+    
+    # Deploy Redis cluster
+    execute_on_server "
+        cd $SERVER_PATH && \
+        if [ -f docker-compose.redis-cluster.yml ]; then
+            docker compose -f docker-compose.redis-cluster.yml up -d && \
+            echo 'Redis cluster deployed successfully'
+        else
+            echo 'Redis cluster compose file not found, skipping cluster deployment'
+        fi
+    " "Deploying Redis cluster"
+    
+    print_success "Redis cluster deployed"
+else
+    print_status "Skipping Redis cluster deployment (set DEPLOY_REDIS_CLUSTER=true to enable)"
+    
+    # Clear Redis cache (single instance)
+    print_status "Clearing Redis cache..."
+    execute_on_server "
+        docker exec jewgo_redis redis-cli FLUSHALL 2>/dev/null || echo 'Redis cache clear failed (container may not be running)'
+    " "Clearing Redis cache"
+fi
 
 print_success "Deployment completed on server"
 
@@ -360,8 +424,42 @@ execute_on_server "
     sudo nginx -t
 " "Ensuring Nginx client_header_buffer_size not duplicated"
 
-# Reload Nginx configuration to apply rate limit changes
-print_status "Reloading Nginx configuration to apply rate limit changes..."
+# Update Nginx configuration for HTTP/2 and webhook endpoints
+print_status "Updating Nginx configuration for HTTP/2 and webhook endpoints..."
+execute_on_server "
+    set -euo pipefail
+    if [ -f /etc/nginx/conf.d/default.conf ]; then
+        # Backup current config
+        sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.$(date +%s) || true
+        
+        # Update HTTP/2 configuration (fix deprecated syntax)
+        sudo sed -i 's/listen 443 ssl http2;/listen 443 ssl;\n        http2 on;/g' /etc/nginx/conf.d/default.conf || true
+        
+        # Ensure webhook endpoints are properly configured
+        if ! grep -q 'location /api/v5/webhook' /etc/nginx/conf.d/default.conf; then
+            echo 'Adding webhook endpoint configuration to Nginx...'
+            sudo tee -a /etc/nginx/conf.d/default.conf > /dev/null << 'EOF'
+        
+        # Webhook endpoints
+        location /api/v5/webhook {
+            proxy_pass http://backend;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_connect_timeout 30s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 30s;
+        }
+EOF
+        fi
+        
+        echo 'Nginx configuration updated'
+    fi
+" "Updating Nginx configuration"
+
+# Reload Nginx configuration to apply changes
+print_status "Reloading Nginx configuration to apply changes..."
 execute_on_server "
     if sudo nginx -t; then
         if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
@@ -431,8 +529,12 @@ else
   print_status "Skipping metrics health check (set ENABLE_METRICS_HEALTH_CHECK=true to enable)"
 fi
 
-# Note: Monitoring API endpoints require authentication
-# test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health" "Monitoring API health endpoint (requires auth)"
+# Test Monitoring API health (now public)
+if [ "${ENABLE_MONITORING_HEALTH_CHECK:-true}" = "true" ]; then
+  test_endpoint "https://api.jewgo.app/api/v5/monitoring/health" "Monitoring API health endpoint (public)"
+else
+  print_status "Skipping monitoring health check (set ENABLE_MONITORING_HEALTH_CHECK=true to enable)"
+fi
 
 print_status "Testing core API endpoints..."
 
@@ -453,6 +555,44 @@ test_endpoint "https://api.jewgo.app/api/v5/search/?q=test&limit=1" "Search API 
 
 # Test reviews endpoint
 test_endpoint "https://api.jewgo.app/api/v5/reviews/?limit=1" "Reviews API endpoint" 200
+
+# Test webhook endpoints
+print_status "Testing webhook endpoints..."
+test_endpoint "https://api.jewgo.app/api/v5/webhook/status" "Webhook status endpoint"
+test_endpoint "https://api.jewgo.app/api/v5/webhook/test" "Webhook test endpoint"
+
+# Test webhook signature verification (if enabled)
+if [ "${TEST_WEBHOOK_SIGNATURE:-false}" = "true" ]; then
+    print_status "Testing webhook signature verification..."
+    
+    # Create a test signature for webhook verification
+    test_webhook_signature() {
+        local payload='{"test": "data", "timestamp": '$(date +%s)'}'
+        local secret_key="${WEBHOOK_SECRET_KEY:-test_secret_key}"
+        local signature=$(echo -n "$payload" | openssl dgst -sha256 -hmac "$secret_key" -binary | base64)
+        local timestamp=$(date +%s)
+        
+        local response_code
+        response_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "https://api.jewgo.app/api/v5/webhook/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: sha256=$signature" \
+            -H "X-Hub-Timestamp: $timestamp" \
+            -d "$payload")
+        
+        if [ "$response_code" = "200" ]; then
+            print_success "Webhook signature verification test passed (HTTP $response_code)"
+            return 0
+        else
+            print_warning "Webhook signature verification test failed (HTTP $response_code)"
+            return 1
+        fi
+    }
+    
+    test_webhook_signature || print_warning "Webhook signature verification test failed"
+else
+    print_status "Skipping webhook signature verification test (set TEST_WEBHOOK_SIGNATURE=true to enable)"
+fi
 
 # Optional: Distance filtering smoke tests (disabled by default)
 # Enable by setting ENABLE_DISTANCE_SMOKE_TEST=true in your environment when running this script
@@ -503,11 +643,11 @@ if [ "${ENABLE_DISTANCE_SMOKE_TEST:-true}" = "true" ]; then
     distance_smoke_check "Florida 0.1km" 25.8 -80.1 0.1 0.2
 fi
 
-# Note: Monitoring health endpoints require authentication
-# test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/database" "Database health check (requires auth)"
-# test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/redis" "Redis health check (requires auth)"
-
-# test_endpoint "http://$SERVER_HOST:5000/api/v5/monitoring/health/system" "System health check (requires auth)"
+# Test database pool monitoring endpoints (now public)
+print_status "Testing database pool monitoring endpoints..."
+test_endpoint "https://api.jewgo.app/api/v5/monitoring/database/pool" "Database pool health endpoint"
+test_endpoint "https://api.jewgo.app/api/v5/monitoring/database/pool/stats" "Database pool stats endpoint"
+test_endpoint "https://api.jewgo.app/api/v5/monitoring/database/pool/performance" "Database pool performance endpoint"
 
 # Test additional important endpoints
 print_status "Testing additional important endpoints..."
@@ -717,6 +857,18 @@ print_status "   - /api/v5/stores (stores data - working)"
 print_status "   - /api/v5/search (search functionality - redirect)"
 print_status "   - /api/v5/reviews (reviews data - redirect)"
 print_status ""
+print_status "✅ Webhook Endpoints:"
+print_status "   - /api/v5/webhook/status (webhook status - public)"
+print_status "   - /api/v5/webhook/test (webhook test - public)"
+print_status "   - /api/v5/webhook/deploy (deployment webhook - signature required)"
+print_status "   - /api/v5/webhook/github (GitHub webhook - signature required)"
+print_status ""
+print_status "✅ Database Pool Monitoring (public):"
+print_status "   - /api/v5/monitoring/database/pool (pool health status)"
+print_status "   - /api/v5/monitoring/database/pool/stats (detailed pool statistics)"
+print_status "   - /api/v5/monitoring/database/pool/performance (historical performance)"
+print_status "   - /api/v5/monitoring/database/pool/history (pool usage history)"
+print_status ""
 print_status "✅ Infrastructure Health (requires authentication):"
 print_status "   - /api/v5/monitoring/health/database (database health)"
 print_status "   - /api/v5/monitoring/health/redis (redis cache health)"
@@ -728,11 +880,34 @@ print_status "   - /api/v5/metrics/dashboard (metrics dashboard)"
 print_status "   - /api/v5/search/suggestions (search suggestions)"
 print_status "   - /api/v5/search/popular (popular searches)"
 print_status ""
+print_status "=== NEW FEATURES DEPLOYED ==="
+print_status "✅ Webhook Endpoints with Signature Verification:"
+print_status "   - HMAC-SHA256 signature verification for secure webhooks"
+print_status "   - Deploy and GitHub webhook endpoints available"
+print_status "   - CSRF protection bypassed for webhook endpoints"
+print_status ""
+print_status "✅ Database Pool Monitoring:"
+print_status "   - Real-time database connection pool health monitoring"
+print_status "   - Historical performance metrics and statistics"
+print_status "   - Public endpoints for external monitoring systems"
+print_status ""
+print_status "✅ Redis Cluster Support:"
+print_status "   - High availability Redis cluster deployment option"
+print_status "   - Automatic failover and load balancing"
+print_status "   - Set DEPLOY_REDIS_CLUSTER=true to enable"
+print_status ""
+print_status "✅ Enhanced Monitoring:"
+print_status "   - Public monitoring endpoints for health checks"
+print_status "   - Database pool statistics and performance metrics"
+print_status "   - Improved observability and debugging capabilities"
+print_status ""
 print_status "=== NEXT STEPS ==="
 print_status "1. Monitor application logs: docker logs -f jewgo_backend"
-print_status "2. Check system metrics: curl -H 'Authorization: Bearer <token>' http://$SERVER_HOST:5000/api/v5/monitoring/status"
-print_status "3. Test frontend connectivity to backend"
-print_status "4. Verify all services are working as expected"
+print_status "2. Check database pool health: curl https://api.jewgo.app/api/v5/monitoring/database/pool"
+print_status "3. Test webhook endpoints: curl https://api.jewgo.app/api/v5/webhook/status"
+print_status "4. Verify Redis cluster (if enabled): docker ps | grep redis"
+print_status "5. Test frontend connectivity to backend"
+print_status "6. Verify all services are working as expected"
 print_status ""
 # Generate deployment summary
 print_status "Generating deployment summary..."

@@ -54,11 +54,11 @@ else:
 print('Initializing real database services...')
 try:
     # Import real database connection managers with correct class names
-    from database.connection_manager import DatabaseConnectionManager
+    from database.unified_connection_manager import UnifiedConnectionManager
     from cache.redis_manager_v5 import RedisManagerV5
     
     # Initialize real database connection
-    connection_manager = DatabaseConnectionManager()
+    connection_manager = UnifiedConnectionManager()
     redis_manager = RedisManagerV5()
     
     # IMPORTANT: Connect to the database
@@ -72,6 +72,14 @@ try:
     from routes.v5.api_v5 import init_services
     init_services(connection_manager, redis_manager)
     print('SUCCESS: Services initialized with real database')
+    
+    # Initialize database pool monitoring
+    from services.database_pool_monitor import db_pool_monitor
+    if db_pool_monitor.initialize():
+        db_pool_monitor.start_monitoring()
+        print('SUCCESS: Database pool monitoring started')
+    else:
+        print('WARNING: Database pool monitoring failed to initialize')
     
 except Exception as e:
     print(f'ERROR: Failed to initialize real database services: {e}')
@@ -178,6 +186,16 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+print('Registering webhook API blueprint...')
+try:
+    from routes.v5.simple_webhook_api import simple_webhook_api
+    app.register_blueprint(simple_webhook_api)
+    print(f'SUCCESS: Registered {simple_webhook_api.name} with prefix {simple_webhook_api.url_prefix}')
+except Exception as e:
+    print(f'ERROR: Failed to register webhook API blueprint: {e}')
+    import traceback
+    traceback.print_exc()
+
 # Disable incomplete reviews system in production
 if os.environ.get('FLASK_ENV') != 'production':
     print('Registering reviews blueprint (development only)...')
@@ -194,6 +212,11 @@ else:
 @app.route('/test')
 def test():
     return jsonify({'status': 'ok', 'message': 'Backend is running'})
+
+# Add a simple webhook test endpoint
+@app.route('/api/v5/webhook/simple', methods=['GET'])
+def simple_webhook_test():
+    return jsonify({'status': 'ok', 'message': 'Simple webhook endpoint is working'})
 
 @app.route('/api/listings')
 def simple_listings():

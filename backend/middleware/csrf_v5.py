@@ -35,6 +35,9 @@ class CSRFMiddleware:
         'monitoring_v5.health',  # Health check endpoints
         'monitoring_v5.metrics',  # Metrics endpoints
         'api_v5.track_restaurant_view',  # Analytics view tracking endpoint
+        'webhook_api.webhook_deploy',  # Webhook deploy endpoint
+        'webhook_api.webhook_github',  # Webhook GitHub endpoint
+        'webhook_api.webhook_status',  # Webhook status endpoint
     }
     
     def __init__(self, app=None):

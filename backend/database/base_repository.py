@@ -1,7 +1,7 @@
 import time
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 from utils.logging_config import get_logger
-from .connection_manager import DatabaseConnectionManager
+from .unified_connection_manager import UnifiedConnectionManager
 from .models import Base
 
 logger = get_logger(__name__)
@@ -27,7 +27,7 @@ class BaseRepository(Generic[T]):
     """Base repository class with generic CRUD operations."""
 
     def __init__(
-        self, connection_manager: DatabaseConnectionManager, model_class: Type[T]
+        self, connection_manager: UnifiedConnectionManager, model_class: Type[T]
     ):
         """Initialize repository with connection manager and model class.
         Args:

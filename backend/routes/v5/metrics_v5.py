@@ -23,7 +23,7 @@ metrics_v5 = BlueprintFactoryV5.create_blueprint(
     url_prefix='/api/v5/metrics',
     config_override={
         'enable_cors': False,  # Disabled - Nginx handles CORS
-        'enable_auth': True,
+        'enable_auth': False,  # Metrics endpoints should be public for monitoring
         'enable_rate_limiting': True,
         'enable_idempotency': False,  # Metrics are inherently idempotent
         'enable_observability': True,
@@ -167,7 +167,6 @@ def aggregate_metrics(metric_name: str, time_period: str, start_time: datetime, 
 
 # Metrics endpoints
 @metrics_v5.route('/health', methods=['GET'])
-@require_metrics_permission()
 def metrics_health():
     """Get metrics service health status."""
     try:
@@ -198,7 +197,6 @@ def metrics_health():
 
 
 @metrics_v5.route('/<metric_name>', methods=['GET'])
-@require_metrics_permission()
 def get_metric(metric_name: str):
     """Get specific metric data."""
     try:
