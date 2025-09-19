@@ -1,0 +1,195 @@
+/**
+ * Review API Client
+ * 
+ * This module provides a client-side API for interacting with review-specific
+ * backend endpoints. It handles authentication and provides methods for
+ * submitting and retrieving reviews.
+ */
+
+import { postgresAuth } from '@/lib/auth/postgres-auth';
+
+// Base API configuration
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.BACKEND_URL ||
+  'https://api.jewgo.app';
+
+export interface ReviewSubmissionData {
+  rating: number;
+  content: string;
+  entity_type: 'restaurants' | 'synagogues' | 'mikvahs' | 'stores';
+  entity_id: number;
+}
+
+export interface ReviewResponse {
+  data: {
+    id: string;
+    user_id: number;
+    entity_type: string;
+    entity_id: number;
+    rating: number;
+    content: string;
+    status: 'pending' | 'approved' | 'rejected';
+    moderation_reason?: string;
+    created_at: string;
+    updated_at: string;
+  };
+  message: string;
+  moderation_status: string;
+}
+
+export interface ReviewError {
+  error: string;
+  details?: string[];
+  code?: string;
+}
+
+/**
+ * Get the current user's JWT token for API authentication
+ */
+async function getAuthToken(): Promise<string | null> {
+  try {
+    return postgresAuth.accessToken || null;
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+    return null;
+  }
+}
+
+/**
+ * Make an authenticated API request
+ */
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = await getAuthToken();
+  
+  if (!token) {
+    throw new Error('Authentication required. Please log in to submit a review.');
+  }
+
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    
+    // Handle specific error cases
+    if (response.status === 401) {
+      throw new Error('Authentication expired. Please log in again.');
+    }
+    
+    if (response.status === 409) {
+      throw new Error('You have already reviewed this restaurant.');
+    }
+    
+    if (response.status === 429) {
+      throw new Error('Too many review submissions. Please try again later.');
+    }
+    
+    if (response.status === 400 && errorData.details) {
+      throw new Error(`Validation error: ${errorData.details.join(', ')}`);
+    }
+    
+    throw new Error(errorData.error || `Failed to submit review: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Submit a new review
+ */
+export async function submitReview(reviewData: ReviewSubmissionData): Promise<ReviewResponse> {
+  try {
+    const response = await apiRequest<ReviewResponse>('/api/v5/reviews', {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Review submission error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get reviews for a specific entity
+ */
+export async function getReviews(
+  entityType: string,
+  entityId: number,
+  limit: number = 10,
+  cursor: string = '0'
+): Promise<{
+  reviews: any[];
+  pagination: {
+    cursor: string;
+    next_cursor: string | null;
+    has_more: boolean;
+    total_count: number;
+  };
+}> {
+  try {
+    const params = new URLSearchParams({
+      entity_type: entityType,
+      entity_id: entityId.toString(),
+      limit: limit.toString(),
+      cursor: cursor,
+    });
+    
+    const response = await apiRequest<{
+      reviews: any[];
+      pagination: {
+        cursor: string;
+        next_cursor: string | null;
+        has_more: boolean;
+        total_count: number;
+      };
+    }>(`/api/v5/reviews?${params}`);
+    
+    return response;
+  } catch (error) {
+    console.error('Failed to fetch reviews:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get review statistics for an entity
+ */
+export async function getReviewStats(
+  entityType: string,
+  entityId: number
+): Promise<{
+  total_reviews: number;
+  average_rating: number;
+  rating_distribution: Record<string, number>;
+  recent_reviews_count: number;
+}> {
+  try {
+    const response = await apiRequest<{
+      data: {
+        total_reviews: number;
+        average_rating: number;
+        rating_distribution: Record<string, number>;
+        recent_reviews_count: number;
+      };
+    }>(`/api/v5/reviews/${entityType}/${entityId}/stats`);
+    
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch review stats:', error);
+    throw error;
+  }
+}

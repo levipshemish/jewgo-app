@@ -19,6 +19,7 @@ interface ListingContentProps {
   onLeftAction?: () => void
   onRightAction?: () => void
   onRightTextClick?: () => void
+  restaurantId?: number
   reviews?: Array<{
     id: string
     user: string
@@ -100,6 +101,7 @@ export function ListingContent({
   onLeftAction: _onLeftAction,
   onRightAction,
   onRightTextClick,
+  restaurantId,
   reviews = [],
   reviewsPagination,
   onLoadMoreReviews,
@@ -191,6 +193,7 @@ export function ListingContent({
         averageRating={parseFloat(rightText || "0")}
         totalReviews={reviewsPagination?.total || displayReviews.length}
         reviews={displayReviews}
+        restaurantId={restaurantId}
         pagination={reviewsPagination}
         onLoadMore={onLoadMoreReviews}
         loading={reviewsLoading}

@@ -226,12 +226,12 @@ const SpringButton = memo(({
       onMouseUp={() => setIsDragging(false)}
       className={`
         group relative inline-flex items-center justify-center
-        focus:outline-none focus:ring-2 focus:ring-blue-500
+        focus:outline-none focus:ring-0 active:ring-0
         transition-all duration-200 overflow-hidden
-        rounded-full bg-white hover:bg-gray-50
+        rounded-full bg-white/90 hover:bg-white shadow-md hover:shadow-lg border border-gray-100
         ${isActive 
-          ? `bg-pink-50` 
-          : 'bg-white'
+          ? `bg-pink-50/90 border-pink-200` 
+          : 'bg-white/90 border-gray-100'
         }
         ${className}
       `}
@@ -298,15 +298,15 @@ const ReportModal = memo(({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div 
-        className="bg-surface border border-border rounded-2xl shadow-elevation max-w-sm w-full max-h-[80vh] overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl max-w-sm w-full max-h-[80vh] overflow-hidden"
         style={{ animation: 'modalSlideIn 0.3s ease-out' }}
       >
         {/* Header */}
-        <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-semibold text-text mb-1">Report Content</h2>
-          <p className="text-sm text-muted">Help us understand what&apos;s wrong with this content</p>
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">Report Content</h2>
+          <p className="text-sm text-gray-600">Help us understand what&apos;s wrong with this content</p>
         </div>
 
         {/* Content */}
@@ -314,7 +314,7 @@ const ReportModal = memo(({
           {reportReasons.map((reason) => (
             <label 
               key={reason}
-              className="flex items-start gap-3 p-3 rounded-xl hover:bg-surfaceVariant cursor-pointer transition-colors duration-200"
+              className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors duration-200"
             >
               <input
                 type="radio"
@@ -322,25 +322,25 @@ const ReportModal = memo(({
                 value={reason}
                 checked={selectedReason === reason}
                 onChange={(e) => onReasonSelect(e.target.value)}
-                className="mt-0.5 w-4 h-4 text-accent focus:ring-accent focus:ring-2"
+                className="mt-0.5 w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
               />
-              <span className="text-sm text-text leading-relaxed">{reason}</span>
+              <span className="text-sm text-gray-800 leading-relaxed">{reason}</span>
             </label>
           ))}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-border flex gap-3">
+        <div className="p-6 border-t border-gray-200 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 text-sm font-medium text-text bg-surfaceVariant border border-border hover:bg-surface rounded-xl transition-colors duration-200"
+            className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             onClick={onSubmit}
             disabled={!selectedReason || isSubmitting}
-            className="flex-1 px-4 py-3 text-sm font-medium text-white bg-danger hover:brightness-95 disabled:bg-muted disabled:cursor-not-allowed rounded-xl transition-colors duration-200"
+            className="flex-1 px-4 py-3 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl transition-colors duration-200"
           >
             {isSubmitting ? 'Reporting...' : 'Report'}
           </button>
@@ -679,11 +679,6 @@ export function ListingHeader({
     }
   }, [restaurantId, internalIsFavorited, callFavoriteAPI, onFavorite, addToast, isProcessingFavorite]);
 
-  const handleViewsClick = useCallback(() => {
-    setInternalViewCount(prev => prev + Math.floor(1 + Math.random() * 3));
-    hapticFeedback('light');
-    addToast(`Total views: ${formatCount(internalViewCount + Math.floor(1 + Math.random() * 3))}`);
-  }, [internalViewCount, addToast]);
 
   return (
     <div className="px-3 relative">
@@ -714,16 +709,12 @@ export function ListingHeader({
 
             {/* View count */}
             {typeof viewCount === "number" && viewCount >= 0 && (
-              <SpringButton
-                onClick={handleViewsClick}
-                aria-label={`${formatCount(animatedViews)} views`}
-                className="p-2 flex items-center gap-2 flex-shrink-0"
-              >
-                <Eye className="h-4 w-4 text-blue-500 transition-all duration-200 flex-shrink-0" />
+              <div className="p-2 flex items-center gap-2 flex-shrink-0 rounded-full bg-white/90 shadow-md border border-gray-100">
+                <Eye className="h-4 w-4 text-blue-500 flex-shrink-0" />
                 <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                   {formatCount(animatedViews)}
                 </span>
-              </SpringButton>
+              </div>
             )}
 
             {/* Share with count */}
@@ -808,16 +799,12 @@ export function ListingHeader({
             {/* Center group - View count */}
             <div className="flex items-center justify-center">
               {typeof viewCount === "number" && viewCount >= 0 && (
-                <SpringButton
-                  onClick={handleViewsClick}
-                  aria-label={`${formatCount(animatedViews)} views`}
-                  className="p-2 flex items-center gap-2 flex-shrink-0"
-                >
-                  <Eye className="h-5 w-5 text-blue-500 transition-all duration-200 flex-shrink-0" />
+                <div className="p-2 flex items-center gap-2 flex-shrink-0 rounded-full bg-white/90 shadow-md border border-gray-100">
+                  <Eye className="h-5 w-5 text-blue-500 flex-shrink-0" />
                   <span className="text-sm font-medium text-gray-500 whitespace-nowrap">
                     {formatCount(animatedViews)}
                   </span>
-                </SpringButton>
+                </div>
               )}
             </div>
 

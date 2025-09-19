@@ -5,6 +5,7 @@ import { ProfileImage } from "@/components/ui/profile-image"
 import { Star, X, ChevronDown, MessageSquare, Send, ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import { createPortal } from "react-dom"
+import { submitReview } from "@/lib/api/review-api"
 
 interface Review {
   id: string
@@ -24,6 +25,7 @@ interface ReviewsPopupProps {
   averageRating: number
   totalReviews: number
   reviews: Review[]
+  restaurantId?: number
   pagination?: {
     total: number
     limit: number
@@ -64,6 +66,7 @@ export function ReviewsPopup({
   averageRating,
   totalReviews,
   reviews,
+  restaurantId,
   pagination,
   onLoadMore,
   loading = false,
@@ -75,6 +78,9 @@ export function ReviewsPopup({
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   if (!isOpen) return null
 
@@ -119,48 +125,92 @@ export function ReviewsPopup({
 
   const handleWriteReview = () => {
     setShowReviewForm(true)
+    setSubmitError(null)
+    setSubmitSuccess(false)
+    setSuccessMessage(null)
   }
 
   const handleBackToReviews = () => {
     setShowReviewForm(false)
     setReviewRating(0)
     setReviewComment('')
+    setSubmitError(null)
+    setSubmitSuccess(false)
+    setSuccessMessage(null)
   }
 
   const handleSubmitReview = async () => {
+    setSubmitError(null)
+    setSubmitSuccess(false)
+    setSuccessMessage(null)
+    
     if (reviewRating === 0) {
-      alert('Please select a rating')
+      setSubmitError('Please select a rating')
       return
     }
     
     if (!reviewComment.trim()) {
-      alert('Please write a comment')
+      setSubmitError('Please write a comment')
       return
     }
 
-    if (onSubmitReview) {
-      setIsSubmitting(true)
-      try {
+    if (!restaurantId) {
+      setSubmitError('Unable to submit review: Restaurant ID is missing')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // Use the actual API if no custom onSubmitReview handler is provided
+      if (onSubmitReview) {
         await onSubmitReview({
           rating: reviewRating,
           comment: reviewComment.trim()
         })
-        // Reset form and go back to reviews
+        setSubmitSuccess(true)
+        setSuccessMessage('Review submitted successfully!')
+      } else {
+        // Submit to the backend API
+        const reviewData = {
+          rating: reviewRating,
+          content: reviewComment.trim(),
+          entity_type: 'restaurants' as const,
+          entity_id: restaurantId
+        }
+        
+        const response = await submitReview(reviewData)
+        setSubmitSuccess(true)
+        
+        // Show success message based on moderation status
+        if (response.moderation_status === 'approved') {
+          setSuccessMessage('Review submitted successfully and is now live!')
+        } else if (response.moderation_status === 'pending') {
+          setSuccessMessage('Review submitted successfully and is pending approval.')
+        } else {
+          setSuccessMessage('Review submitted successfully.')
+        }
+      }
+      
+      // Reset form and go back to reviews after a delay
+      setTimeout(() => {
         setReviewRating(0)
         setReviewComment('')
         setShowReviewForm(false)
-      } catch (error) {
-        console.error('Error submitting review:', error)
-        alert('Failed to submit review. Please try again.')
-      } finally {
-        setIsSubmitting(false)
-      }
-    } else {
-      // Fallback for demo purposes
-      alert('Review submitted successfully! (Demo mode)')
-      setReviewRating(0)
-      setReviewComment('')
-      setShowReviewForm(false)
+        setSubmitError(null)
+        setSubmitSuccess(false)
+        setSuccessMessage(null)
+        
+        // Refresh reviews if onLoadMore is available (to show the new review)
+        if (onLoadMore) {
+          onLoadMore()
+        }
+      }, 2000)
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit review. Please try again.'
+      setSubmitError(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -329,6 +379,18 @@ export function ReviewsPopup({
                   )}
                 </div>
               </div>
+
+              {/* Error/Success Messages */}
+              {submitError && (
+                <div className="p-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
+                  {submitError}
+                </div>
+              )}
+              {successMessage && (
+                <div className="p-3 rounded-lg text-sm bg-green-50 border border-green-200 text-green-700">
+                  {successMessage}
+                </div>
+              )}
 
               {/* Submit Button */}
               <div className="flex gap-3">

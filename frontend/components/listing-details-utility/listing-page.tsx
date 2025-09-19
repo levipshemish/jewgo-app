@@ -27,6 +27,7 @@ export interface ListingData {
     onLeftAction?: () => void
     onRightAction?: () => void
     onRightTextClick?: () => void
+    restaurantId?: number
   }
   actions?: {
     primaryAction?: {
@@ -199,6 +200,7 @@ export function ListingPage({ data, className = "", loading = false, error }: Li
               onLeftAction={safeData.content.onLeftAction}
               onRightAction={safeData.content.onRightAction}
               onRightTextClick={safeData.content.onRightTextClick}
+              restaurantId={safeData.content.restaurantId || safeData.header?.restaurantId}
               reviews={safeData.reviews}
               reviewsPagination={safeData.reviewsPagination}
               onLoadMoreReviews={safeData.onLoadMoreReviews}
