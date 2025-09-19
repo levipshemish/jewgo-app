@@ -1,9 +1,8 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { Special, SpecialsDisplayProps } from '@/types/specials'
 import { useSpecials, useSpecialEvents, useGuestSession } from '@/hooks/use-specials'
-import { specialsApi } from '@/lib/api/specials'
 import SpecialCard from './SpecialCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/button'
@@ -24,7 +23,7 @@ export default function SpecialsDisplay({
   onClaimClick,
   onShareClick,
 }: SpecialsDisplayProps) {
-  const [guestSessionId] = useGuestSession()
+  const guestSessionId = useGuestSession()
   const { trackEvent } = useSpecialEvents()
   
   const {

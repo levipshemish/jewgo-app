@@ -186,6 +186,16 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+print('Registering specials API blueprint...')
+try:
+    from routes.specials_routes import specials_bp
+    app.register_blueprint(specials_bp)
+    print(f'SUCCESS: Registered {specials_bp.name} with prefix {specials_bp.url_prefix}')
+except Exception as e:
+    print(f'ERROR: Failed to register specials API blueprint: {e}')
+    import traceback
+    traceback.print_exc()
+
 print('Registering webhook API blueprint...')
 try:
     from routes.v5.simple_webhook_api import simple_webhook_api

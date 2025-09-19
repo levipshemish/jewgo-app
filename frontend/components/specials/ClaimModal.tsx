@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Special, ClaimModalProps } from '@/types/specials'
+import { ClaimModalProps } from '@/types/specials'
 import { useSpecialClaim, useGuestSession } from '@/hooks/use-specials'
 import { specialsApi } from '@/lib/api/specials'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Users, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Clock, Users, X, CheckCircle, AlertCircle } from 'lucide-react'
 
 /**
  * Modal for claiming specials
@@ -22,7 +22,7 @@ export default function ClaimModal({
   const [claiming, setClaiming] = useState(false)
   const [claimResult, setClaimResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
-  const [guestSessionId] = useGuestSession()
+  const guestSessionId = useGuestSession()
   
   const { claim, loading: claimLoading, error: claimError } = useSpecialClaim()
 
@@ -58,6 +58,7 @@ export default function ClaimModal({
   }
 
   const formatTimeRemaining = () => {
+    if (!special) return 'No special selected'
     const remaining = specialsApi.getTimeRemaining(special)
     
     if (remaining.isExpired) {
@@ -114,7 +115,7 @@ export default function ClaimModal({
                 </h4>
                 
                 <p className="text-sm text-gray-600 mb-4">
-                  You've successfully claimed "{special.title}"
+                  You&apos;ve successfully claimed &ldquo;{special.title}&rdquo;
                 </p>
 
                 {claimResult.redeem_code && (

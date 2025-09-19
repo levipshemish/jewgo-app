@@ -6,6 +6,7 @@ export { default as SpecialsDisplay, SpecialsDisplayCompact, UpcomingSpecials, S
 export { default as SpecialCard, SpecialCardCompact, FeaturedSpecialCard } from './SpecialCard'
 export { default as ClaimModal } from './ClaimModal'
 export { default as SpecialsIntegration, SpecialsIntegrationCompact, RestaurantSpecialsSection, RestaurantCardWithSpecials } from './SpecialsIntegration'
+export { default as RestaurantSpecialsIntegration, RestaurantSpecialsCompact, RestaurantSpecialsCard } from './RestaurantSpecialsIntegration'
 
 // Re-export types for convenience
 export type {

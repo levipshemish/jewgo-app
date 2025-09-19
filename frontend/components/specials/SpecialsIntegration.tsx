@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React from 'react'
 import { Special } from '@/types/specials'
 import { useSpecialClaimModal } from '@/hooks/use-specials'
 import SpecialsDisplay from './SpecialsDisplay'

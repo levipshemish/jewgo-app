@@ -193,7 +193,7 @@ export interface RedeemClaimResponse {
 
 // Track event request
 export interface TrackEventRequest {
-  event_type: 'view' | 'share' | 'click'
+  event_type: 'view' | 'share' | 'click' | 'claim'
   guest_session_id?: string
 }
 

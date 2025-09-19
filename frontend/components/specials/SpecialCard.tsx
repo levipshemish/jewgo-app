@@ -1,11 +1,11 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Special, SpecialCardProps } from '@/types/specials'
+import { SpecialCardProps } from '@/types/specials'
 import { specialsApi } from '@/lib/api/specials'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Users, Share2, Heart, Star } from 'lucide-react'
+import { Clock, Users, Share2 } from 'lucide-react'
 
 /**
  * Component for displaying individual special cards

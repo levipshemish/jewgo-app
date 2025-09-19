@@ -300,6 +300,8 @@ export function useSpecialViewTracking(special: Special | null) {
 
       return () => clearTimeout(timer)
     }
+    // Return undefined for the case when special is null
+    return undefined
   }, [special, trackEvent, guestSessionId])
 }
 
