@@ -158,6 +158,7 @@ export default function EateryGrid({
 
       // Debug the API response
       console.log('🔍 API Response - first 3 restaurants:', response.restaurants?.slice(0, 3));
+      console.log('🔍 API Response - distance values:', response.restaurants?.slice(0, 3).map(r => ({ name: r.name, distance: r.distance, hasDistance: 'distance' in r })));
 
       // Handle the response format from the restaurants API
       const responseRestaurants = response.restaurants || []

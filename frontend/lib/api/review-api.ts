@@ -102,6 +102,8 @@ async function apiRequest<T>(
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
+        // Try adding Authorization header if available
+        ...(postgresAuth.accessToken && { 'Authorization': `Bearer ${postgresAuth.accessToken}` }),
         ...options.headers,
       },
       // Include credentials to send HttpOnly cookies
@@ -172,37 +174,12 @@ async function apiRequest<T>(
  */
 export async function submitReview(reviewData: ReviewSubmissionData): Promise<ReviewResponse> {
   try {
-    // Try using postgresAuth request method first (which handles authentication properly)
-    console.log('🔄 Attempting review submission via postgresAuth...');
-    
-    // Add CSRF token to the review data
-    let csrfToken = null;
-    try {
-      if (!postgresAuth.csrfToken) {
-        await postgresAuth.getCsrf();
-      }
-      csrfToken = postgresAuth.csrfToken;
-    } catch (e) {
-      console.warn('⚠️ Failed to get CSRF token:', e);
-    }
-    
-    const reviewDataWithCsrf = {
-      ...reviewData,
-      ...(csrfToken && { csrf_token: csrfToken })
-    };
-    
-    // Use postgresAuth.request but override the URL construction
-    const response = await postgresAuth.request('/reviews/', {
+    const response = await apiRequest<ReviewResponse>('/api/v5/reviews/', {
       method: 'POST',
-      body: JSON.stringify(reviewDataWithCsrf),
+      body: JSON.stringify(reviewData),
     });
     
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Failed to submit review: ${response.status}`);
-    }
-    
-    return await response.json();
+    return response;
   } catch (error) {
     console.error('Review submission error:', error);
     throw error;
