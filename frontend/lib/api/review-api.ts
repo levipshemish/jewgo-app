@@ -92,7 +92,13 @@ async function apiRequest<T>(
     ),
     authCookies: Object.keys(cookieObj).filter(key => 
       key.includes('auth') || key.includes('session') || key.includes('token')
-    )
+    ),
+    allCookies: cookieObj
+  });
+  
+  // Log each cookie individually for better debugging
+  Object.entries(cookieObj).forEach(([name, value]) => {
+    console.log(`🍪 Cookie: ${name} = ${value?.substring(0, 50)}${value?.length > 50 ? '...' : ''}`);
   });
   
   // Get CSRF token for POST requests
