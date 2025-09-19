@@ -447,7 +447,7 @@ class UnifiedConnectionManager:
             'pool_size': pool.size(),
             'checked_out_connections': pool.checkedout(),
             'overflow_connections': pool.overflow(),
-            'invalid_connections': pool.invalidated(),
+            'invalid_connections': getattr(pool, 'invalidated', lambda: 0)(),
             'metrics': self.metrics.get_stats()
         }
     

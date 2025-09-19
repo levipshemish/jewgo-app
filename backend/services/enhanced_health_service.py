@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
 
+from sqlalchemy import text
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -194,7 +195,7 @@ def check_database_health():
         
         # Test basic connectivity
         with connection_manager.session_scope() as session:
-            result = session.execute("SELECT 1 as health_check")
+            result = session.execute(text("SELECT 1 as health_check"))
             result.fetchone()
         
         response_time = (time.time() - start_time) * 1000
@@ -233,7 +234,7 @@ def check_redis_health():
         
         # Test basic connectivity
         test_key = f"health_check_{int(time.time())}"
-        redis_manager.set(test_key, "test_value", ex=10)
+        redis_manager.set(test_key, "test_value", ttl=10)
         value = redis_manager.get(test_key)
         redis_manager.delete(test_key)
         
