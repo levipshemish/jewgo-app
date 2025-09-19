@@ -233,6 +233,11 @@ export class V5ApiClient {
 
 
     const endpoint = `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`;
+    
+    // Debug the endpoint being called
+    console.log('🔍 V5 API Client - calling endpoint:', endpoint);
+    console.log('🔍 V5 API Client - searchParams:', searchParams.toString());
+    
     return this.makeRequest(endpoint);
   }
 

@@ -17,6 +17,7 @@ import Button from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Logo from '@/components/ui/Logo';
+import Image from 'next/image';
 
 function SignInForm() {
   const [email, setEmail] = useState("");
@@ -456,7 +457,10 @@ function SignInForm() {
                   }}
                   className="w-full rounded-full"
                 >
-                  Continue with Google
+                  <span className="inline-flex items-center gap-2">
+                    <Image src="/providers/google.svg" alt="Google" width={18} height={18} />
+                    Continue with Google
+                  </span>
                 </Button>
 
                 <Button
@@ -465,7 +469,12 @@ function SignInForm() {
                   onClick={() => setShowAppleComingSoon(true)}
                   className="w-full rounded-full"
                 >
-                  Continue with Apple
+                  <span className="inline-flex items-center gap-2">
+                    <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" className="fill-black">
+                      <path d="M16.365 1.43c-1.14.1-2.36.78-3.12 1.7-.68.83-1.21 2.03-1 3.2 1.19.09 2.41-.69 3.11-1.6.68-.92 1.17-2.11 1.01-3.3zM19.73 12.89c-.02-2.1 1.73-3.11 1.81-3.16-1-.01-2.06.59-2.6 1.5-.57.93-.75 2.29-.2 3.3.39.67 1.09 1.4 1.98 1.37.02-.01-1.54.51-2.99-1.99zm-3.34 1.1c-.6 1.17-1.2 2.34-2.16 2.36-.94.02-1.25-.76-2.33-.76-1.08 0-1.43.73-2.34.78-.94.05-1.66-1.18-2.27-2.34-1.23-2.27-2.16-6.41-.9-9.22.62-1.35 1.72-2.2 3.02-2.22.94-.02 1.83.64 2.33.64.5 0 1.6-.79 2.69-.67 1.15.02 2.24.63 2.86 1.61-2.51 1.49-2.1 5.38.1 6.63-.18.5-.39.98-.61 1.44z"/>
+                    </svg>
+                    Continue with Apple
+                  </span>
                 </Button>
 
                 <Button
