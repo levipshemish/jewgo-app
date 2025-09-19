@@ -109,19 +109,9 @@ class EntityRepositoryV5(BaseRepository):
         self._model_cache = {}
         self._load_models()
         
-        # Detect PostGIS availability and cache the result
-        self._postgis_available = False
-        try:
-            with self.connection_manager.engine.connect() as conn:
-                result = conn.execute(text("""
-                    SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis')
-                """))
-                row = result.fetchone()
-                self._postgis_available = bool(row and row[0])
-                logger.info(f"PostGIS availability: {self._postgis_available}")
-        except Exception as e:
-            logger.warning(f"Could not determine PostGIS availability; assuming false: {e}")
-            self._postgis_available = False
+        # PostGIS availability will be detected lazily on first use
+        self._postgis_available = None
+        self._postgis_check_attempted = False
     
     def _load_models(self):
         """Load and cache SQLAlchemy model classes."""
@@ -140,6 +130,33 @@ class EntityRepositoryV5(BaseRepository):
         except ImportError as e:
             logger.error(f"Failed to load entity models: {e}")
             self._model_cache = {}
+    
+    def _check_postgis_availability(self) -> bool:
+        """Lazily check PostGIS availability and cache the result."""
+        if self._postgis_check_attempted:
+            return self._postgis_available or False
+            
+        self._postgis_check_attempted = True
+        self._postgis_available = False
+        
+        try:
+            # Ensure connection manager is available and connected
+            if not hasattr(self.connection_manager, 'engine') or self.connection_manager.engine is None:
+                logger.warning("Database engine not available for PostGIS check")
+                return False
+                
+            with self.connection_manager.engine.connect() as conn:
+                result = conn.execute(text("""
+                    SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis')
+                """))
+                row = result.fetchone()
+                self._postgis_available = bool(row and row[0])
+                logger.info(f"PostGIS availability: {self._postgis_available}")
+        except Exception as e:
+            logger.warning(f"Could not determine PostGIS availability; assuming false: {e}")
+            self._postgis_available = False
+            
+        return self._postgis_available
     
     def get_model_class(self, entity_type: str) -> Optional[Type]:
         """Get SQLAlchemy model class for entity type."""
@@ -820,7 +837,7 @@ class EntityRepositoryV5(BaseRepository):
                 lng = float(filters['longitude'])
                 radius_km = float(filters.get('radius', 160))
 
-                if getattr(self, '_postgis_available', False) and hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
+                if self._check_postgis_availability() and hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
                     try:
                         query = query.filter(
                             func.ST_DWithin(
@@ -988,14 +1005,21 @@ class EntityRepositoryV5(BaseRepository):
         except (TypeError, ValueError):
             logger.warning("Invalid latitude/longitude provided for distance expression")
             return None
+
         from sqlalchemy import func
+
+        # Attempt PostGIS distance regardless of cached availability; fallback to earthdistance on failure
         try:
-            if getattr(self, '_postgis_available', False):
-                entity_point = func.ST_SetSRID(func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')), 4326).cast(text('geography'))
-                user_point = func.ST_SetSRID(func.ST_MakePoint(lng_val, lat_val), 4326).cast(text('geography'))
-                return func.ST_Distance(entity_point, user_point)
+            self._check_postgis_availability()
+            entity_point = func.ST_SetSRID(
+                func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')),
+                4326,
+            ).cast(text('geography'))
+            user_point = func.ST_SetSRID(func.ST_MakePoint(lng_val, lat_val), 4326).cast(text('geography'))
+            return func.ST_Distance(entity_point, user_point)
         except Exception as postgis_error:
             logger.warning(f"PostGIS distance expression failed: {postgis_error}")
+
         try:
             return func.earth_distance(
                 func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),

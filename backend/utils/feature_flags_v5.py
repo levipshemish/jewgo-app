@@ -149,7 +149,79 @@ class FeatureFlagsV5:
                 "default": True,
                 "description": "Unified entity API (restaurants, synagogues, mikvah, stores)",
                 "rollout_percentage": 100.0,
+                "depends_on": ["v5_api_enabled"]
+            },
+            
+            "main_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": True,
+                "description": "V5 main API endpoints",
+                "rollout_percentage": 100.0,
+                "depends_on": ["v5_api_enabled"]
+            },
+            
+            "search_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": True,
+                "description": "V5 search API endpoints",
+                "rollout_percentage": 100.0,
+                "depends_on": ["v5_api_enabled"]
+            },
+            
+            "admin_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.FULL,
+                "default": True,
+                "description": "V5 admin API endpoints",
+                "rollout_percentage": 100.0,
                 "depends_on": ["v5_api_enabled", "auth_v5"]
+            },
+            
+            "optimization_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.TESTING,
+                "default": False,
+                "description": "V5 optimization API endpoints",
+                "rollout_percentage": 10.0,
+                "depends_on": ["v5_api_enabled"]
+            },
+            
+            "websocket_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.DISABLED,
+                "default": False,
+                "description": "V5 WebSocket API endpoints",
+                "rollout_percentage": 0.0,
+                "depends_on": ["v5_api_enabled"]
+            },
+            
+            "job_queue_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.TESTING,
+                "default": False,
+                "description": "V5 job queue API endpoints",
+                "rollout_percentage": 5.0,
+                "depends_on": ["v5_api_enabled"]
+            },
+            
+            "security_api_v5": {
+                "type": FeatureFlagType.ROLLOUT,
+                "stage": FeatureFlagStageV5.TESTING,
+                "default": False,
+                "description": "V5 security API endpoints",
+                "rollout_percentage": 10.0,
+                "depends_on": ["v5_api_enabled", "auth_v5"]
+            },
+            
+            "idempotency_v5_for_legacy": {
+                "type": FeatureFlagType.CONFIG,
+                "stage": FeatureFlagStageV5.DISABLED,
+                "default": False,
+                "description": "Enable v5 idempotency for legacy endpoints",
+                "rollout_percentage": 0.0,
+                "depends_on": ["idempotency_v5"]
             },
             
             "cursor_pagination_v5": {

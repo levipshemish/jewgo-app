@@ -515,8 +515,8 @@ print_status "Testing additional important endpoints..."
 
 # Note: Monitoring status endpoint requires authentication - skipping test
 
-# Test metrics dashboard
-test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/dashboard" "Metrics dashboard endpoint"
+# Note: Metrics dashboard endpoint requires authentication - skipping test
+# test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/dashboard" "Metrics dashboard endpoint"
 
 # Test search suggestions
 test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggestions?q=test" "Search suggestions endpoint"

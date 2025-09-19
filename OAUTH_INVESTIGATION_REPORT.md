@@ -66,16 +66,31 @@ The OAuth flow has multiple failure points where `oauth_failed` can occur:
 
 ## Resolution Implemented
 
-### ✅ **Fix Applied: Increased OAuth State Expiration**
+### ✅ **Primary Fix: OAuth Service Auth Manager Initialization**
+```python
+# backend/services/oauth_service_v5.py - Modified __init__ method
+try:
+    self.auth_manager = get_postgres_auth()
+except RuntimeError as e:
+    if "not initialized" in str(e):
+        # Auth manager not initialized - initialize it manually
+        logger.warning("PostgreSQL auth manager not initialized, initializing manually for OAuth")
+        from utils.postgres_auth import initialize_postgres_auth
+        self.auth_manager = initialize_postgres_auth(db_manager)
+        logger.info("PostgreSQL auth manager initialized successfully for OAuth service")
+```
+
+### ✅ **Secondary Fix: Increased OAuth State Expiration**
 ```python
 # backend/services/oauth_service_v5.py line 84
 'expires_at': datetime.utcnow() + timedelta(minutes=30)  # Was: minutes=10
 ```
 
-**Benefits:**
+**Combined Benefits:**
+- OAuth service can now initialize even when Flask app auth manager fails
 - 3x longer window for users to complete OAuth flow
-- Reduces timeout-related failures significantly
-- Maintains security (30 minutes is still reasonable for OAuth)
+- Robust fallback initialization for critical OAuth functionality
+- Maintains security while improving reliability
 
 ### 🔄 **Deployment Completed**
 - ✅ Code changes committed and pushed to main

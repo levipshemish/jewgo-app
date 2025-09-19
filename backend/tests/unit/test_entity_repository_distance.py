@@ -148,3 +148,80 @@ def test_get_entities_with_cursor_computes_distance(monkeypatch, repo_base):
     repo_base._build_distance_expression.assert_called()
     query_mock.add_columns.assert_called()
     repo_base.get_entity_count.assert_called_once()
+
+
+def test_get_entities_with_page_pagination_computes_distance(monkeypatch, repo_base):
+    monkeypatch.setattr("utils.cursor_v5.create_cursor_v5", lambda **_: "cursor-token")
+    distance_expr = MagicMock()
+    distance_expr.label.side_effect = lambda alias: alias
+    distance_expr.asc.return_value = "distance_order_expr"
+    repo_base._build_distance_expression = MagicMock(return_value=distance_expr)
+
+    model_class = SimpleNamespace(
+        id=MagicMock(),
+        created_at=MagicMock(),
+        latitude=MagicMock(),
+        longitude=MagicMock(),
+    )
+    repo_base._model_cache = {"restaurants": model_class}
+
+    session_mock = MagicMock()
+    query_mock = MagicMock()
+    query_mock.options.return_value = query_mock
+    query_mock.add_columns.return_value = query_mock
+    query_mock.order_by.return_value = query_mock
+    query_mock.filter.return_value = query_mock
+
+    class RowLike:
+        def __init__(self, entity, distance):
+            self._data = (entity, distance)
+            self._mapping = {'distance_meters': distance}
+
+        def __getitem__(self, idx):
+            return self._data[idx]
+
+        def __len__(self):
+            return len(self._data)
+
+    limit_holder = MagicMock()
+    limit_holder.all.return_value = [
+        RowLike(SimpleNamespace(id=1, name="A"), 1609.344),
+        RowLike(SimpleNamespace(id=2, name="B"), 3218.688),
+    ]
+    query_mock.offset.return_value = query_mock
+    query_mock.limit.return_value = limit_holder
+
+    session_mock.query.return_value = query_mock
+
+    @contextmanager
+    def fake_scope():
+        yield session_mock
+
+    repo_base.connection_manager = SimpleNamespace(session_scope=fake_scope)
+    repo_base._apply_filters = MagicMock(return_value=query_mock)
+    repo_base._apply_geospatial_filter = MagicMock(return_value=query_mock)
+
+    count_query = MagicMock()
+    count_query.count.return_value = 2
+    repo_base._apply_filters.side_effect = [query_mock, count_query]
+    repo_base._apply_geospatial_filter.side_effect = [query_mock, count_query]
+
+    def entity_to_dict(entity, _include_relations=False):
+        return {"id": entity.id, "name": entity.name}
+
+    repo_base._entity_to_dict = MagicMock(side_effect=entity_to_dict)
+
+    results, next_cursor, prev_cursor, total_count = repo_base._get_entities_with_distance_pagination(
+        "restaurants",
+        page=1,
+        limit=2,
+        filters={"latitude": 40.0, "longitude": -73.0},
+        include_relations=False,
+    )
+
+    assert len(results) == 2
+    assert math.isclose(results[0]["distance"], 1.0, rel_tol=1e-6)
+    assert math.isclose(results[1]["distance"], 2.0, rel_tol=1e-6)
+    assert next_cursor is None
+    assert prev_cursor is None
+    assert total_count == 2

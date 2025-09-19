@@ -16,6 +16,7 @@ import logging
 from database.repositories.entity_repository_v5 import EntityRepositoryV5
 from utils.cursor_v5 import CursorV5Manager
 from utils.etag_v5 import ETagV5Manager
+from middleware.auth_decorators import auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -290,6 +291,7 @@ def get_review(review_id: int):
 
 
 @reviews_v5.route('/', methods=['POST'])
+@auth_required
 @require_review_permission('create')
 def create_review():
     """Create a new review."""

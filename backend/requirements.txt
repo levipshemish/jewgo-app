@@ -54,3 +54,6 @@ psutil==5.9.8
 
 # Browser automation (for auth API) - using latest version for better compatibility
 playwright>=1.40.0
+
+# WebSocket support
+websockets>=11.0.0
