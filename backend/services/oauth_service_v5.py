@@ -33,7 +33,23 @@ class OAuthService:
 
     def __init__(self, db_manager):
         self.db = db_manager
-        self.auth_manager = get_postgres_auth()
+        
+        # Try to get existing auth manager, or initialize one if needed
+        try:
+            self.auth_manager = get_postgres_auth()
+        except RuntimeError as e:
+            if "not initialized" in str(e):
+                # Auth manager not initialized - initialize it manually
+                logger.warning("PostgreSQL auth manager not initialized, initializing manually for OAuth")
+                try:
+                    from utils.postgres_auth import initialize_postgres_auth
+                    self.auth_manager = initialize_postgres_auth(db_manager)
+                    logger.info("PostgreSQL auth manager initialized successfully for OAuth service")
+                except Exception as init_error:
+                    logger.error(f"Failed to initialize auth manager for OAuth: {init_error}")
+                    raise OAuthError(f"Authentication system not available: {init_error}")
+            else:
+                raise
 
         # OAuth state signing - REQUIRED, no fallbacks
         self.state_key = os.getenv('OAUTH_STATE_SIGNING_KEY', '').encode()
