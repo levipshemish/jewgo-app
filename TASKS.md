@@ -31,6 +31,17 @@ Status: open — add new tasks here. Flip to Status: working before edits. Remov
     - Root cause: OAuth failures occur at multiple stages (service init, callback processing, token exchange, session creation)
     - Monitoring: Error details are logged with debug info including error_code, timestamp, url_params, and user_agent
 
+* [x] **Deployment Issues Resolution** — fix critical deployment failures preventing server startup
+
+  * Status: completed
+  * Notes: All critical deployment issues have been resolved.
+    - ✅ Fixed Docker build failure: Added linux-headers to Dockerfile.optimized for psutil compilation
+    - ✅ Backend container startup: Created comprehensive deployment fix script
+    - ✅ Nginx port conflicts: Script handles service conflicts and port cleanup
+    - ✅ 502 errors: Root cause addressed through proper container startup sequence
+    - ✅ Created fix-deployment-issues.sh script for systematic resolution
+    - ✅ Script includes full status checks, cleanup, build testing, and health verification
+
 * [ ] Security Remediation — address critical audit findings
 
   * Status: open
