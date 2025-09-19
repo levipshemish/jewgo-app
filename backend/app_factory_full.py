@@ -449,9 +449,13 @@ def create_app(config_class=None):
         init_postgres_auth_app(app)
         logger.info("PostgreSQL authentication system initialized successfully")
     except ImportError as e:
-        logger.warning(f"Could not initialize PostgreSQL auth system: {e}")
+        logger.error(f"Could not import PostgreSQL auth system: {e}")
+        # Don't silently continue - this is critical for OAuth
+        raise
     except Exception as e:
         logger.error(f"Error initializing PostgreSQL auth system: {e}")
+        # Don't silently continue - this is critical for OAuth
+        raise
     
     # Register v5 middleware with optimized initialization
     try:
