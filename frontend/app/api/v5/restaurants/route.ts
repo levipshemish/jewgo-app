@@ -51,11 +51,22 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('page')) pagination.page = parseInt(searchParams.get('page')!);
     if (searchParams.get('include_filter_options')) pagination.includeFilterOptions = searchParams.get('include_filter_options') === 'true';
 
-    // Call backend API through client
-    const response = await apiClient.getEntities(
-      'restaurants',
-      filters,
-      pagination
+    // Call backend API through client - get full response object
+    const response = await apiClient.request(
+      `/api/v5/restaurants?${new URLSearchParams({
+        ...Object.fromEntries(
+          Object.entries(filters).map(([key, value]) => [
+            key,
+            key === 'location' && typeof value === 'object' 
+              ? `${value.latitude},${value.longitude}${value.radius ? `,${value.radius}` : ''}`
+              : value.toString()
+          ])
+        ),
+        ...Object.fromEntries(
+          Object.entries(pagination).map(([key, value]) => [key, value.toString()])
+        )
+      }).toString()}`,
+      { method: 'GET' }
     );
 
     if (!response || !response.data) {
@@ -74,15 +85,9 @@ export async function GET(request: NextRequest) {
     //   headers.set('ETag', response.headers.etag);
     // }
 
-    // Return full response object for FilterPreview (when includeFilterOptions is false)
-    // Return just data array for main grid (when includeFilterOptions is true)
-    if (pagination.includeFilterOptions) {
-      // Main grid: return just the data array
-      return NextResponse.json((response.data as any).data || response.data, { headers });
-    } else {
-      // FilterPreview: return full response object with total_count
-      return NextResponse.json(response.data, { headers });
-    }
+    // Always return the full response object format that V5ApiClient expects
+    // V5ApiClient expects {data: [], next_cursor: null, prev_cursor: null, total_count: 207, filterOptions: {...}}
+    return NextResponse.json(response.data, { headers });
 
   } catch (error) {
     console.error('Restaurants API error:', error);

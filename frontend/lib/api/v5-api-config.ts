@@ -5,10 +5,10 @@
  * all entity types (restaurants, synagogues, mikvah, stores) into unified endpoints.
  */
 
-import { getApiBaseUrl } from '../api-config';
+// import { getApiBaseUrl } from '../api-config'; // No longer needed - using frontend proxy routes
 
-// V5 API Base URL - always use production API URL
-export const V5_API_BASE_URL = getApiBaseUrl(); // Always use production API
+// V5 API Base URL - use frontend proxy routes for client-side calls
+export const V5_API_BASE_URL = ''; // Use relative URLs to call frontend proxy routes
 
 // V5 API Endpoints
 export const V5_API_ENDPOINTS = {

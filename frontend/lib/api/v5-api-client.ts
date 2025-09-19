@@ -46,8 +46,8 @@ export class V5ApiClient {
   private lastRequestTime: number = 0;
   private minRequestInterval: number = 150; // Minimum 150ms between requests to avoid rate limiting
 
-  constructor(baseUrl: string = V5_API_CONFIG.BASE_URL) {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl: string = '') {
+    this.baseUrl = baseUrl; // Use empty string for relative URLs (frontend proxy routes)
     this.defaultOptions = {
       timeout: V5_API_CONFIG.TIMEOUT,
       retryAttempts: V5_API_CONFIG.RETRY_ATTEMPTS,

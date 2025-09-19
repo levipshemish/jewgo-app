@@ -121,7 +121,7 @@ function useParticleTrail() {
   useEffect(() => {
     const interval = setInterval(updateParticles, 16);
     return () => clearInterval(interval);
-  }, []);
+  }, [updateParticles]);
 
   return { particles, addParticle };
 }

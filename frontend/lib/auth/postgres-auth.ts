@@ -482,8 +482,23 @@ class PostgresAuthClient {
 
   private async _fetchProfile(): Promise<AuthUser> {
     try {
-      const response = await this.request('/profile');
-      const result = await this.handleResponse<{ user: AuthUser }>(response);
+      // Use /sync-user endpoint which properly handles guest users
+      const response = await this.request('/sync-user');
+      const result = await this.handleResponse<{ user: AuthUser; guest?: boolean; authenticated?: boolean }>(response);
+      
+      // Handle guest users properly
+      if (result.guest && !result.authenticated) {
+        // Guest users don't have profiles - return a guest user object
+        return {
+          id: 'guest',
+          name: 'Guest User',
+          email: '',
+          email_verified: false,
+          is_guest: true,
+          roles: [{ role: 'guest', level: 0 }]
+        };
+      }
+      
       return result.user;
     } catch (err) {
       if (err instanceof PostgresAuthError && err.status === 413) {
