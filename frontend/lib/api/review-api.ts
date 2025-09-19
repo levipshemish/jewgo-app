@@ -203,7 +203,7 @@ async function apiRequest<T>(
  */
 export async function submitReview(reviewData: ReviewSubmissionData): Promise<ReviewResponse> {
   try {
-    console.log('🚀 Review submission v2.1 - trying apiRequest first, then postgresAuth fallback');
+    console.log('🚀 Review submission v2.2 - trying apiRequest first, then direct fetch fallback');
     
     try {
       // Try our custom apiRequest first
@@ -217,9 +217,33 @@ export async function submitReview(reviewData: ReviewSubmissionData): Promise<Re
     } catch (apiError) {
       console.log('⚠️ apiRequest failed, trying postgresAuth.request() as fallback:', apiError);
       
-      // Fallback: Use postgresAuth.request() which handles authentication properly
-      const response = await postgresAuth.request('/reviews', {
+      // Fallback: Use direct fetch with postgresAuth authentication handling
+      // postgresAuth.request() is designed for /api/v5/auth endpoints, not /api/v5/reviews
+      console.log('🔄 Using direct fetch fallback with postgresAuth authentication');
+      
+      // Get CSRF token
+      let csrfToken = null;
+      try {
+        if (!postgresAuth.csrfToken) {
+          await postgresAuth.getCsrf();
+        }
+        csrfToken = postgresAuth.csrfToken;
+      } catch (e) {
+        console.warn('⚠️ Failed to get CSRF token for fallback:', e);
+      }
+      
+      const fallbackUrl = `${API_BASE_URL}/api/v5/reviews/`;
+      const response = await fetch(fallbackUrl, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
+          // Try adding Authorization header if available
+          ...(postgresAuth.accessToken && { 'Authorization': `Bearer ${postgresAuth.accessToken}` }),
+        },
+        credentials: 'include',
+        mode: 'cors',
         body: JSON.stringify(reviewData),
       });
       

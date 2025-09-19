@@ -113,6 +113,9 @@ export class V5ApiClient {
 
     const url = this.cleanDuplicateParams(`${this.baseUrl}${endpoint}`);
     let lastError: Error | null = null;
+    
+    // Debug the request being made
+    console.log('🔍 V5 API Client - making request to:', url);
 
     for (let attempt = 0; attempt <= retryAttempts!; attempt++) {
       try {
@@ -156,7 +159,8 @@ export class V5ApiClient {
           dataLength: Array.isArray(data.data) ? data.data.length : 'not array',
           firstItemKeys: data.data?.[0] ? Object.keys(data.data[0]) : 'no first item',
           hasDistance: data.data?.[0]?.distance !== undefined,
-          distance: data.data?.[0]?.distance
+          distance: data.data?.[0]?.distance,
+          actualUrl: url
         });
         
         // Backend returns {data: [], next_cursor: null, prev_cursor: null, total_count: 207}
