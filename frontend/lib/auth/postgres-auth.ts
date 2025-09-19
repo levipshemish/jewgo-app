@@ -353,7 +353,7 @@ class PostgresAuthClient {
     this.refreshToken = null;
   }
 
-  private clearTokens(): void {
+  public clearTokens(): void {
     this.accessToken = null;
     this.refreshToken = null;
     this.csrfToken = null;

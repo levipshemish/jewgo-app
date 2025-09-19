@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Auth initialization error:', error);
         setUser(null);
         setSessionExpired(true);
+        return () => {}; // Return empty cleanup function
       } finally {
         setLoading(false);
       }

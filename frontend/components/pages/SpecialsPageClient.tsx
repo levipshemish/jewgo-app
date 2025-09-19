@@ -23,7 +23,7 @@ export default function SpecialsPageClient() {
       try {
         setLoading(true);
         const response = await getSpecials();
-        setSpecials(response.data || []);
+        setSpecials(response.specials || []);
       } catch (err) {
         console.error('Failed to fetch specials:', err);
         setError('Failed to load specials. Please try again later.');
