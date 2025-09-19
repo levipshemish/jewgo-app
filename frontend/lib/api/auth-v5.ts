@@ -88,7 +88,7 @@ export class AuthTokenManager {
    * Perform actual token refresh request
    */
   private async performTokenRefresh(): Promise<TokenPair> {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
     const response = await fetch(`${backendUrl}/api/v5/auth/refresh`, {
       method: 'POST',
       headers: {
@@ -169,7 +169,7 @@ export class AuthTokenManager {
 
     try {
       const token = await this.getAccessToken();
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
       const response = await fetch(`${backendUrl}/api/v5/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -261,7 +261,7 @@ export class AuthTokenManager {
    */
   async verifyToken(token: string): Promise<{ valid: boolean; error?: string }> {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
       const response = await fetch(`${backendUrl}/api/v5/auth/verify`, {
         method: 'POST',
         headers: {

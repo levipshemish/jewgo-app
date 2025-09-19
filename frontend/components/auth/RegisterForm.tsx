@@ -7,6 +7,7 @@ import Input from '@/components/ui/input';
 import Button from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Logo from '@/components/ui/Logo';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -66,8 +67,11 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
+        <div className="flex justify-center mb-6">
+          <Logo size="lg" />
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Create your account</CardTitle>
@@ -100,7 +104,7 @@ export default function RegisterForm() {
                 <div className="relative">
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
                   <Input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required placeholder="Password (min 8 characters)" value={formData.password} onChange={handleChange} className="pr-20" />
-                  <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(v => !v)}>
+                  <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600 rounded-full" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(v => !v)}>
                     {showPassword ? 'Hide' : 'Show'}
                   </Button>
                 </div>
@@ -108,7 +112,7 @@ export default function RegisterForm() {
                 <div className="relative">
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm password</label>
                   <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" required placeholder="Confirm password" value={formData.confirmPassword} onChange={handleChange} className="pr-20" />
-                  <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600" aria-label={showConfirmPassword ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmPassword(v => !v)}>
+                  <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600 rounded-full" aria-label={showConfirmPassword ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmPassword(v => !v)}>
                     {showConfirmPassword ? 'Hide' : 'Show'}
                   </Button>
                 </div>
@@ -121,7 +125,7 @@ export default function RegisterForm() {
               )}
 
               <div>
-                <Button type="submit" disabled={loading} className="w-full">
+                <Button type="submit" disabled={loading} className="w-full rounded-full">
                   {loading ? 'Creating account...' : 'Create account'}
                 </Button>
               </div>

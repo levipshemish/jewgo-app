@@ -4,7 +4,7 @@
 import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
 import { useEffect, useState, Suspense } from "react";
-import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
+// PasswordStrengthIndicator removed from this page (no upgrade form)
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import Input from '@/components/ui/input';
 import Button from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Logo from '@/components/ui/Logo';
 
 function SignInForm() {
   const [email, setEmail] = useState("");
@@ -29,11 +30,7 @@ function SignInForm() {
   const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
   const [csrfMessage, setCsrfMessage] = useState<string | null>(null);
   const [showHeaderTooLargeHint, setShowHeaderTooLargeHint] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [upgradeEmail, setUpgradeEmail] = useState("");
-  const [upgradePassword, setUpgradePassword] = useState("");
-  const [upgradeName, setUpgradeName] = useState("");
-  const [upgradePending, setUpgradePending] = useState(false);
+  // Removed upgrade guest account UI/state per design request
   const [showAppleComingSoon, setShowAppleComingSoon] = useState(false);
   const [magicEmail, setMagicEmail] = useState("");
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
@@ -303,40 +300,20 @@ function SignInForm() {
     }
   };
 
-  const handleUpgradeGuest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUpgradePending(true);
-    
-    try {
-      if (!upgradeEmail || !upgradePassword) {
-        setError('Email and password are required');
-        return;
-      }
-
-      setTimeout(() => {
-        showSuccess('Account upgraded successfully! You can now sign in with your email and password.');
-      }, 1200);
-    } catch (err: any) {
-      const authError = handleAuthError(err, 'guest_upgrade', { email: upgradeEmail });
-      setError(authError.message);
-      showError(authError.message);
-    } finally {
-      setUpgradePending(false);
-    }
-  };
+  // Upgrade guest flow removed per design request
 
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Checking authentication...</p>
-          </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <>
@@ -348,8 +325,11 @@ function SignInForm() {
         />
       )}
 
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
+          <div className="flex justify-center mb-6">
+            <Logo size="lg" />
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Sign in to your account</CardTitle>
@@ -427,7 +407,7 @@ function SignInForm() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-2 top-7 h-8 px-3 text-gray-400 hover:text-gray-600"
+                      className="absolute right-2 top-7 h-8 px-3 text-gray-400 hover:text-gray-600 rounded-full"
                       onClick={() => setShowPassword((v) => !v)}
                     >
                       {showPassword ? 'Hide' : 'Show'}
@@ -444,7 +424,7 @@ function SignInForm() {
                 </div>
 
                 <div>
-                  <Button type="submit" disabled={isEmailSigningIn} className="w-full">
+                  <Button type="submit" disabled={isEmailSigningIn} className="w-full rounded-full">
                     {isEmailSigningIn ? 'Signing in...' : 'Sign in'}
                   </Button>
                 </div>
@@ -474,7 +454,7 @@ function SignInForm() {
                     const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/google/start?returnTo=${encodeURIComponent(redirectTo)}`;
                     window.location.href = url;
                   }}
-                  className="w-full"
+                  className="w-full rounded-full"
                 >
                   Continue with Google
                 </Button>
@@ -483,7 +463,7 @@ function SignInForm() {
                   type="button"
                   variant="outline"
                   onClick={() => setShowAppleComingSoon(true)}
-                  className="w-full"
+                  className="w-full rounded-full"
                 >
                   Continue with Apple
                 </Button>
@@ -492,71 +472,20 @@ function SignInForm() {
                   type="button"
                   variant="outline"
                   onClick={() => setShowMagicLinkModal(true)}
-                  className="w-full"
+                  className="w-full rounded-full"
                 >
                   Send magic link
                 </Button>
 
                 <Button
                   type="button"
-                  variant="secondary"
+                  // Make guest button primary color like main actions
                   onClick={handleGuestContinue}
                   disabled={csrfReady === false}
-                  className="w-full"
+                  className="w-full rounded-full"
                 >
                   {csrfReady === false ? 'Guest temporarily unavailable' : 'Continue as Guest'}
                 </Button>
-
-                {/* Upgrade guest to full account */}
-                <div className="border rounded-md p-3 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => setShowUpgrade(v => !v)}
-                    className="w-full text-sm text-blue-600 hover:text-blue-700 text-left"
-                    aria-expanded={showUpgrade}
-                  >
-                    {showUpgrade ? 'Hide' : 'Upgrade my guest account'}
-                  </button>
-                  {showUpgrade && (
-                    <form className="mt-3 space-y-3" onSubmit={handleUpgradeGuest}>
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        value={upgradeEmail}
-                        onChange={e => setUpgradeEmail(e.target.value)}
-                        required
-                      />
-                      <input
-                        type="password"
-                        placeholder="Password (min 8 chars)"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        value={upgradePassword}
-                        onChange={e => setUpgradePassword(e.target.value)}
-                        required
-                      />
-                      {upgradePassword && (
-                        <div className="mt-2">
-                          <PasswordStrengthIndicator password={upgradePassword} />
-                        </div>
-                      )}
-                      <input
-                        type="text"
-                        placeholder="Full name (optional)"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        value={upgradeName}
-                        onChange={e => setUpgradeName(e.target.value)}
-                      />
-                      <button
-                        type="submit"
-                        disabled={upgradePending}
-                        className="w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {upgradePending ? 'Upgrading…' : 'Upgrade account'}
-                      </button>
-                    </form>
-                  )}
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -578,7 +507,7 @@ function SignInForm() {
                   setMagicEmail('');
                   setMagicStatus(null);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 rounded-full"
               >
                 ×
               </Button>
@@ -616,7 +545,7 @@ function SignInForm() {
                   handleMagicLinkSignIn();
                 }}
                 disabled={!magicEmail || magicStatus === 'sending' || magicLinkCooldown > 0}
-                className="flex-1"
+                className="flex-1 rounded-full"
               >
                 {magicLinkCooldown > 0
                   ? `Wait ${magicLinkCooldown}s`
@@ -633,6 +562,7 @@ function SignInForm() {
                   setMagicEmail('');
                   setMagicStatus(null);
                 }}
+                className="rounded-full"
               >
                 Cancel
               </Button>

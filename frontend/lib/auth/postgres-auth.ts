@@ -78,12 +78,12 @@ class PostgresAuthClient {
 
   constructor() {
     // Always prioritize NEXT_PUBLIC_BACKEND_URL if it's set, regardless of environment
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
     if (backendUrl) {
       this.baseUrl = backendUrl;
     } else {
-      // Fallback to frontend API routes for backward compatibility
-      this.baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+      // Use production backend as fallback instead of frontend API routes
+      this.baseUrl = 'https://api.jewgo.app';
     }
   }
 

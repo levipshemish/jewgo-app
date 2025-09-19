@@ -1,5 +1,39 @@
 # Task Completion Log
 
+## 2025-09-19 — Auth Endpoint Configuration Audit and Fix
+- ID: 2025-09-19-AUTH-ENDPOINT-CONFIG-FIX
+- Owner: Claude Sonnet 4 AI Agent
+- Links: `frontend/lib/api-config.ts`, `frontend/lib/auth/postgres-auth.ts`, `frontend/lib/api/client-v5.ts`, `frontend/lib/api/auth-v5.ts`, `frontend/app/api/auth/user-with-roles/route.ts`, `frontend/app/api/update-database/route.ts`
+
+**Reason Why** — User requested ensuring all authentication-related calls use proper backend endpoints. Investigation revealed inconsistent backend URL configurations across the authentication system, with some files using hardcoded URLs while others used environment variables with different fallback patterns.
+
+**Change Summary**
+- **Standardized Backend URL Configuration**: Updated all authentication-related files to use consistent pattern: `NEXT_PUBLIC_BACKEND_URL || BACKEND_URL || 'https://api.jewgo.app'`
+- **Fixed API Config Module**: Updated `getApiBaseUrl()`, `getBackendUrl()`, and `getBackendUrlForClient()` to use environment variables instead of hardcoded URLs
+- **Fixed PostgresAuth Client**: Updated constructor to check both `NEXT_PUBLIC_BACKEND_URL` and `BACKEND_URL` before fallback, and use production backend instead of frontend API routes as fallback
+- **Fixed API Client V5**: Updated baseUrl configuration to include `BACKEND_URL` in fallback chain
+- **Fixed Auth V5 Module**: Updated all backend URL references to use consistent environment variable pattern
+- **Fixed API Routes**: Updated `user-with-roles` and `update-database` routes to use standardized backend URL pattern
+
+**Risks & Mitigations**
+- **Configuration Consistency**: All auth-related components now use the same backend URL resolution logic
+- **Environment Flexibility**: Support for both `NEXT_PUBLIC_BACKEND_URL` (client-side) and `BACKEND_URL` (server-side) environment variables
+- **Fallback Safety**: Production backend URL (`https://api.jewgo.app`) used as final fallback when environment variables are not set
+- **Backward Compatibility**: No breaking changes to existing authentication flows
+
+**Tests**
+- **Frontend Linting**: All modified files pass linting with 0 errors
+- **Type Safety**: TypeScript compilation passes with no type errors
+- **Configuration Validation**: All backend URL configurations now use consistent pattern
+- **Environment Variable Support**: Proper fallback chain implemented across all auth components
+
+**Docs Updated**
+- **Task Documentation**: Updated TASKS.md and TASK_COMPLETION.md with configuration audit details
+- **Inline Comments**: Updated comments to reflect new environment variable usage pattern
+
+**Follow-ups**
+- None required. All authentication-related components now use consistent backend endpoint configuration.
+
 ## 2025-09-19 — Profile Page Redirect Issue Fix
 - ID: 2025-09-19-PROFILE-REDIRECT-FIX
 - Owner: Claude Sonnet 4 AI Agent

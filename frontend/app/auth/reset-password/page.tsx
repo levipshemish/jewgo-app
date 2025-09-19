@@ -99,7 +99,7 @@ function ResetPasswordForm() {
               <div className="relative">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">New Password</label>
                 <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter new password" required minLength={8} className="pr-20" />
-                <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(v => !v)}>
+                <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600 rounded-full" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(v => !v)}>
                   {showPassword ? 'Hide' : 'Show'}
                 </Button>
               </div>
@@ -107,12 +107,12 @@ function ResetPasswordForm() {
               <div className="relative">
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
                 <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" required minLength={8} className="pr-20" />
-                <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600" aria-label={showConfirmPassword ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmPassword(v => !v)}>
+                <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600 rounded-full" aria-label={showConfirmPassword ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmPassword(v => !v)}>
                   {showConfirmPassword ? 'Hide' : 'Show'}
                 </Button>
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full">
+              <Button type="submit" disabled={isLoading} className="w-full rounded-full">
                 {isLoading ? 'Resetting…' : 'Reset Password'}
               </Button>
             </form>

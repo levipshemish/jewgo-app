@@ -1,6 +1,6 @@
 # Frontend Docs Changelog
 
-- Auth UI Polish: Sign-in, sign-up, forgot-password, and reset-password now use shared UI primitives (Card, Input, Button, Alert) for consistent styling and better accessibility. Added password visibility toggles where applicable. All existing flows are unchanged (magic link modal, guest continue, Google button, reCAPTCHA).
+- Auth UI Polish: Auth pages (sign-in, sign-up, forgot-password, reset-password, legacy register) use shared UI primitives (Card, Input, Button, Alert) for consistency and accessibility. Added password visibility toggles where applicable, made all buttons pill-shaped, set sign-in/sign-up/register backgrounds to black with centered Jewgo logo, and removed the guest upgrade section. All existing flows remain unchanged (magic link modal, guest continue, Google button, reCAPTCHA).
 
 Date: 2025-09-03
 

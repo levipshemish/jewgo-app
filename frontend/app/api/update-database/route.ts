@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Get backend URL from environment
-    const backendUrl = process.env["BACKEND_URL"]; 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app'; 
     
     // Forward the request to the backend
     const backendResponse = await fetch(

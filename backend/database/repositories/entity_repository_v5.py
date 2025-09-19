@@ -365,15 +365,17 @@ class EntityRepositoryV5(BaseRepository):
                 # Execute query with page-based pagination, attempt distance projection
                 use_projection = False
                 try:
-                    if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                        lat = float(filters['latitude'])
-                        lng = float(filters['longitude'])
-                        distance_expr = func.earth_distance(
-                            func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                            func.ll_to_earth(lat, lng)
-                        ).label('distance_meters')
-                        query = query.add_columns(distance_expr)
-                        use_projection = True
+                    # TEMPORARY: Disable distance projection to fix entity conversion
+                    logger.info("🚧 TEMPORARY: Skipping distance projection")
+                    # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    #     lat = float(filters['latitude'])
+                    #     lng = float(filters['longitude'])
+                    #     distance_expr = func.earth_distance(
+                    #         func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                    #         func.ll_to_earth(lat, lng)
+                    #     ).label('distance_meters')
+                    #     query = query.add_columns(distance_expr)
+                    #     use_projection = True
                     entities = query.offset(offset).limit(limit).all()
                 except Exception as e:
                     logger.warning(f"Distance projection failed (page-based): {e}")
@@ -536,15 +538,17 @@ class EntityRepositoryV5(BaseRepository):
                 # Execute query with optional distance projection
                 use_projection = False
                 try:
-                    if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                        lat = float(filters['latitude'])
-                        lng = float(filters['longitude'])
-                        distance_expr = func.earth_distance(
-                            func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
-                            func.ll_to_earth(lat, lng)
-                        ).label('distance_meters')
-                        query = query.add_columns(distance_expr)
-                        use_projection = True
+                    # TEMPORARY: Disable distance projection to fix entity conversion
+                    logger.info("🚧 TEMPORARY: Skipping distance projection")
+                    # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    #     lat = float(filters['latitude'])
+                    #     lng = float(filters['longitude'])
+                    #     distance_expr = func.earth_distance(
+                    #         func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                    #         func.ll_to_earth(lat, lng)
+                    #     ).label('distance_meters')
+                    #     query = query.add_columns(distance_expr)
+                    #     use_projection = True
                     entities = query.limit(limit + 1).all()  # Get one extra to check for next page
                     logger.info(f"Query executed successfully: {len(entities)} entities returned for limit={limit}")
                     logger.info(f"DEBUG PAGINATION: entities count={len(entities)} , limit={limit}, limit+1={limit+1}")

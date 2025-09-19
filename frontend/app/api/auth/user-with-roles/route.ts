@@ -24,12 +24,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Use environment variable for backend URL
-    const backendUrl = process.env.BACKEND_URL || '';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app';
     
-    // Validate BACKEND_URL in production
-    if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {
-      console.error('[Auth] BACKEND_URL not configured in production');
-      const res = json({ success: false, error: 'BACKEND_URL not configured', adminRole: null, roleLevel: 0, permissions: [] }, 500);
+    // Validate backend URL in production
+    if (process.env.NODE_ENV === 'production' && !backendUrl) {
+      console.error('[Auth] Backend URL not configured in production');
+      const res = json({ success: false, error: 'Backend URL not configured', adminRole: null, roleLevel: 0, permissions: [] }, 500);
       return res;
     }
 

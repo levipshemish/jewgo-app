@@ -29,7 +29,7 @@ export class ApiClientV5 {
 
   constructor(config: Partial<ApiClientConfig> = {}) {
     this.config = {
-      baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app',
+      baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.jewgo.app',
       timeout: 30000,
       retryAttempts: 3,
       retryDelay: 1000,
