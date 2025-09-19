@@ -149,6 +149,16 @@ export class V5ApiClient {
 
         const data = await response.json();
         
+        // Debug the raw response structure
+        console.log('🔍 V5 API Client - raw response structure:', {
+          hasData: 'data' in data,
+          dataType: Array.isArray(data.data) ? 'array' : typeof data.data,
+          dataLength: Array.isArray(data.data) ? data.data.length : 'not array',
+          firstItemKeys: data.data?.[0] ? Object.keys(data.data[0]) : 'no first item',
+          hasDistance: data.data?.[0]?.distance !== undefined,
+          distance: data.data?.[0]?.distance
+        });
+        
         // Backend returns {data: [], next_cursor: null, prev_cursor: null, total_count: 207}
         // Extract the actual data array and return in expected frontend format
         return {
