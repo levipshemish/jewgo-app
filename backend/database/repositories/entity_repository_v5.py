@@ -1139,21 +1139,53 @@ class EntityRepositoryV5(BaseRepository):
                     logger.info("Applied bbox geospatial fallback; PostGIS unavailable")
                 elif hasattr(model_class, 'latitude') and hasattr(model_class, 'longitude'):
                     # Use traditional latitude/longitude columns (most common case)
-                    # Cast to geography so distance is in meters
-                    query = query.filter(
-                        func.ST_DWithin(
-                            func.cast(
-                                func.ST_SetSRID(func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')), 4326),
-                                text('geography')
-                            ),
-                            func.cast(
-                                func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326),
-                                text('geography')
-                            ),
-                            radius_km * 1000  # meters
+                    # Try PostGIS first, fall back to earthdistance if PostGIS fails
+                    try:
+                        # Cast to geography so distance is in meters
+                        query = query.filter(
+                            func.ST_DWithin(
+                                func.ST_SetSRID(func.ST_MakePoint(getattr(model_class, 'longitude'), getattr(model_class, 'latitude')), 4326).cast(text('geography')),
+                                func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326).cast(text('geography')),
+                                radius_km * 1000  # meters
+                            )
                         )
-                    )
-                    logger.info(f"Applied PostGIS geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
+                        logger.info(f"✅ Applied PostGIS geospatial filter: lat={lat}, lng={lng}, radius={radius_km}km")
+                    except Exception as postgis_error:
+                        logger.warning(f"PostGIS geospatial filter failed: {postgis_error}")
+                        # Fall back to earthdistance
+                        try:
+                            radius_meters = radius_km * 1000
+                            query = query.filter(
+                                and_(
+                                    getattr(model_class, 'latitude').isnot(None),
+                                    getattr(model_class, 'longitude').isnot(None),
+                                    func.earth_distance(
+                                        func.ll_to_earth(getattr(model_class, 'latitude'), getattr(model_class, 'longitude')),
+                                        func.ll_to_earth(lat, lng)
+                                    ) <= radius_meters
+                                )
+                            )
+                            logger.info(f"✅ Applied earthdistance geospatial filter fallback: lat={lat}, lng={lng}, radius={radius_km}km")
+                        except Exception as earth_error:
+                            logger.error(f"❌ Both PostGIS and earthdistance geospatial filters failed: {earth_error}")
+                            # Final fallback - use bbox filter
+                            from math import cos, radians
+                            lat_delta = radius_km / 110.574
+                            try:
+                                lng_delta = radius_km / (111.320 * max(0.1, cos(radians(lat))))
+                            except Exception:
+                                lng_delta = radius_km / 111.320
+                            query = query.filter(
+                                and_(
+                                    getattr(model_class, 'latitude').isnot(None),
+                                    getattr(model_class, 'longitude').isnot(None),
+                                    getattr(model_class, 'latitude') >= (lat - lat_delta),
+                                    getattr(model_class, 'latitude') <= (lat + lat_delta),
+                                    getattr(model_class, 'longitude') >= (lng - lng_delta),
+                                    getattr(model_class, 'longitude') <= (lng + lng_delta),
+                                )
+                            )
+                            logger.info(f"⚠️  Applied bbox geospatial filter as final fallback: lat={lat}, lng={lng}, radius={radius_km}km")
                 elif hasattr(model_class, 'geom'):
                     # Use geom column (PostGIS geometry column)
                     query = query.filter(
