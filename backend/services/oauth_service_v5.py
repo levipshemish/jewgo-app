@@ -462,7 +462,7 @@ class OAuthService:
         logger.info(f"[{callback_id}] Validating OAuth state")
         try:
             return_to, extra_data = self.validate_and_consume_state(state, 'google')
-            if not return_to:
+            if return_to is None:  # Only fail if state validation returned None (invalid state)
                 logger.error(f"[{callback_id}] Invalid or expired OAuth state")
                 raise OAuthError("Invalid or expired OAuth state")
             
@@ -738,8 +738,8 @@ class OAuthService:
 
     def handle_apple_callback(self, code: str, state: str, user_data: str | None = None) -> Tuple[Dict[str, Any], str]:
         """Handle Apple OAuth callback."""
-        return_to = self.validate_and_consume_state(state, 'apple')
-        if not return_to:
+        return_to, extra_data = self.validate_and_consume_state(state, 'apple')
+        if return_to is None:  # Only fail if state validation returned None (invalid state)
             raise OAuthError("Invalid or expired OAuth state")
 
         try:
