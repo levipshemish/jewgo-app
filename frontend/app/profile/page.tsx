@@ -6,15 +6,14 @@ import { useRouter} from "next/navigation";
 import Link from "next/link";
 import { SignOutButton} from "@/components/auth";
 import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
+import { postgresAuth, type AuthUser } from "@/lib/auth/postgres-auth";
 
 
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
 
-import { type TransformedUser } from "@/lib/types/postgres-auth";
-
 export default function ProfilePage() {
-  const [user, setUser] = useState<TransformedUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectStatus, setRedirectStatus] = useState<string>('');
 
@@ -27,23 +26,26 @@ export default function ProfilePage() {
       let redirected = false;
       let userAuthenticated = false;
       try {
-        // Use server-side API to get user data instead of client-side Supabase
-        const response = await fetch('/api/auth/sync-user', {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-
-          if (userData.user) {
-
+        // Check if user is authenticated via PostgreSQL auth
+        const isAuth = postgresAuth.isAuthenticated();
+        appLogger.info('Profile page: isAuthenticated check:', isAuth);
+        
+        // Try to get profile regardless of cookie check, as HttpOnly cookies aren't visible to client
+        appLogger.info('Profile page: Attempting to get profile...');
+        
+        try {
+          const profile = await postgresAuth.getProfile();
+          appLogger.info('Profile page: Profile loaded successfully:', !!profile);
+          
+          if (profile) {
             // Check if user is a guest user (no email, provider unknown)
             // Guest users should be redirected to sign in for protected pages
-            const isGuest = !userData.user.email && userData.user.provider === 'unknown';
-
+            const isGuest = !profile.email || profile.is_guest === true;
+            appLogger.info('Profile page: Is guest user:', isGuest);
+            
             if (isGuest) {
-              appLogger.info('Profile page: Redirecting guest user');
+              // Guest users should sign in to access profile
+              appLogger.info('Profile page: Redirecting guest user to sign in');
               setRedirectStatus('Guest users must sign in to access protected pages. Redirecting to /auth/signin...');
               redirected = true;
               router.push('/auth/signin?redirectTo=/profile');
@@ -51,35 +53,50 @@ export default function ProfilePage() {
             }
             
             // User is authenticated with email (not a guest)
-
             if (isMounted) {
-              setUser(userData.user);
+              setUser(profile);
               setIsLoading(false);
               userAuthenticated = true;
             }
             return;
-          } else {
-            appLogger.info('Profile page: No user data, redirecting');
-            // userData.user is null - user is not authenticated
-            setRedirectStatus('Redirecting to /auth/signin...');
-            redirected = true;
-            router.push('/auth/signin?redirectTo=/profile');
-            return;
           }
-        } else if (response.status === 401) {
-          // User is not authenticated
-          setRedirectStatus('Redirecting to /auth/signin...');
-          redirected = true;
-          router.push('/auth/signin?redirectTo=/profile');
-          return;
-        } else {
-          // Handle other error statuses
-          setRedirectStatus('Error occurred, redirecting to /auth/signin...');
-          redirected = true;
-          router.push('/auth/signin?redirectTo=/profile');
+        } catch (profileError) {
+          appLogger.error('Profile page: Failed to get profile:', profileError);
+          // Re-throw to be handled by outer catch block
+          throw profileError;
+        }
+
+        // No user found, will redirect to sign in
+        appLogger.info('Profile page: No user found, redirecting to sign in');
+        setRedirectStatus('Redirecting to /auth/signin...');
+        redirected = true;
+        router.push('/auth/signin?redirectTo=/profile');
+      } catch (error) {
+        appLogger.error('Error loading user:', error);
+        
+        // Enhanced error logging for debugging
+        if (error && typeof error === 'object' && 'status' in error) {
+          appLogger.error('Profile page error details:', {
+            status: (error as any).status,
+            code: (error as any).code,
+            message: (error as any).message,
+            name: (error as any).name
+          });
+        }
+        
+        // Check if it's a service unavailable error (503)
+        if (error && typeof error === 'object' && 'status' in error && error.status === 503) {
+          // Service unavailable - show error state instead of infinite loading
+          appLogger.warn('Auth service unavailable (503), showing error state instead of redirecting');
+          if (isMounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
           return;
         }
-      } catch (_error) {
+        
+        // For other errors, redirect to sign in
+        appLogger.info('Redirecting to sign in due to auth error');
         setRedirectStatus('Error occurred, redirecting to /auth/signin...');
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile');

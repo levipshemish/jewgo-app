@@ -1,5 +1,38 @@
 # Task Completion Log
 
+## 2025-09-19 — Profile Page Redirect Issue Fix
+- ID: 2025-09-19-PROFILE-REDIRECT-FIX
+- Owner: Claude Sonnet 4 AI Agent
+- Links: `frontend/app/profile/page.tsx`
+
+**Reason Why** — User reported that signed-in users were being redirected to the sign-in page when trying to access the profile page. Investigation revealed the profile page was calling a non-existent `/api/auth/sync-user` endpoint, while the working profile settings page used the `postgresAuth.getProfile()` client directly.
+
+**Change Summary**
+- **Fixed Authentication Method**: Replaced broken `fetch('/api/auth/sync-user')` call with direct `postgresAuth.getProfile()` usage
+- **Updated Imports**: Added `postgresAuth` and `AuthUser` type imports from postgres-auth module
+- **Improved Error Handling**: Added enhanced error logging and 503 Service Unavailable handling to prevent infinite loading
+- **Consistent Pattern**: Aligned profile page authentication with the working pattern used in profile settings page
+- **Type Updates**: Changed user state type from `TransformedUser` to `AuthUser` for consistency
+
+**Risks & Mitigations**
+- **Authentication Flow**: No changes to core authentication logic, only fixed broken endpoint call
+- **User Experience**: Improved error handling prevents infinite loading states during service unavailability
+- **Type Safety**: Maintained proper TypeScript typing with AuthUser interface
+- **Backward Compatibility**: No breaking changes to existing profile functionality
+
+**Tests**
+- **Frontend Linting**: All modified files pass linting with 0 errors
+- **Type Safety**: TypeScript compilation passes with proper type usage
+- **Authentication Pattern**: Uses same proven pattern as working profile settings page
+- **Error Handling**: Added comprehensive error logging and graceful degradation
+
+**Docs Updated**
+- **Task Documentation**: Updated TASKS.md and TASK_COMPLETION.md with fix details
+- **Inline Comments**: Enhanced code comments explaining authentication approach and error handling
+
+**Follow-ups**
+- None required. Profile page authentication now works consistently with other protected pages.
+
 ## 2025-09-19 — PostGIS Sorting Investigation and Fix
 - ID: 2025-09-19-POSTGIS-SORTING-FIX
 - Owner: Claude Sonnet 4 AI Agent
