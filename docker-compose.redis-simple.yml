@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Redis Master
   redis-master:
@@ -50,57 +48,6 @@ services:
       - REDIS_MASTER_PORT=6379
     depends_on:
       - redis-master
-    networks:
-      - redis-cluster
-    restart: unless-stopped
-
-  # Redis Sentinel 1
-  redis-sentinel-1:
-    image: redis:7-alpine
-    container_name: redis-sentinel-1
-    ports:
-      - "26379:26379"
-    volumes:
-      - ./redis-sentinel.conf:/usr/local/etc/redis/sentinel.conf
-    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    networks:
-      - redis-cluster
-    restart: unless-stopped
-
-  # Redis Sentinel 2
-  redis-sentinel-2:
-    image: redis:7-alpine
-    container_name: redis-sentinel-2
-    ports:
-      - "26380:26379"
-    volumes:
-      - ./redis-sentinel.conf:/usr/local/etc/redis/sentinel.conf
-    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    networks:
-      - redis-cluster
-    restart: unless-stopped
-
-  # Redis Sentinel 3
-  redis-sentinel-3:
-    image: redis:7-alpine
-    container_name: redis-sentinel-3
-    ports:
-      - "26381:26379"
-    volumes:
-      - ./redis-sentinel.conf:/usr/local/etc/redis/sentinel.conf
-    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
     networks:
       - redis-cluster
     restart: unless-stopped
