@@ -298,13 +298,21 @@ def get_entities(entity_type: str):
         # Check if filter options should be included (typically on first page)
         include_filter_options = request.args.get('include_filter_options', 'false').lower() == 'true'
         
+        # Debug logging for distance sorting
+        sort_param = pagination.get('sort', 'created_at_desc')
+        if sort_param == 'distance_asc':
+            lat = request.args.get('latitude') or request.args.get('lat')
+            lng = request.args.get('longitude') or request.args.get('lng')
+            logger.info(f"🔍 DEBUG API: Distance sorting requested - sort={sort_param}, lat={lat}, lng={lng}")
+            logger.info(f"🔍 DEBUG API: All filters - {filters}")
+        
         # Get entities
         result = service.get_entities(
             filters=filters,
             cursor=pagination.get('cursor'),
             page=pagination.get('page'),
             limit=pagination.get('limit', 20),
-            sort=pagination.get('sort', 'created_at_desc'),
+            sort=sort_param,
             include_filter_options=include_filter_options
         )
         

@@ -214,15 +214,14 @@ export class V5ApiClient {
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.cursor) searchParams.set('cursor', params.cursor);
     
-    // Handle sort parameter - prioritize params.sort over filters.sort
-    // Auto-enable distance sorting when location is provided
+    // Handle sort parameter - prioritize params.sort > filters.sort > auto-distance sorting
     if (params.sort) {
       searchParams.set('sort', params.sort);
+    } else if (params.filters && (params.filters as any).sort) {
+      searchParams.set('sort', String((params.filters as any).sort));
     } else if (params.location && params.location.lat && params.location.lng) {
       // Automatically use distance sorting when location is available
       searchParams.set('sort', 'distance_asc');
-    } else if (params.filters && (params.filters as any).sort) {
-      searchParams.set('sort', String((params.filters as any).sort));
     }
     
     if (params.order) searchParams.set('order', params.order);
@@ -278,15 +277,14 @@ export class V5ApiClient {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     
-    // Handle sort parameter - prioritize params.sort over filters.sort
-    // Auto-enable distance sorting when location is provided
+    // Handle sort parameter - prioritize params.sort > filters.sort > auto-distance sorting
     if (params.sort) {
       searchParams.set('sort', params.sort);
+    } else if (params.filters && (params.filters as any).sort) {
+      searchParams.set('sort', String((params.filters as any).sort));
     } else if (params.location && params.location.lat && params.location.lng) {
       // Automatically use distance sorting when location is available
       searchParams.set('sort', 'distance_asc');
-    } else if (params.filters && (params.filters as any).sort) {
-      searchParams.set('sort', String((params.filters as any).sort));
     }
     
     if (params.order) searchParams.set('order', params.order);

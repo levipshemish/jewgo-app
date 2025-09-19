@@ -457,12 +457,12 @@ class PostgresAuthClient {
   }
 
   // Auth request deduplication
-  private _profilePromise: Promise<AuthUser> | null = null;
+  private _profilePromise: Promise<AuthUser | null> | null = null;
 
   /**
    * Get current user profile with deduplication
    */
-  async getProfile(): Promise<AuthUser> {
+  async getProfile(): Promise<AuthUser | null> {
     // If there's already a profile request in flight, return that promise
     if (this._profilePromise) {
       return this._profilePromise;
@@ -480,7 +480,7 @@ class PostgresAuthClient {
     }
   }
 
-  private async _fetchProfile(): Promise<AuthUser> {
+  private async _fetchProfile(): Promise<AuthUser | null> {
     try {
       // Use /sync-user endpoint which properly handles guest users
       const response = await this.request('/sync-user');
@@ -503,7 +503,7 @@ class PostgresAuthClient {
           email: '',
           email_verified: false,
           is_guest: true,
-          roles: [{ role: 'guest', level: 0 }]
+          roles: [{ role: 'guest', level: 0, granted_at: new Date().toISOString() }]
         };
       }
       
@@ -522,7 +522,7 @@ class PostgresAuthClient {
       }
       
       console.log('[Auth] No user found in response');
-      throw new PostgresAuthError('No user data found', 404);
+      throw new PostgresAuthError('No user data found', 'NO_USER_DATA', 404);
     } catch (err) {
       if (err instanceof PostgresAuthError && err.status === 413) {
         // Log detailed cookie information to aid debugging
@@ -619,7 +619,7 @@ class PostgresAuthClient {
   async hasRole(roleName: string): Promise<boolean> {
     try {
       const user = await this.getProfile();
-      return user.roles.some(role => role.role === roleName);
+      return user?.roles.some(role => role.role === roleName) || false;
     } catch {
       return false;
     }
@@ -631,6 +631,7 @@ class PostgresAuthClient {
   async hasMinimumRoleLevel(level: number): Promise<boolean> {
     try {
       const user = await this.getProfile();
+      if (!user) return false;
       const maxLevel = Math.max(...user.roles.map(role => role.level), 0);
       return maxLevel >= level;
     } catch {

@@ -31,7 +31,8 @@
 - **Inline Documentation**: Enhanced code comments explaining PostGIS sorting logic and fallback chain
 
 **Follow-ups**
-- None required - PostGIS distance sorting is now properly implemented and functional
+- Monitor backend logs for debug messages to confirm distance sorting is working after deployment
+- Remove debug logging once sorting is confirmed working in production
 
 * [x] Auth UI Polish — Consistent, accessible UI for sign-in/sign-up pages using shared components; added password visibility toggles and polished modal/buttons
 

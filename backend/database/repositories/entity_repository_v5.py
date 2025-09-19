@@ -1272,15 +1272,36 @@ class EntityRepositoryV5(BaseRepository):
             lat = filters['latitude']
             lng = filters['longitude']
             
+            logger.info(f"DEBUG: Distance sorting requested - lat={lat}, lng={lng}, postgis_available={self._postgis_available}")
+            
             if self._postgis_available:
                 # Use PostGIS ST_Distance for accurate distance sorting
-                from sqlalchemy import func
-                distance_expr = func.ST_Distance(
-                    func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326).cast(text('geography')),
-                    func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326).cast(text('geography'))
-                )
-                query = query.order_by(distance_expr.asc(), model_class.id.asc())
-                logger.info(f"Applied PostGIS distance sorting for lat={lat}, lng={lng}")
+                try:
+                    from sqlalchemy import func
+                    distance_expr = func.ST_Distance(
+                        func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326).cast(text('geography')),
+                        func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326).cast(text('geography'))
+                    )
+                    query = query.order_by(distance_expr.asc(), model_class.id.asc())
+                    logger.info(f"✅ Applied PostGIS distance sorting for lat={lat}, lng={lng}")
+                except Exception as e:
+                    logger.error(f"❌ PostGIS distance sorting failed: {e}")
+                    # Fall back to earthdistance
+                    try:
+                        from sqlalchemy import func
+                        distance_expr = func.earth_distance(
+                            func.ll_to_earth(model_class.latitude, model_class.longitude),
+                            func.ll_to_earth(lat, lng)
+                        )
+                        query = query.order_by(distance_expr.asc(), model_class.id.asc())
+                        logger.info(f"✅ Applied earthdistance sorting fallback for lat={lat}, lng={lng}")
+                    except Exception as e2:
+                        logger.error(f"❌ Earthdistance sorting also failed: {e2}")
+                        # Final fallback to created_at
+                        primary_field = getattr(model_class, 'created_at')
+                        secondary_field = getattr(model_class, 'id')
+                        query = query.order_by(desc(primary_field), desc(secondary_field))
+                        logger.info("⚠️  Applied final fallback to created_at sorting")
             else:
                 # Fallback to earthdistance if PostGIS not available
                 try:
@@ -1290,16 +1311,17 @@ class EntityRepositoryV5(BaseRepository):
                         func.ll_to_earth(lat, lng)
                     )
                     query = query.order_by(distance_expr.asc(), model_class.id.asc())
-                    logger.info(f"Applied earthdistance sorting for lat={lat}, lng={lng}")
+                    logger.info(f"✅ Applied earthdistance sorting for lat={lat}, lng={lng}")
                 except Exception as e:
-                    logger.warning(f"Distance sorting failed, falling back to created_at: {e}")
+                    logger.error(f"❌ Earthdistance sorting failed: {e}")
                     # Final fallback to created_at
                     primary_field = getattr(model_class, 'created_at')
                     secondary_field = getattr(model_class, 'id')
                     query = query.order_by(desc(primary_field), desc(secondary_field))
+                    logger.info("⚠️  Applied final fallback to created_at sorting")
         elif sort_key == 'distance_asc':
             # No location provided, fall back to created_at
-            logger.info("Distance sorting requested but no location provided, falling back to created_at")
+            logger.info("⚠️  Distance sorting requested but no location provided, falling back to created_at")
             primary_field = getattr(model_class, 'created_at')
             secondary_field = getattr(model_class, 'id')
             query = query.order_by(desc(primary_field), desc(secondary_field))

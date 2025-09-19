@@ -122,11 +122,16 @@ export default function EateryGrid({
         longitude: parseFloat(searchParams.get('longitude')!)
       } : undefined
       
-      // Build filters from search params
+      // Build filters from search params, but extract sort parameter separately
       const filters: Record<string, any> = {}
+      let sortParam = undefined
       for (const [key, value] of searchParams.entries()) {
         if (key !== 'latitude' && key !== 'longitude' && key !== 'cursor') {
-          filters[key] = value
+          if (key === 'sort') {
+            sortParam = value // Extract sort parameter separately
+          } else {
+            filters[key] = value
+          }
         }
       }
       
@@ -134,7 +139,10 @@ export default function EateryGrid({
       const response = await apiFetchRestaurants({
         page: page || 1, // Always use page-based pagination
         limit,
-        filters,
+        filters: {
+          ...filters,
+          ...(sortParam && { sort: sortParam }) // Add sort to filters for V5 API client processing
+        },
         location,
         cursor: undefined, // Never use cursor-based pagination
         includeFilterOptions: page === 1 // Include filter options on first page only

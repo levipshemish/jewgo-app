@@ -8,6 +8,13 @@
 
 import { postgresAuth } from '@/lib/auth/postgres-auth';
 
+// We'll use a callback to check authentication instead of direct postgresAuth
+let authCheckCallback: (() => boolean) | null = null;
+
+export function setAuthCheckCallback(callback: () => boolean) {
+  authCheckCallback = callback;
+}
+
 // Base API configuration
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
@@ -51,8 +58,9 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  // Check if user is authenticated using the postgresAuth system
-  if (!postgresAuth.isAuthenticated()) {
+  // Check if user is authenticated using the auth callback or fallback to postgresAuth
+  const isAuthenticated = authCheckCallback ? authCheckCallback() : postgresAuth.isAuthenticated();
+  if (!isAuthenticated) {
     throw new Error('Authentication required. Please log in to submit a review.');
   }
 

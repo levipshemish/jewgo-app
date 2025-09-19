@@ -3,9 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { ProfileImage } from "@/components/ui/profile-image"
 import { Star, X, ChevronDown, MessageSquare, Send, ArrowLeft, LogIn } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { submitReview } from "@/lib/api/review-api"
+import { submitReview, setAuthCheckCallback } from "@/lib/api/review-api"
 import { useAuth } from "@/contexts/AuthContext"
 
 interface Review {
@@ -84,6 +84,11 @@ export function ReviewsPopup({
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+
+  // Set up auth callback for the review API
+  useEffect(() => {
+    setAuthCheckCallback(isAuthenticated)
+  }, [isAuthenticated])
 
   if (!isOpen) return null
 

@@ -3,6 +3,10 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { postgresAuth } from "@/lib/auth/postgres-auth";
+import Input from '@/components/ui/input';
+import Button from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
@@ -10,6 +14,8 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,81 +62,68 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-neutral-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-green-400 text-6xl mb-4">✓</div>
-          <h1 className="text-2xl font-bold text-white mb-4">Password Reset Successful</h1>
-          <p className="text-neutral-400 mb-4">Your password has been reset successfully.</p>
-          <p className="text-neutral-500 text-sm">Redirecting to signin page...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <Card>
+            <CardHeader>
+              <CardTitle>Password Reset Successful</CardTitle>
+              <CardDescription>Your password has been updated. Redirecting to sign in…</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert className="border-green-200 bg-green-50 text-green-700">
+                <AlertDescription>Success! You can now sign in with your new password.</AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-800 flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Reset Password</h1>
-          <p className="text-neutral-400">Enter your new password below</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <Card>
+          <CardHeader>
+            <CardTitle>Reset Password</CardTitle>
+            <CardDescription>Enter your new password below.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <Alert className="border-red-200 bg-red-50 text-red-700">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg">
-              {error}
+              <div className="relative">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">New Password</label>
+                <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter new password" required minLength={8} className="pr-20" />
+                <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(v => !v)}>
+                  {showPassword ? 'Hide' : 'Show'}
+                </Button>
+              </div>
+
+              <div className="relative">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" required minLength={8} className="pr-20" />
+                <Button type="button" variant="ghost" size="sm" className="absolute right-2 bottom-2 text-gray-600" aria-label={showConfirmPassword ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmPassword(v => !v)}>
+                  {showConfirmPassword ? 'Hide' : 'Show'}
+                </Button>
+              </div>
+
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? 'Resetting…' : 'Reset Password'}
+              </Button>
+            </form>
+
+            <div className="text-center mt-6">
+              <a href="/auth/signin" className="text-blue-600 hover:text-blue-500 text-sm">
+                Back to Sign In
+              </a>
             </div>
-          )}
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-neutral-300 mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:border-transparent"
-              placeholder="Enter new password"
-              required
-              minLength={8}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-300 mb-2">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:border-transparent"
-              placeholder="Confirm new password"
-              required
-              minLength={8}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-jewgo-400 text-white py-3 px-4 rounded-lg font-medium hover:bg-jewgo-500 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isLoading ? "Resetting..." : "Reset Password"}
-          </button>
-        </form>
-
-        <div className="text-center mt-6">
-          <a
-            href="/auth/signin"
-            className="text-jewgo-400 hover:text-jewgo-300 text-sm transition-colors"
-          >
-            Back to Sign In
-          </a>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
