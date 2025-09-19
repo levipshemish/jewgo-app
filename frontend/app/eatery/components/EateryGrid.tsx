@@ -122,6 +122,10 @@ export default function EateryGrid({
         longitude: parseFloat(searchParams.get('longitude')!)
       } : undefined
       
+      // Debug the API request
+      console.log('🔍 API Request - location:', location);
+      console.log('🔍 API Request - params:', params);
+      
       // Build filters from search params, but extract sort parameter separately
       const filters: Record<string, any> = {}
       let sortParam = undefined
@@ -151,6 +155,9 @@ export default function EateryGrid({
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch restaurants')
       }
+
+      // Debug the API response
+      console.log('🔍 API Response - first 3 restaurants:', response.restaurants?.slice(0, 3));
 
       // Handle the response format from the restaurants API
       const responseRestaurants = response.restaurants || []
