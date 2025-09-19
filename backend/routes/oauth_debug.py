@@ -61,8 +61,7 @@ def oauth_debug():
                 'frontend_url_value': os.getenv('FRONTEND_URL', 'NOT_SET'),
                 'oauth_state_key_set': bool(os.getenv('OAUTH_STATE_SIGNING_KEY')),
                 'oauth_state_key_length': len(os.getenv('OAUTH_STATE_SIGNING_KEY', '')),
-            },
-            'service_status': {}
+            }
         }
         
         # Test OAuth service initialization

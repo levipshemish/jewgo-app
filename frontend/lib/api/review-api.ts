@@ -164,7 +164,7 @@ async function apiRequest<T>(
     try {
       errorData = await response.json();
       console.log('📄 Error Response Body:', errorData);
-    } catch (e) {
+    } catch (_e) {
       console.log('📄 Error Response Body (not JSON):', await response.text());
       errorData = {};
     }

@@ -3,12 +3,13 @@ Security Audit API endpoints for monitoring and analysis.
 Provides security metrics and audit log access for administrators.
 """
 
-from datetime import datetime, timedelta
-from flask import request, jsonify, g
+from datetime import datetime
+from flask import request, jsonify
+from sqlalchemy import text
 
 from utils.blueprint_factory_v5 import BlueprintFactoryV5
 from middleware.auth_decorators import auth_required, rate_limit_by_user
-from services.security_audit_service import get_security_audit_service, SecurityEventType
+from services.security_audit_service import get_security_audit_service
 from utils.logging_config import get_logger
 from utils.security import require_admin
 
@@ -202,7 +203,7 @@ def security_audit_health():
         
         # Test database connectivity
         with service.db_connection.session_scope() as session:
-            result = session.execute(text("SELECT 1")).scalar()
+            session.execute(text("SELECT 1")).scalar()
             
         return jsonify({
             'success': True,
