@@ -62,6 +62,11 @@ class DatabaseConnectionManager:
         """
         return getattr(self._unified_manager, 'engine', None)
 
+    @property
+    def connection_manager(self):
+        """Expose the unified manager for helpers expecting `.connection_manager`."""
+        return self._unified_manager
+
     def session_scope(self):
         """Get session context manager."""
         return self._unified_manager.session_scope()

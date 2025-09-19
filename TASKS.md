@@ -13,11 +13,6 @@ Status: open — add new tasks here. Flip to Status: working before edits. Remov
     - Root cause: OAuth failures occur at multiple stages (service init, callback processing, token exchange, session creation)
     - Monitoring: Error details are logged with debug info including error_code, timestamp, url_params, and user_agent
 
-* [ ] Authentication System Audit — review backend auth routes for flaws and propose fixes
-
-  * Status: open
-  * Notes: Requested deep analysis of authentication, CSRF, cookies, and route structure. Pending REQ/DES/IMP documentation before code changes.
-
 * [ ] Security Remediation — address critical audit findings
 
   * Status: open

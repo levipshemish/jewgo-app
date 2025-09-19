@@ -1,8 +1,11 @@
 import os
 import hashlib
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
+
+from .token_manager_v5 import TokenManagerV5
 
 
 def _now():
@@ -29,11 +32,35 @@ def new_session_id() -> str:
     return str(uuid.uuid4())
 
 
+_token_manager_v5: Optional[TokenManagerV5] = None
+
+
+def _get_token_manager_v5() -> TokenManagerV5:
+    """Lazily instantiate a shared TokenManagerV5 instance."""
+    global _token_manager_v5
+    if _token_manager_v5 is None:
+        _token_manager_v5 = TokenManagerV5()
+    return _token_manager_v5
+
+
+@contextmanager
+def _session_scope(db_manager):
+    """Yield a session regardless of db_manager interface flavour."""
+    if hasattr(db_manager, "connection_manager"):
+        with db_manager.connection_manager.session_scope() as session:
+            yield session
+    elif hasattr(db_manager, "session_scope"):
+        with db_manager.session_scope() as session:
+            yield session
+    else:
+        raise AttributeError("Database manager must expose session_scope")
+
+
 def persist_initial(db_manager, *, user_id: str, refresh_token: str, sid: str, fid: str, user_agent: Optional[str], ip: Optional[str], ttl_seconds: int) -> None:
     from sqlalchemy import text
     expires_at = _now() + timedelta(seconds=ttl_seconds)
     token_hash = _hash_refresh(refresh_token)
-    with db_manager.connection_manager.session_scope() as session:
+    with _session_scope(db_manager) as session:
         session.execute(
             text(
                 """
@@ -61,7 +88,7 @@ def rotate_or_reject(db_manager, *, user_id: str, provided_refresh: str, sid: st
     from sqlalchemy import text
     token_hash = _hash_refresh(provided_refresh)
     now = _now()
-    with db_manager.connection_manager.session_scope() as session:
+    with _session_scope(db_manager) as session:
         # Verify the session row matches presented token and is not revoked/expired
         row = session.execute(
             text(
@@ -104,9 +131,13 @@ def rotate_or_reject(db_manager, *, user_id: str, provided_refresh: str, sid: st
         new_sid = new_session_id()
         # The caller will mint the new refresh token so we can hash it here after they pass it back
         # For simplicity, mint here to keep rotation atomic
-        from .tokens import mint_refresh
-
-        new_token, new_ttl = mint_refresh(user_id, sid=new_sid, fid=fid)
+        token_manager = _get_token_manager_v5()
+        new_token, new_ttl = token_manager.mint_refresh_token(
+            user_id,
+            new_sid,
+            fid,
+            ttl=ttl_seconds,
+        )
         new_hash = _hash_refresh(new_token)
         expires_at = now + timedelta(seconds=new_ttl)
 
@@ -134,5 +165,5 @@ def rotate_or_reject(db_manager, *, user_id: str, provided_refresh: str, sid: st
 
 def revoke_family(db_manager, *, fid: str) -> None:
     from sqlalchemy import text
-    with db_manager.connection_manager.session_scope() as session:
+    with _session_scope(db_manager) as session:
         session.execute(text("UPDATE auth_sessions SET revoked_at = NOW() WHERE family_id = :fid AND revoked_at IS NULL"), {"fid": fid})

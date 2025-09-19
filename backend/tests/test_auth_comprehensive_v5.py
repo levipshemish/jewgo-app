@@ -84,6 +84,7 @@ class MockDatabaseManager:
         self.users = {}
         self.sessions = {}
         self.user_roles = {}
+        self.connection_manager = self
     
     def session_scope(self):
         return MockSession(self)
@@ -153,8 +154,76 @@ class MockSession:
         return MockResult([])
     
     def _handle_session_query(self, query: str, params: Dict[str, Any]):
-        # Mock session queries
-        return []
+        query_lower = query.lower()
+        params = params or {}
+
+        if 'insert into auth_sessions' in query_lower:
+            session_data = {
+                'id': params['id'],
+                'user_id': params['uid'],
+                'refresh_token_hash': params['hash'],
+                'family_id': params['fid'],
+                'rotated_from': params.get('from_id'),
+                'user_agent': params.get('ua'),
+                'ip': params.get('ip'),
+                'created_at': datetime.utcnow(),
+                'last_used': datetime.utcnow(),
+                'expires_at': params['exp'],
+                'revoked_at': None,
+            }
+            self.db.sessions[session_data['id']] = session_data
+            return MockResult([])
+
+        if 'select id, revoked_at, expires_at' in query_lower:
+            session = self.db.sessions.get(params['sid'])
+            if session and session['user_id'] == params['uid']:
+                row = {
+                    'id': session['id'],
+                    'revoked_at': session['revoked_at'],
+                    'expires_at': session['expires_at'],
+                }
+                return MockResult([MockRow(row)])
+            return MockResult([])
+
+        if 'select 1 from auth_sessions' in query_lower and 'refresh_token_hash' in query_lower:
+            session = self.db.sessions.get(params['sid'])
+            if session and session['refresh_token_hash'] == params['h'] and session['revoked_at'] is None:
+                return MockResult([MockRow({'result': 1})])
+            return MockResult([])
+
+        if 'update auth_sessions set revoked_at = now(), last_used = now() where id' in query_lower:
+            session = self.db.sessions.get(params['sid'])
+            updated = 0
+            if session and session['revoked_at'] is None:
+                session['revoked_at'] = datetime.utcnow()
+                session['last_used'] = datetime.utcnow()
+                updated = 1
+            return MockResult([None] * updated)
+
+        if 'update auth_sessions set revoked_at = now() where family_id' in query_lower:
+            updated = 0
+            for session in self.db.sessions.values():
+                if session['family_id'] == params['fid'] and session['revoked_at'] is None:
+                    session['revoked_at'] = datetime.utcnow()
+                    updated += 1
+            return MockResult([None] * updated)
+
+        if 'update auth_sessions set revoked_at = now() where id = :sid' in query_lower and 'family_id' not in query_lower:
+            session = self.db.sessions.get(params['sid'])
+            updated = 0
+            if session and session['revoked_at'] is None:
+                session['revoked_at'] = datetime.utcnow()
+                updated = 1
+            return MockResult([None] * updated)
+
+        if 'select id, family_id' in query_lower and 'from auth_sessions' in query_lower:
+            rows = []
+            for session in self.db.sessions.values():
+                if session['user_id'] == params.get('uid'):
+                    rows.append(MockRow(session.copy()))
+            return MockResult(rows)
+
+        return MockResult([])
 
 
 class MockRow:
@@ -222,6 +291,18 @@ def test_user_data():
         'permissions': ['read'],
         'email_verified': False
     }
+
+
+@pytest.fixture
+def jwt_env(monkeypatch):
+    """Set deterministic secrets for JWT/refresh flows during tests."""
+    monkeypatch.setenv('JWT_SECRET_KEY', 'test-secret-key')
+    monkeypatch.setenv('JWT_ISSUER', 'test-issuer')
+    monkeypatch.setenv('JWT_AUDIENCE', 'test-audience')
+    monkeypatch.setenv('REFRESH_PEPPER', 'test-pepper')
+    yield
+    for key in ('JWT_SECRET_KEY', 'JWT_ISSUER', 'JWT_AUDIENCE', 'REFRESH_PEPPER'):
+        monkeypatch.delenv(key, raising=False)
 
 
 class TestUserRegistration:
@@ -391,7 +472,8 @@ class TestTokenManagement:
         }
         auth_service.token_manager_v5.verify_token.return_value = mock_payload
         
-        payload = auth_service.verify_token('valid_token')
+        with patch.object(auth_service, 'is_token_blacklisted', return_value=False):
+            payload = auth_service.verify_token('valid_token')
         
         assert payload is not None
         assert payload['uid'] == 'user123'
@@ -400,9 +482,23 @@ class TestTokenManagement:
     def test_token_verification_invalid(self, auth_service):
         """Test verification of invalid token."""
         auth_service.token_manager_v5.verify_token.return_value = None
-        
-        payload = auth_service.verify_token('invalid_token')
-        
+
+        with patch.object(auth_service, 'is_token_blacklisted', return_value=False):
+            payload = auth_service.verify_token('invalid_token')
+
+        assert payload is None
+
+    def test_token_verification_blacklisted(self, auth_service):
+        """Token verification should fail for blacklisted tokens."""
+        auth_service.token_manager_v5.verify_token.return_value = {
+            'uid': 'user123',
+            'type': 'access',
+            'jti': 'test-jti'
+        }
+
+        with patch.object(auth_service, 'is_token_blacklisted', return_value=True):
+            payload = auth_service.verify_token('blacklisted_token')
+
         assert payload is None
     
     def test_token_refresh(self, auth_service, test_user_data):
@@ -454,6 +550,51 @@ class TestTokenManagement:
             assert success is True
             # Verify token is blacklisted
             assert auth_service.is_token_blacklisted('token_to_blacklist') is True
+
+    def test_refresh_rotation_generates_v5_refresh_token(self, mock_db, jwt_env):
+        """Ensure rotated refresh tokens remain compatible with TokenManagerV5."""
+        from services.auth import sessions as session_mod
+        from services.auth.token_manager_v5 import TokenManagerV5
+
+        # Reset singleton so it picks up the test secrets
+        session_mod._token_manager_v5 = None
+
+        user_id = 'user-refresh'
+        family_id = 'family-refresh'
+        initial_sid = 'session-initial'
+        token_manager = TokenManagerV5()
+
+        refresh_token, refresh_ttl = token_manager.mint_refresh_token(user_id, initial_sid, family_id)
+
+        session_mod.persist_initial(
+            mock_db,
+            user_id=user_id,
+            refresh_token=refresh_token,
+            sid=initial_sid,
+            fid=family_id,
+            user_agent='pytest-agent',
+            ip='127.0.0.1',
+            ttl_seconds=refresh_ttl,
+        )
+
+        new_sid, new_refresh, new_refresh_ttl = session_mod.rotate_or_reject(
+            mock_db,
+            user_id=user_id,
+            provided_refresh=refresh_token,
+            sid=initial_sid,
+            fid=family_id,
+            user_agent='pytest-agent',
+            ip='127.0.0.1',
+            ttl_seconds=refresh_ttl,
+        )
+
+        assert new_sid != initial_sid
+        assert new_refresh_ttl == refresh_ttl
+
+        payload = token_manager.verify_token(new_refresh)
+        assert payload is not None
+        assert payload['uid'] == user_id
+        assert payload['aud'] == token_manager.audience
 
 
 class TestPasswordManagement:

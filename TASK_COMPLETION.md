@@ -1,5 +1,8 @@
 # Task Completion Log
 
+* [x] **Authentication System Audit — refresh safety hardening** — Fixed refresh rotation compatibility, blacklist enforcement, and CSRF secret checks.
+
+
 ## 2025-09-19 — Restaurant Page Duplication Consolidation
 - ID: 2025-09-19-RESTAURANT-DUPLICATE-CONSOLIDATION  
 - Owner: Claude Sonnet 4 AI Agent

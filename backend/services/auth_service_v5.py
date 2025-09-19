@@ -758,6 +758,17 @@ class AuthServiceV5:
             payload = self.token_manager_v5.verify_token(token)
             if not payload or payload.get('type') != 'access':
                 return None
+
+            if self.is_token_blacklisted(token):
+                logger.info(
+                    "Rejected blacklisted token",
+                    extra={
+                        'user_id': payload.get('uid'),
+                        'jti': payload.get('jti'),
+                        'reason': 'blacklisted'
+                    }
+                )
+                return None
             return payload
         except Exception as e:
             logger.error(f"Token verification error: {e}")

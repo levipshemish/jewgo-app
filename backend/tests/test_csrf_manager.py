@@ -37,15 +37,26 @@ class TestCSRFManager:
         """Test CSRF manager initialization."""
         # Test successful initialization
         manager = CSRFManager("valid-secret-key")
-        assert manager.secret_key == b"valid-secret-key"
+        assert manager.secret_key == "valid-secret-key"
         assert manager.token_ttl == 24 * 60 * 60
         
         # Test initialization with empty secret key
         with pytest.raises(ValueError, match="CSRF secret key is required"):
             CSRFManager("")
-        
-        with pytest.raises(ValueError, match="CSRF secret key is required"):
-            CSRFManager(None)
+
+        # Defaults to development-safe secret when none provided
+        manager_default = CSRFManager()
+        assert manager_default.secret_key == 'default-csrf-secret'
+
+    def test_production_requires_secret(self, monkeypatch):
+        """Ensure production-like environments enforce explicit CSRF secret."""
+        monkeypatch.delenv('CSRF_SECRET_KEY', raising=False)
+        monkeypatch.setenv('ENVIRONMENT', 'production')
+
+        with pytest.raises(RuntimeError, match="CSRF_SECRET_KEY"):
+            CSRFManager()
+
+        monkeypatch.delenv('ENVIRONMENT', raising=False)
     
     def test_token_generation(self, csrf_manager, app_context):
         """Test CSRF token generation."""

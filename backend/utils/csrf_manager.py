@@ -38,9 +38,21 @@ class CSRFManager:
     
     def __init__(self, secret_key: str = None):
         """Initialize CSRF manager."""
-        self.secret_key = secret_key or os.getenv('CSRF_SECRET_KEY', 'default-csrf-secret')
-        if not self.secret_key or self.secret_key == 'default-csrf-secret':
-            logger.warning("Using default CSRF secret - not secure for production")
+        environment = (os.getenv('ENVIRONMENT') or os.getenv('FLASK_ENV') or 'development').lower()
+
+        if secret_key is not None and not secret_key:
+            raise ValueError("CSRF secret key is required")
+
+        env_secret = os.getenv('CSRF_SECRET_KEY')
+        effective_secret = secret_key or env_secret
+
+        if not effective_secret or effective_secret == 'default-csrf-secret':
+            if environment in {'production', 'staging', 'preview'}:
+                raise RuntimeError("CSRF_SECRET_KEY environment variable is required in production-like environments")
+            effective_secret = effective_secret or 'default-csrf-secret'
+            logger.warning("Using default CSRF secret - not secure outside development")
+
+        self.secret_key = effective_secret
         
         # Token configuration
         self.token_length = 32

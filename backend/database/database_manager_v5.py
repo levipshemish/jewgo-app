@@ -191,6 +191,11 @@ class DatabaseManagerV5:
                         duration_ms=execution_time,
                         success=True
                     )
+
+    @property
+    def connection_manager(self):
+        """Provide compatibility for helpers that expect `.connection_manager`."""
+        return self
     
     @contextmanager
     def get_session(self):
