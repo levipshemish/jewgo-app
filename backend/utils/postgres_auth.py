@@ -1097,7 +1097,16 @@ postgres_auth: Optional[PostgresAuthManager] = None
 def get_postgres_auth() -> PostgresAuthManager:
     """Get global PostgreSQL auth manager instance."""
     if postgres_auth is None:
-        raise RuntimeError("PostgreSQL auth manager not initialized")
+        # Try to initialize auth manager if not already done
+        try:
+            from database.connection_manager import get_connection_manager
+            logger.warning("PostgreSQL auth manager not initialized, attempting automatic initialization")
+            cm = get_connection_manager()
+            initialize_postgres_auth(cm)
+            logger.info("PostgreSQL auth manager auto-initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to auto-initialize PostgreSQL auth manager: {e}")
+            raise RuntimeError("PostgreSQL auth manager not initialized and auto-initialization failed")
     return postgres_auth
 
 
