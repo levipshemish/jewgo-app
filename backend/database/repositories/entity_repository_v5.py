@@ -191,11 +191,13 @@ class EntityRepositoryV5(BaseRepository):
                 
                 # Apply geospatial filtering if needed
                 logger.info(f"DEBUG: Distance pagination - geospatial={mapping.get('geospatial')}, has_filters={bool(filters)}, has_lat={bool(filters and filters.get('latitude'))}, has_lng={bool(filters and filters.get('longitude'))}")
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
-                    query = self._apply_geospatial_filter(query, model_class, filters)
-                else:
-                    logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
+                # TEMPORARY: Disable geospatial filtering to test distance sorting without radius filtering
+                logger.info("🚧 TEMPORARY: Skipping geospatial filtering to debug distance sorting")
+                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                #     logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
+                #     query = self._apply_geospatial_filter(query, model_class, filters)
+                # else:
+                #     logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
                 
                 # Execute query to get all entities, attempting distance projection when applicable
                 use_projection = False
@@ -347,8 +349,10 @@ class EntityRepositoryV5(BaseRepository):
                 query = self._apply_filters(query, model_class, filters, mapping)
                 
                 # Apply geospatial filtering if needed
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    query = self._apply_geospatial_filter(query, model_class, filters)
+                # TEMPORARY: Disable geospatial filtering to test distance sorting
+                logger.info("🚧 TEMPORARY: Skipping geospatial filtering in cursor pagination")
+                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                #     query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 # Apply sorting
                 query = self._apply_sorting(query, model_class, sort_key, filters)
@@ -514,8 +518,10 @@ class EntityRepositoryV5(BaseRepository):
                 query = self._apply_filters(query, model_class, filters, mapping)
                 
                 # Apply geospatial filtering if needed
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    query = self._apply_geospatial_filter(query, model_class, filters)
+                # TEMPORARY: Disable geospatial filtering to test distance sorting
+                logger.info("🚧 TEMPORARY: Skipping geospatial filtering in cursor pagination")
+                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                #     query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 # Apply cursor pagination
                 query, cursor_position = self._apply_cursor_pagination(
@@ -962,8 +968,10 @@ class EntityRepositoryV5(BaseRepository):
                 query = session.query(func.count(model_class.id))
                 query = self._apply_filters(query, model_class, filters, mapping)
                 # Include geospatial filtering in counts when applicable
-                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                    query = self._apply_geospatial_filter(query, model_class, filters)
+                # TEMPORARY: Disable geospatial filtering to test distance sorting
+                logger.info("🚧 TEMPORARY: Skipping geospatial filtering in count query")
+                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                #     query = self._apply_geospatial_filter(query, model_class, filters)
                 
                 return query.scalar() or 0
                 

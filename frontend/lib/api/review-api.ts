@@ -66,15 +66,56 @@ async function apiRequest<T>(
 
   const url = `${API_BASE_URL}${endpoint}`;
   
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    // Include credentials to send HttpOnly cookies
-    credentials: 'include',
+  // Debug logging
+  console.log('🌐 Review API Request:', {
+    url,
+    endpoint,
+    API_BASE_URL,
+    method: options.method || 'GET'
   });
+  
+  // Get CSRF token for POST requests
+  const method = (options.method || 'GET').toString().toUpperCase();
+  const isPostRequest = method === 'POST';
+  let csrfToken = null;
+  
+  if (isPostRequest) {
+    try {
+      if (!postgresAuth.csrfToken) {
+        await postgresAuth.getCsrf();
+      }
+      csrfToken = postgresAuth.csrfToken;
+      console.log('🔐 CSRF Token obtained:', csrfToken ? 'Yes' : 'No');
+    } catch (e) {
+      console.warn('⚠️ Failed to get CSRF token:', e);
+    }
+  }
+  
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
+        ...options.headers,
+      },
+      // Include credentials to send HttpOnly cookies
+      credentials: 'include',
+      // Add mode to ensure CORS is handled properly
+      mode: 'cors',
+    });
+  } catch (fetchError) {
+    console.error('🚨 Fetch Error Details:', {
+      error: fetchError,
+      message: fetchError.message,
+      name: fetchError.name,
+      url,
+      method: options.method || 'GET'
+    });
+    throw fetchError;
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
