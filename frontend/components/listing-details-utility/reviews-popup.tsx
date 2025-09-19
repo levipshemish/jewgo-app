@@ -2,10 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { ProfileImage } from "@/components/ui/profile-image"
-import { Star, X, ChevronDown, MessageSquare, Send, ArrowLeft } from "lucide-react"
+import { Star, X, ChevronDown, MessageSquare, Send, ArrowLeft, LogIn } from "lucide-react"
 import { useState } from "react"
 import { createPortal } from "react-dom"
 import { submitReview } from "@/lib/api/review-api"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface Review {
   id: string
@@ -72,6 +73,7 @@ export function ReviewsPopup({
   loading = false,
   onSubmitReview,
 }: ReviewsPopupProps) {
+  const { user, isAuthenticated } = useAuth()
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
@@ -81,6 +83,7 @@ export function ReviewsPopup({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   if (!isOpen) return null
 
@@ -124,10 +127,16 @@ export function ReviewsPopup({
   }
 
   const handleWriteReview = () => {
+    if (!isAuthenticated()) {
+      setShowLoginPrompt(true)
+      return
+    }
+    
     setShowReviewForm(true)
     setSubmitError(null)
     setSubmitSuccess(false)
     setSuccessMessage(null)
+    setShowLoginPrompt(false)
   }
 
   const handleBackToReviews = () => {
@@ -137,6 +146,7 @@ export function ReviewsPopup({
     setSubmitError(null)
     setSubmitSuccess(false)
     setSuccessMessage(null)
+    setShowLoginPrompt(false)
   }
 
   const handleSubmitReview = async () => {
@@ -304,7 +314,7 @@ export function ReviewsPopup({
                 size="sm"
               >
                 <MessageSquare className="h-3 w-3" />
-                Write Review
+                {isAuthenticated() ? 'Write Review' : 'Login to Review'}
               </Button>
             </div>
           </div>
@@ -326,6 +336,40 @@ export function ReviewsPopup({
               <div>
                 <h4 className="text-sm font-semibold text-gray-900">Write a Review</h4>
                 <p className="text-xs text-gray-600">{restaurantName}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Login Prompt */}
+        {showLoginPrompt && (
+          <div className="p-4 bg-blue-50 border-b border-blue-200">
+            <div className="text-center">
+              <LogIn className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+              <h4 className="text-lg font-semibold text-blue-900 mb-2">Login Required</h4>
+              <p className="text-sm text-blue-700 mb-4">
+                You need to be logged in to submit a review for {restaurantName}.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    // Redirect to login page or open login modal
+                    window.location.href = '/login'
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
               </div>
             </div>
           </div>

@@ -3,9 +3,8 @@
 // Trigger frontend rebuild to fix missing chunks - 2025-09-16
 import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
-import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 import { useEffect, useState, Suspense } from "react";
-// import { useCallback } from "react"; // TODO: Implement callback functionality
+import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -13,11 +12,16 @@ import { postgresAuth, PostgresAuthError } from "@/lib/auth/postgres-auth";
 import { useToast } from '@/components/ui/Toast';
 import { handleAuthError } from '@/lib/auth/error-handler';
 import ComingSoonModal from '@/components/ui/ComingSoonModal';
+import Input from '@/components/ui/input';
+import Button from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [_isLoading, _setIsLoading] = useState(false); // TODO: Implement loading state
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   const [isEmailSigningIn, setIsEmailSigningIn] = useState(false);
@@ -398,55 +402,44 @@ function SignInForm() {
       )}
 
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Sign in to your account
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Or{" "}
-              <Link
-                href="/auth/signup"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                create a new account
-              </Link>
-            </p>
-          </div>
+        <div className="max-w-md w-full">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sign in to your account</CardTitle>
+              <CardDescription>
+                Or{' '}
+                <Link href="/auth/signup" className="text-blue-600 hover:text-blue-500">create a new account</Link>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
 
           {/* 413 Hint Banner */}
           {showHeaderTooLargeHint && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded">
-              <p className="text-sm">
-                Having trouble loading your session? Your browser may be sending too many or oversized cookies to the API.
-                Clear cookies for <strong>api.jewgo.app</strong> (and <strong>jewgo.app</strong> if needed), then try again.
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleLogVisibleCookies}
-                  className="inline-flex items-center px-3 py-1.5 text-xs font-medium border rounded bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
-                  title="Logs JS-visible cookie names to the console"
-                >
-                  Log visible cookie names
-                </button>
-                <span className="text-xs text-gray-600">(HttpOnly auth cookies won’t appear here)</span>
-              </div>
-            </div>
+            <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+              <AlertDescription>
+                Having trouble loading your session? Your browser may be sending too many or oversized cookies to the API. Clear cookies for <strong>api.jewgo.app</strong> (and <strong>jewgo.app</strong> if needed), then try again.
+                <div className="mt-2 flex items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={handleLogVisibleCookies} title="Logs JS-visible cookie names to the console">
+                    Log visible cookie names
+                  </Button>
+                  <span className="text-xs text-gray-600">(HttpOnly auth cookies won’t appear here)</span>
+                </div>
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-              {error}
-            </div>
+            <Alert className="border-red-200 bg-red-50 text-red-700">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           {/* CSRF/Service Banner */}
           {csrfReady === false && csrfMessage && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded relative">
-              {csrfMessage}
-            </div>
+            <Alert className="border-yellow-200 bg-yellow-50 text-yellow-800">
+              <AlertDescription>{csrfMessage}</AlertDescription>
+            </Alert>
           )}
 
           {/* Success toast handled via useToast */}
@@ -455,73 +448,64 @@ function SignInForm() {
 
           {/* Success Message */}
           {magicStatus === 'sent' && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
-              Check your email for a magic link to sign in!
-            </div>
+            <Alert className="border-green-200 bg-green-50 text-green-700">
+              <AlertDescription>Check your email for a magic link to sign in!</AlertDescription>
+            </Alert>
           )}
 
-          <form className="mt-8 space-y-6" onSubmit={handleEmailSignIn}>
-            <div className="rounded-md shadow-sm -space-y-px">
+          <form className="mt-2 space-y-4" onSubmit={handleEmailSignIn}>
+            <div className="space-y-3">
               <div>
-                <label htmlFor="email-address" className="sr-only">
-                  Email address
-                </label>
-                <input
+                <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">Email address</label>
+                <Input
                   id="email-address"
                   name="email"
                   type="email"
                   autoComplete="off"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div>
-                <label htmlFor="password" className="sr-only">
-                  Password
-                </label>
-                <input
+              <div className="relative">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Password"
+                  placeholder="Enter your password"
+                  className="pr-20"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 bottom-2 text-gray-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </Button>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="text-sm">
-                <Link
-                  href="/auth/forgot-password"
-                  className="font-medium text-blue-600 hover:text-blue-500"
-                >
+                <Link href="/auth/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
                   Forgot your password?
                 </Link>
               </div>
             </div>
 
             <div>
-              <button
-                type="submit"
-                disabled={isEmailSigningIn}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isEmailSigningIn ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign in"
-                )}
-              </button>
+              <Button type="submit" disabled={isEmailSigningIn} className="w-full">
+                {isEmailSigningIn ? 'Signing in…' : 'Sign in'}
+              </Button>
             </div>
           </form>
 
@@ -539,7 +523,7 @@ function SignInForm() {
 
           <div className="mt-6 grid grid-cols-1 gap-3">
               {/* Google OAuth */}
-              <button
+              <Button
                 onClick={() => {
                   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
                   if (!backendUrl) {
@@ -549,43 +533,47 @@ function SignInForm() {
                   const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/google/start?returnTo=${encodeURIComponent(redirectTo)}`;
                   window.location.href = url;
                 }}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                variant="outline"
+                className="w-full"
                 title="Sign in with Google"
               >
                 Continue with Google
-              </button>
+              </Button>
 
               {/* Apple OAuth */}
-              <button
+              <Button
                 onClick={() => setShowAppleComingSoon(true)}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                variant="outline"
+                className="w-full"
                 title="Sign in with Apple"
               >
                 Continue with Apple
-              </button>
+              </Button>
 
               {/* Magic Link Button - Opens Modal */}
-              <button
+              <Button
                 onClick={() => setShowMagicLinkModal(true)}
                 disabled={magicLinkCooldown > 0}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                variant="outline"
+                className="w-full mt-4"
               >
                 {magicLinkCooldown > 0 ? (
                   `Magic link sent - wait ${magicLinkCooldown}s`
                 ) : (
                   '🔗 Sign in with Magic Link'
                 )}
-              </button>
+              </Button>
 
               {/* Continue as Guest */}
-              <button
+              <Button
                 onClick={handleGuestContinue}
                 disabled={csrfReady === false}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="outline"
+                className="w-full"
                 title="Start a temporary guest session"
               >
                 {csrfReady === false ? 'Guest temporarily unavailable' : 'Continue as Guest'}
-              </button>
+              </Button>
 
               {/* Upgrade guest to full account */}
               <div className="border rounded-md p-3 bg-white">
@@ -638,7 +626,8 @@ function SignInForm() {
                 )}
               </div>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -649,28 +638,28 @@ function SignInForm() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Magic Link Sign-in</h3>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setShowMagicLinkModal(false);
                   setMagicEmail('');
                   setMagicStatus(null);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-600"
               >
                 ✕
-              </button>
+              </Button>
             </div>
-            
+
             <p className="text-sm text-gray-600 mb-4">
               Enter your email address and we'll send you a secure magic link to sign in.
             </p>
 
-            {/* Magic Link Email Input */}
             <div className="mb-4">
-              <label htmlFor="modal-magic-email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
+              <label htmlFor="modal-magic-email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <Input
                 id="modal-magic-email"
                 name="modal-magic-email"
                 type="email"
@@ -687,33 +676,33 @@ function SignInForm() {
                     setMagicStatus(null);
                   }
                 }}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
               />
             </div>
 
-            {/* Success/Error Messages */}
             {magicStatus === 'sent' && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded mb-4 text-sm">
-                ✅ Magic link sent! Check your email.
-              </div>
+              <Alert className="border-green-200 bg-green-50 text-green-700 mb-4">
+                <AlertDescription>✅ Magic link sent! Check your email.</AlertDescription>
+              </Alert>
             )}
 
-            {/* Action Buttons */}
             <div className="flex space-x-3">
-              <button
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setShowMagicLinkModal(false);
                   setMagicEmail('');
                   setMagicStatus(null);
                 }}
-                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
                 onClick={handleMagicLinkSignIn}
                 disabled={magicLinkCooldown > 0 || magicStatus === 'sending' || !magicEmail.trim()}
-                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1"
               >
                 {magicLinkCooldown > 0 ? (
                   `Wait ${magicLinkCooldown}s`
@@ -724,7 +713,7 @@ function SignInForm() {
                 ) : (
                   'Send Magic Link'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

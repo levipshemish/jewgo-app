@@ -191,13 +191,11 @@ class EntityRepositoryV5(BaseRepository):
                 
                 # Apply geospatial filtering if needed
                 logger.info(f"DEBUG: Distance pagination - geospatial={mapping.get('geospatial')}, has_filters={bool(filters)}, has_lat={bool(filters and filters.get('latitude'))}, has_lng={bool(filters and filters.get('longitude'))}")
-                # TEMPORARY DEBUG: Disable geospatial filtering to test
-                logger.info("DEBUG: Distance pagination - TEMPORARILY DISABLING geospatial filter for debugging")
-                # if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
-                #     logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
-                #     query = self._apply_geospatial_filter(query, model_class, filters)
-                # else:
-                #     logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
+                if mapping.get('geospatial') and filters and filters.get('latitude') and filters.get('longitude'):
+                    logger.info(f"DEBUG: Distance pagination - Applying geospatial filter")
+                    query = self._apply_geospatial_filter(query, model_class, filters)
+                else:
+                    logger.info(f"DEBUG: Distance pagination - Skipping geospatial filter")
                 
                 # Execute query to get all entities, attempting distance projection when applicable
                 use_projection = False
@@ -1269,13 +1267,42 @@ class EntityRepositoryV5(BaseRepository):
         strategy = self.SORT_STRATEGIES.get(sort_key, self.SORT_STRATEGIES['created_at_desc'])
         
         # Handle distance sorting specially
-        if sort_key == 'distance_asc':
-            # For distance sorting, we'll sort by created_at first and then sort by distance in the application layer
-            # This avoids complex PostGIS distance sorting issues
+        if sort_key == 'distance_asc' and filters and filters.get('latitude') and filters.get('longitude'):
+            # Use PostGIS ST_Distance for proper distance sorting
+            lat = filters['latitude']
+            lng = filters['longitude']
+            
+            if self._postgis_available:
+                # Use PostGIS ST_Distance for accurate distance sorting
+                from sqlalchemy import func
+                distance_expr = func.ST_Distance(
+                    func.ST_SetSRID(func.ST_MakePoint(model_class.longitude, model_class.latitude), 4326).cast(text('geography')),
+                    func.ST_SetSRID(func.ST_MakePoint(lng, lat), 4326).cast(text('geography'))
+                )
+                query = query.order_by(distance_expr.asc(), model_class.id.asc())
+                logger.info(f"Applied PostGIS distance sorting for lat={lat}, lng={lng}")
+            else:
+                # Fallback to earthdistance if PostGIS not available
+                try:
+                    from sqlalchemy import func
+                    distance_expr = func.earth_distance(
+                        func.ll_to_earth(model_class.latitude, model_class.longitude),
+                        func.ll_to_earth(lat, lng)
+                    )
+                    query = query.order_by(distance_expr.asc(), model_class.id.asc())
+                    logger.info(f"Applied earthdistance sorting for lat={lat}, lng={lng}")
+                except Exception as e:
+                    logger.warning(f"Distance sorting failed, falling back to created_at: {e}")
+                    # Final fallback to created_at
+                    primary_field = getattr(model_class, 'created_at')
+                    secondary_field = getattr(model_class, 'id')
+                    query = query.order_by(desc(primary_field), desc(secondary_field))
+        elif sort_key == 'distance_asc':
+            # No location provided, fall back to created_at
+            logger.info("Distance sorting requested but no location provided, falling back to created_at")
             primary_field = getattr(model_class, 'created_at')
             secondary_field = getattr(model_class, 'id')
             query = query.order_by(desc(primary_field), desc(secondary_field))
-            logger.info("Applied distance sorting fallback to created_at")
         else:
             # Regular field sorting
             primary_field = getattr(model_class, strategy['field'])

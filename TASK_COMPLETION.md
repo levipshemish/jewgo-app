@@ -1,5 +1,67 @@
 # Task Completion Log
 
+## 2025-09-19 — PostGIS Sorting Investigation and Fix
+- ID: 2025-09-19-POSTGIS-SORTING-FIX
+- Owner: Claude Sonnet 4 AI Agent
+- Links: `backend/database/repositories/entity_repository_v5.py`, `frontend/lib/api/v5-api-client.ts`
+
+**Reason Why** — User reported that PostGIS sorting was not working properly on the eatery page. Investigation revealed multiple issues: distance sorting was falling back to application-layer sorting instead of using PostGIS ST_Distance queries, geospatial filtering was temporarily disabled for debugging, and the frontend wasn't requesting distance sorting when location was available.
+
+**Change Summary**
+- **Backend Distance Sorting**: Fixed `_apply_sorting()` method in EntityRepositoryV5 to use PostGIS ST_Distance for proper database-level distance sorting instead of application-layer fallback
+- **PostGIS Integration**: Implemented proper PostGIS ST_Distance queries with geography casting for accurate distance calculations
+- **Geospatial Filtering**: Re-enabled geospatial filtering that was temporarily disabled for debugging purposes
+- **Frontend Auto-Sort**: Updated V5 API client to automatically request `distance_asc` sorting when location coordinates are provided
+- **Fallback Handling**: Added comprehensive fallback chain: PostGIS ST_Distance → earthdistance → created_at for maximum compatibility
+
+**Risks & Mitigations**
+- **PostGIS Dependency**: Mitigated with earthdistance fallback and final created_at fallback for maximum compatibility
+- **Performance Impact**: PostGIS ST_Distance is more efficient than application-layer sorting for large datasets
+- **Location Privacy**: Sorting only activates when user explicitly provides location coordinates
+- **Backward Compatibility**: All existing non-location-based sorting continues to work unchanged
+
+**Tests**
+- **Backend Repository**: PostGIS distance sorting implementation with proper SQL query generation
+- **Frontend API Client**: Auto-detection of location parameters and automatic distance sorting request
+- **Geospatial Filtering**: Re-enabled and properly integrated with distance sorting
+- **Linting**: All modified files pass linting with 0 errors
+
+**Docs Updated**
+- **Task Completion**: Added comprehensive documentation of investigation and fix
+- **Inline Documentation**: Enhanced code comments explaining PostGIS sorting logic and fallback chain
+
+**Follow-ups**
+- None required - PostGIS distance sorting is now properly implemented and functional
+
+* [x] Auth UI Polish — Consistent, accessible UI for sign-in/sign-up pages using shared components; added password visibility toggles and polished modal/buttons
+
+Reason Why — See plans: `plans/REQ_auth_ui_polish.md`, `plans/DES_auth_ui_polish.md`, `plans/IMP_auth_ui_polish.md`. Align auth pages with shared UI components for consistency and improve UX with minimal diff while preserving existing authentication flows.
+
+Change Summary
+- frontend/app/auth/signin/page.tsx: Refactored to use `Card`, `Input`, `Button`, `Alert`; added show/hide password toggle; converted alt sign-in buttons; styled magic-link modal with UI primitives.
+- frontend/app/auth/signup/page.tsx: Same UI primitives; added toggles for password and confirm password; retained PasswordStrengthIndicator; unified banners.
+- frontend/components/auth/RegisterForm.tsx: Updated legacy register form to shared UI components and toggles.
+- frontend/docs/DOCS_CHANGELOG.md: Documented auth UI polish.
+- plans/*: Added REQ/DES/IMP planning docs.
+
+Risks & Mitigations
+- Styling regressions: mitigated by reusing shared UI primitives already used elsewhere.
+- Accessibility regressions: labels changed from sr-only to visible; kept semantic structure; alerts/banners consistent.
+- Functional changes: none; all flows preserved (CSRF, reCAPTCHA, magic link, guest continue).
+
+Tests
+- Manually verified: form field interactions, password visibility toggles, error/success banners, magic link modal open/send/close, guest continue disabled when CSRF fails, Google button URL composition unchanged.
+- No API or schema changes; no new dependencies introduced.
+
+Docs Updated
+- frontend/docs/DOCS_CHANGELOG.md
+- plans/REQ_auth_ui_polish.md
+- plans/DES_auth_ui_polish.md
+- plans/IMP_auth_ui_polish.md
+
+Follow-ups
+- None
+
 ## 2025-09-18 — Magic Link Button Fix
 - ID: 2025-09-18-MAGIC-LINK-FIX
 - Owner: Claude Sonnet 4 AI Agent

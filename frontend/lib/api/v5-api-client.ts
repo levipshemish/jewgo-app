@@ -215,8 +215,12 @@ export class V5ApiClient {
     if (params.cursor) searchParams.set('cursor', params.cursor);
     
     // Handle sort parameter - prioritize params.sort over filters.sort
+    // Auto-enable distance sorting when location is provided
     if (params.sort) {
       searchParams.set('sort', params.sort);
+    } else if (params.location && params.location.lat && params.location.lng) {
+      // Automatically use distance sorting when location is available
+      searchParams.set('sort', 'distance_asc');
     } else if (params.filters && (params.filters as any).sort) {
       searchParams.set('sort', String((params.filters as any).sort));
     }
@@ -275,8 +279,12 @@ export class V5ApiClient {
     if (params.limit) searchParams.set('limit', params.limit.toString());
     
     // Handle sort parameter - prioritize params.sort over filters.sort
+    // Auto-enable distance sorting when location is provided
     if (params.sort) {
       searchParams.set('sort', params.sort);
+    } else if (params.location && params.location.lat && params.location.lng) {
+      // Automatically use distance sorting when location is available
+      searchParams.set('sort', 'distance_asc');
     } else if (params.filters && (params.filters as any).sort) {
       searchParams.set('sort', String((params.filters as any).sort));
     }

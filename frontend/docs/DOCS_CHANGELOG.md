@@ -1,5 +1,9 @@
 # Frontend Docs Changelog
 
+Date: 2025-09-19
+
+- Auth UI Polish: Sign-in and sign-up pages now use shared UI primitives (Card, Input, Button, Alert) for consistent styling and better accessibility. Added password visibility toggles to email/password forms (signin, signup, confirm password). Kept existing flows (magic link modal, guest continue, Google button, reCAPTCHA) unchanged. Also refreshed legacy `/auth/register` form with the same components.
+
 Date: 2025-09-03
 
 - Eatery Filters: Modern filter popup now uses responsive sizing. Bottom sheet on mobile; centered modal on larger screens with width scaling by breakpoint (sm→lg→xl). Improves usability across devices without changing filter behavior. Also raised modal z-index above bottom navigation and added safe-area bottom padding to prevent cutoff on mobile.

@@ -486,8 +486,16 @@ class PostgresAuthClient {
       const response = await this.request('/sync-user');
       const result = await this.handleResponse<{ user: AuthUser; guest?: boolean; authenticated?: boolean }>(response);
       
+      // Debug logging for authentication status
+      console.log('[Auth] Sync-user response:', { 
+        guest: result.guest, 
+        authenticated: result.authenticated, 
+        user: result.user 
+      });
+      
       // Handle guest users properly
       if (result.guest && !result.authenticated) {
+        console.log('[Auth] Creating guest user object');
         // Guest users don't have profiles - return a guest user object
         return {
           id: 'guest',
@@ -499,7 +507,22 @@ class PostgresAuthClient {
         };
       }
       
-      return result.user;
+      // Handle unauthenticated users (no guest, no authenticated user)
+      if (!result.authenticated && !result.guest) {
+        console.log('[Auth] User not authenticated and not guest - clearing invalid tokens');
+        // Clear any invalid tokens and return null (unauthenticated state)
+        this.clearTokens();
+        return null;
+      }
+      
+      // Return authenticated user
+      if (result.user) {
+        console.log('[Auth] Returning authenticated user:', result.user.id);
+        return result.user;
+      }
+      
+      console.log('[Auth] No user found in response');
+      throw new PostgresAuthError('No user data found', 404);
     } catch (err) {
       if (err instanceof PostgresAuthError && err.status === 413) {
         // Log detailed cookie information to aid debugging

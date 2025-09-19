@@ -34,8 +34,14 @@ export function useAuth(): UseAuthReturn {
       // Check if user is authenticated via PostgreSQL auth
       if (postgresAuth.isAuthenticated()) {
         const authUser = await postgresAuth.getProfile();
-        setUser(authUser);
-        setAuthState('authenticated');
+        if (authUser) {
+          setUser(authUser);
+          setAuthState('authenticated');
+        } else {
+          // Token exists but is invalid - clear state
+          setUser(null);
+          setAuthState('unauthenticated');
+        }
       } else {
         setUser(null);
         setAuthState('unauthenticated');
