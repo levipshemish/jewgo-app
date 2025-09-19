@@ -276,9 +276,11 @@ export default function EateryGrid({
       params.set('longitude', userLocation.longitude.toString())
       // Automatically sort by distance when location is available
       params.set('sort', 'distance_asc')
+      console.log(`🔍 Using distance sorting with location: ${userLocation.latitude}, ${userLocation.longitude}`);
     } else {
       // Set default sort when no location is available to ensure consistent pagination
       params.set('sort', 'created_at_desc')
+      console.log('🔍 No location available, using created_at_desc sorting');
     }
     
     return params.toString()
@@ -441,7 +443,10 @@ export default function EateryGrid({
               }));
               
               // Debug logging to verify distance sorting
-              console.log('🔍 Initial restaurants loaded with distances:', mappedRestaurants.map(r => ({ name: r.name, distance: r.distance })));
+              console.log('🔍 Initial restaurants loaded with distances:');
+              mappedRestaurants.slice(0, 10).forEach((r, i) => {
+                console.log(`  ${i + 1}. ${r.name}: ${r.distance}mi`);
+              });
               
               setRestaurants(mappedRestaurants)
               

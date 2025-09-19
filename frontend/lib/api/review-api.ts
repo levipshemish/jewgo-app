@@ -105,8 +105,6 @@ async function apiRequest<T>(
       credentials: 'include',
       // Add mode to ensure CORS is handled properly
       mode: 'cors',
-      // Prevent automatic redirects to avoid HTTPS->HTTP redirects
-      redirect: 'manual',
     });
   } catch (fetchError) {
     console.error('🚨 Fetch Error Details:', {
@@ -119,37 +117,23 @@ async function apiRequest<T>(
     throw fetchError;
   }
 
-  // Handle manual redirects - if we get a redirect, follow it manually with HTTPS
-  if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
-    const location = response.headers.get('location');
-    if (location) {
-      // Convert HTTP redirects to HTTPS
-      const httpsLocation = location.replace(/^http:\/\//, 'https://');
-      console.log('🔄 Following redirect:', { from: location, to: httpsLocation });
-      
-      // Make the request to the HTTPS version
-      try {
-        response = await fetch(httpsLocation, {
-          ...options,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
-            ...options.headers,
-          },
-          credentials: 'include',
-          mode: 'cors',
-          redirect: 'manual',
-        });
-      } catch (redirectError) {
-        console.error('🚨 Redirect Error:', redirectError);
-        throw redirectError;
-      }
-    }
-  }
+  // Log response details for debugging
+  console.log('📡 Server Response:', {
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok,
+    headers: Object.fromEntries(response.headers.entries())
+  });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    let errorData;
+    try {
+      errorData = await response.json();
+      console.log('📄 Error Response Body:', errorData);
+    } catch (e) {
+      console.log('📄 Error Response Body (not JSON):', await response.text());
+      errorData = {};
+    }
     
     // Handle specific error cases
     if (response.status === 401) {
@@ -171,6 +155,12 @@ async function apiRequest<T>(
     throw new Error(errorData.error || `Failed to submit review: ${response.status}`);
   }
 
+  // Log successful response
+  console.log('✅ Success Response:', {
+    status: response.status,
+    statusText: response.statusText
+  });
+
   return response.json();
 }
 
@@ -179,7 +169,7 @@ async function apiRequest<T>(
  */
 export async function submitReview(reviewData: ReviewSubmissionData): Promise<ReviewResponse> {
   try {
-    const response = await apiRequest<ReviewResponse>('/api/v5/reviews', {
+    const response = await apiRequest<ReviewResponse>('/api/v5/reviews/', {
       method: 'POST',
       body: JSON.stringify(reviewData),
     });
