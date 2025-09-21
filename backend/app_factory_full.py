@@ -915,11 +915,11 @@ def create_app(config_class=None):
         except Exception as e:
             logger.warning(f"Could not register geocoding API blueprint: {e}")
         
-        # Register specials API
+        # Register specials API (using simplified version to avoid import issues)
         try:
-            from routes.specials_routes import specials_bp
+            from routes.specials_routes_simple import specials_bp
             app.register_blueprint(specials_bp)
-            logger.info("Specials API blueprint registered successfully")
+            logger.info("Specials API blueprint (simplified) registered successfully")
         except ImportError as e:
             logger.warning(f"Could not import specials API blueprint: {e}")
         except Exception as e:

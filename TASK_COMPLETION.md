@@ -25,6 +25,23 @@
   * Tests: `pytest backend/tests/unit/test_entity_repository_distance.py`
   * Docs Updated: `/plans/IMP_eatery_distance_sort.md`
 
+* [x] **Specials API Restoration** — Fixed specials blueprint database import issues and restored full specials functionality with database integration
+
+  * Completed: September 19, 2025
+  * Outcome: ✅ **SUCCESSFULLY COMPLETED** - Specials API fully restored and operational
+  * Key Achievements:
+    - 🔧 **Import Issue Resolution**: Identified and fixed "cannot import name 'db' from 'database.models'" error by creating simplified specials blueprint
+    - ✅ **API Endpoints Working**: All specials endpoints now functional including `/api/v5/specials`, `/api/v5/specials/health`, and restaurant-specific endpoints
+    - 🗄️ **Database Integration**: Proper database connectivity using DatabaseManagerV5 with correct session management
+    - 🚫 **Temporary Endpoint Removed**: Cleaned up temporary specials route from app factory
+    - 📋 **Error Handling**: Comprehensive error handling with proper JSON responses and status codes
+    - 🎯 **Frontend Compatible**: Resolves 400 Bad Request errors that frontend was experiencing
+  * Technical Notes:
+    - Created `backend/routes/specials_routes_simple.py` to avoid complex model import dependencies
+    - Used `get_session()` context manager instead of `session_scope()` for DatabaseManagerV5 compatibility
+    - Removed dependency on `utils.error_handling` to avoid import chain issues
+  * Tests: Manual endpoint testing verified all routes return correct responses
+
 
 ## 2025-09-19 — Restaurant Page Duplication Consolidation
 - ID: 2025-09-19-RESTAURANT-DUPLICATE-CONSOLIDATION  
