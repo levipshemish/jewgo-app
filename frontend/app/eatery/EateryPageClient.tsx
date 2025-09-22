@@ -172,10 +172,11 @@ function EateryPageContent() {
         </div>
       </div>
 
-      {/* Grid - Fill remaining space and account for bottom nav height */}
+      {/* Grid - Fill remaining space and account for bottom nav height via CSS var */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+64px)]"
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-height, 64px))' }}
       >
         <EateryGrid
           category="all"
