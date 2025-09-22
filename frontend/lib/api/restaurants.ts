@@ -301,6 +301,7 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
     return null;
   } catch (error) {
     console.error('V5 API error, falling back to legacy API:', error);
+    console.log('[V5:getRestaurant] FALLBACK fetch to /api/v5/restaurants/:id');
     
     // Fallback to V5 API directly
     const u = new URL(`/api/v5/restaurants/${id}`, API_BASE || window.location.origin);
