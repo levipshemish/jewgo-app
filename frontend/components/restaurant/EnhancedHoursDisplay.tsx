@@ -23,9 +23,17 @@ export default function EnhancedHoursDisplay({
   const computed = useMemo(() => {
     const status: CoreHoursStatus = getHoursStatus(hoursData as any);
     const weekly = formatWeeklyHoursArray(hoursData as any) || [];
+    const noStructured = weekly.length === 0 && !status.nextOpenTime && !status.closingTime;
+    const mapped = status.type === 'open'
+      ? 'open'
+      : status.type === 'closed'
+        ? (noStructured ? 'unknown' : 'closed')
+        : (status.type === 'opensToday' || status.type === 'opensTomorrow' || status.type === 'opensLater')
+          ? 'closed_today'
+          : 'unknown';
     return {
-      status: status.type === 'open' ? 'open' : (status.type === 'closed' ? 'closed' : (status.type === 'opensToday' ? 'closed_today' : (status.type === 'opensTomorrow' ? 'closed_today' : (status.type === 'opensLater' ? 'closed_today' : 'unknown')))),
-      message: status.label,
+      status: mapped,
+      message: noStructured ? 'Hours not available' : status.label,
       is_open: status.isOpenNow,
       formatted_hours: weekly.map(d => ({ day: d.day, hours: d.hours, is_open: status.isOpenNow })),
       timezone: timezone || 'America/New_York',
