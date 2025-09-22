@@ -38,16 +38,15 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const enrich = searchParams.get('enrich') !== 'false'; // Default to true
 
-    // Call backend API through client
-    const response = await apiClient.getEntity(
-      entityType as EntityType,
-      entityId,
-      { 
-        headers: { 
-          'X-Enrich': enrich.toString() 
-        }
+    // Call backend API through client (backend path is /api/v5/<entityType>/<id>)
+    const backendPath = `/api/v5/${entityType}/${entityId}` as const;
+    console.log('[V5 Entities Detail] proxying to backend', backendPath);
+    const response = await apiClient.request<any>(backendPath, {
+      method: 'GET',
+      headers: {
+        'X-Enrich': enrich.toString()
       }
-    );
+    });
 
     // Debug: ensure hours fields exist in data
     try {
@@ -61,7 +60,7 @@ export async function GET(
     } catch (_e) {}
 
     if (!response.success) {
-      if (response.status === 404) {
+      if ((response as any).status === 404) {
         return NextResponse.json(
           { error: `${entityType.slice(0, -1)} not found` },
           { status: 404 }
