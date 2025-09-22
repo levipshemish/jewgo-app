@@ -1,5 +1,5 @@
 "use client"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Header from "@/components/layout/Header"
 import { CategoryTabs } from "@/components/core"
@@ -198,15 +198,26 @@ function EateryPageContent() {
           />
           
           {/* Active Filter Chips */}
-          <div className="px-4 py-2 border-b border-border/30">
-            <ActiveFilterChips
-              filters={activeFilters}
-              onRemoveFilter={handleRemoveFilter}
-              onClearAll={clearAllFilters}
-              variant="full"
-              className="min-h-[32px]"
-            />
-          </div>
+          {useMemo(() => {
+            const has = Object.values(activeFilters || {}).some((v: any) => {
+              if (v === undefined || v === null) return false
+              if (typeof v === 'string') return v.trim() !== ''
+              if (Array.isArray(v)) return v.length > 0
+              if (typeof v === 'object') return Object.keys(v).length > 0
+              return true
+            })
+            return has
+          }, [activeFilters]) && (
+            <div className="px-4 py-2 border-b border-border/30">
+              <ActiveFilterChips
+                filters={activeFilters}
+                onRemoveFilter={handleRemoveFilter}
+                onClearAll={clearAllFilters}
+                variant="full"
+                className="min-h-[32px]"
+              />
+            </div>
+          )}
         </div>
 
         {/* Grid */}

@@ -731,10 +731,10 @@ test_endpoint "http://$SERVER_HOST:5000/api/v5/search/popular" "Popular searches
 print_status "Testing entity endpoints with different types..."
 
 # Test generic entity endpoint
-test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/restaurants?limit=1" "Generic entity restaurants endpoint"
-test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/synagogues?limit=1" "Generic entity synagogues endpoint"
-test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/mikvahs?limit=1" "Generic entity mikvahs endpoint"
-test_endpoint "http://$SERVER_HOST:5000/api/v5/entity/stores?limit=1" "Generic entity stores endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/restaurants?limit=1" "Generic entity restaurants endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/synagogues?limit=1" "Generic entity synagogues endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/mikvahs?limit=1" "Generic entity mikvahs endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/stores?limit=1" "Generic entity stores endpoint"
 
 # Test specific business logic endpoints
 print_status "Testing specific business logic endpoints..."
