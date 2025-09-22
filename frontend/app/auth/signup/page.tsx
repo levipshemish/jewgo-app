@@ -82,7 +82,7 @@ export default function SignUpPage() {
           password: formData.password,
           name: `${formData.firstName} ${formData.lastName}`,
         });
-        router.push('/eatery');
+        router.push('/specials');
       } catch (error: any) {
         setErrors({ general: error.message || 'Registration failed' });
       }

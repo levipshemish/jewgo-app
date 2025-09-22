@@ -25,8 +25,8 @@ export default function GuestPage() {
 
       await postgresAuth.guestLogin();
       
-      // Redirect to main app after successful guest login
-      router.push('/eatery');
+      // Redirect to specials page after successful guest login
+      router.push('/specials');
     } catch (e: any) {
       console.error('Guest login failed:', e);
       setError(e.message || 'Failed to start guest session. Please try again.');

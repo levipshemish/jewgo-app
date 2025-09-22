@@ -47,7 +47,7 @@ export default function LoginPage() {
       try {
         // Use email as identifier for now (can be enhanced later)
         await login(formData.identifier, formData.password);
-        router.push('/eatery');
+        router.push('/specials');
       } catch (error: any) {
         setErrors({ general: error.message || 'Login failed' });
       }
