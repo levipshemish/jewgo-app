@@ -37,6 +37,7 @@ from services.specials_service import (
     parse_time_window,
     get_active_specials_for_restaurant,
     get_formatted_specials_for_restaurant,
+    get_formatted_specials_all,
     format_special,
     can_user_claim,
     create_claim,
@@ -66,6 +67,45 @@ specials_bp = Blueprint('specials', __name__, url_prefix='/api/v5/specials')
 CLAIM_RATE_LIMIT = "10 per minute"
 REDEEM_RATE_LIMIT = "30 per minute"
 EVENT_RATE_LIMIT = "100 per minute"
+
+
+@specials_bp.route('', methods=['GET'])
+def list_all_specials():
+    """List specials across all restaurants."""
+    try:
+        window = request.args.get('window', 'now')
+        from_time_arg = request.args.get('from')
+        until_time_arg = request.args.get('until')
+        try:
+            limit = int(request.args.get('limit', 50))
+            offset = int(request.args.get('offset', 0))
+        except ValueError:
+            raise BadRequest('limit and offset must be integers')
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+
+        time_from, time_until = parse_time_window(window, from_time_arg, until_time_arg)
+
+        specials, total = get_formatted_specials_all(
+            time_from,
+            time_until,
+            limit=limit,
+            offset=offset,
+        )
+
+        return jsonify({
+            'specials': specials,
+            'total': total,
+            'has_more': offset + len(specials) < total,
+            'window': window,
+            'from': time_from.isoformat() if window == 'range' else None,
+            'until': time_until.isoformat() if window == 'range' else None,
+        })
+    except BadRequest as exc:
+        return jsonify({'error': str(exc)}), 400
+    except Exception:
+        logger.exception("Error listing all specials")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @specials_bp.route('/restaurants/<int:restaurant_id>', methods=['GET'])

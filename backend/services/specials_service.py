@@ -98,6 +98,43 @@ def get_formatted_specials_for_restaurant(
     return cached["formatted"], cached["total"]
 
 
+def get_formatted_specials_all(
+    time_from: datetime,
+    time_until: datetime,
+    limit: int = 50,
+    offset: int = 0,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Return formatted specials across all restaurants with caching."""
+    cache_namespace = "specials_all"
+    key = (
+        f"from:{time_from.isoformat(timespec='seconds')}:"
+        f"until:{time_until.isoformat(timespec='seconds')}:"
+        f"limit:{limit}:offset:{offset}"
+    )
+
+    def _compute():
+        with _db_session() as session:
+            base_query = session.query(Special).filter(
+                Special.is_active.is_(True),
+                Special.deleted_at.is_(None),
+                Special.valid_from <= time_until,
+                Special.valid_until >= time_from,
+            )
+            total_local = base_query.count()
+            specials_local = (
+                base_query.order_by(Special.valid_from.asc()).offset(offset).limit(limit).all()
+            )
+            formatted = [format_special(session, special, None) for special in specials_local]
+            return {"formatted": formatted, "total": total_local}
+
+    cached = cache_service.get(key, cache_namespace)
+    if cached is None:
+        computed = _compute()
+        cache_service.set(key, computed, ttl=300, namespace=cache_namespace)
+        cached = computed
+    return cached["formatted"], cached["total"]
+
+
 def invalidate_specials_cache_for_restaurant(restaurant_id: int) -> None:
     try:
         cache_service.delete_pattern(f"restaurant:{restaurant_id}:*", namespace="specials")
@@ -235,6 +272,7 @@ def format_special(session, special: Special, current_user_id: Optional[str]) ->
         can_claim_flag = remaining > 0
     return {
         'id': str(special.id),
+        'restaurant_id': special.restaurant_id,
         'title': special.title,
         'subtitle': special.subtitle,
         'description': special.description,
@@ -246,6 +284,7 @@ def format_special(session, special: Special, current_user_id: Optional[str]) ->
         'max_claims_total': special.max_claims_total,
         'max_claims_per_user': special.max_claims_per_user,
         'per_visit': special.per_visit,
+        'is_active': special.is_active,
         'requires_code': special.requires_code,
         'code_hint': special.code_hint,
         'terms': special.terms,
@@ -263,6 +302,6 @@ def format_special(session, special: Special, current_user_id: Optional[str]) ->
         'can_claim': can_claim_flag,
         'user_claims_remaining': remaining,
         'created_at': special.created_at.isoformat(),
+        'updated_at': special.updated_at.isoformat() if special.updated_at else None,
     }
-
 
