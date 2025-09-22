@@ -141,18 +141,20 @@ function EateryPageContent() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header - Sticky at top */}
-      <Header 
-        onSearch={handleSearch}
-        placeholder="Find restaurants near you"
-      />
-
-      {/* Scroll container - holds sticky nav and grid; accounts for bottom nav height */}
+      {/* Scroll container - holds sticky header/nav and grid; accounts for bottom nav height */}
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-height, 64px))' }}
       >
+        {/* Header - Sticky at top inside scroll container */}
+        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+          <Header 
+            onSearch={handleSearch}
+            placeholder="Find restaurants near you"
+          />
+        </div>
+
         {/* Navigation Block - Sticky below header inside scroll container */}
         <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <CategoryTabs 
