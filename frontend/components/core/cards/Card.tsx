@@ -24,6 +24,16 @@ export interface CardData {
   isLiked?: boolean;
   kosherCategory?: string;
   city?: string;
+  // Specials-specific fields
+  price?: {
+    original?: number | string;
+    sale?: number | string;
+    currency?: string;
+  };
+  timeLeftSeconds?: number;
+  claimsLeft?: number;
+  ctaText?: string;
+  overlayTag?: string;
 }
 
 export interface CardProps {
