@@ -272,6 +272,18 @@ export function ListingActions({
                         </span>
                       )
                     }
+
+                    // If hours array is the special single-row "Hours: No hours available" or lacks standard weekdays, show Not available
+                    const standardDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+                    const hasStandardDay = bottomAction.hoursInfo.hours.some(h => standardDays.includes((h.day || '').toLowerCase()))
+                    const allNotAvailable = bottomAction.hoursInfo.hours.every(h => /not available/i.test(h.time || ''))
+                    if (!hasStandardDay || allNotAvailable) {
+                      return (
+                        <span className="text-sm font-medium text-gray-500">
+                          Hours not available
+                        </span>
+                      )
+                    }
                     
                     const status = getRestaurantStatus(bottomAction.hoursInfo.hours)
                     

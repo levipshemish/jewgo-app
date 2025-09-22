@@ -140,7 +140,7 @@ function EateryPageContent() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen overflow-hidden bg-background flex flex-col">
       {/* Scroll container - holds sticky header/nav and grid; accounts for bottom nav height */}
       <div
         ref={scrollContainerRef}

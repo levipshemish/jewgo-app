@@ -612,7 +612,6 @@ test_endpoint "https://api.jewgo.app/api/v5/reviews/?limit=1" "Reviews API endpo
 # Test webhook endpoints
 print_status "Testing webhook endpoints..."
 test_endpoint "https://api.jewgo.app/api/v5/webhook/status" "Webhook status endpoint"
-test_endpoint "https://api.jewgo.app/api/v5/webhook/test" "Webhook test endpoint"
 
 # Test webhook signature verification (if enabled)
 if [ "${TEST_WEBHOOK_SIGNATURE:-false}" = "true" ]; then
@@ -968,7 +967,6 @@ print_status "   - /api/v5/reviews (reviews data - redirect)"
 print_status ""
 print_status "✅ Webhook Endpoints:"
 print_status "   - /api/v5/webhook/status (webhook status - public)"
-print_status "   - /api/v5/webhook/test (webhook test - public)"
 print_status "   - /api/v5/webhook/deploy (deployment webhook - signature required)"
 print_status "   - /api/v5/webhook/github (GitHub webhook - signature required)"
 print_status ""
