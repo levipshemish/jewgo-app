@@ -77,6 +77,13 @@ class PostgresAuthClient {
   private minRequestInterval: number = 100; // Minimum 100ms between requests to same endpoint
   private pendingRequests: { [key: string]: Promise<Response> } = {};
 
+  // Lightweight client-side auth state cache so synchronous checks reflect recent backend results
+  private authState: 'unknown' | 'authenticated' | 'guest' | 'unauthenticated' = 'unknown';
+  private authStateLastUpdated = 0;
+  private authStateInitialized = false;
+  private readonly authStateTtlMs = 5 * 60 * 1000; // 5 minutes before requiring fresh verification
+  private readonly authStateStorageKey = 'jewgo.auth.state';
+
   constructor() {
     // Always prioritize NEXT_PUBLIC_BACKEND_URL if it's set, regardless of environment
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
@@ -86,6 +93,108 @@ class PostgresAuthClient {
       // Use production backend as fallback instead of frontend API routes
       this.baseUrl = 'https://api.jewgo.app';
     }
+  }
+
+  private ensureAuthStateInitialized(): void {
+    if (this.authStateInitialized) return;
+    this.authStateInitialized = true;
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const persisted = this.readPersistedAuthState();
+    if (persisted) {
+      this.authState = persisted.state;
+      this.authStateLastUpdated = persisted.timestamp;
+    }
+  }
+
+  private readPersistedAuthState(): { state: 'authenticated' | 'guest' | 'unauthenticated'; timestamp: number } | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const storages = [window.sessionStorage, window.localStorage];
+
+    for (const storage of storages) {
+      try {
+        const raw = storage.getItem(this.authStateStorageKey);
+        if (!raw) continue;
+
+        const parsed = JSON.parse(raw) as { state?: string; timestamp?: number } | null;
+        if (!parsed || typeof parsed.state !== 'string') continue;
+
+        if (
+          (parsed.state === 'authenticated' || parsed.state === 'guest' || parsed.state === 'unauthenticated') &&
+          typeof parsed.timestamp === 'number'
+        ) {
+          return { state: parsed.state, timestamp: parsed.timestamp };
+        }
+      } catch {
+        // Ignore storage parsing errors (e.g., inaccessible storage in private mode)
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private persistAuthState(state: 'authenticated' | 'guest' | 'unauthenticated', timestamp: number): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const payload = JSON.stringify({ state, timestamp });
+    const storages = [window.sessionStorage, window.localStorage];
+
+    for (const storage of storages) {
+      try {
+        storage.setItem(this.authStateStorageKey, payload);
+      } catch {
+        // Ignore storage write errors (e.g., quota exceeded or disabled storage)
+      }
+    }
+  }
+
+  private clearPersistedAuthState(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const storages = [window.sessionStorage, window.localStorage];
+    for (const storage of storages) {
+      try {
+        storage.removeItem(this.authStateStorageKey);
+      } catch {
+        // Ignore storage removal errors
+      }
+    }
+  }
+
+  private setAuthState(
+    state: 'unknown' | 'authenticated' | 'guest' | 'unauthenticated',
+    options: { timestamp?: number } = {}
+  ): void {
+    if (state === 'unknown') {
+      this.authState = 'unknown';
+      this.authStateLastUpdated = 0;
+      this.clearPersistedAuthState();
+      return;
+    }
+
+    const timestamp = options.timestamp ?? Date.now();
+    this.authState = state;
+    this.authStateLastUpdated = timestamp;
+    this.persistAuthState(state, timestamp);
+  }
+
+  private isAuthStateFresh(): boolean {
+    if (!this.authStateLastUpdated) {
+      return false;
+    }
+    const age = Date.now() - this.authStateLastUpdated;
+    return age <= this.authStateTtlMs;
   }
 
   public async request(
@@ -358,7 +467,9 @@ class PostgresAuthClient {
     this.refreshToken = null;
     this.csrfToken = null;
     this._profilePromise = null;
-    
+    this.setAuthState('unauthenticated');
+    this.authStateInitialized = true;
+
     // Clear any cached authentication state
     if (typeof window !== 'undefined') {
       // Clear any visible auth-related cookies (best effort)
@@ -433,6 +544,8 @@ class PostgresAuthClient {
 
     const result: AuthResponse = await this.handleResponse(response);
     // Tokens are set as cookies; nothing to persist client-side
+    this.setAuthState('authenticated');
+    this.authStateInitialized = true;
     return result;
   }
 
@@ -482,6 +595,7 @@ class PostgresAuthClient {
   }
 
   private async _fetchProfile(): Promise<AuthUser | null> {
+    this.ensureAuthStateInitialized();
     try {
       // Use /sync-user endpoint which properly handles guest users
       const response = await this.request('/sync-user');
@@ -498,6 +612,8 @@ class PostgresAuthClient {
       if (result.guest && !result.authenticated) {
         console.log('[Auth] Creating guest user object');
         // Guest users don't have profiles - return a guest user object
+        this.setAuthState('guest');
+        this.authStateInitialized = true;
         return {
           id: 'guest',
           name: 'Guest User',
@@ -512,6 +628,7 @@ class PostgresAuthClient {
       if (!result.authenticated && !result.guest) {
         console.log('[Auth] User not authenticated and not guest - clearing invalid tokens');
         // Clear any invalid tokens and return null (unauthenticated state)
+        this.authStateInitialized = true;
         this.clearTokens();
         return null;
       }
@@ -519,10 +636,13 @@ class PostgresAuthClient {
       // Return authenticated user
       if (result.user) {
         console.log('[Auth] Returning authenticated user:', result.user.id);
+        this.setAuthState('authenticated');
+        this.authStateInitialized = true;
         return result.user;
       }
-      
+
       console.log('[Auth] No user found in response');
+      this.setAuthState('unknown');
       throw new PostgresAuthError('No user data found', 'NO_USER_DATA', 404);
     } catch (err) {
       if (err instanceof PostgresAuthError && err.status === 413) {
@@ -598,10 +718,29 @@ class PostgresAuthClient {
    * Note: HttpOnly cookies aren't visible to JavaScript, so this is not reliable
    */
   isAuthenticated(): boolean {
-    // In cookie-mode, we can't reliably check HttpOnly cookies from client-side
-    // Always return true and let server-side checks handle actual authentication
-    // The middleware will redirect unauthenticated users to sign-in
-    return true;
+    this.ensureAuthStateInitialized();
+
+    if (this.authState === 'authenticated') {
+      if (this.isAuthStateFresh()) {
+        return true;
+      }
+
+      // Stale cache - require a fresh check
+      this.setAuthState('unknown');
+      return false;
+    }
+
+    return false;
+  }
+
+  getCachedAuthState(): 'unknown' | 'authenticated' | 'guest' | 'unauthenticated' {
+    this.ensureAuthStateInitialized();
+
+    if (this.authState === 'authenticated' && !this.isAuthStateFresh()) {
+      this.setAuthState('unknown');
+    }
+
+    return this.authState;
   }
 
   /**
@@ -821,6 +960,8 @@ class PostgresAuthClient {
     try { await this.getCsrf(); } catch {}
     const response = await this.request('/guest', { method: 'POST' });
     const result: AuthResponse = await this.handleResponse(response);
+    this.setAuthState('guest');
+    this.authStateInitialized = true;
     return result;
   }
 

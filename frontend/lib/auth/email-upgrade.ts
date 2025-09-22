@@ -28,7 +28,10 @@ export class EmailUpgradeFlow {
     
     try {
       // First, check if user is currently authenticated
-      if (!postgresAuth.isAuthenticated()) {
+      const authState = typeof postgresAuth.getCachedAuthState === 'function'
+        ? postgresAuth.getCachedAuthState()
+        : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+      if (authState === 'unauthenticated') {
         console.error(`[Email Upgrade] No current user found (${correlationId})`);
         return {
           success: false,
@@ -218,7 +221,10 @@ export class EmailUpgradeFlow {
    * Get current session
    */
   async getSession() {
-    if (postgresAuth.isAuthenticated()) {
+    const authState = typeof postgresAuth.getCachedAuthState === 'function'
+      ? postgresAuth.getCachedAuthState()
+      : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+    if (authState === 'authenticated' || authState === 'guest') {
       return { data: { session: { user: await postgresAuth.getProfile() } } };
     }
     return { data: { session: null } };

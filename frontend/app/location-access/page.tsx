@@ -15,11 +15,23 @@ export default function LocationAccessPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        if (!postgresAuth.isAuthenticated()) {
-          // Redirect to sign in if not authenticated
+        const authState = typeof postgresAuth.getCachedAuthState === 'function'
+          ? postgresAuth.getCachedAuthState()
+          : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+
+        if (authState === 'unauthenticated') {
           router.push('/auth/signin');
           return;
         }
+
+        if (authState === 'unknown' || authState === 'guest') {
+          const profile = await postgresAuth.getProfile();
+          if (!profile || profile.is_guest) {
+            router.push('/auth/signin');
+            return;
+          }
+        }
+
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check failed:', error);

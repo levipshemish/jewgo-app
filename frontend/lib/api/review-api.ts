@@ -12,6 +12,17 @@ import { sessionManager } from '@/lib/auth/session-manager';
 // We'll use a callback to check authentication instead of direct postgresAuth
 let authCheckCallback: (() => boolean) | null = null;
 
+function resolveAuthState(): 'unknown' | 'authenticated' | 'guest' | 'unauthenticated' {
+  try {
+    if (typeof postgresAuth.getCachedAuthState === 'function') {
+      return postgresAuth.getCachedAuthState();
+    }
+  } catch {
+    // ignore and fall through to legacy behaviour
+  }
+  return postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated';
+}
+
 export function setAuthCheckCallback(callback: () => boolean) {
   authCheckCallback = callback;
 }
@@ -65,8 +76,8 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   // Check if user is authenticated using the auth callback or fallback to postgresAuth
-  const isAuthenticated = authCheckCallback ? authCheckCallback() : postgresAuth.isAuthenticated();
-  if (!isAuthenticated) {
+  const authState = authCheckCallback ? (authCheckCallback() ? 'authenticated' : 'unauthenticated') : resolveAuthState();
+  if (authState !== 'authenticated') {
     throw new Error('Authentication required. Please log in to submit a review.');
   }
 
@@ -80,7 +91,7 @@ async function apiRequest<T>(
     method: options.method || 'GET',
     cookies: document.cookie,
     hasAuthCallback: !!authCheckCallback,
-    isAuthenticated: authCheckCallback ? authCheckCallback() : postgresAuth.isAuthenticated()
+    isAuthenticated: authCheckCallback ? authCheckCallback() : authState === 'authenticated'
   });
   
   // Parse cookies for better debugging

@@ -31,17 +31,18 @@ export function useAuth(): UseAuthReturn {
       setIsLoading(true);
       setError(null);
       
-      // Check if user is authenticated via PostgreSQL auth
-      if (postgresAuth.isAuthenticated()) {
-        const authUser = await postgresAuth.getProfile();
-        if (authUser) {
-          setUser(authUser);
-          setAuthState('authenticated');
-        } else {
-          // Token exists but is invalid - clear state
-          setUser(null);
-          setAuthState('unauthenticated');
-        }
+      const cachedState = postgresAuth.getCachedAuthState ? postgresAuth.getCachedAuthState() : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+
+      if (cachedState === 'unauthenticated') {
+        setUser(null);
+        setAuthState('unauthenticated');
+        return;
+      }
+
+      const authUser = await postgresAuth.getProfile();
+      if (authUser && authUser.is_guest !== true && authUser.email) {
+        setUser(authUser);
+        setAuthState('authenticated');
       } else {
         setUser(null);
         setAuthState('unauthenticated');
@@ -85,8 +86,9 @@ export function useAuth(): UseAuthReturn {
   useEffect(() => {
     if (authState === 'authenticated') {
       const checkTokenExpiry = () => {
-        if (!postgresAuth.isAuthenticated()) {
-          // Token expired, refresh user state
+        const cachedState = postgresAuth.getCachedAuthState ? postgresAuth.getCachedAuthState() : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+        if (cachedState !== 'authenticated') {
+          // Token expired or unknown, refresh user state
           checkAuth();
         }
       };

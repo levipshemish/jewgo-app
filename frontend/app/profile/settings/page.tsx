@@ -32,8 +32,10 @@ export default function SettingsPage() {
       let userAuthenticated = false;
       try {
         // Check if user is authenticated via PostgreSQL auth
-        const isAuth = postgresAuth.isAuthenticated();
-        console.log('Profile settings: isAuthenticated check:', isAuth);
+        const authState = typeof postgresAuth.getCachedAuthState === 'function'
+          ? postgresAuth.getCachedAuthState()
+          : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+        console.log('Profile settings: cached auth state:', authState);
         
         // Try to get profile regardless of cookie check, as HttpOnly cookies aren't visible to client
         console.log('Profile settings: Attempting to get profile...');

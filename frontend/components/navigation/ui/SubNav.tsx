@@ -18,6 +18,12 @@ const SubNav: React.FC<SubNavProps> = ({
   variant = 'simple', className = '', onShowFilters, onShowMap, onAddEatery
 }) => {
   const router = useRouter();
+  const isUserAuthenticated = () => {
+    const state = typeof postgresAuth.getCachedAuthState === 'function'
+      ? postgresAuth.getCachedAuthState()
+      : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+    return state === 'authenticated';
+  };
 
   // Simple variant (original /components/layout/ActionButtons.tsx)
   if (variant === 'simple') {
@@ -37,7 +43,7 @@ const SubNav: React.FC<SubNavProps> = ({
               onClick={onAddEatery || (async () => {
                 try {
                   // Check if user is authenticated via PostgreSQL auth
-                  if (!postgresAuth.isAuthenticated()) {
+                  if (!isUserAuthenticated()) {
                     router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
                     return;
                   }
@@ -86,7 +92,7 @@ const SubNav: React.FC<SubNavProps> = ({
         onClick: async () => {
           try {
             // Check if user is authenticated via PostgreSQL auth
-            if (!postgresAuth.isAuthenticated()) {
+            if (!isUserAuthenticated()) {
               router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
               return;
             }
@@ -150,7 +156,7 @@ const SubNav: React.FC<SubNavProps> = ({
             onClick={onAddEatery || (async () => {
               try {
                 // Check if user is authenticated via PostgreSQL auth
-                if (!postgresAuth.isAuthenticated()) {
+                if (!isUserAuthenticated()) {
                   router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
                   return;
                 }

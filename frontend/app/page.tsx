@@ -14,17 +14,14 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if user is authenticated via PostgreSQL auth
-        if (postgresAuth.isAuthenticated()) {
-          // User is authenticated, redirect to eatery page
+        const profile = await postgresAuth.getProfile();
+        if (profile && profile.is_guest !== true && profile.email) {
           router.push('/eatery');
         } else {
-          // User is not authenticated, redirect to signin page
           router.push('/auth/signin');
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        // Redirect unauthenticated users to signin page
         router.push('/auth/signin');
       }
     };
@@ -32,16 +29,33 @@ export default function HomePage() {
     checkAuth();
 
     // Set up auth state listener for PostgreSQL auth
-    const checkAuthState = () => {
-      if (postgresAuth.isAuthenticated()) {
+    const checkAuthState = async () => {
+      const cachedState = postgresAuth.getCachedAuthState ? postgresAuth.getCachedAuthState() : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+
+      if (cachedState === 'authenticated') {
         router.push('/eatery');
-      } else {
-        router.push('/auth/signin');
+        return;
       }
+
+      if (cachedState === 'unknown') {
+        try {
+          const profile = await postgresAuth.getProfile();
+          if (profile && profile.is_guest !== true && profile.email) {
+            router.push('/eatery');
+            return;
+          }
+        } catch (error) {
+          console.error('Periodic auth check failed:', error);
+        }
+      }
+
+      router.push('/auth/signin');
     };
 
     // Check auth state periodically (since PostgreSQL auth doesn't have built-in listeners)
-    const authCheckInterval = setInterval(checkAuthState, 5000);
+    const authCheckInterval = setInterval(() => {
+      void checkAuthState();
+    }, 5000);
 
     return () => {
       clearInterval(authCheckInterval);

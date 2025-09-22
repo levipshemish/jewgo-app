@@ -16,6 +16,13 @@ export default function ActionButtons({
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const isUserAuthenticated = () => {
+    const state = typeof postgresAuth.getCachedAuthState === 'function'
+      ? postgresAuth.getCachedAuthState()
+      : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+    return state === 'authenticated';
+  };
+
   useEffect(() => {
     setMounted(true);
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -31,7 +38,7 @@ export default function ActionButtons({
   const handleAddEateryClick = async () => {
     try {
       // Check if user is authenticated via PostgreSQL auth
-      if (!postgresAuth.isAuthenticated()) {
+      if (!isUserAuthenticated()) {
         window.location.href = `/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`;
         return;
       }

@@ -82,7 +82,8 @@ function SignInForm() {
     const checkAuthStatus = async () => {
       try {
         // Quick check if auth is available
-        if (!postgresAuth.isAuthenticated()) {
+        const cachedState = postgresAuth.getCachedAuthState ? postgresAuth.getCachedAuthState() : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+        if (cachedState === 'unauthenticated') {
           // No auth token, stay on signin form
           return;
         }

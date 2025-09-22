@@ -27,10 +27,17 @@ export function PostgresAuthProvider({ children }: { children: React.ReactNode }
     // Get initial user state
     const getInitialUser = async () => {
       try {
-        if (postgresAuth.isAuthenticated()) {
-          const userProfile = await postgresAuth.getProfile();
-          setUser(userProfile);
+        const authState = typeof postgresAuth.getCachedAuthState === 'function'
+          ? postgresAuth.getCachedAuthState()
+          : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+
+        if (authState === 'unauthenticated') {
+          setUser(null);
+          return;
         }
+
+        const userProfile = await postgresAuth.getProfile();
+        setUser(userProfile);
       } catch (error) {
         console.error('Error getting initial user:', error);
       } finally {
@@ -78,10 +85,17 @@ export function PostgresAuthProvider({ children }: { children: React.ReactNode }
 
   const refreshUser = async () => {
     try {
-      if (postgresAuth.isAuthenticated()) {
-        const userProfile = await postgresAuth.getProfile();
-        setUser(userProfile);
+      const authState = typeof postgresAuth.getCachedAuthState === 'function'
+        ? postgresAuth.getCachedAuthState()
+        : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+
+      if (authState === 'unauthenticated') {
+        setUser(null);
+        return;
       }
+
+      const userProfile = await postgresAuth.getProfile();
+      setUser(userProfile);
     } catch (error) {
       console.error('Error refreshing user:', error);
       setUser(null);

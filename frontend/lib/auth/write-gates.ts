@@ -2,6 +2,17 @@ import React from 'react';
 import { postgresAuth } from '@/lib/auth/postgres-auth';
 import { generateCorrelationId, extractIsAnonymous } from '@/lib/utils/auth-utils';
 
+const resolveAuthState = (): 'unknown' | 'authenticated' | 'guest' | 'unauthenticated' => {
+  try {
+    if (typeof postgresAuth.getCachedAuthState === 'function') {
+      return postgresAuth.getCachedAuthState();
+    }
+  } catch {
+    // ignore and fall back to legacy behaviour
+  }
+  return postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated';
+};
+
 export interface WritePermissionResult {
   allowed: boolean;
   error?: string;
@@ -32,7 +43,8 @@ export class WriteGates {
     
     try {
       // Check if user is authenticated via PostgreSQL auth
-      if (!postgresAuth.isAuthenticated()) {
+      const authState = resolveAuthState();
+      if (authState !== 'authenticated') {
         return {
           allowed: false,
           error: 'No authenticated user',
@@ -155,7 +167,8 @@ export class WriteGates {
     let userId: string | undefined;
 
     try {
-      if (postgresAuth.isAuthenticated()) {
+      const authState = resolveAuthState();
+      if (authState === 'authenticated' || authState === 'guest') {
         const user = await postgresAuth.getProfile();
         if (user) {
           isAnonymous = extractIsAnonymous(user);

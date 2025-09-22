@@ -31,11 +31,22 @@ export function useAuth(): UseAuthReturn {
 
   const refreshUser = useCallback(async () => {
     try {
-      if (postgresAuth.isAuthenticated()) {
-        const userProfile = await postgresAuth.getProfile();
+      const cachedState = typeof postgresAuth.getCachedAuthState === 'function'
+        ? postgresAuth.getCachedAuthState()
+        : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+
+      if (cachedState === 'unauthenticated') {
+        setUser(null);
+        setAuthState('unauthenticated');
+        setIsAnonymous(false);
+        return;
+      }
+
+      const userProfile = await postgresAuth.getProfile();
+      if (userProfile) {
         setUser(userProfile);
         setAuthState('authenticated');
-        setIsAnonymous(false);
+        setIsAnonymous(userProfile.is_guest === true || !userProfile.email);
       } else {
         setUser(null);
         setAuthState('unauthenticated');

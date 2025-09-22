@@ -46,7 +46,10 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
       };
       
       // Include authorization header if user is authenticated
-      if (postgresAuth.isAuthenticated()) {
+      const authState = typeof postgresAuth.getCachedAuthState === 'function'
+        ? postgresAuth.getCachedAuthState()
+        : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+      if (authState === 'authenticated') {
         const token = postgresAuth.accessToken;
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;

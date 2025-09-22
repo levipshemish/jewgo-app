@@ -1,11 +1,25 @@
 import { redirect } from "next/navigation";
 import { postgresAuth, type AuthUser } from "@/lib/auth/postgres-auth";
 
+type CachedAuthState = 'unknown' | 'authenticated' | 'guest' | 'unauthenticated';
+
+function resolveCachedAuthState(): CachedAuthState {
+  try {
+    if (typeof postgresAuth.getCachedAuthState === 'function') {
+      return postgresAuth.getCachedAuthState();
+    }
+  } catch {
+    // Fall through to legacy behaviour
+  }
+  return postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated';
+}
+
 // PostgreSQL-based authentication system
 export async function getSessionUser(): Promise<AuthUser | null> {
   try {
     // Check if user is authenticated via PostgreSQL auth
-    if (!postgresAuth.isAuthenticated()) {
+    const cachedState = resolveCachedAuthState();
+    if (cachedState === 'unauthenticated') {
       return null;
     }
 
@@ -35,7 +49,8 @@ export async function requireUser(): Promise<AuthUser> {
 export async function getSessionUserWithRoles(): Promise<AuthUser | null> {
   try {
     // Check if user is authenticated via PostgreSQL auth
-    if (!postgresAuth.isAuthenticated()) {
+    const cachedState = resolveCachedAuthState();
+    if (cachedState === 'unauthenticated') {
       return null;
     }
 
@@ -124,7 +139,7 @@ export async function getCurrentUserId(): Promise<string | null> {
  */
 export async function isAuthenticated(): Promise<boolean> {
   try {
-    return postgresAuth.isAuthenticated();
+    return resolveCachedAuthState() === 'authenticated';
   } catch (error) {
     console.error('[Auth] Authentication check failed:', error);
     return false;
@@ -136,7 +151,8 @@ export async function isAuthenticated(): Promise<boolean> {
  */
 export async function getUserProfile(): Promise<AuthUser | null> {
   try {
-    if (!postgresAuth.isAuthenticated()) {
+    const cachedState = resolveCachedAuthState();
+    if (cachedState === 'unauthenticated') {
       return null;
     }
     return await postgresAuth.getProfile();
