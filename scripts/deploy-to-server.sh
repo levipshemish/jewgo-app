@@ -742,7 +742,7 @@ print_status "Testing specific business logic endpoints..."
 # Test authentication endpoints
 print_status "Testing authentication endpoints..."
 test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/health" "Auth service health"
-test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/verify-token" "Token verification endpoint" "401"  # Expected to fail without token
+test_endpoint "http://$SERVER_HOST:5000/api/v5/auth/verify-token" "Token verification endpoint" "403" "POST"  # Expected to fail without token
 
 # Test restaurant-specific endpoints
 print_status "Testing restaurant-specific endpoints..."
