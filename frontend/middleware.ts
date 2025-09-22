@@ -48,6 +48,9 @@ export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
     const isApi = path.startsWith('/api/admin');
     
+    // Debug logging for middleware execution
+    console.log('Middleware executing for path:', path);
+    
     // Handle CORS preflight requests for API only
     if (isApi && request.method === 'OPTIONS') {
       return new NextResponse(null, { status: 200, headers: corsHeaders(request) });
@@ -289,6 +292,15 @@ function redirectToSignin(request: NextRequest): NextResponse {
   
   // Preserve returnTo parameter for post-login redirects
   const redirectUrl = `/auth/signin?returnTo=${encodeURIComponent(sanitizedRedirect)}`;
+  
+  // Debug logging for redirect
+  console.log('Middleware redirecting to signin:', {
+    originalPath: fullPath,
+    sanitizedRedirect,
+    redirectUrl,
+    pathname,
+    search
+  });
   
   const redirectResponse = NextResponse.redirect(new URL(redirectUrl, request.url), 302);
   

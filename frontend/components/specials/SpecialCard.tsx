@@ -1,16 +1,16 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
-import { SpecialCardProps } from '@/types/specials'
-import { specialsApi } from '@/lib/api/specials'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import Card, { type CardData } from '@/components/core/cards/Card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, Users, Share2 } from 'lucide-react'
+import { Clock, Share2 } from 'lucide-react'
 import { useTimeNow } from '@/contexts/TimeUpdateProvider'
+import { specialsApi } from '@/lib/api/specials'
+import type { SpecialCardProps } from '@/types/specials'
 
 /**
- * Component for displaying individual special cards
+ * Compact special card that reuses the eatery Card styling.
  */
 export default function SpecialCard({
   special,
@@ -21,19 +21,15 @@ export default function SpecialCard({
   showShareButton = true,
   compact = false,
 }: SpecialCardProps) {
-  const [timeRemaining, setTimeRemaining] = useState(
-    specialsApi.getTimeRemaining(special)
-  )
-  const [isActive, setIsActive] = useState(specialsApi.isSpecialActive(special))
-  const [status] = useState(specialsApi.getSpecialStatus(special))
-  const [imageError, setImageError] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(() => specialsApi.getTimeRemaining(special))
+  const [isActive, setIsActive] = useState(() => specialsApi.isSpecialActive(special))
+  const status = useMemo(() => specialsApi.getSpecialStatus(special), [special])
 
   const requiresSecondPrecision = useMemo(
     () => isActive && timeRemaining.total <= 60_000,
     [isActive, timeRemaining.total]
   )
-
-  const now = useTimeNow({ requireSecondPrecision: requiresSecondPrecision })
+  const now = useTimeNow({ requireSecondPrecision })
 
   useEffect(() => {
     const remaining = specialsApi.getTimeRemaining(special)
@@ -41,313 +37,204 @@ export default function SpecialCard({
     setIsActive(specialsApi.isSpecialActive(special))
   }, [special, now])
 
-  const formatTimeRemaining = () => {
+  const formatTimeRemaining = useCallback(() => {
     if (timeRemaining.isExpired) {
       return 'Expired'
     }
 
     const { hours, minutes, seconds } = timeRemaining
-
     if (hours > 0) {
       return `${hours}h ${minutes}m left`
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds}s left`
-    } else {
-      return `${seconds}s left`
     }
-  }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s left`
+    }
+    return `${seconds}s left`
+  }, [timeRemaining])
+
+  const statusLabel = useMemo(
+    () => status.charAt(0).toUpperCase() + status.slice(1),
+    [status]
+  )
+
+  const timingLabel = useMemo(() => {
+    if (status === 'active') {
+      return formatTimeRemaining()
+    }
+    if (status === 'upcoming') {
+      return `Starts ${new Date(special.valid_from).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })}`
+    }
+    return 'Expired'
+  }, [status, special.valid_from, formatTimeRemaining])
+
+  const timingDescription = useMemo(() => {
+    const describe = (value: string) =>
+      new Date(value).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+
+    if (status === 'active') {
+      return `Valid until ${describe(special.valid_until)}`
+    }
+    if (status === 'upcoming') {
+      return `Starts ${describe(special.valid_from)}`
+    }
+    return `Expired ${describe(special.valid_until)}`
+  }, [status, special.valid_from, special.valid_until])
+
+  const heroImage = special.hero_image_url || special.media_items?.[0]?.url
+
+  const cardData: CardData = useMemo(
+    () => ({
+      id: special.id,
+      imageUrl: heroImage,
+      title: special.title,
+      badge: specialsApi.formatDiscountLabel(special),
+      subtitle: special.subtitle || '',
+      additionalText: timingLabel,
+      showHeart: false,
+      imageTag: statusLabel,
+    }), [heroImage, special.id, special.subtitle, special.title, special, timingLabel, statusLabel]
+  )
+
+  const handleClaim = useCallback(() => {
+    if (onClaim && special.can_claim) {
+      onClaim(special)
+    }
+  }, [onClaim, special])
+
+  const handleShare = useCallback(() => {
+    if (onShare) {
+      onShare(special)
+    }
+  }, [onShare, special])
+
+  const handleViewDetails = useCallback(() => {
+    if (onViewDetails) {
+      onViewDetails(special)
+    }
+  }, [onViewDetails, special])
 
   const getStatusColor = () => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 border-green-200'
+        return 'bg-green-100 text-green-700'
       case 'upcoming':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'bg-blue-100 text-blue-700'
       case 'expired':
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-gray-100 text-gray-600'
       case 'inactive':
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'bg-red-100 text-red-600'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-gray-100 text-gray-600'
     }
   }
 
-  const getDiscountColor = () => {
-    if (special.discount_type === 'percentage') {
-      return 'bg-gradient-to-r from-green-500 to-emerald-600'
-    } else if (special.discount_type === 'fixed_amount') {
-      return 'bg-gradient-to-r from-blue-500 to-cyan-600'
-    } else if (special.discount_type === 'bogo') {
-      return 'bg-gradient-to-r from-purple-500 to-pink-600'
-    } else {
-      return 'bg-gradient-to-r from-orange-500 to-red-600'
-    }
-  }
-
-  const handleClaim = () => {
-    if (onClaim && special.can_claim) {
-      onClaim(special)
-    }
-  }
-
-  const handleShare = () => {
-    if (onShare) {
-      onShare(special)
-    }
-  }
-
-  const handleViewDetails = () => {
-    if (onViewDetails) {
-      onViewDetails(special)
-    }
-  }
+  const showClaimCta = showClaimButton && special.can_claim && isActive
+  const rightStatusLabel = !special.can_claim && isActive ? 'Claimed' : statusLabel
 
   return (
-    <div
-      className={`bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200 ${
-        compact ? 'max-w-sm' : ''
-      }`}
-    >
-      {/* Hero Image */}
-      {special.hero_image_url && !imageError ? (
-        <div className="relative h-48 bg-gray-200">
-          <Image
-            src={special.hero_image_url}
-            alt={special.media_items?.[0]?.alt_text || special.title}
-            fill
-            className="object-cover"
-            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-            onError={() => setImageError(true)}
-            unoptimized
-          />
+    <div className="flex flex-col gap-2">
+      <Card
+        data={cardData}
+        variant={compact ? 'minimal' : 'default'}
+        showStarInBadge={false}
+        onCardClick={onViewDetails ? handleViewDetails : undefined}
+        className="w-full"
+      />
 
-          {/* Status Badge */}
-          <div className="absolute top-3 left-3">
-            <Badge className={`${getStatusColor()} text-xs font-medium`}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Badge>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${getStatusColor()}`}>
+            {statusLabel}
+          </span>
+          <div className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            <span className="leading-none">{timingDescription}</span>
           </div>
+        </div>
 
-          {/* Discount Badge */}
-          <div className="absolute top-3 right-3">
-            <div className={`px-3 py-1 rounded-full text-white text-sm font-bold ${getDiscountColor()}`}>
-              {specialsApi.formatDiscountLabel(special)}
-            </div>
-          </div>
-
-          {/* Time Remaining */}
-          {isActive && (
-            <div className="absolute bottom-3 left-3 right-3">
-              <div className="bg-black bg-opacity-75 text-white px-3 py-1 rounded-full text-sm flex items-center">
-                <Clock className="h-4 w-4 mr-2" />
-                {formatTimeRemaining()}
-              </div>
-            </div>
+        <div className="flex items-center gap-1">
+          {showShareButton && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleShare}
+              aria-label="Share special"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
           )}
-        </div>
-      ) : (
-        <div className="h-48 bg-gray-100 flex flex-col items-center justify-center text-gray-400">
-          <Clock className="h-8 w-8 mb-2" />
-          <span className="text-sm">Image unavailable</span>
-        </div>
-      )}
 
-      {/* Content */}
-      <div className="p-4">
-        {/* Title and Subtitle */}
-        <div className="mb-3">
-          <h3
-            className={`font-bold text-gray-900 mb-1 ${compact ? 'text-lg' : 'text-xl'} ${
-              onViewDetails ? 'cursor-pointer hover:text-blue-600' : ''
-            }`}
-            onClick={handleViewDetails}
-          >
-            {special.title}
-          </h3>
-          {special.subtitle && (
-            <p className="text-gray-600 text-sm">{special.subtitle}</p>
-          )}
-        </div>
-
-        {/* Description */}
-        {!compact && special.description && (
-          <p className="text-gray-700 text-sm mb-3 line-clamp-3">
-            {special.description}
-          </p>
-        )}
-
-        {/* Discount Details */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-green-600">
-              {specialsApi.formatDiscountLabel(special)}
-            </span>
-            {special.max_claims_total && (
-              <span className="text-sm text-gray-500 flex items-center">
-                <Users className="h-4 w-4 mr-1" />
-                {special.max_claims_total} available
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Time Information */}
-        <div className="mb-3 text-sm text-gray-600">
-          <div className="flex items-center justify-between">
-            <span>Valid until:</span>
-            <span className="font-medium">
-              {new Date(special.valid_until).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-              })}
-            </span>
-          </div>
-        </div>
-
-        {/* User Claims Remaining */}
-        {special.user_claims_remaining > 0 && (
-          <div className="mb-3">
-            <Badge variant="outline" className="text-xs">
-              {special.user_claims_remaining} claim{special.user_claims_remaining !== 1 ? 's' : ''} remaining
+          {showClaimCta ? (
+            <Button
+              onClick={handleClaim}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Claim
+            </Button>
+          ) : (
+            <Badge variant="outline" className="text-[11px] capitalize">
+              {rightStatusLabel}
             </Badge>
-          </div>
-        )}
-
-        {/* Terms */}
-        {!compact && special.terms && (
-          <details className="mb-3">
-            <summary className="text-sm text-gray-700 cursor-pointer">Terms &amp; Conditions</summary>
-            <p className="text-xs text-gray-500 mt-2">{special.terms}</p>
-          </details>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="flex space-x-2">
-            {showShareButton && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                className="flex items-center"
-              >
-                <Share2 className="h-4 w-4 mr-1" />
-                Share
-              </Button>
-            )}
-          </div>
-
-          <div className="flex space-x-2">
-            {showClaimButton && special.can_claim && isActive && (
-              <Button
-                onClick={handleClaim}
-                size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Claim Special
-              </Button>
-            )}
-
-            {!special.can_claim && isActive && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
-                className="text-gray-500"
-              >
-                Already Claimed
-              </Button>
-            )}
-
-            {!isActive && status === 'expired' && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
-                className="text-gray-500"
-              >
-                Expired
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-/**
- * Compact version for smaller displays
- */
 export function SpecialCardCompact(props: SpecialCardProps) {
-  return <SpecialCard {...props} compact={true} />
+  return <SpecialCard {...props} compact />
 }
 
-/**
- * Featured special card with larger display
- */
 export function FeaturedSpecialCard({ special, onClaim, onShare }: SpecialCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      {/* Large Hero Image */}
-      {special.hero_image_url && (
-        <div className="relative h-64 bg-gray-200">
-          <Image
-            src={special.hero_image_url}
-            alt={special.media_items?.[0]?.alt_text || special.title}
-            fill
-            className="object-cover"
-            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-            unoptimized
-          />
+    <div className="flex flex-col gap-2">
+      <Card
+        data={{
+          id: special.id,
+          imageUrl: special.hero_image_url || special.media_items?.[0]?.url,
+          title: special.title,
+          badge: specialsApi.formatDiscountLabel(special),
+          subtitle: special.subtitle || '',
+          additionalText: specialsApi.isSpecialActive(special)
+            ? specialsApi.getTimeRemaining(special).isExpired
+              ? 'Expired'
+              : 'Featured'
+            : 'Upcoming',
+          showHeart: false,
+          imageTag: 'Featured',
+        }}
+        variant="default"
+        showStarInBadge={false}
+        className="w-full"
+      />
 
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+      <div className="flex items-center justify-between gap-2">
+        {specialsApi.isSpecialActive(special) && onClaim && (
+          <Button
+            onClick={() => onClaim(special)}
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            Claim Now
+          </Button>
+        )}
 
-          {/* Content Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <Badge className="bg-green-600 text-white">
-                Featured Special
-              </Badge>
-              <div className="text-2xl font-bold">
-                {specialsApi.formatDiscountLabel(special)}
-              </div>
-            </div>
-
-            <h2 className="text-2xl font-bold mb-2">{special.title}</h2>
-            {special.subtitle && (
-              <p className="text-lg opacity-90 mb-4">{special.subtitle}</p>
-            )}
-
-            <div className="flex items-center space-x-4">
-              {special.can_claim && specialsApi.isSpecialActive(special) && (
-                <Button
-                  onClick={() => onClaim?.(special)}
-                  size="lg"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Claim Now
-                </Button>
-              )}
-
-              {onShare && (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => onShare(special)}
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                >
-                  <Share2 className="h-5 w-5 mr-2" />
-                  Share
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+        {onShare && (
+          <Button variant="outline" size="sm" onClick={() => onShare(special)}>
+            Share
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

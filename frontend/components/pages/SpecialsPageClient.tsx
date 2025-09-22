@@ -116,7 +116,7 @@ export default function SpecialsPageClient() {
   };
 
   const LoadingGrid = () => (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {Array.from({ length: 6 }).map((_, index) => (
         <SkeletonCard key={`specials-loading-${index}`} />
       ))}
@@ -198,7 +198,7 @@ export default function SpecialsPageClient() {
               <h2 className="text-lg font-semibold text-gray-900">Active Now</h2>
               <span className="text-sm text-gray-500">({activeSpecials.length})</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {activeSpecials.map((special) => (
                 <SpecialCard
                   key={special.id}
@@ -220,7 +220,7 @@ export default function SpecialsPageClient() {
               <h2 className="text-lg font-semibold text-gray-900">Coming Soon</h2>
               <span className="text-sm text-gray-500">({upcomingSpecials.length})</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {upcomingSpecials.map((special) => (
                 <SpecialCard
                   key={special.id}
