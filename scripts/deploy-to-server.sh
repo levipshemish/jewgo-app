@@ -81,7 +81,7 @@ execute_on_server() {
     local description="$2"
 
     print_status "$description"
-    if ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "$cmd" 2>&1 | tee -a "$DEPLOYMENT_LOG"; then
+    if ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "$cmd" 2>&1 | tee -a "$DEPLOYMENT_LOG"; then
         print_success "$description completed"
         return 0
     else
@@ -101,7 +101,7 @@ chmod 600 "$SSH_KEY"
 
 # Check if we can connect to the server
 print_status "Testing server connection..."
-if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o BatchMode=yes $SERVER_USER@$SERVER_HOST "echo 'Connection successful'" 2>/dev/null; then
+if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -o BatchMode=yes $SERVER_USER@$SERVER_HOST "echo 'Connection successful'" 2>/dev/null; then
     print_error "Cannot connect to server. Please check your SSH key and server configuration."
     exit 1
 fi
@@ -356,7 +356,7 @@ check_backend_health() {
     while [ $attempt -le $max_attempts ]; do
         print_status "Health check attempt $attempt/$max_attempts..."
         # Hit through Nginx to ensure upstream routing works
-        if curl -f -s https://api.jewgo.app/healthz > /dev/null 2>&1; then
+        if curl --max-time 10 --connect-timeout 5 -f -s https://api.jewgo.app/healthz > /dev/null 2>&1; then
             print_success "Backend health check passed"
             return 0
         else
@@ -381,7 +381,7 @@ test_endpoint() {
     local curl_error
     
     # Get response code and body
-    response_code=$(curl -s -o /tmp/curl_response.tmp -w "%{http_code}" "$url" 2>/tmp/curl_error.tmp)
+    response_code=$(curl --max-time 15 --connect-timeout 5 -s -o /tmp/curl_response.tmp -w "%{http_code}" "$url" 2>/tmp/curl_error.tmp)
     response_body=$(cat /tmp/curl_response.tmp 2>/dev/null || echo "")
     curl_error=$(cat /tmp/curl_error.tmp 2>/dev/null || echo "")
     
@@ -407,10 +407,10 @@ test_endpoint() {
 
         # Always fetch recent server logs for failed endpoints (tail 200 for context)
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_LOGS] Fetching backend logs (tail 200) for failed endpoint..." >> "$LOCAL_LOG_FILE"
-        ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 200 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
+        ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 200 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
         # Also record container status for quicker triage
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ENDPOINT_LOGS] docker ps (backend)" >> "$LOCAL_LOG_FILE"
-        ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker ps --filter name=jewgo_backend --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" >> "$LOCAL_LOG_FILE" 2>&1
+        ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker ps --filter name=jewgo_backend --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" >> "$LOCAL_LOG_FILE" 2>&1
         
         return 1
     fi
@@ -421,7 +421,7 @@ test_backend_direct_on_server() {
     local path="$1"   # e.g., /api/v5/auth/csrf or /readyz
     local desc="$2"
     print_status "Direct backend test (server): $desc at http://127.0.0.1:5000$path"
-    ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "curl -s -o /tmp/direct_resp.tmp -w '%{http_code}' http://127.0.0.1:5000$path" > /tmp/direct_code.tmp 2>/dev/null || true
+    ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "curl --max-time 10 -s -o /tmp/direct_resp.tmp -w '%{http_code}' http://127.0.0.1:5000$path" > /tmp/direct_code.tmp 2>/dev/null || true
     local code=$(cat /tmp/direct_code.tmp 2>/dev/null || echo "000")
     local body=$(cat /tmp/direct_resp.tmp 2>/dev/null | head -c 1000)
     rm -f /tmp/direct_code.tmp /tmp/direct_resp.tmp || true
@@ -542,7 +542,7 @@ execute_on_server "
 print_status "Testing rate limits after Nginx reload..."
 for i in {1..3}; do
     print_status "Rate limit test $i/3:"
-    response_code=$(curl -s -w "%{http_code}" "https://api.jewgo.app/api/v5/auth/csrf" -o /dev/null)
+    response_code=$(curl --max-time 10 --connect-timeout 5 -s -w "%{http_code}" "https://api.jewgo.app/api/v5/auth/csrf" -o /dev/null)
     if [ "$response_code" = "200" ]; then
         print_success "Rate limit test $i passed (HTTP $response_code)"
     else
@@ -577,7 +577,7 @@ fi
 
 # Test Metrics API health (optional due to Redis/DB dependencies)
 if [ "${ENABLE_METRICS_HEALTH_CHECK:-true}" = "true" ]; then
-  test_endpoint "https://api.jewgo.app/api/v5/metrics/health" "Metrics API health endpoint" || true
+test_endpoint "https://api.jewgo.app/api/v5/metrics/health" "Metrics API health endpoint" || true
 else
   print_status "Skipping metrics health check (set ENABLE_METRICS_HEALTH_CHECK=true to enable)"
 fi
@@ -626,7 +626,7 @@ if [ "${TEST_WEBHOOK_SIGNATURE:-false}" = "true" ]; then
         local timestamp=$(date +%s)
         
         local response_code
-        response_code=$(curl -s -o /dev/null -w "%{http_code}" \
+    response_code=$(curl --max-time 15 --connect-timeout 5 -s -o /dev/null -w "%{http_code}" \
             -X POST "https://api.jewgo.app/api/v5/webhook/deploy" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: sha256=$signature" \
@@ -939,10 +939,8 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] [FINAL_LOGS] Capturing final server logs...
 ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "docker logs --tail 50 jewgo_backend" >> "$LOCAL_LOG_FILE" 2>&1
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] [FINAL_LOGS] Server logs captured" >> "$LOCAL_LOG_FILE"
 
-# Count successful vs failed tests
 print_status "Generating deployment test summary..."
 
-# Test summary
 print_success "Server deployment and testing completed!"
 print_status ""
 print_status "=== DEPLOYMENT SUMMARY ==="
@@ -1036,12 +1034,11 @@ print_status "4. Verify Redis cluster (if enabled): docker ps | grep redis"
 print_status "5. Test frontend connectivity to backend"
 print_status "6. Verify all services are working as expected"
 print_status ""
-# Generate deployment summary
 print_status "Generating deployment summary..."
 
 # Count successful vs failed tests
-local success_count=0
-local failure_count=0
+success_count=0
+failure_count=0
 
 # Count from local log file
 success_count=$(grep -c "\[ENDPOINT_TEST\] SUCCESS:" "$LOCAL_LOG_FILE" 2>/dev/null || echo "0")

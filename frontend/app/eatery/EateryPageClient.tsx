@@ -147,37 +147,38 @@ function EateryPageContent() {
         placeholder="Find restaurants near you"
       />
 
-      {/* Navigation Block - Sticky below header */}
-      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <CategoryTabs 
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-        <ActionButtons
-          onShowFilters={handleShowFilters}
-          onShowMap={handleShowMap}
-          onAddEatery={handleAddEatery}
-          addButtonText="Add Restaurant"
-        />
-        
-        {/* Active Filter Chips */}
-        <div className="px-4 py-2 border-b border-border/30">
-          <ActiveFilterChips
-            filters={activeFilters}
-            onRemoveFilter={handleRemoveFilter}
-            onClearAll={clearAllFilters}
-            variant="full"
-            className="min-h-[32px]"
-          />
-        </div>
-      </div>
-
-      {/* Grid - Fill remaining space and account for bottom nav height via CSS var */}
+      {/* Scroll container - holds sticky nav and grid; accounts for bottom nav height */}
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-height, 64px))' }}
       >
+        {/* Navigation Block - Sticky below header inside scroll container */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
+          <CategoryTabs 
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+          <ActionButtons
+            onShowFilters={handleShowFilters}
+            onShowMap={handleShowMap}
+            onAddEatery={handleAddEatery}
+            addButtonText="Add Restaurant"
+          />
+          
+          {/* Active Filter Chips */}
+          <div className="px-4 py-2 border-b border-border/30">
+            <ActiveFilterChips
+              filters={activeFilters}
+              onRemoveFilter={handleRemoveFilter}
+              onClearAll={clearAllFilters}
+              variant="full"
+              className="min-h-[32px]"
+            />
+          </div>
+        </div>
+
+        {/* Grid */}
         <EateryGrid
           category="all"
           searchQuery={searchQuery}
