@@ -462,45 +462,49 @@ execute_on_server "$nginx_dedupe_cmd" "Ensuring Nginx client_header_buffer_size 
 
 # Update Nginx configuration for HTTP/2 and webhook endpoints
 print_status "Updating Nginx configuration for HTTP/2 and webhook endpoints..."
-execute_on_server "
-    set -euo pipefail
-    if [ -f /etc/nginx/conf.d/default.conf ]; then
-        # Backup current config
-        sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.\$(date +%s) || true
-        
-        # Update HTTP/2 configuration (fix deprecated syntax)
-        sudo sed -i 's/listen 443 ssl http2;/listen 443 ssl;\n        http2 on;/g' /etc/nginx/conf.d/default.conf || true
-        # Update backend upstream target dynamically based on current container IP
-        BACKEND_IP=\$(docker inspect -f '{{range NetworkSettings.Networks}}{{.IPAddress}}{{end}}' jewgo_backend 2>/dev/null || true)
-        if [ -n "\$BACKEND_IP" ]; then
-            sudo sed -i -E "s/server[[:space:]]+[0-9.]+:5000;/    server \$BACKEND_IP:5000;/" /etc/nginx/conf.d/default.conf
-            echo "Updated backend upstream to \$BACKEND_IP:5000"
-        else
-            echo 'WARNING: Could not determine backend container IP; upstream not updated'
-        fi
-        
-        # Ensure webhook endpoints are properly configured
-        if ! grep -q 'location /api/v5/webhook' /etc/nginx/conf.d/default.conf; then
-            echo 'Adding webhook endpoint configuration to Nginx...'
-            sudo tee -a /etc/nginx/conf.d/default.conf > /dev/null << 'EOF'
-        
+nginx_update_cmd=$(cat <<'NGINX_UPDATE'
+set -euo pipefail
+if [ -f /etc/nginx/conf.d/default.conf ]; then
+    # Backup current config
+    sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.$(date +%s) || true
+
+    # Update HTTP/2 configuration (fix deprecated syntax)
+    sudo sed -i 's/listen 443 ssl http2;/listen 443 ssl;
+        http2 on;/g' /etc/nginx/conf.d/default.conf || true
+
+    # Update backend upstream target dynamically based on current container IP
+    BACKEND_IP=$(docker inspect -f '{{range NetworkSettings.Networks}}{{.IPAddress}}{{end}}' jewgo_backend 2>/dev/null || true)
+    if [ -n "$BACKEND_IP" ]; then
+        sudo sed -i -E "s/server[[:space:]]+[0-9.]+:5000;/    server $BACKEND_IP:5000;/" /etc/nginx/conf.d/default.conf
+        echo "Updated backend upstream to $BACKEND_IP:5000"
+    else
+        echo 'WARNING: Could not determine backend container IP; upstream not updated'
+    fi
+
+    # Ensure webhook endpoints are properly configured
+    if ! grep -q 'location /api/v5/webhook' /etc/nginx/conf.d/default.conf; then
+        echo 'Adding webhook endpoint configuration to Nginx...'
+        sudo tee -a /etc/nginx/conf.d/default.conf > /dev/null <<'EOF'
+
         # Webhook endpoints
         location /api/v5/webhook {
             proxy_pass http://backend;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
             proxy_connect_timeout 30s;
             proxy_send_timeout 30s;
             proxy_read_timeout 30s;
         }
 EOF
-        fi
-        
-        echo 'Nginx configuration updated'
     fi
-" "Updating Nginx configuration"
+
+    echo 'Nginx configuration updated'
+fi
+NGINX_UPDATE
+)
+execute_on_server "$nginx_update_cmd" "Updating Nginx configuration"
 
 # Reload Nginx configuration to apply changes
 print_status "Reloading Nginx configuration to apply changes..."
