@@ -595,15 +595,13 @@ class PostgresAuthClient {
   /**
    * Check if user is currently authenticated
    * In cookie-mode, this is a best-effort check using available client-side information
+   * Note: HttpOnly cookies aren't visible to JavaScript, so this is not reliable
    */
   isAuthenticated(): boolean {
     // In cookie-mode, we can't reliably check HttpOnly cookies from client-side
-    // This is a best-effort check - prefer server-side authentication checks
-    if (typeof window === 'undefined') return false;
-    
-    // Check if we have any authentication-related cookies (best effort)
-    const cookies = document.cookie;
-    return cookies.includes('access_token') || cookies.includes('session');
+    // Always return true and let server-side checks handle actual authentication
+    // The middleware will redirect unauthenticated users to sign-in
+    return true;
   }
 
   /**

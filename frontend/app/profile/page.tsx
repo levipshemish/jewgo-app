@@ -26,11 +26,8 @@ export default function ProfilePage() {
       let redirected = false;
       let userAuthenticated = false;
       try {
-        // Check if user is authenticated via PostgreSQL auth
-        const isAuth = postgresAuth.isAuthenticated();
-        appLogger.info('Profile page: isAuthenticated check:', { isAuth });
-        
-        // Try to get profile regardless of cookie check, as HttpOnly cookies aren't visible to client
+        // Skip client-side authentication check since HttpOnly cookies aren't visible
+        // Go directly to profile loading - the middleware will handle authentication
         appLogger.info('Profile page: Attempting to get profile...');
         
         try {

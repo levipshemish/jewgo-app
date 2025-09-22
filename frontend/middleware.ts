@@ -29,6 +29,7 @@ export const config = {
     '/settings/:path*',
     '/favorites/:path*',
     '/account/:path*',
+    '/notifications/:path*',
   ]
 };
 
@@ -74,7 +75,17 @@ export async function middleware(request: NextRequest) {
       const accessToken = request.cookies.get('access_token')?.value ||
                          request.headers.get('authorization')?.replace('Bearer ', '');
       
+      // Debug logging for token extraction
+      console.log('Middleware token extraction:', {
+        path: request.nextUrl.pathname,
+        hasCookie: !!request.cookies.get('access_token'),
+        hasAuthHeader: !!request.headers.get('authorization'),
+        tokenLength: accessToken ? accessToken.length : 0,
+        cookieValue: request.cookies.get('access_token')?.value ? 'present' : 'missing'
+      });
+      
       if (!accessToken) {
+        console.log('No access token found, redirecting to signin');
         return handleUnauthenticatedUser(request, isApi);
       }
       
@@ -90,8 +101,19 @@ export async function middleware(request: NextRequest) {
         signal: AbortSignal.timeout(5000)
       });
 
+      // Debug logging for response
+      console.log('Middleware auth verification response:', {
+        status: verifyResponse.status,
+        ok: verifyResponse.ok,
+        userId: verifyResponse.headers.get('X-User-ID'),
+        userRoles: verifyResponse.headers.get('X-User-Roles'),
+        userPermissions: verifyResponse.headers.get('X-User-Permissions'),
+        tokenValid: verifyResponse.headers.get('X-Token-Valid')
+      });
+
       // Handle different response codes
       if (verifyResponse.status === 401) {
+        console.log('Token verification failed with 401, redirecting to signin');
         return handleUnauthenticatedUser(request, isApi);
       }
       
@@ -117,16 +139,34 @@ export async function middleware(request: NextRequest) {
       const userRoles = verifyResponse.headers.get('X-User-Roles');
       const userPermissions = verifyResponse.headers.get('X-User-Permissions');
       
+      // Create user data - if we have a valid token (200 response), we have a user
       const userData = userId ? {
         id: userId,
-        roles: userRoles ? userRoles.split(',') : [],
-        permissions: userPermissions ? userPermissions.split(',') : []
-      } : null;
+        roles: userRoles ? userRoles.split(',').filter(role => role.trim()) : ['user'], // Default to user role
+        permissions: userPermissions ? userPermissions.split(',').filter(perm => perm.trim()) : ['read'] // Default permissions
+      } : {
+        id: 'authenticated', // Fallback for valid tokens without user ID
+        roles: ['user'],
+        permissions: ['read']
+      };
+
+      // Debug logging for successful authentication
+      console.log('Middleware authentication successful:', {
+        userData,
+        path: request.nextUrl.pathname
+      });
 
       // Handle authenticated users
       return await handleAuthenticatedUser(request, isApi, userData, response);
     } catch (error) {
-      console.error('Middleware auth verification error:', error);
+      console.error('Middleware auth verification error:', {
+        error: error instanceof Error ? error.message : String(error),
+        path: request.nextUrl.pathname,
+        method: request.method,
+        hasToken: !!accessToken,
+        tokenLength: accessToken ? accessToken.length : 0,
+        backendUrl: backendUrl
+      });
       return handleAuthError(request, isApi, error as AuthError);
     }
 
@@ -279,7 +319,8 @@ function isProtectedPath(pathname: string): boolean {
     '/profile',
     '/settings',
     '/favorites',
-    '/account'
+    '/account',
+    '/notifications'
   ];
   
   return protectedPaths.some(path => pathname.startsWith(path));

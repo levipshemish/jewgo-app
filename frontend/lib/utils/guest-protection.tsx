@@ -28,7 +28,7 @@ export function useGuestProtection(redirectTo?: string): GuestProtectionResult {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const response = await fetch('/api/auth/sync-user', {
+        const response = await fetch('/api/v5/auth/sync-user', {
           method: 'GET',
           credentials: 'include',
         });
