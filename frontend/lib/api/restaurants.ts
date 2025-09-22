@@ -92,16 +92,12 @@ export async function fetchRestaurants({
       throw new Error(response.error || 'Failed to fetch restaurants');
     }
 
-    // Debug the V5 API response
-    console.log('🔍 V5 API Response - first restaurant:', response.data?.[0]);
-    console.log('🔍 V5 API Response - distance field:', response.data?.[0]?.distance);
+    // Debug logs removed
     
     // Handle V5 API response format - V5 API returns data array directly
     const restaurants = sanitizeRestaurantData(response.data || []) as Restaurant[];
     
-    // Debug after sanitization
-    console.log('🔍 After sanitization - first restaurant:', restaurants[0]);
-    console.log('🔍 After sanitization - distance field:', restaurants[0]?.distance);
+    // Debug logs removed
     
     const total = response.data?.total || response.pagination?.total || restaurants.length;
     const safeLimit = limit > 0 ? limit : 1;
@@ -262,19 +258,12 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
 export async function getRestaurant(id: number): Promise<Restaurant | null> {
   try {
     // Use V5 API client for restaurant details with cache disabled to get fresh data
-    console.log('[V5:getRestaurant] requesting entity details via proxy', { id });
+    // Debug logs removed
     const response = await v5ApiClient.getEntity(id.toString(), V5_ENTITY_TYPES.RESTAURANTS, { 
       cache: 'no-store'
     });
 
-    console.log('[V5:getRestaurant] response meta', {
-      success: response.success,
-      hasData: !!response.data,
-      keys: response?.data ? Object.keys(response.data) : [],
-      hasHoursJson: !!(response as any)?.data?.hours_json,
-      hasHoursOfOperation: !!(response as any)?.data?.hours_of_operation,
-      timezone: (response as any)?.data?.timezone
-    });
+    // Debug logs removed
 
     if (!response.success) {
       if (response.error?.includes('404') || response.error?.includes('not found')) {
@@ -285,14 +274,7 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
 
     // Handle V5 API response format
     const restaurant = response.data;
-    console.log('[V5:getRestaurant] restaurant sample fields', {
-      id: restaurant?.id,
-      name: restaurant?.name,
-      hours_json: restaurant?.hours_json ? 'present' : 'missing',
-      hours_of_operation: restaurant?.hours_of_operation ? 'present' : 'missing',
-      hours_parsed: restaurant?.hours_parsed,
-      timezone: restaurant?.timezone
-    });
+    // Debug logs removed
     if (restaurant) {
       const sanitized = sanitizeRestaurantData([restaurant]);
       return sanitized[0] as Restaurant;
@@ -300,8 +282,7 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
     
     return null;
   } catch (error) {
-    console.error('V5 API error, falling back to legacy API:', error);
-    console.log('[V5:getRestaurant] FALLBACK fetch to /api/v5/restaurants/:id');
+    // Fallback
     
     // Fallback to V5 API directly
     const u = new URL(`/api/v5/restaurants/${id}`, API_BASE || window.location.origin);
