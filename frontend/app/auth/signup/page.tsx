@@ -177,9 +177,15 @@ export default function SignUpPage() {
           {isLoading ? "Creating Account..." : "Agree & Continue"}
         </Button>
 
-        <div className="text-center">
-          <Link href="/auth/login" className="text-green-500 hover:text-green-600 text-sm">
+        <div className="text-center space-y-3">
+          <Link href="/auth/login" className="text-green-500 hover:text-green-600 text-sm block">
             Already have an account? Sign in
+          </Link>
+          
+          <div className="text-gray-400 text-sm">or</div>
+          
+          <Link href="/auth/guest" className="text-green-400 hover:text-green-300 text-sm block">
+            Continue as guest
           </Link>
         </div>
       </form>
