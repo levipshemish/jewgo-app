@@ -438,19 +438,19 @@ execute_on_server "
     if [ -f /etc/nginx/conf.d/default.conf ]; then
         timestamp=\$(date +%s)
         sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.\$timestamp || true
-        sudo bash -c "
-            set -euo pipefail
-            tmp1=\$(mktemp /tmp/default.conf.step1.XXXXXX)
-            tmp2=\$(mktemp /tmp/default.conf.step2.XXXXXX)
-            tmpfixed=\$(mktemp /tmp/default.conf.fixed.XXXXXX)
-            sed -e '0,/client_header_buffer_size/s//& __KEEP__/' /etc/nginx/conf.d/default.conf > \"\$tmp1\"
-            sed -e '/client_header_buffer_size/ { /__KEEP__/! s/^/#/ }' \"\$tmp1\" > \"\$tmp2\"
-            sed -e 's/ __KEEP__//' \"\$tmp2\" > \"\$tmpfixed\"
-            if [ -s \"\$tmpfixed\" ]; then
-                mv \"\$tmpfixed\" /etc/nginx/conf.d/default.conf
-            fi
-            rm -f \"\$tmp1\" \"\$tmp2\" \"\$tmpfixed\"
-        "
+        sudo bash <<'NG_DEDUPE'
+set -euo pipefail
+tmp1=$(mktemp /tmp/default.conf.step1.XXXXXX)
+tmp2=$(mktemp /tmp/default.conf.step2.XXXXXX)
+tmpfixed=$(mktemp /tmp/default.conf.fixed.XXXXXX)
+sed -e '0,/client_header_buffer_size/s//& __KEEP__/' /etc/nginx/conf.d/default.conf > "$tmp1"
+sed -e '/client_header_buffer_size/ { /__KEEP__/! s/^/#/ }' "$tmp1" > "$tmp2"
+sed -e 's/ __KEEP__//' "$tmp2" > "$tmpfixed"
+if [ -s "$tmpfixed" ]; then
+    mv "$tmpfixed" /etc/nginx/conf.d/default.conf
+fi
+rm -f "$tmp1" "$tmp2" "$tmpfixed"
+NG_DEDUPE
     fi
     sudo nginx -t
 " "Ensuring Nginx client_header_buffer_size not duplicated"
@@ -461,7 +461,7 @@ execute_on_server "
     set -euo pipefail
     if [ -f /etc/nginx/conf.d/default.conf ]; then
         # Backup current config
-        sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.$(date +%s) || true
+        sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.\$(date +%s) || true
         
         # Update HTTP/2 configuration (fix deprecated syntax)
         sudo sed -i 's/listen 443 ssl http2;/listen 443 ssl;\n        http2 on;/g' /etc/nginx/conf.d/default.conf || true
