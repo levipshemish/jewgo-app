@@ -722,7 +722,7 @@ print_status "Testing additional important endpoints..."
 # test_endpoint "http://$SERVER_HOST:5000/api/v5/metrics/dashboard" "Metrics dashboard endpoint"
 
 # Test search suggestions
-test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggestions?q=test" "Search suggestions endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggest?q=test" "Search suggestions endpoint"
 
 # Test popular searches
 test_endpoint "http://$SERVER_HOST:5000/api/v5/search/popular" "Popular searches endpoint"
@@ -838,7 +838,7 @@ fi
 # Test search functionality
 print_status "Testing search functionality..."
 test_endpoint "http://$SERVER_HOST:5000/api/v5/search/?q=kosher&limit=5" "General search endpoint"
-test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggestions?q=rest" "Search suggestions endpoint"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/search/suggest?q=rest" "Search suggestions endpoint"
 test_endpoint "http://$SERVER_HOST:5000/api/v5/search/popular" "Popular searches endpoint"
 
 # Test reviews functionality
@@ -984,7 +984,7 @@ print_status ""
 print_status "✅ Additional Services:"
 print_status "   - /api/v5/monitoring/status (requires authentication - skipped)"
 print_status "   - /api/v5/metrics/dashboard (metrics dashboard)"
-print_status "   - /api/v5/search/suggestions (search suggestions)"
+print_status "   - /api/v5/search/suggest (search suggestions)"
 print_status "   - /api/v5/search/popular (popular searches)"
 print_status ""
 print_status "=== NEW FEATURES DEPLOYED ==="
