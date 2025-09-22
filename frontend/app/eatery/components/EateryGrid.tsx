@@ -299,6 +299,9 @@ export default function EateryGrid({
     return params.toString()
   }, [searchQuery, category, activeFilters, userLocation])
 
+  // Stable key for fetch dependencies to avoid re-fetch on same params
+  const searchParamsKey = useMemo(() => buildSearchParams(), [buildSearchParams])
+
   // Load more items using appropriate pagination method
   const loadMoreItems = useCallback(async () => {
     if (loading || !hasMore || requestInProgressRef.current) {
@@ -413,7 +416,7 @@ export default function EateryGrid({
     }
     
     debounceTimeoutRef.current = setTimeout(() => {
-      // Reset state for new data load
+      // Reset state for new data load only if params changed
       setRestaurants([])
       setHasMore(true)
       setNextCursor(null)
@@ -435,7 +438,7 @@ export default function EateryGrid({
           try {
             if (useRealData && currentRetryCount < 3) {
               // Use page-based pagination for initial load (page 1)
-              const response = await fetchRestaurants(50, undefined, buildSearchParams(), 8000, 1)
+              const response = await fetchRestaurants(50, undefined, searchParamsKey, 8000, 1)
               const mappedRestaurants = response.restaurants.map((r: any): LightRestaurant => ({
                 id: r.id,
                 name: r.name,
@@ -548,14 +551,14 @@ export default function EateryGrid({
       }
       
       loadInitialItems()
-    }, 300) // Reduced debounce to 300ms for better responsiveness
+    }, 400) // Slightly increased debounce to reduce flicker
     
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current)
       }
     }
-  }, [category, searchQuery, userLocation, activeFilters, useRealData, buildSearchParams, fetchRestaurants])
+  }, [searchParamsKey, userLocation?.latitude, userLocation?.longitude, useRealData, fetchRestaurants])
 
   // Infinite scroll handler for the scrollable container
   useEffect(() => {
