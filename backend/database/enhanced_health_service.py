@@ -237,10 +237,15 @@ def check_redis_health():
         redis_manager.set(test_key, "test_value", ttl=10)
         value = redis_manager.get(test_key)
         redis_manager.delete(test_key)
-        
+
         response_time = (time.time() - start_time) * 1000
-        
-        if value != "test_value":
+
+        if isinstance(value, bytes):
+            normalized_value = value.decode("utf-8", errors="replace")
+        else:
+            normalized_value = value
+
+        if normalized_value != "test_value":
             return HealthStatus.CRITICAL, "Redis read/write test failed", {}
         
         if response_time > 100:  # > 100ms

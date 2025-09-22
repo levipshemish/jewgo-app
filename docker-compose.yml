@@ -1,0 +1,77 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.optimized
+    container_name: jewgo_backend
+    env_file:
+      - ./.env
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - redis-master
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - default
+      - redis-cluster
+
+  redis-master:
+    image: redis:7-alpine
+    container_name: redis-master
+    command: redis-server --port 6379 --save 900 1 --save 300 10 --save 60 10000 --dir /data
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-master-data:/data
+    networks:
+      - redis-cluster
+    restart: unless-stopped
+
+  redis-slave-1:
+    image: redis:7-alpine
+    container_name: redis-slave-1
+    command: redis-server --port 6379 --slaveof redis-master 6379 --dir /data
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-slave-1-data:/data
+    depends_on:
+      - redis-master
+    networks:
+      - redis-cluster
+    restart: unless-stopped
+
+  redis-slave-2:
+    image: redis:7-alpine
+    container_name: redis-slave-2
+    command: redis-server --port 6379 --slaveof redis-master 6379 --dir /data
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis-slave-2-data:/data
+    depends_on:
+      - redis-master
+    networks:
+      - redis-cluster
+    restart: unless-stopped
+
+volumes:
+  redis-master-data:
+  redis-slave-1-data:
+  redis-slave-2-data:
+
+networks:
+  default:
+    name: jewgo-app_default
+    driver: bridge
+  redis-cluster:
+    name: jewgo-app_redis-cluster
+    driver: bridge

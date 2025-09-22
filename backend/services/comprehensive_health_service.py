@@ -285,8 +285,16 @@ class ComprehensiveHealthService:
             r.set(test_key, test_value, ex=60)
             retrieved_value = r.get(test_key)
             r.delete(test_key)
-            
-            if retrieved_value.decode() != test_value:
+
+            if retrieved_value is None:
+                raise Exception("Redis read/write test failed: value not found")
+
+            if isinstance(retrieved_value, bytes):
+                normalized_value = retrieved_value.decode("utf-8", errors="replace")
+            else:
+                normalized_value = str(retrieved_value)
+
+            if normalized_value != test_value:
                 raise Exception("Redis read/write test failed")
             
             # Get Redis info

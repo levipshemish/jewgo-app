@@ -253,39 +253,24 @@ execute_on_server "
         # Stop any existing container
         docker stop jewgo_backend 2>/dev/null || true && \
         docker rm jewgo_backend 2>/dev/null || true && \
-        # Start container on host network for direct access to localhost services
         cd $SERVER_PATH && \
         docker run -d \
           --name jewgo_backend \
-          --network host \
+          --network jewgo-app_default \
           --env-file .env \
-          -e PGHOST=129.80.190.110 \
-          -e PGPORT=5432 \
-          -e PGDATABASE=jewgo_db \
-          -e PGUSER=app_user \
-          -e PGPASSWORD=Jewgo123 \
-          -e DATABASE_URL=postgresql://app_user:Jewgo123@129.80.190.110:5432/jewgo_db \
-          -e REDIS_URL=redis://localhost:6379/0 \
-          -e REDIS_HOST=localhost \
-          -e REDIS_PORT=6379 \
-          -e REDIS_DB=0 \
-          -e REDIS_PASSWORD= \
-          -e REDIS_USERNAME=default \
-          -e REDIS_SSL=false \
-          -e CACHE_REDIS_URL=redis://localhost:6379 \
-          -e DB_POOL_SIZE=10 \
-          -e DB_MAX_OVERFLOW=20 \
-          -e DB_POOL_TIMEOUT=60 \
-          -e DB_POOL_RECYCLE=300 \
+          --restart unless-stopped \
+          -p 5000:5000 \
+          -v $SERVER_PATH/backend/uploads:/app/uploads \
           -w /app \
           jewgo-app-backend \
-          gunicorn --config config/gunicorn.conf.py wsgi:application || exit 1
+          gunicorn --config config/gunicorn.conf.py wsgi:application || exit 1 && \
+        docker network connect jewgo-app_redis-cluster jewgo_backend 2>/dev/null || echo 'Warning: backend not attached to redis network (ensure redis cluster is running)' && \
         # Verify image exists and container is running
         if ! docker image inspect jewgo-app-backend:latest >/dev/null 2>&1; then
           echo 'Built image not found locally after build; aborting'; exit 1; fi
         if ! docker inspect -f '{{.State.Running}}' jewgo_backend 2>/dev/null | grep -q true; then
           echo 'Backend container failed to start'; exit 1; fi && \
-        echo 'Backend container started (docker run with gunicorn and network alias)'
+        echo 'Backend container started (docker run with gunicorn and redis network)'
     fi
 " "Starting new backend container"
 
@@ -302,11 +287,11 @@ if [ "${DEPLOY_REDIS_CLUSTER:-false}" = "true" ]; then
     # Deploy Redis cluster
     execute_on_server "
         cd $SERVER_PATH && \
-        if [ -f docker-compose.redis-cluster.yml ]; then
-            docker compose -f docker-compose.redis-cluster.yml up -d && \
-            echo 'Redis cluster deployed successfully'
+        if [ -f docker-compose.yml ]; then
+            docker compose up -d redis-master redis-slave-1 redis-slave-2 && \
+            echo 'Redis cluster services started via root docker-compose.yml'
         else
-            echo 'Redis cluster compose file not found, skipping cluster deployment'
+            echo 'docker-compose.yml not found, skipping cluster deployment'
         fi
     " "Deploying Redis cluster"
     
