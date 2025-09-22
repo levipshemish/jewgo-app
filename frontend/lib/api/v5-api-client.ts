@@ -104,15 +104,7 @@ export class V5ApiClient {
     // Enforce rate limiting
     await this.enforceRateLimit();
     
-    // Normalize detail endpoints to consolidated entities route if needed
-    try {
-      const detailPattern = /^\/api\/v5\/(restaurants|synagogues|mikvahs|stores)\/(\d+)(?:$|\?|#)/;
-      if (!endpoint.startsWith('/api/v5/entities/') && detailPattern.test(endpoint)) {
-        const normalized = endpoint.replace(detailPattern, '/api/v5/entities/$1/$2$3');
-        console.log('[V5ApiClient] normalized detail endpoint', { from: endpoint, to: normalized });
-        endpoint = normalized;
-      }
-    } catch (_e) {}
+    // Note: No client-side normalization here; endpoints should be passed explicitly
 
     const {
       timeout = this.defaultOptions.timeout,
