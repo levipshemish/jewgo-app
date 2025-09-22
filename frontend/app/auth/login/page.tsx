@@ -1,3 +1,5 @@
+"use client";
+
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { InputField } from '@/components/auth/InputField';
 import { Button } from '@/components/ui/button';
