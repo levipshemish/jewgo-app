@@ -117,7 +117,7 @@ export class V5ApiClient {
     let lastError: Error | null = null;
     
     // Debug the request being made
-    console.log('🔍 V5 API Client - making request to:', url);
+    // console.log('🔍 V5 API Client - making request to:', url);
 
     for (let attempt = 0; attempt <= retryAttempts!; attempt++) {
       try {
@@ -155,15 +155,7 @@ export class V5ApiClient {
         const data = await response.json();
         
         // Debug the raw response structure
-        console.log('🔍 V5 API Client - raw response structure:', {
-          hasData: 'data' in data,
-          dataType: Array.isArray(data.data) ? 'array' : typeof data.data,
-          dataLength: Array.isArray(data.data) ? data.data.length : 'not array',
-          firstItemKeys: data.data?.[0] ? Object.keys(data.data[0]) : 'no first item',
-          hasDistance: data.data?.[0]?.distance !== undefined,
-          distance: data.data?.[0]?.distance,
-          actualUrl: url
-        });
+        // Debug structure disabled after verification
         
         // Backend returns {data: [], next_cursor: null, prev_cursor: null, total_count: 207}
         // Extract the actual data array and return in expected frontend format
@@ -249,11 +241,7 @@ export class V5ApiClient {
 
 
     const endpoint = `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`;
-    console.log('[V5ApiClient] getEntities endpoint', endpoint);
-    
-    // Debug the endpoint being called
-    console.log('🔍 V5 API Client - calling endpoint:', endpoint);
-    console.log('🔍 V5 API Client - searchParams:', searchParams.toString());
+    // Debug logs removed
     
     return this.makeRequest(endpoint);
   }
@@ -263,7 +251,7 @@ export class V5ApiClient {
    */
   async getEntity(id: string, entityType: V5EntityType, options?: V5ApiRequestOptions): Promise<V5ApiResponse> {
     const endpoint = V5_API_ENDPOINTS.ENTITY_DETAILS(entityType, id);
-    console.log('[V5ApiClient] getEntity endpoint', endpoint);
+    // Debug logs removed
     return this.makeRequest(endpoint, options);
   }
 

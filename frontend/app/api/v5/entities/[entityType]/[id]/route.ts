@@ -40,7 +40,7 @@ export async function GET(
 
     // Call backend API through client (backend path is /api/v5/<entityType>/<id>)
     const backendPath = `/api/v5/${entityType}/${entityId}` as const;
-    console.log('[V5 Entities Detail] proxying to backend', backendPath);
+    // Debug logs removed
     const response = await apiClient.request<any>(backendPath, {
       method: 'GET',
       headers: {
@@ -49,15 +49,7 @@ export async function GET(
     });
 
     // Debug: ensure hours fields exist in data
-    try {
-      const d: any = response?.data;
-      console.log('[V5 Entities Detail] keys:', d ? Object.keys(d) : 'no data');
-      console.log('[V5 Entities Detail] hours fields:', {
-        hours_json: !!d?.hours_json,
-        hours_of_operation: !!d?.hours_of_operation,
-        timezone: d?.timezone,
-      });
-    } catch (_e) {}
+    // Debug logs removed
 
     if (!response.success) {
       if ((response as any).status === 404) {
