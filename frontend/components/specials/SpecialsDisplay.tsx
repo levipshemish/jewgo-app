@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Special, SpecialsDisplayProps } from '@/types/specials'
 import { useSpecials, useSpecialEvents, useGuestSession } from '@/hooks/use-specials'
 import SpecialCard from './SpecialCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/button'
+import { specialsApi } from '@/lib/api/specials'
 
 /**
  * Main component for displaying specials for a restaurant
@@ -41,14 +42,38 @@ export default function SpecialsDisplay({
     limit,
   })
 
+  const viewedSpecialsRef = useRef<Set<string>>(new Set())
+
   // Track view events for visible specials
   useEffect(() => {
-    if (specials.length > 0) {
-      specials.forEach(special => {
-        trackEvent(special.id, 'view', guestSessionId || undefined)
-      })
+    if (specials.length === 0) {
+      return
     }
-  }, [specials, trackEvent, guestSessionId])
+
+    const unseenSpecials = specials.filter((special) => {
+      if (viewedSpecialsRef.current.has(special.id)) {
+        return false
+      }
+      viewedSpecialsRef.current.add(special.id)
+      return true
+    })
+
+    if (unseenSpecials.length === 0) {
+      return
+    }
+
+    const events = unseenSpecials.map((special) => ({
+      specialId: special.id,
+      eventType: 'view' as const,
+      guestSessionId: guestSessionId || undefined,
+    }))
+
+    specialsApi.batchTrackEvents(events).catch(() => {
+      events.forEach((event) => {
+        trackEvent(event.specialId, event.eventType, event.guestSessionId)
+      })
+    })
+  }, [specials, guestSessionId, trackEvent])
 
   const handleSpecialClick = (special: Special) => {
     // Track click event

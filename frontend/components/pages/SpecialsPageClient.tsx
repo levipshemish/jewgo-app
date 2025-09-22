@@ -1,15 +1,18 @@
 'use client';
 
-import { Ticket, MapPin, Clock, Users } from 'lucide-react';
+import { Ticket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { BottomNavigation, CategoryTabs } from '@/components/core';
 import { Header } from '@/components/layout';
-import { CategoryTabs } from '@/components/core';
-import { BottomNavigation } from '@/components/core';
-import { SpecialsDisplay, SpecialCard } from '@/components/specials';
+import { SpecialCard } from '@/components/specials';
+import { SkeletonCard } from '@/components/ui/LoadingStates';
+import { TimeUpdateProvider } from '@/contexts/TimeUpdateProvider';
 import { getSpecials } from '@/lib/api/specials';
 import type { Special } from '@/types/specials';
+
+const PAGE_LIMIT = 24;
 
 export default function SpecialsPageClient() {
   const router = useRouter();
@@ -17,23 +20,41 @@ export default function SpecialsPageClient() {
   const [specials, setSpecials] = useState<Special[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const offsetRef = useRef(0);
 
-  useEffect(() => {
-    const fetchSpecials = async () => {
-      try {
+  const fetchSpecials = useCallback(async (reset = false) => {
+    try {
+      setError(null);
+      if (reset) {
         setLoading(true);
-        const response = await getSpecials();
-        setSpecials(response.specials || []);
-      } catch (err) {
-        console.error('Failed to fetch specials:', err);
-        setError('Failed to load specials. Please try again later.');
-      } finally {
+        offsetRef.current = 0;
+      } else {
+        setLoadingMore(true);
+      }
+
+      const response = await getSpecials({ limit: PAGE_LIMIT, offset: offsetRef.current });
+      const incoming = response.specials || [];
+
+      setSpecials((prev) => (reset ? incoming : [...prev, ...incoming]));
+      setHasMore(Boolean(response.has_more));
+
+      offsetRef.current = reset ? incoming.length : offsetRef.current + incoming.length;
+    } catch (err) {
+      console.error('Failed to fetch specials:', err);
+      setError('Failed to load specials. Please try again later.');
+    } finally {
+      if (reset) {
         setLoading(false);
       }
-    };
-
-    fetchSpecials();
+      setLoadingMore(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchSpecials(true);
+  }, [fetchSpecials]);
 
   const _handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -66,16 +87,6 @@ export default function SpecialsPageClient() {
     }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  };
-
   const isCurrentlyActive = (special: Special) => {
     const now = new Date();
     const validFrom = new Date(special.valid_from);
@@ -89,74 +100,60 @@ export default function SpecialsPageClient() {
     return now < validFrom;
   };
 
-  const activeSpecials = specials.filter(isCurrentlyActive);
-  const upcomingSpecials = specials.filter(isUpcoming);
+  const activeSpecials = useMemo(
+    () => specials.filter(isCurrentlyActive),
+    [specials]
+  );
+  const upcomingSpecials = useMemo(
+    () => specials.filter(isUpcoming),
+    [specials]
+  );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f4f4f4]">
-        <Header />
-        
-        {/* Navigation Tabs */}
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-          <CategoryTabs activeTab={activeTab} onTabChange={_handleTabChange} />
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchSpecials(false);
+    }
+  };
+
+  const LoadingGrid = () => (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <SkeletonCard key={`specials-loading-${index}`} />
+      ))}
+    </div>
+  );
+
+  let bodyContent: React.ReactNode;
+
+  if (loading && specials.length === 0) {
+    bodyContent = (
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading specials...</p>
         </div>
-
-        {/* Loading State */}
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading specials...</p>
-          </div>
-        </div>
-
-        <BottomNavigation />
       </div>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#f4f4f4]">
-        <Header />
-        
-        {/* Navigation Tabs */}
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-          <CategoryTabs activeTab={activeTab} onTabChange={_handleTabChange} />
-        </div>
-
-        {/* Error State */}
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="text-center max-w-md mx-auto">
-            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Ticket className="w-12 h-12 text-red-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h1>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Try Again
-            </button>
+  } else if (error && specials.length === 0) {
+    bodyContent = (
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="text-center max-w-md mx-auto">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Ticket className="w-12 h-12 text-red-600" />
           </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => fetchSpecials(true)}
+            className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
-
-        <BottomNavigation />
       </div>
     );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#f4f4f4]">
-      <Header />
-      
-      {/* Navigation Tabs */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-        <CategoryTabs activeTab={activeTab} onTabChange={_handleTabChange} />
-      </div>
-
-      {/* Specials Content */}
+  } else {
+    bodyContent = (
       <div className="px-4 sm:px-6 py-6">
         {/* Header */}
         <div className="mb-6">
@@ -170,6 +167,12 @@ export default function SpecialsPageClient() {
             Discover amazing deals and offers from kosher establishments in your area.
           </p>
         </div>
+
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -195,7 +198,7 @@ export default function SpecialsPageClient() {
               <h2 className="text-lg font-semibold text-gray-900">Active Now</h2>
               <span className="text-sm text-gray-500">({activeSpecials.length})</span>
             </div>
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {activeSpecials.map((special) => (
                 <SpecialCard
                   key={special.id}
@@ -217,7 +220,7 @@ export default function SpecialsPageClient() {
               <h2 className="text-lg font-semibold text-gray-900">Coming Soon</h2>
               <span className="text-sm text-gray-500">({upcomingSpecials.length})</span>
             </div>
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {upcomingSpecials.map((special) => (
                 <SpecialCard
                   key={special.id}
@@ -232,7 +235,7 @@ export default function SpecialsPageClient() {
         )}
 
         {/* No Specials State */}
-        {specials.length === 0 && (
+        {specials.length === 0 && !loading && (
           <div className="flex-1 flex items-center justify-center py-12">
             <div className="text-center max-w-md mx-auto">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -251,10 +254,38 @@ export default function SpecialsPageClient() {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Bottom Navigation */}
-      <BottomNavigation />
-    </div>
+        {loadingMore && specials.length > 0 && <LoadingGrid />}
+
+        {hasMore && specials.length > 0 && (
+          <div className="text-center pt-6">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loadingMore ? 'Loading...' : 'Load More'}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <TimeUpdateProvider>
+      <div className="min-h-screen bg-[#f4f4f4]">
+        <Header />
+
+        {/* Navigation Tabs */}
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab={activeTab} onTabChange={_handleTabChange} />
+        </div>
+
+        {bodyContent}
+
+        <BottomNavigation />
+      </div>
+    </TimeUpdateProvider>
   );
 }

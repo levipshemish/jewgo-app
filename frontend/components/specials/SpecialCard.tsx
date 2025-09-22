@@ -1,11 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import { SpecialCardProps } from '@/types/specials'
 import { specialsApi } from '@/lib/api/specials'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Clock, Users, Share2 } from 'lucide-react'
+import { useTimeNow } from '@/contexts/TimeUpdateProvider'
 
 /**
  * Component for displaying individual special cards
@@ -24,17 +26,20 @@ export default function SpecialCard({
   )
   const [isActive, setIsActive] = useState(specialsApi.isSpecialActive(special))
   const [status] = useState(specialsApi.getSpecialStatus(special))
+  const [imageError, setImageError] = useState(false)
 
-  // Update time remaining every second
+  const requiresSecondPrecision = useMemo(
+    () => isActive && timeRemaining.total <= 60_000,
+    [isActive, timeRemaining.total]
+  )
+
+  const now = useTimeNow({ requireSecondPrecision: requiresSecondPrecision })
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      const remaining = specialsApi.getTimeRemaining(special)
-      setTimeRemaining(remaining)
-      setIsActive(specialsApi.isSpecialActive(special))
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [special])
+    const remaining = specialsApi.getTimeRemaining(special)
+    setTimeRemaining(remaining)
+    setIsActive(specialsApi.isSpecialActive(special))
+  }, [special, now])
 
   const formatTimeRemaining = () => {
     if (timeRemaining.isExpired) {
@@ -42,7 +47,7 @@ export default function SpecialCard({
     }
 
     const { hours, minutes, seconds } = timeRemaining
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m left`
     } else if (minutes > 0) {
@@ -98,23 +103,24 @@ export default function SpecialCard({
   }
 
   return (
-    <div 
+    <div
       className={`bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200 ${
         compact ? 'max-w-sm' : ''
       }`}
     >
       {/* Hero Image */}
-      {special.hero_image_url && (
+      {special.hero_image_url && !imageError ? (
         <div className="relative h-48 bg-gray-200">
-          <img
+          <Image
             src={special.hero_image_url}
-            alt={special.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none'
-            }}
+            alt={special.media_items?.[0]?.alt_text || special.title}
+            fill
+            className="object-cover"
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            onError={() => setImageError(true)}
+            unoptimized
           />
-          
+
           {/* Status Badge */}
           <div className="absolute top-3 left-3">
             <Badge className={`${getStatusColor()} text-xs font-medium`}>
@@ -139,13 +145,18 @@ export default function SpecialCard({
             </div>
           )}
         </div>
+      ) : (
+        <div className="h-48 bg-gray-100 flex flex-col items-center justify-center text-gray-400">
+          <Clock className="h-8 w-8 mb-2" />
+          <span className="text-sm">Image unavailable</span>
+        </div>
       )}
 
       {/* Content */}
       <div className="p-4">
         {/* Title and Subtitle */}
         <div className="mb-3">
-          <h3 
+          <h3
             className={`font-bold text-gray-900 mb-1 ${compact ? 'text-lg' : 'text-xl'} ${
               onViewDetails ? 'cursor-pointer hover:text-blue-600' : ''
             }`}
@@ -206,11 +217,10 @@ export default function SpecialCard({
 
         {/* Terms */}
         {!compact && special.terms && (
-          <div className="mb-3">
-            <p className="text-xs text-gray-500 italic">
-              {special.terms}
-            </p>
-          </div>
+          <details className="mb-3">
+            <summary className="text-sm text-gray-700 cursor-pointer">Terms &amp; Conditions</summary>
+            <p className="text-xs text-gray-500 mt-2">{special.terms}</p>
+          </details>
         )}
 
         {/* Actions */}
@@ -239,7 +249,7 @@ export default function SpecialCard({
                 Claim Special
               </Button>
             )}
-            
+
             {!special.can_claim && isActive && (
               <Button
                 variant="outline"
@@ -284,15 +294,18 @@ export function FeaturedSpecialCard({ special, onClaim, onShare }: SpecialCardPr
       {/* Large Hero Image */}
       {special.hero_image_url && (
         <div className="relative h-64 bg-gray-200">
-          <img
+          <Image
             src={special.hero_image_url}
-            alt={special.title}
-            className="w-full h-full object-cover"
+            alt={special.media_items?.[0]?.alt_text || special.title}
+            fill
+            className="object-cover"
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            unoptimized
           />
-          
+
           {/* Overlay Gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          
+
           {/* Content Overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <div className="flex items-center justify-between mb-2">
@@ -303,12 +316,12 @@ export function FeaturedSpecialCard({ special, onClaim, onShare }: SpecialCardPr
                 {specialsApi.formatDiscountLabel(special)}
               </div>
             </div>
-            
+
             <h2 className="text-2xl font-bold mb-2">{special.title}</h2>
             {special.subtitle && (
               <p className="text-lg opacity-90 mb-4">{special.subtitle}</p>
             )}
-            
+
             <div className="flex items-center space-x-4">
               {special.can_claim && specialsApi.isSpecialActive(special) && (
                 <Button
@@ -319,7 +332,7 @@ export function FeaturedSpecialCard({ special, onClaim, onShare }: SpecialCardPr
                   Claim Now
                 </Button>
               )}
-              
+
               {onShare && (
                 <Button
                   variant="outline"
