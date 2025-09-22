@@ -71,6 +71,7 @@ export default function BottomNavigation({
 }: BottomNavigationProps) {
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
   
   // Use currentPath prop or fallback to pathname
   const activePath = currentPath || pathname;
@@ -104,8 +105,41 @@ export default function BottomNavigation({
     [onNavigate, vibrate]
   );
 
+  // Expose CSS variable for bottom nav height so pages can pad content accordingly
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updateHeightVar = () => {
+      const height = Math.ceil(el.offsetHeight || el.getBoundingClientRect().height);
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--bottom-nav-height', `${height}px`);
+      }
+    };
+
+    // Initial measurement
+    updateHeightVar();
+
+    // Observe size changes
+    const resizeObserver = new ResizeObserver(() => updateHeightVar());
+    resizeObserver.observe(el);
+
+    // Handle viewport changes
+    window.addEventListener('resize', updateHeightVar);
+    window.addEventListener('orientationchange', updateHeightVar);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateHeightVar);
+      window.removeEventListener('orientationchange', updateHeightVar);
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.removeProperty('--bottom-nav-height');
+      }
+    };
+  }, []);
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <div ref={containerRef} className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       <motion.nav
         role="navigation"
         aria-label="Primary"

@@ -172,14 +172,10 @@ function EateryPageContent() {
         </div>
       </div>
 
-      {/* Grid - Explicit height constraint to prevent overflow */}
-      <div 
+      {/* Grid - Fill remaining space and account for bottom nav height */}
+      <div
         ref={scrollContainerRef}
-        className="overflow-y-auto pb-4"
-        style={{ 
-          height: 'calc(100vh - 64px - 64px - 64px - 160px)', // header - nav - bottom nav - extra space for search bar
-          maxHeight: 'calc(100vh - 64px - 64px - 64px - 160px)'
-        }}
+        className="flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+64px)]"
       >
         <EateryGrid
           category="all"

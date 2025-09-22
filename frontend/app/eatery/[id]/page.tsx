@@ -418,13 +418,23 @@ function EateryIdPageContent() {
                 // If it's not JSON, try to create a simple hours structure
                 return parseHoursFromJson('{"weekday_text": []}')
               }
-            } else if ((restaurantData as any).opening_hours_today) {
+            } else if ((restaurantData as any).business_hours) {
+              // Some records may store hours under business_hours (legacy mapping)
+              console.log('[EateryPage] using business_hours')
+              return parseHoursFromJson((restaurantData as any).business_hours)
+            } else if ((restaurantData as any).opening_hours_json) {
+              // Google Places style opening hours json if provided
+              console.log('[EateryPage] using opening_hours_json')
+              return parseHoursFromJson((restaurantData as any).opening_hours_json)
+            } else if ((((restaurantData as any).opening_hours_today ?? '').toString().trim().length) > 0) {
               // Fallback: derive minimal weekly hours from today's text
               try {
                 const today = new Date().getDay();
                 const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
                 const weekday_text: string[] = Array(7).fill('Closed');
-                weekday_text[today] = `${days[today].charAt(0).toUpperCase()}${days[today].slice(1)}: ${String((restaurantData as any).opening_hours_today)}`;
+                const todayText = String((restaurantData as any).opening_hours_today).trim();
+                console.log('[EateryPage] opening_hours_today fallback text', todayText);
+                weekday_text[today] = `${days[today].charAt(0).toUpperCase()}${days[today].slice(1)}: ${todayText}`;
                 return parseHoursFromJson(JSON.stringify({ weekday_text }));
               } catch (_e) {
                 return parseHoursFromJson('{"weekday_text": []}')
