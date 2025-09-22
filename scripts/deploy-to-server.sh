@@ -15,6 +15,7 @@
 #   PERFORMANCE_OPTIMIZATIONS=true     - Apply performance optimizations
 
 set -e
+set -o pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -78,7 +79,7 @@ print_status "Local log: $LOCAL_LOG_FILE"
 execute_on_server() {
     local cmd="$1"
     local description="$2"
-    
+
     print_status "$description"
     if ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "$cmd" 2>&1 | tee -a "$DEPLOYMENT_LOG"; then
         print_success "$description completed"
@@ -435,20 +436,21 @@ fi
 execute_on_server "
     set -euo pipefail
     if [ -f /etc/nginx/conf.d/default.conf ]; then
-        sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.$(date +%s) || true
-        # sed-only approach:
-        # 1) Mark the first occurrence with a KEEP token
-        sudo sed -e '0,/client_header_buffer_size/s//& __KEEP__/' \
-            /etc/nginx/conf.d/default.conf > /tmp/default.conf.step1
-        # 2) Comment any subsequent occurrences (that do not include KEEP)
-        sudo sed -e '/client_header_buffer_size/ { /__KEEP__/! s/^/#/ }' \
-            /tmp/default.conf.step1 > /tmp/default.conf.step2
-        # 3) Remove the KEEP token
-        sudo sed -e 's/ __KEEP__//' /tmp/default.conf.step2 > /tmp/default.conf.fixed
-        if [ -s /tmp/default.conf.fixed ]; then
-            sudo mv /tmp/default.conf.fixed /etc/nginx/conf.d/default.conf
-            sudo rm -f /tmp/default.conf.step1 /tmp/default.conf.step2 || true
-        fi
+        timestamp=\$(date +%s)
+        sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.\$timestamp || true
+        sudo bash -c '
+            set -euo pipefail
+            tmp1=\$(mktemp /tmp/default.conf.step1.XXXXXX)
+            tmp2=\$(mktemp /tmp/default.conf.step2.XXXXXX)
+            tmpfixed=\$(mktemp /tmp/default.conf.fixed.XXXXXX)
+            sed -e "0,/client_header_buffer_size/s//& __KEEP__/" /etc/nginx/conf.d/default.conf > "\$tmp1"
+            sed -e "/client_header_buffer_size/ { /__KEEP__/! s/^/#/ }" "\$tmp1" > "\$tmp2"
+            sed -e "s/ __KEEP__//" "\$tmp2" > "\$tmpfixed"
+            if [ -s "\$tmpfixed" ]; then
+                mv "\$tmpfixed" /etc/nginx/conf.d/default.conf
+            fi
+            rm -f "\$tmp1" "\$tmp2" "\$tmpfixed"
+        '
     fi
     sudo nginx -t
 " "Ensuring Nginx client_header_buffer_size not duplicated"
@@ -463,6 +465,9 @@ execute_on_server "
         
         # Update HTTP/2 configuration (fix deprecated syntax)
         sudo sed -i 's/listen 443 ssl http2;/listen 443 ssl;\n        http2 on;/g' /etc/nginx/conf.d/default.conf || true
+
+        # Ensure backend upstream points to host listener rather than ephemeral container IPs
+        sudo sed -i 's/server[[:space:]]\+10\.0\.0\.189:5000;/    server 127.0.0.1:5000;/' /etc/nginx/conf.d/default.conf || true
         
         # Ensure webhook endpoints are properly configured
         if ! grep -q 'location /api/v5/webhook' /etc/nginx/conf.d/default.conf; then
