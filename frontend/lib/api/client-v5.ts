@@ -169,7 +169,8 @@ export class ApiClientV5 {
     entityId: number | string,
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
-    const endpoint = `/api/v5/${entityType}/${entityId}`;
+    const endpoint = `/api/v5/entities/${entityType}/${entityId}`;
+    console.log('[V5ApiClient] getEntity endpoint', endpoint);
     
     return this.request<T>(endpoint, {
       method: 'GET',

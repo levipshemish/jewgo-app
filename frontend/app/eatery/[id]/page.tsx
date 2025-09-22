@@ -252,7 +252,17 @@ function EateryIdPageContent() {
         }
 
         // Use the restaurants API module for restaurant details
+        console.log('[EateryPage] fetching restaurant details', { restaurantId })
         const detailData = await getRestaurant(restaurantId)
+        console.log('[EateryPage] detailData keys', detailData ? Object.keys(detailData as any) : 'null')
+        if (detailData) {
+          console.log('[EateryPage] hours fields presence', {
+            hours_json: !!(detailData as any).hours_json,
+            hours_of_operation: !!(detailData as any).hours_of_operation,
+            timezone: (detailData as any).timezone,
+            hours_parsed: (detailData as any).hours_parsed,
+          })
+        }
         
         // Extract restaurant data from the response
         let restaurantData = null
@@ -390,21 +400,26 @@ function EateryIdPageContent() {
             return uniqueImages;
           })(),
           hours: (() => {
+            console.log('[EateryPage] building hours from fields...')
             
             if (restaurantData.hours_parsed) {
               // hours_parsed is already a parsed object, not a JSON string
+              console.log('[EateryPage] hours_parsed=true, using hours_json fallback if present')
               return parseHoursFromJson(restaurantData.hours_json || '{}')
             } else if (restaurantData.hours_json) {
+              console.log('[EateryPage] using hours_json')
               return parseHoursFromJson(restaurantData.hours_json)
             } else if (restaurantData.hours_of_operation) {
               // Try to parse hours_of_operation as JSON or use it as is
               try {
+                console.log('[EateryPage] using hours_of_operation')
                 return parseHoursFromJson(restaurantData.hours_of_operation)
               } catch (_err) {
                 // If it's not JSON, try to create a simple hours structure
                 return parseHoursFromJson('{"weekday_text": []}')
               }
             } else {
+              console.log('[EateryPage] no hours fields present')
               return parseHoursFromJson('{"weekday_text": []}')
             }
           })(),

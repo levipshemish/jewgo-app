@@ -14,7 +14,9 @@ export const V5_API_BASE_URL = ''; // Use relative URLs to call frontend proxy r
 export const V5_API_ENDPOINTS = {
   // Entity-specific API endpoints
   ENTITIES: (entityType: string) => `/api/v5/${entityType}`,
-  ENTITY_DETAILS: (entityType: string, id: string) => `/api/v5/${entityType}/${id}`,
+  // Detail requests go through the consolidated Next.js proxy route
+  // which forwards to backend /api/v5/<entityType>/<id>
+  ENTITY_DETAILS: (entityType: string, id: string) => `/api/v5/entities/${entityType}/${id}`,
   ENTITY_SEARCH: '/api/v5/search',
   
   // Unified Search API - cross-entity search

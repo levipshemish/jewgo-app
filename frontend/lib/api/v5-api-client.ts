@@ -247,6 +247,7 @@ export class V5ApiClient {
 
 
     const endpoint = `${V5_API_ENDPOINTS.ENTITIES(params.entityType)}?${searchParams.toString()}`;
+    console.log('[V5ApiClient] getEntities endpoint', endpoint);
     
     // Debug the endpoint being called
     console.log('🔍 V5 API Client - calling endpoint:', endpoint);
@@ -260,6 +261,7 @@ export class V5ApiClient {
    */
   async getEntity(id: string, entityType: V5EntityType, options?: V5ApiRequestOptions): Promise<V5ApiResponse> {
     const endpoint = V5_API_ENDPOINTS.ENTITY_DETAILS(entityType, id);
+    console.log('[V5ApiClient] getEntity endpoint', endpoint);
     return this.makeRequest(endpoint, options);
   }
 

@@ -2,119 +2,38 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, ChevronDown, ChevronUp, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
-
-interface HoursData {
-  hours: {
-    [key: string]: {
-      open: string;
-      close: string;
-      is_open: boolean;
-    };
-  };
-  open_now: boolean;
-  timezone: string;
-  last_updated: string;
-}
-
-interface HoursStatus {
-  status: 'open' | 'closed' | 'closed_today' | 'unknown' | 'error';
-  message: string;
-  is_open: boolean;
-  today_hours: {
-    open?: string;
-    close?: string;
-    is_open?: boolean;
-  };
-  formatted_hours: Array<{
-    day: string;
-    hours: string;
-    is_open: boolean;
-  }>;
-  timezone: string;
-  last_updated: string;
-}
+import React, { useMemo, useState } from 'react';
+import { getHoursStatus, formatWeeklyHoursArray, HoursStatus as CoreHoursStatus } from '@/lib/utils/hours';
+import type { HoursData as HoursDataType } from '@/lib/types/restaurant';
 
 interface EnhancedHoursDisplayProps {
-  restaurantId: number;
-  initialHoursData?: HoursData;
+  hoursData?: HoursDataType | string | null;
+  timezone?: string;
+  hoursLastUpdated?: string;
   className?: string;
   showTimezone?: boolean;
   showLastUpdated?: boolean;
 }
 
 export default function EnhancedHoursDisplay({
-  restaurantId, initialHoursData: _initialHoursData, className = "", showTimezone = true, showLastUpdated = true
+  hoursData, timezone, hoursLastUpdated, className = "", showTimezone = true, showLastUpdated = true
 }: EnhancedHoursDisplayProps) {
-  const [hoursStatus, setHoursStatus] = useState<HoursStatus | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchHoursStatus = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Use Next.js API proxy to avoid CORS and control caching
-      const response = await fetch(`/api/restaurants/${restaurantId}/hours`, { 
-        cache: 'no-store',
-        // Add timeout to prevent hanging requests
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // If the API returns closed but no actual hours data, treat as unknown
-        let status = data.status || 'unknown';
-        if (status === 'closed' && (!data.message || data.message === 'Closed')) {
-          // Check if this is actually "no hours available" vs "closed with hours"
-          if (!data.today_hours && !data.formatted_hours && !data.next_open_time) {
-            status = 'unknown';
-          }
-        }
-        
-        const normalized = {
-          ...data,
-          status,
-          message: status === 'unknown' ? 'Hours not available' : data.message,
-          formatted_hours: Array.isArray(data?.formatted_hours) ? data.formatted_hours : [],
-        } as HoursStatus;
-        setHoursStatus(normalized);
-      } else {
-        // Set a fallback status instead of error for better UX
-        setHoursStatus({
-          status: 'unknown',
-          message: 'Hours information unavailable',
-          is_open: false,
-          today_hours: {},
-          formatted_hours: [],
-          timezone: 'America/New_York',
-          last_updated: new Date().toISOString()
-        });
-      }
-    } catch (_err) {
-      // Set a fallback status instead of error for better UX
-      setHoursStatus({
-        status: 'unknown',
-        message: 'Hours information unavailable',
-        is_open: false,
-        today_hours: {},
-        formatted_hours: [],
-        timezone: 'America/New_York',
-        last_updated: new Date().toISOString()
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [restaurantId, setHoursStatus, setIsLoading, setError]);
-
-  useEffect(() => {
-    if (restaurantId) {
-      fetchHoursStatus();
-    }
-  }, [restaurantId, fetchHoursStatus]);
+  const computed = useMemo(() => {
+    const status: CoreHoursStatus = getHoursStatus(hoursData as any);
+    const weekly = formatWeeklyHoursArray(hoursData as any) || [];
+    return {
+      status: status.type === 'open' ? 'open' : (status.type === 'closed' ? 'closed' : (status.type === 'opensToday' ? 'closed_today' : (status.type === 'opensTomorrow' ? 'closed_today' : (status.type === 'opensLater' ? 'closed_today' : 'unknown')))),
+      message: status.label,
+      is_open: status.isOpenNow,
+      formatted_hours: weekly.map(d => ({ day: d.day, hours: d.hours, is_open: status.isOpenNow })),
+      timezone: timezone || 'America/New_York',
+      last_updated: hoursLastUpdated || new Date().toISOString(),
+      today_open: status.nextOpenTime || undefined,
+      today_close: status.closingTime || undefined,
+    } as const;
+  }, [hoursData, timezone, hoursLastUpdated]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -181,15 +100,15 @@ export default function EnhancedHoursDisplay({
 
   // Build centered summary line text per spec
   const summaryText = (() => {
-    const open = hoursStatus?.today_hours?.open;
-    const close = hoursStatus?.today_hours?.close;
-    switch (hoursStatus?.status) {
+    const open = computed.today_open;
+    const close = computed.today_close;
+    switch (computed.status) {
       case 'open':
         return close ? `Open now - closes ${close}` : 'Open now';
       case 'closed':
       case 'closed_today':
         // Only show "Closed" if we have actual hours data, otherwise show "Hours not available"
-        if (open || hoursStatus?.formatted_hours?.length > 0) {
+        if (open || computed.formatted_hours?.length > 0) {
           return open ? `Closed - opens ${open}` : 'Closed';
         } else {
           return 'Hours not available';
@@ -197,38 +116,16 @@ export default function EnhancedHoursDisplay({
       case 'unknown':
       case 'error':
       default:
-        return (hoursStatus?.message?.trim() || 'Hours not available');
+        return (computed.message?.trim() || 'Hours not available');
     }
   })();
-
-  if (isLoading) {
-    return (
-      <div className={`animate-pulse ${className}`}>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-gray-200 rounded"></div>
-          <div className="h-4 bg-gray-200 rounded w-32"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !hoursStatus) {
-    return (
-      <div className={`text-sm text-gray-500 ${className}`}>
-        <div className="flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4" />
-          <span>{error || 'Hours not available'}</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`${className}`}>
       {/* Main Hours Status */}
-      <div className={`relative flex items-center justify-center text-center h-6 sm:h-auto px-1 pr-6 sm:pr-10 py-0 sm:px-3 sm:py-1 md:px-4 md:py-1.5 rounded-full border-0 sm:border flex-nowrap whitespace-nowrap overflow-hidden ${getStatusColor(hoursStatus.status)}`}>
+      <div className={`relative flex items-center justify-center text-center h-6 sm:h-auto px-1 pr-6 sm:pr-10 py-0 sm:px-3 sm:py-1 md:px-4 md:py-1.5 rounded-full border-0 sm:border flex-nowrap whitespace-nowrap overflow-hidden ${getStatusColor(computed.status)}`}>
         <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
-          <span className="hidden sm:inline-flex">{getStatusIcon(hoursStatus.status)}</span>
+          <span className="hidden sm:inline-flex">{getStatusIcon(computed.status)}</span>
           <p className="text-[11px] sm:text-xs md:text-sm font-medium leading-none truncate tracking-tight max-w-[75vw] sm:max-w-none">{summaryText}</p>
         </div>
 
@@ -260,7 +157,7 @@ export default function EnhancedHoursDisplay({
               <h4 className="hidden sm:block text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-3">Weekly Hours</h4>
               
               <div className="space-y-0.5 sm:space-y-1.5">
-                {(hoursStatus.formatted_hours || []).map((dayHours) => (
+                {(computed.formatted_hours || []).map((dayHours) => (
                   <div
                     key={`day-${dayHours.day}`}
                     className={`flex justify-between items-center py-0 px-1.5 sm:py-1 sm:px-3 rounded-full whitespace-nowrap text-[10px] sm:text-sm ${
@@ -283,10 +180,10 @@ export default function EnhancedHoursDisplay({
               <div className="mt-1 pt-1 sm:mt-4 sm:pt-3 border-t border-gray-100">
                 <div className="flex items-center justify-between text-[11px] sm:text-sm text-gray-500">
                   <div className="flex items-center space-x-4">
-                    {showTimezone && hoursStatus.timezone && (
-                      <span>Timezone: {formatTimezone(hoursStatus.timezone)}</span>
+                    {showTimezone && computed.timezone && (
+                      <span>Timezone: {formatTimezone(computed.timezone)}</span>
                     )}
-                    {hoursStatus.is_open && (
+                    {computed.is_open && (
                       <span className="flex items-center space-x-1">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <span>Currently open</span>
@@ -294,8 +191,8 @@ export default function EnhancedHoursDisplay({
                     )}
                   </div>
                   
-                  {showLastUpdated && hoursStatus.last_updated && (
-                    <span>{formatLastUpdated(hoursStatus.last_updated)}</span>
+                  {showLastUpdated && computed.last_updated && (
+                    <span>{formatLastUpdated(computed.last_updated)}</span>
                   )}
                 </div>
               </div>

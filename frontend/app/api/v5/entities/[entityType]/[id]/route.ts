@@ -49,6 +49,17 @@ export async function GET(
       }
     );
 
+    // Debug: ensure hours fields exist in data
+    try {
+      const d: any = response?.data;
+      console.log('[V5 Entities Detail] keys:', d ? Object.keys(d) : 'no data');
+      console.log('[V5 Entities Detail] hours fields:', {
+        hours_json: !!d?.hours_json,
+        hours_of_operation: !!d?.hours_of_operation,
+        timezone: d?.timezone,
+      });
+    } catch (_e) {}
+
     if (!response.success) {
       if (response.status === 404) {
         return NextResponse.json(

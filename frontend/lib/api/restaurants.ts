@@ -262,8 +262,18 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
 export async function getRestaurant(id: number): Promise<Restaurant | null> {
   try {
     // Use V5 API client for restaurant details with cache disabled to get fresh data
+    console.log('[V5:getRestaurant] requesting entity details via proxy', { id });
     const response = await v5ApiClient.getEntity(id.toString(), V5_ENTITY_TYPES.RESTAURANTS, { 
       cache: 'no-store'
+    });
+
+    console.log('[V5:getRestaurant] response meta', {
+      success: response.success,
+      hasData: !!response.data,
+      keys: response?.data ? Object.keys(response.data) : [],
+      hasHoursJson: !!(response as any)?.data?.hours_json,
+      hasHoursOfOperation: !!(response as any)?.data?.hours_of_operation,
+      timezone: (response as any)?.data?.timezone
     });
 
     if (!response.success) {
@@ -275,6 +285,14 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
 
     // Handle V5 API response format
     const restaurant = response.data;
+    console.log('[V5:getRestaurant] restaurant sample fields', {
+      id: restaurant?.id,
+      name: restaurant?.name,
+      hours_json: restaurant?.hours_json ? 'present' : 'missing',
+      hours_of_operation: restaurant?.hours_of_operation ? 'present' : 'missing',
+      hours_parsed: restaurant?.hours_parsed,
+      timezone: restaurant?.timezone
+    });
     if (restaurant) {
       const sanitized = sanitizeRestaurantData([restaurant]);
       return sanitized[0] as Restaurant;
