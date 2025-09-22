@@ -9,6 +9,7 @@ import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { postgresAuth, PostgresAuthError } from "@/lib/auth/postgres-auth";
+import { validateRedirectUrl } from '@/lib/utils/auth-utils';
 import { useToast } from '@/components/ui/Toast';
 import { handleAuthError } from '@/lib/auth/error-handler';
 import ComingSoonModal from '@/components/ui/ComingSoonModal';
@@ -41,7 +42,9 @@ function SignInForm() {
   const { showSuccess: _showSuccess, showError } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
+  const defaultRedirect = '/eatery';
+  const rawRedirectTarget = searchParams.get("returnTo") || searchParams.get("redirectTo") || searchParams.get("callbackUrl");
+  const redirectTo = rawRedirectTarget ? validateRedirectUrl(rawRedirectTarget) : defaultRedirect;
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   // Check if reCAPTCHA is ready

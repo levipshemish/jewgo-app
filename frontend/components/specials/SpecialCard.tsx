@@ -23,7 +23,6 @@ export default function SpecialCard({
 }: SpecialCardProps) {
   const [timeRemaining, setTimeRemaining] = useState(() => specialsApi.getTimeRemaining(special))
   const [isActive, setIsActive] = useState(() => specialsApi.isSpecialActive(special))
-  const status = useMemo(() => specialsApi.getSpecialStatus(special), [special])
 
   const now = useTimeNow({
     requireSecondPrecision: isActive && timeRemaining.total <= 60_000,
@@ -35,70 +34,85 @@ export default function SpecialCard({
     setIsActive(specialsApi.isSpecialActive(special))
   }, [special, now])
 
-  const formatTimeRemaining = useCallback(() => {
-    if (timeRemaining.isExpired) {
+  const heroImage = special.hero_image_url || special.media_items?.[0]?.url
+
+  const displayData = useMemo(() => {
+    const badgeText = (special as unknown as { badge?: { text?: string } })?.badge?.text
+      || specialsApi.formatDiscountLabel(special)
+
+    const merchantName = (special as unknown as { merchantName?: string; merchant_name?: string })
+      ?.merchantName
+      || (special as unknown as { merchant_name?: string })?.merchant_name
+
+    const price = (special as unknown as { price?: { original?: number | string; sale?: number | string } })?.price
+      || {
+        original: (special as unknown as { price_original?: number | string })?.price_original,
+        sale: (special as unknown as { price_sale?: number | string })?.price_sale,
+      }
+
+    const timeLeftSeconds = (special as unknown as { timeLeftSeconds?: number })?.timeLeftSeconds
+      ?? Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now.getTime()) / 1000))
+
+    return {
+      imageUrl: heroImage,
+      badgeText,
+      title: special.title,
+      merchantName: merchantName || special.subtitle || '',
+      price,
+      timeLeftSeconds,
+    }
+  }, [heroImage, special, now])
+
+  const timeLeftLabel = useMemo(() => {
+    if (!displayData.timeLeftSeconds || displayData.timeLeftSeconds <= 0) {
       return 'Expired'
     }
 
-    const { hours, minutes, seconds } = timeRemaining
+    const hours = Math.floor(displayData.timeLeftSeconds / 3600)
+    const minutes = Math.floor((displayData.timeLeftSeconds % 3600) / 60)
+    const seconds = displayData.timeLeftSeconds % 60
+
     if (hours > 0) {
       return `${hours}h ${minutes}m left`
     }
+
     if (minutes > 0) {
       return `${minutes}m ${seconds}s left`
     }
+
     return `${seconds}s left`
-  }, [timeRemaining])
+  }, [displayData.timeLeftSeconds])
 
-  const statusLabel = useMemo(
-    () => status.charAt(0).toUpperCase() + status.slice(1),
-    [status]
-  )
-
-  const timingLabel = useMemo(() => {
-    if (status === 'active') {
-      return formatTimeRemaining()
+  const formatCurrency = useCallback((value?: number | string | null) => {
+    if (value === null || value === undefined || value === '') {
+      return null
     }
-    if (status === 'upcoming') {
-      return `Starts ${new Date(special.valid_from).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      })}`
-    }
-    return 'Expired'
-  }, [status, special.valid_from, formatTimeRemaining])
 
-  const timingDescription = useMemo(() => {
-    const describe = (value: string) =>
-      new Date(value).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      })
-
-    if (status === 'active') {
-      return `Valid until ${describe(special.valid_until)}`
+    const numeric = typeof value === 'string' ? Number(value) : value
+    if (Number.isNaN(numeric)) {
+      return null
     }
-    if (status === 'upcoming') {
-      return `Starts ${describe(special.valid_from)}`
-    }
-    return `Expired ${describe(special.valid_until)}`
-  }, [status, special.valid_from, special.valid_until])
 
-  const heroImage = special.hero_image_url || special.media_items?.[0]?.url
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(numeric)
+  }, [])
+
+  const salePrice = formatCurrency(displayData.price?.sale)
+  const originalPrice = formatCurrency(displayData.price?.original)
 
   const cardData: CardData = useMemo(
     () => ({
       id: special.id,
-      imageUrl: heroImage,
-      title: special.title,
-      badge: specialsApi.formatDiscountLabel(special),
-      subtitle: special.subtitle || '',
-      additionalText: timingLabel,
-      showHeart: false,
-      imageTag: statusLabel,
-    }), [heroImage, special, timingLabel, statusLabel]
+      imageUrl: displayData.imageUrl,
+      title: displayData.title,
+      badge: displayData.badgeText,
+      subtitle: displayData.merchantName,
+      additionalText: timeLeftLabel,
+      showHeart: true,
+    }), [displayData, special.id, timeLeftLabel]
   )
 
   const handleClaim = useCallback(() => {
@@ -119,23 +133,7 @@ export default function SpecialCard({
     }
   }, [onViewDetails, special])
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-700'
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-700'
-      case 'expired':
-        return 'bg-gray-100 text-gray-600'
-      case 'inactive':
-        return 'bg-red-100 text-red-600'
-      default:
-        return 'bg-gray-100 text-gray-600'
-    }
-  }
-
   const showClaimCta = showClaimButton && special.can_claim && isActive
-  const rightStatusLabel = !special.can_claim && isActive ? 'Claimed' : statusLabel
 
   return (
     <div className="flex flex-col gap-2">
@@ -147,42 +145,49 @@ export default function SpecialCard({
         className="w-full"
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${getStatusColor()}`}>
-            {statusLabel}
-          </span>
-          <div className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            <span className="leading-none">{timingDescription}</span>
-          </div>
+      <div className="flex flex-col gap-2">
+        {displayData.badgeText && (
+          <Badge className="w-fit text-[11px] font-semibold uppercase tracking-wide">
+            {displayData.badgeText}
+          </Badge>
+        )}
+
+        <div className="flex items-center gap-2 text-sm">
+          {salePrice && (
+            <span className="font-semibold text-green-600">{salePrice}</span>
+          )}
+          {originalPrice && originalPrice !== salePrice && (
+            <span className="text-xs text-muted-foreground line-through">{originalPrice}</span>
+          )}
         </div>
 
-        <div className="flex items-center gap-1">
-          {showShareButton && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleShare}
-              aria-label="Share special"
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
-          )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            <span>{timeLeftLabel}</span>
+          </div>
 
-          {showClaimCta ? (
+          <div className="flex items-center gap-1">
+            {showShareButton && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleShare}
+                aria-label="Share special"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            )}
+
             <Button
               onClick={handleClaim}
               size="sm"
               className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={!showClaimCta}
             >
               Claim
             </Button>
-          ) : (
-            <Badge variant="outline" className="text-[11px] capitalize">
-              {rightStatusLabel}
-            </Badge>
-          )}
+          </div>
         </div>
       </div>
     </div>
