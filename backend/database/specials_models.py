@@ -22,6 +22,7 @@ from sqlalchemy import (
     Numeric,
     CheckConstraint,
     Index,
+    Computed,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID, INET, TSTZRANGE
 from sqlalchemy.ext.declarative import declarative_base
@@ -98,8 +99,7 @@ class Special(Base):
     valid_until = Column(DateTime(timezone=True), nullable=False)
     valid_range = Column(
         TSTZRANGE,
-        computed="tstzrange(valid_from, valid_until, '[)')",
-        stored=True
+        Computed("tstzrange(valid_from, valid_until, '[)')", persisted=True)
     )
     
     # Limits & Rules
@@ -207,8 +207,7 @@ class SpecialClaim(Base):
     # Generated column for daily limits
     claim_day = Column(
         DateTime,
-        computed="(claimed_at AT TIME ZONE 'UTC')::date",
-        stored=True
+        Computed("(claimed_at AT TIME ZONE 'UTC')::date", persisted=True)
     )
     
     # Constraints

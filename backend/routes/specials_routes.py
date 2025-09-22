@@ -23,8 +23,9 @@ from database.specials_models import (
     Special, SpecialClaim, SpecialEvent, SpecialMedia,
     DiscountKind, ClaimStatus, MediaKind
 )
-from middleware.auth import require_auth, get_current_user
-from middleware.rate_limit import rate_limit
+from utils.rbac import require_auth
+from utils.security import get_current_user
+from middleware.rate_limit_v5 import rate_limit_v5 as rate_limit
 from middleware.security_middleware import validate_json_schema
 from routes.specials_schemas import (
     CREATE_SPECIAL_SCHEMA,

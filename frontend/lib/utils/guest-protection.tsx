@@ -36,17 +36,34 @@ export function useGuestProtection(redirectTo?: string): GuestProtectionResult {
         if (response.ok) {
           const userData = await response.json();
           
+          // Debug logging
+          console.log('GuestProtection: User data received:', {
+            hasUser: !!userData.user,
+            userEmail: userData.user?.email,
+            userProvider: userData.user?.provider,
+            guest: userData.guest,
+            authenticated: userData.authenticated
+          });
+          
           if (userData.user) {
             // Check if user is a guest user (no email, provider unknown)
             const guestUser = !userData.user.email && userData.user.provider === 'unknown';
             
+            console.log('GuestProtection: Guest check result:', {
+              hasEmail: !!userData.user.email,
+              provider: userData.user.provider,
+              isGuest: guestUser
+            });
+            
             if (guestUser) {
+              console.log('GuestProtection: User is guest, redirecting to signin');
               setIsGuest(true);
               setUser(userData.user);
               // Redirect guest users to sign-in
               const redirectPath = redirectTo ? `/auth/signin?redirectTo=${encodeURIComponent(redirectTo)}` : '/auth/signin';
               router.push(redirectPath);
             } else {
+              console.log('GuestProtection: User is authenticated, allowing access');
               // Authenticated user with email
               setIsGuest(false);
               setUser(userData.user);

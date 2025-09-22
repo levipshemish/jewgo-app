@@ -187,6 +187,7 @@ except Exception as e:
     print(f'ERROR: Failed to register specials API blueprint: {e}')
     import traceback
     traceback.print_exc()
+    raise
 
 print('Registering webhook API blueprint...')
 try:

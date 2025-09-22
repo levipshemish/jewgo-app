@@ -921,9 +921,11 @@ def create_app(config_class=None):
             app.register_blueprint(specials_bp)
             logger.info("Specials API blueprint registered successfully")
         except ImportError as e:
-            logger.warning(f"Could not import specials API blueprint: {e}")
+            logger.exception("Failed to import specials API blueprint")
+            raise
         except Exception as e:
-            logger.warning(f"Could not register specials API blueprint: {e}")
+            logger.exception("Failed to register specials API blueprint")
+            raise
                 
     except ImportError as e:
         logger.warning(f"Could not import v5 feature flags: {e}")
