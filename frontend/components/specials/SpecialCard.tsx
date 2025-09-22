@@ -13,7 +13,7 @@ const createBaseCardData = (special: any): Partial<CardData> => ({
   title: special.title,
   badge: specialsApi.formatDiscountLabel(special),
   subtitle: special.subtitle || '',
-  showHeart: false,
+  showHeart: true,
 })
 
 // Helper function to create view details handler
@@ -89,6 +89,8 @@ export default function SpecialCard({
       timeLeftSeconds,
       claimsLeft,
       overlayTag,
+      ctaText: 'Claim',
+      showHeart: true, // Enable heart for specials
     } as CardData
   }, [special, now])
 
