@@ -53,17 +53,25 @@ else:
 
 print('Initializing real database services...')
 try:
-    # Import consolidated database manager
-    from database.consolidated_db_manager import get_consolidated_db_manager
+    # Import real database connection managers with correct class names
+    from database.unified_connection_manager import UnifiedConnectionManager
+    from cache.redis_manager_v5 import RedisManagerV5
     
-    # Initialize consolidated database manager
-    connection_manager = get_consolidated_db_manager()
-    print('SUCCESS: Consolidated database manager initialized')
+    # Initialize real database connection
+    connection_manager = UnifiedConnectionManager()
+    redis_manager = RedisManagerV5()
     
-    # Initialize services with consolidated manager
+    # IMPORTANT: Connect to the database
+    print('Connecting to database...')
+    connection_manager.connect()
+    print('SUCCESS: Database connected')
+    
+    print('SUCCESS: Real database services initialized')
+    
+    # Initialize services with real database connections
     from routes.v5.api_v5 import init_services
-    init_services(connection_manager, None)  # Redis handled internally
-    print('SUCCESS: Services initialized with consolidated database manager')
+    init_services(connection_manager, redis_manager)
+    print('SUCCESS: Services initialized with real database')
     
     # Initialize database pool monitoring
     from services.database_pool_monitor import db_pool_monitor
