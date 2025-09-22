@@ -6,6 +6,7 @@ import { RestaurantSpecial } from '@/lib/types/restaurant';
 import { commonSpacing } from '@/lib/utils/spacing';
 import { commonTypography } from '@/lib/utils/typography';
 import { safeFilter } from '@/lib/utils/validation';
+import Card, { type CardData } from '@/components/core/cards/Card';
 
 interface SpecialsCardProps {
   specials: RestaurantSpecial[];
@@ -33,6 +34,15 @@ export default function SpecialsCard({ specials, maxDisplay = 3 }: SpecialsCardP
     return '';
   };
 
+  const createCardData = (special: RestaurantSpecial): CardData => ({
+    id: special.id.toString(),
+    imageUrl: undefined, // RestaurantSpecial doesn't have image_url property
+    title: special.title,
+    badge: formatDiscount(special) || undefined,
+    subtitle: special.description || '',
+    showHeart: false,
+  });
+
   return (
     <div className={commonSpacing.marginTopLarge}>
       <div className={`flex items-center space-x-2 ${commonSpacing.marginBottomMedium}`}>
@@ -41,48 +51,12 @@ export default function SpecialsCard({ specials, maxDisplay = 3 }: SpecialsCardP
       </div>
       <div className="flex space-x-4 overflow-x-auto pb-2">
         {displaySpecials.map((special) => (
-          <div
+          <Card
             key={special.id}
-            className="bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex-shrink-0 w-48"
-          >
-            {/* Food Image - Better visuals with fallback icons */}
-            <div className="h-32 bg-gray-200 relative">
-              <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
-                {/* Better food icons based on special type */}
-                {special.special_type === 'discount' && (
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">🍔</div>
-                    <div className="text-2xl">🍟</div>
-                  </div>
-                )}
-                {special.special_type === 'promotion' && (
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">🍣</div>
-                    <div className="text-2xl">🥒</div>
-                  </div>
-                )}
-                {special.special_type === 'event' && (
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">🍹</div>
-                    <div className="text-2xl">🍋</div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className={commonSpacing.cardContent}>
-              <h4 className={`${commonTypography.specialsItem} ${commonSpacing.marginBottomSmall} line-clamp-1 leading-tight`}>
-                {special.title}
-              </h4>
-              {formatDiscount(special) && (
-                <p className="text-red-600 font-bold text-xs">{formatDiscount(special)}</p>
-              )}
-              {special.description && (
-                <p className={`${commonTypography.specialsDescription} ${commonSpacing.marginTopSmall} line-clamp-2`}>
-                  {special.description}
-                </p>
-              )}
-            </div>
-          </div>
+            data={createCardData(special)}
+            variant="minimal"
+            className="flex-shrink-0 w-48"
+          />
         ))}
       </div>
     </div>

@@ -6,6 +6,23 @@ import { specialsApi } from '@/lib/api/specials'
 import type { SpecialCardProps } from '@/types/specials'
 import Card, { type CardData } from '@/components/core/cards/Card'
 
+// Helper function to create common card data
+const createBaseCardData = (special: any): Partial<CardData> => ({
+  id: special.id,
+  imageUrl: special.hero_image_url || special.media_items?.[0]?.url,
+  title: special.title,
+  badge: specialsApi.formatDiscountLabel(special),
+  subtitle: special.subtitle || '',
+  showHeart: false,
+})
+
+// Helper function to create view details handler
+const createViewDetailsHandler = (special: any, onViewDetails?: (special: any) => void) => () => {
+  if (onViewDetails) {
+    onViewDetails(special)
+  }
+}
+
 /**
  * Special card using the shared Card utility with specials-specific data transformation.
  * Displays: image, badge, title, merchant name, price, time left, claims left, overlay tag.
@@ -28,9 +45,9 @@ export default function SpecialCard({
     setIsActive(specialsApi.isSpecialActive(special))
   }, [special, now])
 
-  const heroImage = special.hero_image_url || special.media_items?.[0]?.url
-
   const cardData: CardData = useMemo(() => {
+    const baseData = createBaseCardData(special)
+    
     // Handle badge structure from DealGridCard interface
     const badge = (special as unknown as { badge?: { text?: string; type?: string } })?.badge
     const badgeText = badge?.text || specialsApi.formatDiscountLabel(special)
@@ -65,24 +82,17 @@ export default function SpecialCard({
     const overlayTag = (special as unknown as { overlayTag?: string })?.overlayTag
 
     return {
-      id: special.id,
-      imageUrl: heroImage,
-      title: special.title,
+      ...baseData,
       badge: badgeText,
       subtitle: merchantName || special.subtitle || '',
       price: priceData,
       timeLeftSeconds,
       claimsLeft,
       overlayTag,
-      showHeart: false, // Disable heart for specials
-    }
-  }, [heroImage, special, now])
+    } as CardData
+  }, [special, now])
 
-  const handleViewDetails = () => {
-    if (onViewDetails) {
-      onViewDetails(special)
-    }
-  }
+  const handleViewDetails = createViewDetailsHandler(special, onViewDetails)
 
   return (
     <Card
@@ -97,25 +107,16 @@ export default function SpecialCard({
 
 export function FeaturedSpecialCard({ special, onViewDetails }: SpecialCardProps) {
   const cardData: CardData = {
-    id: special.id,
-    imageUrl: special.hero_image_url || special.media_items?.[0]?.url,
-    title: special.title,
-    badge: specialsApi.formatDiscountLabel(special),
-    subtitle: special.subtitle || '',
+    ...createBaseCardData(special),
     additionalText: specialsApi.isSpecialActive(special)
       ? specialsApi.getTimeRemaining(special).isExpired
         ? 'Expired'
         : 'Featured'
       : 'Upcoming',
-    showHeart: false,
     imageTag: 'Featured',
-  }
+  } as CardData
 
-  const handleViewDetails = () => {
-    if (onViewDetails) {
-      onViewDetails(special)
-    }
-  }
+  const handleViewDetails = createViewDetailsHandler(special, onViewDetails)
 
   return (
     <Card
@@ -129,20 +130,8 @@ export function FeaturedSpecialCard({ special, onViewDetails }: SpecialCardProps
 }
 
 export function SpecialCardCompact({ special, onViewDetails }: SpecialCardProps) {
-  const cardData: CardData = {
-    id: special.id,
-    imageUrl: special.hero_image_url || special.media_items?.[0]?.url,
-    title: special.title,
-    badge: specialsApi.formatDiscountLabel(special),
-    subtitle: special.subtitle || '',
-    showHeart: false,
-  }
-
-  const handleViewDetails = () => {
-    if (onViewDetails) {
-      onViewDetails(special)
-    }
-  }
+  const cardData: CardData = createBaseCardData(special) as CardData
+  const handleViewDetails = createViewDetailsHandler(special, onViewDetails)
 
   return (
     <Card
