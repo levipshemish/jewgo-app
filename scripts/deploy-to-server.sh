@@ -375,13 +375,18 @@ test_endpoint() {
     local url="$1"
     local description="$2"
     local expected_status="${3:-200}"
+    local method="${4:-GET}"
     
     local response_code
     local response_body
     local curl_error
     
     # Get response code and body
-    response_code=$(curl --max-time 15 --connect-timeout 5 -s -o /tmp/curl_response.tmp -w "%{http_code}" "$url" 2>/tmp/curl_error.tmp)
+    if [ "$method" = "POST" ]; then
+        response_code=$(curl --max-time 15 --connect-timeout 5 -s -o /tmp/curl_response.tmp -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{}' "$url" 2>/tmp/curl_error.tmp)
+    else
+        response_code=$(curl --max-time 15 --connect-timeout 5 -s -o /tmp/curl_response.tmp -w "%{http_code}" "$url" 2>/tmp/curl_error.tmp)
+    fi
     response_body=$(cat /tmp/curl_response.tmp 2>/dev/null || echo "")
     curl_error=$(cat /tmp/curl_error.tmp 2>/dev/null || echo "")
     
