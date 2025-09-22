@@ -43,7 +43,6 @@ export default function EnhancedHoursDisplay({
       case 'closed_today':
         return <XCircle className="w-3 h-3 sm:w-5 sm:h-5 text-red-500" />;
       case 'unknown':
-      case 'error':
         return <AlertCircle className="w-3 h-3 sm:w-5 sm:h-5 text-gray-500" />;
       default:
         return <Clock className="w-3 h-3 sm:w-5 sm:h-5 text-gray-500" />;
@@ -58,7 +57,6 @@ export default function EnhancedHoursDisplay({
       case 'closed_today':
         return 'text-red-600 bg-red-50 border-red-200';
       case 'unknown':
-      case 'error':
         return 'text-gray-600 bg-gray-50 border-gray-200';
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -114,7 +112,6 @@ export default function EnhancedHoursDisplay({
           return 'Hours not available';
         }
       case 'unknown':
-      case 'error':
       default:
         return (computed.message?.trim() || 'Hours not available');
     }
