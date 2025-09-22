@@ -81,7 +81,7 @@ class Special(Base):
     
     # Restaurant reference
     restaurant_id = Column(Integer, ForeignKey("restaurants.id", ondelete="CASCADE"), nullable=False)
-    restaurant = relationship("Restaurant", backref="specials")
+    restaurant = relationship("Restaurant")
     
     # Content
     title = Column(String(255), nullable=False)
@@ -118,7 +118,6 @@ class Special(Base):
     
     # Audit Trail
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    created_by_user = relationship("User", foreign_keys=[created_by])
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
     deleted_at = Column(DateTime(timezone=True))
@@ -186,9 +185,7 @@ class SpecialClaim(Base):
     
     # User/Guest Identity (one or the other, not both)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
-    user = relationship("User", foreign_keys=[user_id])
     guest_session_id = Column(UUID(as_uuid=True), ForeignKey("guest_sessions.id", ondelete="SET NULL"))
-    guest_session = relationship("GuestSession", foreign_keys=[guest_session_id])
     
     # Claim Details
     claimed_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
@@ -200,7 +197,6 @@ class SpecialClaim(Base):
     claim_status = relationship("ClaimStatus", back_populates="claims")
     redeemed_at = Column(DateTime(timezone=True))
     redeemed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    redeemed_by_user = relationship("User", foreign_keys=[redeemed_by])
     revoked_at = Column(DateTime(timezone=True))
     revoke_reason = Column(Text)
     
@@ -235,9 +231,7 @@ class SpecialEvent(Base):
     
     # User/Guest Identity (one or the other, not both)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
-    user = relationship("User", foreign_keys=[user_id])
     guest_session_id = Column(UUID(as_uuid=True), ForeignKey("guest_sessions.id", ondelete="SET NULL"))
-    guest_session = relationship("GuestSession", foreign_keys=[guest_session_id])
     
     # Event Details
     event_type = Column(String, nullable=False)  # 'view', 'share', 'click', 'claim'

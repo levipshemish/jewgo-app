@@ -920,6 +920,7 @@ def create_app(config_class=None):
             from routes.specials_routes import specials_bp
             app.register_blueprint(specials_bp)
             logger.info("Specials API blueprint registered successfully")
+            print(f"SUCCESS: Registered {specials_bp.name} with prefix {specials_bp.url_prefix}")
         except ImportError as e:
             logger.exception("Failed to import specials API blueprint")
             raise
