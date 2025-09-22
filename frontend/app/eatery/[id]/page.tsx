@@ -418,6 +418,17 @@ function EateryIdPageContent() {
                 // If it's not JSON, try to create a simple hours structure
                 return parseHoursFromJson('{"weekday_text": []}')
               }
+            } else if (restaurantData.opening_hours_today) {
+              // Fallback: derive minimal weekly hours from today's text
+              try {
+                const today = new Date().getDay();
+                const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                const weekday_text: string[] = Array(7).fill('Closed');
+                weekday_text[today] = `${days[today].charAt(0).toUpperCase()}${days[today].slice(1)}: ${String(restaurantData.opening_hours_today)}`;
+                return parseHoursFromJson(JSON.stringify({ weekday_text }));
+              } catch (_e) {
+                return parseHoursFromJson('{"weekday_text": []}')
+              }
             } else {
               console.log('[EateryPage] no hours fields present')
               return parseHoursFromJson('{"weekday_text": []}')
@@ -481,7 +492,7 @@ function EateryIdPageContent() {
     if (eateryId) {
       fetchEateryData()
     }
-  }, [eateryId, fetchReviews, trackView])
+  }, [eateryId, fetchReviews])
 
   // Convert new location format to old format for compatibility with mapEateryToListingData
   const legacyUserLocation = useMemo(() => {
