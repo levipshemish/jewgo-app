@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, memo } from 'react';
-import { Star } from 'lucide-react';
+import { Star, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
@@ -99,6 +99,49 @@ const Card = memo<CardProps>(({
     additionalText: data.additionalText || '',
     showHeart: data.showHeart !== false
   }), [data]);
+
+  // Currency formatting for specials
+  const formatCurrency = useCallback((value?: number | string | null, currency = 'USD') => {
+    if (value === null || value === undefined || value === '') {
+      return null
+    }
+
+    const numeric = typeof value === 'string' ? Number(value) : value
+    if (Number.isNaN(numeric)) {
+      return null
+    }
+
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(numeric)
+  }, []);
+
+  // Time left calculation for specials
+  const timeLeftLabel = useMemo(() => {
+    if (!cardData.timeLeftSeconds || cardData.timeLeftSeconds <= 0) {
+      return 'Expired'
+    }
+
+    const hours = Math.floor(cardData.timeLeftSeconds / 3600)
+    const minutes = Math.floor((cardData.timeLeftSeconds % 3600) / 60)
+    const seconds = cardData.timeLeftSeconds % 60
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m left`
+    }
+
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s left`
+    }
+
+    return `${seconds}s left`
+  }, [cardData.timeLeftSeconds]);
+
+  // Price formatting for specials
+  const salePrice = formatCurrency(cardData.price?.sale, cardData.price?.currency)
+  const originalPrice = formatCurrency(cardData.price?.original, cardData.price?.currency)
 
   // Get safe image URL using existing utility
   const heroImageUrl = useMemo(() => {
@@ -306,6 +349,13 @@ const Card = memo<CardProps>(({
           </div>
         )}
 
+        {/* Overlay Tag for specials (e.g., "Meat", "Dairy") */}
+        {cardData.overlayTag && (
+          <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">
+            {cardData.overlayTag}
+          </div>
+        )}
+
         {/* Heart Button - positioned relative to image wrapper */}
         {cardData.showHeart && (
           <button
@@ -388,6 +438,31 @@ const Card = memo<CardProps>(({
             {cardData.additionalText || ''}
           </p>
         </div>
+
+        {/* Specials-specific content */}
+        {cardData.price && (
+          <div className="flex items-center gap-2 mt-2">
+            {salePrice && (
+              <span className="font-semibold text-green-600 text-sm">{salePrice}</span>
+            )}
+            {originalPrice && originalPrice !== salePrice && (
+              <span className="text-xs text-gray-500 line-through">{originalPrice}</span>
+            )}
+          </div>
+        )}
+
+        {cardData.claimsLeft !== undefined && cardData.claimsLeft > 0 && (
+          <div className="text-xs text-gray-500 mt-1">
+            {cardData.claimsLeft} claims left
+          </div>
+        )}
+
+        {cardData.timeLeftSeconds !== undefined && (
+          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+            <Clock className="h-3 w-3" />
+            <span>{timeLeftLabel}</span>
+          </div>
+        )}
       </div>
     </>
   );
