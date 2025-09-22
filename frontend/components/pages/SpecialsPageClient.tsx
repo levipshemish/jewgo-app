@@ -87,27 +87,22 @@ export default function SpecialsPageClient() {
     }
   };
 
-  const isCurrentlyActive = (special: Special) => {
-    const now = new Date();
-    const validFrom = new Date(special.valid_from);
-    const validUntil = new Date(special.valid_until);
-    return now >= validFrom && now <= validUntil;
-  };
+  const sortedSpecials = useMemo(() => {
+    const now = Date.now();
+    return [...specials].sort((a, b) => {
+      const aValidFrom = new Date(a.valid_from).getTime();
+      const aValidUntil = new Date(a.valid_until).getTime();
+      const bValidFrom = new Date(b.valid_from).getTime();
+      const bValidUntil = new Date(b.valid_until).getTime();
 
-  const isUpcoming = (special: Special) => {
-    const now = new Date();
-    const validFrom = new Date(special.valid_from);
-    return now < validFrom;
-  };
+      const aActive = now >= aValidFrom && now <= aValidUntil;
+      const bActive = now >= bValidFrom && now <= bValidUntil;
 
-  const activeSpecials = useMemo(
-    () => specials.filter(isCurrentlyActive),
-    [specials]
-  );
-  const upcomingSpecials = useMemo(
-    () => specials.filter(isUpcoming),
-    [specials]
-  );
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      return aValidUntil - bValidUntil;
+    });
+  }, [specials]);
 
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
@@ -174,90 +169,34 @@ export default function SpecialsPageClient() {
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{activeSpecials.length}</div>
-            <div className="text-sm text-gray-600">Active Now</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{upcomingSpecials.length}</div>
-            <div className="text-sm text-gray-600">Coming Soon</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{specials.length}</div>
-            <div className="text-sm text-gray-600">Total Specials</div>
-          </div>
-        </div>
-
-        {/* Active Specials */}
-        {activeSpecials.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <h2 className="text-lg font-semibold text-gray-900">Active Now</h2>
-              <span className="text-sm text-gray-500">({activeSpecials.length})</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {activeSpecials.map((special) => (
-                <SpecialCard
-                  key={special.id}
-                  special={special}
-                  compact={false}
-                  showClaimButton={true}
-                  showShareButton={true}
-                />
-              ))}
-            </div>
+        {sortedSpecials.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {sortedSpecials.map((special) => (
+              <SpecialCard
+                key={special.id}
+                special={special}
+                showClaimButton
+                showShareButton
+              />
+            ))}
           </div>
         )}
 
-        {/* Upcoming Specials */}
-        {upcomingSpecials.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <h2 className="text-lg font-semibold text-gray-900">Coming Soon</h2>
-              <span className="text-sm text-gray-500">({upcomingSpecials.length})</span>
+        {sortedSpecials.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <Ticket className="w-10 h-10 text-gray-400" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {upcomingSpecials.map((special) => (
-                <SpecialCard
-                  key={special.id}
-                  special={special}
-                  compact={false}
-                  showClaimButton={false}
-                  showShareButton={true}
-                />
-              ))}
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">No specials available</h2>
+            <p className="text-sm max-w-sm">
+              Check back soon for new promotions or explore eateries for more dining options.
+            </p>
           </div>
         )}
 
-        {/* No Specials State */}
-        {specials.length === 0 && !loading && (
-          <div className="flex-1 flex items-center justify-center py-12">
-            <div className="text-center max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Ticket className="w-12 h-12 text-gray-400" />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">No Specials Available</h2>
-              <p className="text-gray-600 mb-6">
-                Check back later for amazing deals and offers from kosher establishments.
-              </p>
-              <button
-                onClick={() => router.push('/eatery')}
-                className="inline-flex items-center px-6 py-3 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-colors"
-              >
-                Explore Eateries
-              </button>
-            </div>
-          </div>
-        )}
+        {loadingMore && sortedSpecials.length > 0 && <LoadingGrid />}
 
-        {loadingMore && specials.length > 0 && <LoadingGrid />}
-
-        {hasMore && specials.length > 0 && (
+        {hasMore && sortedSpecials.length > 0 && (
           <div className="text-center pt-6">
             <button
               onClick={handleLoadMore}
