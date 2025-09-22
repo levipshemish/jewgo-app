@@ -17,6 +17,18 @@ function getRestaurantStatus(hoursArray: any[]) {
     }
   }
 
+  // If every entry is explicitly Closed, treat as not available (data missing/unreliable)
+  const allClosed = hoursArray.every(h => (h?.time || '').toLowerCase().includes('closed'))
+  if (allClosed) {
+    return {
+      status: 'unknown',
+      statusText: 'Hours not available',
+      statusColor: 'text-gray-500',
+      nextTime: '',
+      nextTimeLabel: ''
+    }
+  }
+
   const now = new Date()
   const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() // 'monday', 'tuesday', etc.
   const currentTime = now.getHours() * 60 + now.getMinutes() // minutes since midnight
@@ -50,11 +62,11 @@ function getRestaurantStatus(hoursArray: any[]) {
     }
     
     return {
-      status: 'closed',
-      statusText: 'Closed',
-      statusColor: 'text-red-500',
+      status: 'unknown',
+      statusText: 'Hours not available',
+      statusColor: 'text-gray-500',
       nextTime: '',
-      nextTimeLabel: 'Hours not available'
+      nextTimeLabel: ''
     }
   }
   
@@ -128,11 +140,11 @@ function getRestaurantStatus(hoursArray: any[]) {
     }
     
     return {
-      status: 'closed',
-      statusText: 'Closed',
-      statusColor: 'text-red-500',
+      status: 'unknown',
+      statusText: 'Hours not available',
+      statusColor: 'text-gray-500',
       nextTime: '',
-      nextTimeLabel: 'Hours not available'
+      nextTimeLabel: ''
     }
   }
 }
