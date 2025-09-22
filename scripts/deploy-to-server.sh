@@ -439,6 +439,7 @@ test_backend_direct_on_server() {
     local code=$(cat /tmp/direct_code.tmp 2>/dev/null || echo "000")
     local body=$(cat /tmp/direct_resp.tmp 2>/dev/null | head -c 1000)
     rm -f /tmp/direct_code.tmp /tmp/direct_resp.tmp || true
+    print_status "Direct backend response code: $code"
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DIRECT_BACKEND] $desc code=$code path=$path" >> "$LOCAL_LOG_FILE"
     if [ -n "$body" ]; then
       echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DIRECT_BACKEND] response: $body" >> "$LOCAL_LOG_FILE"
