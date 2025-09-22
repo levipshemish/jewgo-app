@@ -175,8 +175,6 @@ export default function SpecialsPageClient() {
               <SpecialCard
                 key={special.id}
                 special={special}
-                showClaimButton
-                showShareButton
               />
             ))}
           </div>
