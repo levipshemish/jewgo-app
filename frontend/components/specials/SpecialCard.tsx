@@ -51,7 +51,7 @@ export default function SpecialCard({
       }
 
     const timeLeftSeconds = (special as unknown as { timeLeftSeconds?: number })?.timeLeftSeconds
-      ?? Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now.getTime()) / 1000))
+      ?? Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
 
     return {
       imageUrl: heroImage,
