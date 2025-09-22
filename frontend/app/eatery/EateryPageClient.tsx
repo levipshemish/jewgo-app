@@ -22,6 +22,7 @@ function EateryPageContent() {
   const [activeTab, setActiveTab] = useState<string>("eatery")
   const [showFilters, setShowFilters] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const headerWrapperRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const router = useRouter()
   
@@ -139,6 +140,34 @@ function EateryPageContent() {
     // TODO: Implement add eatery functionality
   }, [])
 
+  // Measure header height and expose CSS var for responsive sticky offset
+  useEffect(() => {
+    const el = headerWrapperRef.current
+    if (!el) return
+
+    const updateHeaderHeight = () => {
+      const height = Math.ceil(el.offsetHeight || el.getBoundingClientRect().height)
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--eatery-header-height', `${height}px`)
+      }
+    }
+
+    updateHeaderHeight()
+    const ro = new ResizeObserver(() => updateHeaderHeight())
+    ro.observe(el)
+    window.addEventListener('resize', updateHeaderHeight)
+    window.addEventListener('orientationchange', updateHeaderHeight)
+
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', updateHeaderHeight)
+      window.removeEventListener('orientationchange', updateHeaderHeight)
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.removeProperty('--eatery-header-height')
+      }
+    }
+  }, [])
+
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col">
       {/* Scroll container - holds sticky header/nav and grid; accounts for bottom nav height */}
@@ -147,8 +176,8 @@ function EateryPageContent() {
         className="flex-1 overflow-y-auto"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-height, 64px))' }}
       >
-        {/* Header - Sticky at top inside scroll container */}
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+        {/* Header - Sticky and responsive height */}
+        <div ref={headerWrapperRef} className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <Header 
             onSearch={handleSearch}
             placeholder="Find restaurants near you"
@@ -156,7 +185,7 @@ function EateryPageContent() {
         </div>
 
         {/* Navigation Block - Sticky below header inside scroll container */}
-        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
+        <div className="sticky z-40 bg-background/95 backdrop-blur-sm border-b border-border/50" style={{ top: 'var(--eatery-header-height, 64px)' }}>
           <CategoryTabs 
             activeTab={activeTab}
             onTabChange={handleTabChange}
