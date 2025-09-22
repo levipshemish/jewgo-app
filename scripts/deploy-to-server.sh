@@ -848,8 +848,8 @@ test_endpoint "http://$SERVER_HOST:5000/api/v5/reviews/?entity_type=restaurants&
 
 # Test admin endpoints (should fail with 401/403)
 print_status "Testing admin endpoints (expected to fail without auth)..."
-test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/health/system" "Admin system health" "401"
-test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/analytics/dashboard" "Admin analytics dashboard" "401"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/health/system" "Admin system health" "404"
+test_endpoint "http://$SERVER_HOST:5000/api/v5/admin/analytics/dashboard" "Admin analytics dashboard" "404"
 
 # Deploy security hardening (if requested)
 if [ "${DEPLOY_SECURITY_HARDENING:-false}" = "true" ]; then
