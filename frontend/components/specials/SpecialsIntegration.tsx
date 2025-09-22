@@ -18,7 +18,7 @@ interface SpecialsIntegrationProps {
 
 export default function SpecialsIntegration({
   restaurantId,
-  restaurantName = "Restaurant",
+  restaurantName: _restaurantName = "Restaurant",
   className = "",
 }: SpecialsIntegrationProps) {
   const { isOpen, selectedSpecial, openModal, closeModal } = useSpecialClaimModal()

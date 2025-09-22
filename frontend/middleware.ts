@@ -64,16 +64,18 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
     
+    // Define variables outside try block so they're accessible in catch block
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      process.env.BACKEND_URL ||
+      'https://api.jewgo.app';
+    
+    // Get access token from cookies or headers
+    const accessToken = request.cookies.get('access_token')?.value ||
+                       request.headers.get('authorization')?.replace('Bearer ', '');
+    
     // Use HEAD /api/v5/auth/verify-token for performance optimization
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        process.env.BACKEND_URL ||
-        'https://api.jewgo.app';
-      
-      // Get access token from cookies or headers
-      const accessToken = request.cookies.get('access_token')?.value ||
-                         request.headers.get('authorization')?.replace('Bearer ', '');
       
       // Debug logging for token extraction
       console.log('Middleware token extraction:', {
@@ -165,7 +167,7 @@ export async function middleware(request: NextRequest) {
         method: request.method,
         hasToken: !!accessToken,
         tokenLength: accessToken ? accessToken.length : 0,
-        backendUrl: backendUrl
+        backendUrl
       });
       return handleAuthError(request, isApi, error as AuthError);
     }

@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [timeUntilExpiration, setTimeUntilExpiration] = useState<number | null>(null);
   const hasRunRef = useRef(false);
-  const checkAuthPromiseRef = useRef<Promise<void> | null>(null);
+  const _checkAuthPromiseRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     // Prevent multiple concurrent auth checks (React Strict Mode protection)

@@ -71,16 +71,16 @@ export default function EnhancedHoursDisplay({
     }
   };
 
-  const formatTimezone = (timezone: string) => {
-    if (!timezone) {return '';}
+  const formatTimezone = (tz: string) => {
+    if (!tz) {return '';}
     
     // Extract timezone abbreviation
-    const match = timezone.match(/\/\w+\/(\w+)$/);
+    const match = tz.match(/\/\w+\/(\w+)$/);
     if (match) {
       return match[1];
     }
     
-    return timezone.split('/').pop() || timezone;
+    return tz.split('/').pop() || tz;
   };
 
   const formatLastUpdated = (lastUpdated: string) => {

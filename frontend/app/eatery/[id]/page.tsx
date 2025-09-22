@@ -502,7 +502,7 @@ function EateryIdPageContent() {
     if (eateryId) {
       fetchEateryData()
     }
-  }, [eateryId, fetchReviews])
+  }, [eateryId, fetchReviews, trackView])
 
   // Convert new location format to old format for compatibility with mapEateryToListingData
   const legacyUserLocation = useMemo(() => {

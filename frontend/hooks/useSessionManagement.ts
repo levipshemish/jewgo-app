@@ -10,7 +10,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { sessionManager } from '@/lib/auth/session-manager';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export function useSessionManagement() {
   const { user, sessionExpired, timeUntilExpiration } = useAuth();
@@ -137,7 +137,7 @@ export function useSessionAwareApi() {
       onRetry?: (attempt: number) => void;
     }
   ): Promise<T> => {
-    const { maxRetries, onSessionExpired, onRetry } = options || {};
+    const { maxRetries, onSessionExpired, onRetry: _onRetry } = options || {};
 
     // If session is expired, call the handler immediately
     if (sessionExpired) {
