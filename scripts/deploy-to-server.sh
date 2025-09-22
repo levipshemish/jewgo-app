@@ -448,8 +448,8 @@ if [ -f /etc/nginx/conf.d/default.conf ]; then
             }
         }
         { print }
-    ' /etc/nginx/conf.d/default.conf > /tmp/default.conf.fixed
-    if [ -s /tmp/default.conf.fixed ]; then
+    ' /etc/nginx/conf.d/default.conf | sudo tee /tmp/default.conf.fixed > /dev/null
+    if sudo test -s /tmp/default.conf.fixed; then
         sudo mv /tmp/default.conf.fixed /etc/nginx/conf.d/default.conf
     else
         sudo rm -f /tmp/default.conf.fixed || true
