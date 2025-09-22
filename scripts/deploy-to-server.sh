@@ -430,6 +430,21 @@ test_endpoint() {
     fi
 }
 
+# Direct backend test on server to isolate Nginx vs backend issues
+test_backend_direct_on_server() {
+    local path="$1"   # e.g., /api/v5/auth/csrf or /readyz
+    local desc="$2"
+    print_status "Direct backend test (server): $desc at http://127.0.0.1:5000$path"
+    ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_HOST "curl -s -o /tmp/direct_resp.tmp -w '%{http_code}' http://127.0.0.1:5000$path" > /tmp/direct_code.tmp 2>/dev/null || true
+    local code=$(cat /tmp/direct_code.tmp 2>/dev/null || echo "000")
+    local body=$(cat /tmp/direct_resp.tmp 2>/dev/null | head -c 1000)
+    rm -f /tmp/direct_code.tmp /tmp/direct_resp.tmp || true
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DIRECT_BACKEND] $desc code=$code path=$path" >> "$LOCAL_LOG_FILE"
+    if [ -n "$body" ]; then
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DIRECT_BACKEND] response: $body" >> "$LOCAL_LOG_FILE"
+    fi
+}
+
 # Test basic health endpoint
 if ! check_backend_health; then
     print_error "Backend health check failed - checking logs..."
@@ -552,6 +567,9 @@ for i in {1..3}; do
         print_success "Rate limit test $i passed (HTTP $response_code)"
     else
         print_warning "Rate limit test $i failed (HTTP $response_code)"
+        if [ "$response_code" = "502" ]; then
+          test_backend_direct_on_server "/api/v5/auth/csrf" "Direct CSRf via backend"
+        fi
     fi
     sleep 1
 done
@@ -564,7 +582,8 @@ test_endpoint "https://api.jewgo.app/healthz" "Public healthz endpoint"
 # Optional readyz check: accept 200 (ready) or 503 (not ready) as valid responses from the backend
 if [ "${ENABLE_READYZ_CHECK:-true}" = "true" ]; then
   test_endpoint "https://api.jewgo.app/readyz" "Public readyz endpoint" "200" || \
-  test_endpoint "https://api.jewgo.app/readyz" "Public readyz endpoint (allow 503)" "503"
+  ( test_endpoint "https://api.jewgo.app/readyz" "Public readyz endpoint (allow 503)" "503" || \
+    test_backend_direct_on_server "/readyz" "Direct readyz via backend" )
 else
   print_status "Skipping readyz check (set ENABLE_READYZ_CHECK=true to enable)"
 fi
