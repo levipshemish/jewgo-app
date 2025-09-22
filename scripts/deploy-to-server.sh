@@ -470,9 +470,14 @@ execute_on_server "
         
         # Update HTTP/2 configuration (fix deprecated syntax)
         sudo sed -i 's/listen 443 ssl http2;/listen 443 ssl;\n        http2 on;/g' /etc/nginx/conf.d/default.conf || true
-
-        # Ensure backend upstream points to host listener rather than ephemeral container IPs
-        sudo sed -i 's/server[[:space:]]\+10\.0\.0\.189:5000;/    server 127.0.0.1:5000;/' /etc/nginx/conf.d/default.conf || true
+        # Update backend upstream target dynamically based on current container IP
+        BACKEND_IP=\$(docker inspect -f '{{range NetworkSettings.Networks}}{{.IPAddress}}{{end}}' jewgo_backend 2>/dev/null || true)
+        if [ -n "\$BACKEND_IP" ]; then
+            sudo sed -i -E "s/server[[:space:]]+[0-9.]+:5000;/    server \$BACKEND_IP:5000;/" /etc/nginx/conf.d/default.conf
+            echo "Updated backend upstream to \$BACKEND_IP:5000"
+        else
+            echo 'WARNING: Could not determine backend container IP; upstream not updated'
+        fi
         
         # Ensure webhook endpoints are properly configured
         if ! grep -q 'location /api/v5/webhook' /etc/nginx/conf.d/default.conf; then
