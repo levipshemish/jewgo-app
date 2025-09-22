@@ -25,11 +25,9 @@ export default function SpecialCard({
   const [isActive, setIsActive] = useState(() => specialsApi.isSpecialActive(special))
   const status = useMemo(() => specialsApi.getSpecialStatus(special), [special])
 
-  const requiresSecondPrecision = useMemo(
-    () => isActive && timeRemaining.total <= 60_000,
-    [isActive, timeRemaining.total]
-  )
-  const now = useTimeNow({ requireSecondPrecision })
+  const now = useTimeNow({
+    requireSecondPrecision: isActive && timeRemaining.total <= 60_000,
+  })
 
   useEffect(() => {
     const remaining = specialsApi.getTimeRemaining(special)
@@ -100,7 +98,7 @@ export default function SpecialCard({
       additionalText: timingLabel,
       showHeart: false,
       imageTag: statusLabel,
-    }), [heroImage, special.id, special.subtitle, special.title, special, timingLabel, statusLabel]
+    }), [heroImage, special, timingLabel, statusLabel]
   )
 
   const handleClaim = useCallback(() => {

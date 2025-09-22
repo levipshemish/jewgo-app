@@ -114,7 +114,7 @@ export async function fetchRestaurants({
       total_count: response.total_count,
       filterOptions: response.filterOptions || undefined, // Pass through filter options from API response
     };
-  } catch (error) {
+  } catch (_error) {
     console.error('V5 API error, falling back to legacy API:', error);
     
     // Fallback to V5 API directly
@@ -225,7 +225,7 @@ export async function searchRestaurants(query: string, limit: number = 100): Pro
       page: 1,
       limit,
     };
-  } catch (error) {
+  } catch (_error) {
     console.error('V5 API search error, falling back to legacy API:', error);
     
     // Fallback to V5 API directly
@@ -281,7 +281,7 @@ export async function getRestaurant(id: number): Promise<Restaurant | null> {
     }
     
     return null;
-  } catch (error) {
+  } catch (_error) {
     // Fallback
     
     // Fallback to V5 API directly
@@ -338,7 +338,7 @@ export async function fetchRestaurantsByIds(ids: number[]): Promise<Restaurant[]
     
     const validRestaurants = restaurants.filter((restaurant): restaurant is Restaurant => restaurant !== null);
     return sanitizeRestaurantData(validRestaurants) as Restaurant[];
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching restaurants by IDs:', error);
     return [];
   }
