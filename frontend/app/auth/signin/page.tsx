@@ -119,6 +119,54 @@ function SignInForm() {
     checkAuthStatus();
   }, [redirectTo, router]);
 
+  // Poll for auth changes while the user stays on the sign-in page
+  useEffect(() => {
+    let cancelled = false;
+
+    const pollAuthState = async () => {
+      const state = postgresAuth.getCachedAuthState
+        ? postgresAuth.getCachedAuthState()
+        : (postgresAuth.isAuthenticated() ? 'authenticated' : 'unauthenticated');
+
+      if (state === 'authenticated') {
+        if (!cancelled) {
+          router.replace(redirectTo);
+        }
+        return;
+      }
+
+      if (state === 'guest') {
+        if (!cancelled) {
+          router.replace(`/auth/signin?returnTo=${encodeURIComponent(redirectTo)}`);
+        }
+        return;
+      }
+
+      if (state === 'unknown') {
+        try {
+          const profile = await postgresAuth.getProfile();
+          if (!cancelled && profile && profile.is_guest !== true && profile.email) {
+            router.replace(redirectTo);
+          }
+        } catch (err) {
+          console.error('Auth poll check failed:', err);
+        }
+      }
+    };
+
+    const interval = setInterval(() => {
+      void pollAuthState();
+    }, 4000);
+
+    // Run immediately as well
+    void pollAuthState();
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [redirectTo, router]);
+
   // CSRF check
   useEffect(() => {
     let cancelled = false;
