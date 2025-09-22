@@ -98,3 +98,12 @@ def client(app):
 def runner(app):
     """Create a test runner for the Flask app."""
     return app.test_cli_runner()
+
+
+@pytest.fixture
+def auth_headers():
+    """Basic Authorization header fixture for tests.
+
+    In TEST_MODE, many auth integrations are bypassed; this provides a placeholder header.
+    """
+    return {"Authorization": "Bearer test-token"}

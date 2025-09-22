@@ -404,7 +404,7 @@ def validate_json_schema(schema: Dict[str, Any]):
                 }), 400
             
             json_data = request.get_json()
-            if not self._validate_json_schema(json_data, schema):
+            if not _validate_json_schema(json_data, schema):
                 return jsonify({
                     'error': 'Invalid JSON schema',
                     'code': 'INVALID_SCHEMA'

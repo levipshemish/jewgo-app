@@ -89,7 +89,7 @@ export async function getRestaurantSpecials(
   params: SpecialsQueryParams = {}
 ): Promise<SpecialsListResponse> {
   const queryString = buildQueryString(params)
-  const url = `${API_BASE_URL}/api/v5/specials${queryString ? `?${queryString}&restaurant_id=${restaurantId}` : `?restaurant_id=${restaurantId}`}`
+  const url = `${API_BASE_URL}/api/v5/specials/restaurants/${restaurantId}${queryString ? `?${queryString}` : ''}`
   
   const response = await fetch(url, {
     method: 'GET',
@@ -231,8 +231,6 @@ export async function getMediaKinds(): Promise<MediaKindsResponse> {
  * Get a single special by ID
  */
 export async function getSpecial(specialId: string): Promise<Special> {
-  // For now, we'll get it through the restaurant specials endpoint
-  // In the future, you might want to add a dedicated endpoint
   const url = `${API_BASE_URL}/api/v5/specials/${specialId}`
   
   const response = await fetch(url, {

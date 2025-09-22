@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: JewGo API
+  version: 1.0.0
+  description: API specification for the Specials System (subset)
+security:
+  - bearerAuth: []
+servers:
+  - url: https://API.jewgo.app
+paths:
+  /api/v5/specials/restaurants/{restaurant_id}:
+    get:
+      summary: List specials for a restaurant
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: window
+          in: query
+          schema: { type: string, enum: [now, today, range] }
+        - name: from
+          in: query
+          schema: { type: string }
+        - name: until
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialsListResponse'
+  /api/v5/specials:
+    post:
+      summary: Create a special
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpecialRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  message: { type: string }
+    get:
+      summary: List all specials (optional future)
+      responses:
+        '200':
+          description: Success
+  /api/v5/specials/{id}:
+    patch:
+      summary: Update a special
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSpecialRequest'
+      responses:
+        '200':
+          description: Updated
+  /api/v5/specials/{id}/claim:
+    post:
+      summary: Claim a special
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimSpecialRequest'
+      responses:
+        '201':
+          description: Claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimSpecialResponse'
+  /api/v5/specials/{id}/redeem:
+    post:
+      summary: Redeem a claim
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedeemClaimRequest'
+      responses:
+        '200':
+          description: Redeemed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedeemClaimResponse'
+  /api/v5/specials/{id}/events:
+    post:
+      summary: Track an event for a special
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackEventRequest'
+      responses:
+        '201':
+          description: Tracked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event_id: { type: string }
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        code: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+    SpecialMedia:
+      type: object
+      properties:
+        id: { type: string }
+        special_id: { type: string }
+        kind: { type: string }
+        url: { type: string }
+        alt_text: { type: string }
+        position: { type: integer }
+        created_at: { type: string }
+    Special:
+      type: object
+      properties:
+        id: { type: string }
+        restaurant_id: { type: integer }
+        title: { type: string }
+        subtitle: { type: string }
+        description: { type: string }
+        discount_type: { type: string }
+        discount_value: { type: number }
+        discount_label: { type: string }
+        valid_from: { type: string }
+        valid_until: { type: string }
+        max_claims_total: { type: integer }
+        max_claims_per_user: { type: integer }
+        per_visit: { type: boolean }
+        is_active: { type: boolean }
+        requires_code: { type: boolean }
+        code_hint: { type: string }
+        terms: { type: string }
+        hero_image_url: { type: string }
+        media_items:
+          type: array
+          items: { $ref: '#/components/schemas/SpecialMedia' }
+        can_claim: { type: boolean }
+        user_claims_remaining: { type: integer }
+        created_at: { type: string }
+    SpecialsListResponse:
+      type: object
+      properties:
+        specials:
+          type: array
+          items: { $ref: '#/components/schemas/Special' }
+        total: { type: integer }
+        has_more: { type: boolean }
+        window: { type: string }
+        from: { type: string }
+        until: { type: string }
+    CreateSpecialRequest:
+      type: object
+      required: [restaurant_id, title, discount_type, discount_label, valid_from, valid_until]
+      properties:
+        restaurant_id: { type: integer }
+        title: { type: string }
+        subtitle: { type: string }
+        description: { type: string }
+        discount_type: { type: string }
+        discount_value: { type: number }
+        discount_label: { type: string }
+        valid_from: { type: string }
+        valid_until: { type: string }
+        max_claims_total: { type: integer }
+        max_claims_per_user: { type: integer }
+        per_visit: { type: boolean }
+        requires_code: { type: boolean }
+        code_hint: { type: string }
+        terms: { type: string }
+        hero_image_url: { type: string }
+        media_items:
+          type: array
+          items:
+            type: object
+            properties:
+              kind: { type: string }
+              url: { type: string }
+              alt_text: { type: string }
+              position: { type: integer }
+    UpdateSpecialRequest:
+      type: object
+      properties:
+        title: { type: string }
+        subtitle: { type: string }
+        description: { type: string }
+        discount_type: { type: string }
+        discount_value: { type: number }
+        discount_label: { type: string }
+        valid_from: { type: string }
+        valid_until: { type: string }
+        max_claims_total: { type: integer }
+        max_claims_per_user: { type: integer }
+        per_visit: { type: boolean }
+        requires_code: { type: boolean }
+        code_hint: { type: string }
+        terms: { type: string }
+        hero_image_url: { type: string }
+        is_active: { type: boolean }
+    ClaimSpecialRequest:
+      type: object
+      properties:
+        guest_session_id: { type: string }
+    ClaimSpecialResponse:
+      type: object
+      properties:
+        claim_id: { type: string }
+        status: { type: string }
+        claimed_at: { type: string }
+        redeem_code: { type: string }
+        terms: { type: string }
+        message: { type: string }
+    RedeemClaimRequest:
+      type: object
+      required: [claim_id]
+      properties:
+        claim_id: { type: string }
+        redeem_code: { type: string }
+    RedeemClaimResponse:
+      type: object
+      properties:
+        claim_id: { type: string }
+        status: { type: string }
+        redeemed_at: { type: string }
+        redeemed_by: { type: string }
+        message: { type: string }
+    TrackEventRequest:
+      type: object
+      required: [event_type]
+      properties:
+        event_type: { type: string, enum: [view, share, click] }
+        guest_session_id: { type: string }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

@@ -25,8 +25,24 @@ from database.specials_models import (
 )
 from middleware.auth import require_auth, get_current_user
 from middleware.rate_limit import rate_limit
-from utils.error_handling import handle_api_error
-from utils.validation import validate_json_schema
+from middleware.security_middleware import validate_json_schema
+from routes.specials_schemas import (
+    CREATE_SPECIAL_SCHEMA,
+    UPDATE_SPECIAL_SCHEMA,
+    CLAIM_SPECIAL_SCHEMA,
+    REDEEM_CLAIM_SCHEMA,
+    TRACK_EVENT_SCHEMA,
+)
+from services.specials_service import (
+    parse_time_window,
+    get_active_specials_for_restaurant,
+    get_formatted_specials_for_restaurant,
+    format_special,
+    can_user_claim,
+    create_claim,
+    redeem_claim,
+    invalidate_specials_cache_for_restaurant,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +59,8 @@ class DatabaseSession:
 
 db = DatabaseSession()
 
-# Create Blueprint
-specials_bp = Blueprint('specials', __name__, url_prefix='/v5/specials')
+# Create Blueprint (align with FE client base '/api/v5/specials')
+specials_bp = Blueprint('specials', __name__, url_prefix='/api/v5/specials')
 
 # Rate limiting configurations
 CLAIM_RATE_LIMIT = "10 per minute"
@@ -52,7 +68,7 @@ REDEEM_RATE_LIMIT = "30 per minute"
 EVENT_RATE_LIMIT = "100 per minute"
 
 
-@specials_bp.route('/restaurants/<int:restaurant_id>/specials', methods=['GET'])
+@specials_bp.route('/restaurants/<int:restaurant_id>', methods=['GET'])
 def get_restaurant_specials(restaurant_id: int):
     """Get specials for a specific restaurant.
     
@@ -71,116 +87,17 @@ def get_restaurant_specials(restaurant_id: int):
         limit = min(int(request.args.get('limit', 50)), 100)
         offset = int(request.args.get('offset', 0))
         
-        # Validate time window
-        if window == 'range':
-            if not from_time or not until_time:
-                raise BadRequest("from and until parameters required for range window")
-            try:
-                from_time = datetime.fromisoformat(from_time.replace('Z', '+00:00'))
-                until_time = datetime.fromisoformat(until_time.replace('Z', '+00:00'))
-            except ValueError:
-                raise BadRequest("Invalid timestamp format")
-        elif window == 'today':
-            now = datetime.now(timezone.utc)
-            from_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            until_time = from_time.replace(hour=23, minute=59, second=59, microsecond=999999)
-        else:  # window == 'now'
-            now = datetime.now(timezone.utc)
-            from_time = now
-            until_time = now
+        # Parse time window via service helper
+        from_time, until_time = parse_time_window(window, from_time, until_time)
         
-        # Build query
-        query = db.session.query(Special).filter(
-            Special.restaurant_id == restaurant_id,
-            Special.is_active == True,
-            Special.deleted_at.is_(None)
+        # Fetch specials via cached service (user-specific bits are computed client-side if needed)
+        specials, total = get_formatted_specials_for_restaurant(
+            restaurant_id, from_time, until_time, limit=limit, offset=offset
         )
-        
-        # Apply time filter
-        if window == 'range':
-            query = query.filter(
-                Special.valid_from <= until_time,
-                Special.valid_until >= from_time
-            )
-        else:
-            query = query.filter(
-                Special.valid_from <= until_time,
-                Special.valid_until >= from_time
-            )
-        
-        # Get total count
-        total = query.count()
-        
-        # Apply pagination
-        specials = query.order_by(Special.valid_from.asc()).offset(offset).limit(limit).all()
         
         # Format response
         result = []
-        for special in specials:
-            # Get media items
-            media_items = db.session.query(SpecialMedia).filter(
-                SpecialMedia.special_id == special.id
-            ).order_by(SpecialMedia.position.asc()).all()
-            
-            # Check if user can claim (if authenticated)
-            can_claim = True
-            user_claims_remaining = 0
-            
-            current_user = get_current_user()
-            if current_user:
-                # Check existing claims for authenticated user
-                existing_claims = db.session.query(SpecialClaim).filter(
-                    SpecialClaim.special_id == special.id,
-                    SpecialClaim.user_id == current_user.id
-                ).count()
-                
-                if special.per_visit:
-                    # Check today's claims
-                    today = datetime.now(timezone.utc).date()
-                    today_claims = db.session.query(SpecialClaim).filter(
-                        SpecialClaim.special_id == special.id,
-                        SpecialClaim.user_id == current_user.id,
-                        func.date(SpecialClaim.claimed_at) == today
-                    ).count()
-                    user_claims_remaining = max(0, special.max_claims_per_user - today_claims)
-                else:
-                    # Check total claims
-                    user_claims_remaining = max(0, special.max_claims_per_user - existing_claims)
-                
-                can_claim = user_claims_remaining > 0
-            
-            special_data = {
-                'id': str(special.id),
-                'title': special.title,
-                'subtitle': special.subtitle,
-                'description': special.description,
-                'discount_type': special.discount_type,
-                'discount_value': float(special.discount_value) if special.discount_value else None,
-                'discount_label': special.discount_label,
-                'valid_from': special.valid_from.isoformat(),
-                'valid_until': special.valid_until.isoformat(),
-                'max_claims_total': special.max_claims_total,
-                'max_claims_per_user': special.max_claims_per_user,
-                'per_visit': special.per_visit,
-                'requires_code': special.requires_code,
-                'code_hint': special.code_hint,
-                'terms': special.terms,
-                'hero_image_url': special.hero_image_url,
-                'media_items': [
-                    {
-                        'id': str(item.id),
-                        'kind': item.kind,
-                        'url': item.url,
-                        'alt_text': item.alt_text,
-                        'position': item.position
-                    }
-                    for item in media_items
-                ],
-                'can_claim': can_claim,
-                'user_claims_remaining': user_claims_remaining,
-                'created_at': special.created_at.isoformat()
-            }
-            result.append(special_data)
+        result = specials
         
         return jsonify({
             'specials': result,
@@ -199,6 +116,7 @@ def get_restaurant_specials(restaurant_id: int):
 
 
 @specials_bp.route('', methods=['POST'])
+@validate_json_schema(CREATE_SPECIAL_SCHEMA)
 @require_auth
 def create_special():
     """Create a new special (restaurant owners/admins only)."""
@@ -208,10 +126,8 @@ def create_special():
         if not current_user:
             raise Unauthorized("Authentication required")
         
-        # Validate request data
+        # Request JSON is validated by decorator
         data = request.get_json()
-        if not data:
-            raise BadRequest("JSON data required")
         
         # Validate required fields
         required_fields = ['restaurant_id', 'title', 'discount_type', 'discount_label', 
@@ -259,6 +175,7 @@ def create_special():
         
         db.session.add(special)
         db.session.commit()
+        invalidate_specials_cache_for_restaurant(special.restaurant_id)
         
         # Add media items if provided
         if 'media_items' in data:
@@ -273,6 +190,7 @@ def create_special():
                 db.session.add(media_item)
         
         db.session.commit()
+        invalidate_specials_cache_for_restaurant(special.restaurant_id)
         
         return jsonify({
             'id': str(special.id),
@@ -290,6 +208,7 @@ def create_special():
 
 
 @specials_bp.route('/<uuid:special_id>', methods=['PATCH'])
+@validate_json_schema(UPDATE_SPECIAL_SCHEMA)
 @require_auth
 def update_special(special_id: UUID):
     """Update a special (restaurant owners/admins only)."""
@@ -310,10 +229,8 @@ def update_special(special_id: UUID):
         
         # TODO: Add authorization check - verify user owns restaurant or is admin
         
-        # Get update data
+        # Get update data (validated by decorator)
         data = request.get_json()
-        if not data:
-            raise BadRequest("JSON data required")
         
         # Update fields
         if 'title' in data:
@@ -381,6 +298,7 @@ def update_special(special_id: UUID):
 
 
 @specials_bp.route('/<uuid:special_id>/claim', methods=['POST'])
+@validate_json_schema(CLAIM_SPECIAL_SCHEMA)
 @rate_limit(CLAIM_RATE_LIMIT)
 def claim_special(special_id: UUID):
     """Claim a special (users or guests)."""
@@ -415,42 +333,20 @@ def claim_special(special_id: UUID):
             if total_claims >= special.max_claims_total:
                 raise Conflict("Special has reached maximum claims limit")
         
-        # Create claim
-        claim = SpecialClaim(
-            special_id=special.id,
-            user_id=current_user.id if current_user else None,
-            guest_session_id=guest_session_id,
-            ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent')
-        )
-        
+        # Create claim via service (handles IntegrityError)
         try:
-            db.session.add(claim)
-            db.session.commit()
+            claim, redeem_code = create_claim(
+                special,
+                current_user.id if current_user else None,
+                guest_session_id,
+                request.remote_addr,
+                request.headers.get('User-Agent'),
+            )
         except IntegrityError:
-            db.session.rollback()
             if current_user:
                 raise Conflict("You have already claimed this special")
             else:
                 raise Conflict("This guest session has already claimed this special")
-        
-        # Log claim event
-        event = SpecialEvent(
-            special_id=special.id,
-            user_id=current_user.id if current_user else None,
-            guest_session_id=guest_session_id,
-            event_type='claim',
-            ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent')
-        )
-        db.session.add(event)
-        db.session.commit()
-        
-        # Generate redeem code if required
-        redeem_code = None
-        if special.requires_code:
-            # Generate a simple code (in production, use a more secure method)
-            redeem_code = f"{special_id.hex[:8].upper()}-{claim.id.hex[:4].upper()}"
         
         return jsonify({
             'claim_id': str(claim.id),
@@ -474,6 +370,7 @@ def claim_special(special_id: UUID):
 
 
 @specials_bp.route('/<uuid:special_id>/redeem', methods=['POST'])
+@validate_json_schema(REDEEM_CLAIM_SCHEMA)
 @require_auth
 @rate_limit(REDEEM_RATE_LIMIT)
 def redeem_claim(special_id: UUID):
@@ -486,10 +383,7 @@ def redeem_claim(special_id: UUID):
         
         # TODO: Add authorization check - verify user is staff for restaurant
         
-        # Get request data
         data = request.get_json()
-        if not data:
-            raise BadRequest("JSON data required")
         
         claim_id = data.get('claim_id')
         redeem_code = data.get('redeem_code')
@@ -507,23 +401,13 @@ def redeem_claim(special_id: UUID):
         if not claim:
             raise NotFound("Valid claim not found")
         
-        # Verify redeem code if required
-        if redeem_code:
-            expected_code = f"{special_id.hex[:8].upper()}-{claim.id.hex[:4].upper()}"
-            if redeem_code.upper() != expected_code:
-                raise BadRequest("Invalid redeem code")
-        
-        # Update claim status
-        claim.status = 'redeemed'
-        claim.redeemed_at = datetime.now(timezone.utc)
-        claim.redeemed_by = current_user.id
-        
-        db.session.commit()
+        # Redeem via service (authorization check for staff is TODO in middleware)
+        db_claim = redeem_claim(claim, current_user.id, redeem_code)
         
         return jsonify({
-            'claim_id': str(claim.id),
-            'status': claim.status,
-            'redeemed_at': claim.redeemed_at.isoformat(),
+            'claim_id': str(db_claim.id),
+            'status': db_claim.status,
+            'redeemed_at': db_claim.redeemed_at.isoformat(),
             'redeemed_by': str(current_user.id),
             'message': 'Claim redeemed successfully'
         })
@@ -541,6 +425,7 @@ def redeem_claim(special_id: UUID):
 
 
 @specials_bp.route('/<uuid:special_id>/events', methods=['POST'])
+@validate_json_schema(TRACK_EVENT_SCHEMA)
 @rate_limit(EVENT_RATE_LIMIT)
 def track_special_event(special_id: UUID):
     """Track analytics events for specials (view, share, click)."""
@@ -549,10 +434,7 @@ def track_special_event(special_id: UUID):
         current_user = get_current_user()
         guest_session_id = request.json.get('guest_session_id') if request.json else None
         
-        # Get request data
         data = request.get_json()
-        if not data:
-            raise BadRequest("JSON data required")
         
         event_type = data.get('event_type')
         if event_type not in ['view', 'share', 'click']:
