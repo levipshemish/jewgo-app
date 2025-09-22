@@ -68,6 +68,20 @@ Status: open — add new tasks here. Flip to Status: working before edits. Remov
 
 
 
+* [x] **Codebase Organization and Cleanup** — organize codebase and delete temporary files
+
+  * Status: completed
+  * Notes: Comprehensive cleanup of temporary files, old backups, and organization of documentation.
+    - ✅ Removed temporary log files (auth test logs, deployment logs, nginx/frontend logs)
+    - ✅ Deleted temporary cookie files from root, backend, and frontend directories
+    - ✅ Cleaned up coverage files and HTML coverage reports
+    - ✅ Removed debug/test files (test_postgis.py, debug_users.py, debug_restaurant_count.py, etc.)
+    - ✅ Deleted old backup directories (backend/backups/pre_improvements_*)
+    - ✅ Organized documentation by moving completed reports to docs/archive/
+    - ✅ Cleaned up Python cache directories (__pycache__, .mypy_cache)
+    - ✅ Removed system temporary files (.DS_Store, *.tmp)
+    - ✅ Removed temporary verification scripts
+
 ## Status Conventions
 - open: planned and not started
 - working: in progress
