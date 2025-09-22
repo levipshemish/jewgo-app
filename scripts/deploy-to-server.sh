@@ -253,13 +253,11 @@ execute_on_server "
         # Stop any existing container
         docker stop jewgo_backend 2>/dev/null || true && \
         docker rm jewgo_backend 2>/dev/null || true && \
-        # Start container on compose default network with alias backend for Nginx upstream
+        # Start container on host network for direct access to localhost services
         cd $SERVER_PATH && \
         docker run -d \
           --name jewgo_backend \
-          --network jewgo-app_default \
-          --network-alias backend \
-          -p 5000:5000 \
+          --network host \
           --env-file .env \
           -e PGHOST=129.80.190.110 \
           -e PGPORT=5432 \
@@ -267,11 +265,14 @@ execute_on_server "
           -e PGUSER=app_user \
           -e PGPASSWORD=Jewgo123 \
           -e DATABASE_URL=postgresql://app_user:Jewgo123@129.80.190.110:5432/jewgo_db \
-          -e REDIS_URL=redis://jewgo_redis:6379/0 \
-          -e REDIS_HOST=jewgo_redis \
+          -e REDIS_URL=redis://localhost:6379/0 \
+          -e REDIS_HOST=localhost \
           -e REDIS_PORT=6379 \
           -e REDIS_DB=0 \
           -e REDIS_PASSWORD= \
+          -e REDIS_USERNAME=default \
+          -e REDIS_SSL=false \
+          -e CACHE_REDIS_URL=redis://localhost:6379 \
           -e DB_POOL_SIZE=10 \
           -e DB_MAX_OVERFLOW=20 \
           -e DB_POOL_TIMEOUT=60 \
@@ -294,8 +295,8 @@ if [ "${DEPLOY_REDIS_CLUSTER:-false}" = "true" ]; then
     
     # Stop old Redis container if running
     execute_on_server "
-        docker stop jewgo_redis 2>/dev/null || echo 'Old Redis container not running' && \
-        docker rm jewgo_redis 2>/dev/null || echo 'Old Redis container not found'
+        docker stop redis-master 2>/dev/null || echo 'Redis master container not running' && \
+        docker rm redis-master 2>/dev/null || echo 'Redis master container not found'
     " "Stopping old Redis container"
     
     # Deploy Redis cluster
@@ -316,7 +317,7 @@ else
     # Clear Redis cache (single instance)
     print_status "Clearing Redis cache..."
     execute_on_server "
-        docker exec jewgo_redis redis-cli FLUSHALL 2>/dev/null || echo 'Redis cache clear failed (container may not be running)'
+        docker exec redis-master redis-cli FLUSHALL 2>/dev/null || echo 'Redis cache clear failed (container may not be running)'
     " "Clearing Redis cache"
 fi
 
@@ -347,7 +348,7 @@ rollback_deployment() {
         cd $SERVER_PATH/backend && \
         docker build -t jewgo-app-backend . && \
         cd $SERVER_PATH && \
-        docker run -d --name jewgo_backend --network jewgo-app_default -p 5000:5000 --env-file .env jewgo-app-backend && \
+        docker run -d --name jewgo_backend --network host --env-file .env jewgo-app-backend && \
         echo 'Rollback container started'
     " "Rolling back container"
     
@@ -492,33 +493,29 @@ if [ -f /etc/nginx/conf.d/default.conf ]; then
     # Backup current config
     sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.$(date +%s) || true
 
-    # Ensure HTTP/2 is enabled using the modern directive if needed (no inline sed with newlines)
-    if ! grep -q "^\s*http2 on;" /etc/nginx/conf.d/default.conf; then
-        echo 'INFO: http2 on; not found explicitly; leaving as-is to avoid breaking config.'
+    # Check if nginx configuration is already working (avoid breaking our fixes)
+    if sudo nginx -t 2>/dev/null; then
+        echo 'INFO: Nginx configuration is already valid; skipping modifications to avoid conflicts.'
+    else
+        echo 'WARNING: Nginx configuration has issues; attempting to fix...'
+        # Only attempt fixes if configuration is broken
     fi
 
     # Do NOT rewrite upstream to container IP when Nginx runs on the host.
-    # Keep upstream pointing to 127.0.0.1:5000 which matches the published port -p 5000:5000
+    # Keep upstream pointing to 127.0.0.1:5000 which matches the host network setup
     # This avoids 502s caused by pointing Nginx at an inaccessible Docker bridge IP.
     echo 'INFO: Skipping dynamic upstream rewrite; using 127.0.0.1:5000 for backend upstream.'
 
-    # Ensure webhook endpoints are properly configured
+    # Check if webhook endpoints are already configured
     if ! grep -q 'location /api/v5/webhook' /etc/nginx/conf.d/default.conf; then
-        echo 'Adding webhook endpoint configuration to Nginx...'
-        sudo tee -a /etc/nginx/conf.d/default.conf > /dev/null <<'EOF'
-
-        # Webhook endpoints
-        location /api/v5/webhook {
-            proxy_pass http://backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_connect_timeout 30s;
-            proxy_send_timeout 30s;
-            proxy_read_timeout 30s;
-        }
-EOF
+        echo 'INFO: Webhook endpoints not found in nginx config; checking if they exist in main config...'
+        if grep -q 'location /api/v5/webhook' /etc/nginx/nginx.conf; then
+            echo 'INFO: Webhook endpoints found in main nginx config; no changes needed.'
+        else
+            echo 'WARNING: Webhook endpoints not found; they may need to be added manually.'
+        fi
+    else
+        echo 'INFO: Webhook endpoints already configured in nginx.'
     fi
 
     echo 'Nginx configuration updated'
@@ -527,34 +524,31 @@ NGINX_UPDATE
 )
 execute_on_server "$nginx_update_cmd" "Updating Nginx configuration"
 
-# Reload Nginx configuration to apply changes
-print_status "Reloading Nginx configuration to apply changes..."
+# Reload Nginx configuration to apply changes (only if needed)
+print_status "Checking if Nginx configuration reload is needed..."
 execute_on_server "
     if sudo nginx -t; then
+        echo 'Nginx configuration is valid; checking if reload is needed...'
+        # Only reload if nginx is running and config was modified
         if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
+            echo 'Nginx is running; performing graceful reload...'
             sudo systemctl reload nginx && echo 'Nginx configuration reloaded successfully (systemd)'
         else
-            # Try signal reload first
-            if sudo nginx -s reload 2>/dev/null; then
-                echo 'Nginx configuration reloaded successfully (signal)'
+            echo 'Nginx is not running; attempting to start...'
+            if command -v systemctl >/dev/null 2>&1; then
+                sudo systemctl start nginx || true
+            fi
+            # Validate after start
+            if sudo nginx -t; then
+                echo 'Nginx started and config valid'
             else
-                echo 'Nginx not running; attempting to start...'
-                if command -v systemctl >/dev/null 2>&1; then
-                    sudo systemctl start nginx || true
-                fi
-                # Fallback direct start
-                sudo nginx || true
-                # Validate again
-                if sudo nginx -t; then
-                    echo 'Nginx started and config valid'
-                else
-                    echo 'Nginx start failed after reload attempt'
-                    exit 1
-                fi
+                echo 'Nginx start failed'
+                exit 1
             fi
         fi
     else
-        echo 'Nginx configuration test failed - not reloading'
+        echo 'ERROR: Nginx configuration test failed - not reloading'
+        echo 'Current nginx config has syntax errors that need to be fixed manually'
         exit 1
     fi
 " "Reloading Nginx configuration"
@@ -914,8 +908,8 @@ if [ "${HORIZONTAL_SCALING_ENABLED:-false}" = "true" ]; then
         # Test starting a second backend container on different port
         docker run -d \
           --name jewgo_backend_test \
-          --network jewgo-app_default \
-          -p 5001:5000 \
+          --network host \
+          -e PORT=5001 \
           --env-file .env \
           -e DB_POOL_SIZE=5 \
           -e DB_MAX_OVERFLOW=10 \
