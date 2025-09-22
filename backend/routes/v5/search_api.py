@@ -380,6 +380,63 @@ def get_search_filters():
         }), 503
 
 
+@search_bp.route('/popular', methods=['GET'])
+def popular_searches():
+    """Get popular search queries."""
+    try:
+        limit = min(int(request.args.get('limit', 10)), 20)
+        
+        # For now, return static popular searches
+        # In production, this would query analytics/search history
+        popular = [
+            {
+                'query': 'kosher restaurant',
+                'count': 1250,
+                'entity_types': ['restaurants']
+            },
+            {
+                'query': 'orthodox synagogue',
+                'count': 890,
+                'entity_types': ['synagogues']
+            },
+            {
+                'query': 'mikvah near me',
+                'count': 650,
+                'entity_types': ['mikvahs']
+            },
+            {
+                'query': 'kosher grocery',
+                'count': 520,
+                'entity_types': ['stores']
+            },
+            {
+                'query': 'glatt kosher',
+                'count': 480,
+                'entity_types': ['restaurants', 'stores']
+            }
+        ]
+        
+        # Limit results
+        popular = popular[:limit]
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'searches': popular,
+                'count': len(popular),
+                'period': '7d'
+            },
+            'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Popular searches error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Popular searches unavailable'
+        }), 503
+
+
 def _parse_search_filters(args) -> Dict[str, Any]:
     """Parse search filters from request arguments."""
     filters = {}
