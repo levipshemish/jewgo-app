@@ -438,19 +438,19 @@ execute_on_server "
     if [ -f /etc/nginx/conf.d/default.conf ]; then
         timestamp=\$(date +%s)
         sudo cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak.\$timestamp || true
-        sudo bash -c '
+        sudo bash -c "
             set -euo pipefail
             tmp1=\$(mktemp /tmp/default.conf.step1.XXXXXX)
             tmp2=\$(mktemp /tmp/default.conf.step2.XXXXXX)
             tmpfixed=\$(mktemp /tmp/default.conf.fixed.XXXXXX)
-            sed -e "0,/client_header_buffer_size/s//& __KEEP__/" /etc/nginx/conf.d/default.conf > "\$tmp1"
-            sed -e "/client_header_buffer_size/ { /__KEEP__/! s/^/#/ }" "\$tmp1" > "\$tmp2"
-            sed -e "s/ __KEEP__//" "\$tmp2" > "\$tmpfixed"
-            if [ -s "\$tmpfixed" ]; then
-                mv "\$tmpfixed" /etc/nginx/conf.d/default.conf
+            sed -e '0,/client_header_buffer_size/s//& __KEEP__/' /etc/nginx/conf.d/default.conf > \"\$tmp1\"
+            sed -e '/client_header_buffer_size/ { /__KEEP__/! s/^/#/ }' \"\$tmp1\" > \"\$tmp2\"
+            sed -e 's/ __KEEP__//' \"\$tmp2\" > \"\$tmpfixed\"
+            if [ -s \"\$tmpfixed\" ]; then
+                mv \"\$tmpfixed\" /etc/nginx/conf.d/default.conf
             fi
-            rm -f "\$tmp1" "\$tmp2" "\$tmpfixed"
-        '
+            rm -f \"\$tmp1\" \"\$tmp2\" \"\$tmpfixed\"
+        "
     fi
     sudo nginx -t
 " "Ensuring Nginx client_header_buffer_size not duplicated"
