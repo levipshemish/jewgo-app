@@ -8,9 +8,9 @@ import ComingSoonModal from '@/components/ui/ComingSoonModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [formData, setFormData] = useState({
     identifier: "", // username, email, or mobile number
     password: "",
@@ -168,5 +168,13 @@ export default function LoginPage() {
         feature="Apple Sign-In"
       />
     </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

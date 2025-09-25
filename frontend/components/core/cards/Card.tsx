@@ -351,15 +351,19 @@ const Card = memo<CardProps>(({
 
         {/* Badge for specials - positioned in top left corner of image */}
         {cardData.badge && (
-          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-            {cardData.badge}
+          <div className="absolute top-2 left-2">
+            <span className="unified-card-tag px-1.5 py-0.5 text-xs font-medium rounded-full text-white shadow-sm bg-red-500">
+              {cardData.badge}
+            </span>
           </div>
         )}
 
         {/* Overlay Tag for specials (e.g., "Meat", "Dairy") */}
         {cardData.overlayTag && (
-          <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">
-            {cardData.overlayTag}
+          <div className="absolute top-2 right-2">
+            <span className="unified-card-tag px-1.5 py-0.5 text-xs font-medium rounded-full text-white shadow-sm bg-blue-500">
+              {cardData.overlayTag}
+            </span>
           </div>
         )}
 
@@ -402,7 +406,7 @@ const Card = memo<CardProps>(({
           animation: isScrolling ? 'none' : undefined
         }}
       >
-        <div className="flex justify-between items-start gap-1 mb-0 min-h-[16px] w-full">
+        <div className="flex justify-between items-center gap-1 mb-0 min-h-[16px] w-full">
           <h3 
             className={cn(
               variantStyles.titleClass,
@@ -411,37 +415,8 @@ const Card = memo<CardProps>(({
             style={{ flex: '1 1 0%', minWidth: 0 }}
             aria-label={`Title: ${cardData.title}`}
           >
-            {cardData.title}
+            {cardData.title ? cardData.title.substring(0, 11) + (cardData.title.length > 11 ? '...' : '') : ''}
           </h3>
-          {/* Only show badge in title area if it's not a specials card (badge is on image for specials) */}
-          {cardData.badge && !cardData.price && (
-            <div
-              className={cn(
-                "flex items-center bg-transparent text-gray-700 font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent",
-                variantStyles.badgeClass
-              )}
-              style={{
-                transform: isScrolling ? 'none' : undefined,
-                transition: isScrolling ? 'none' : undefined,
-                animation: isScrolling ? 'none' : undefined,
-                flexShrink: 0,
-                margin: 0,
-                padding: 0
-              }}
-              aria-label={`Rating: ${cardData.badge}`}
-            >
-              {showStarInBadge && (
-                <Star size={12} className="fill-yellow-400 text-yellow-400 flex-shrink-0 mr-0.5" />
-              )}
-              <span className="leading-none">{cardData.badge}</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-between items-center mt-0.5 gap-3">
-          <p className="text-xs text-muted-foreground line-clamp-1 flex-1 min-w-0">
-            {cardData.subtitle ? cardData.subtitle.substring(0, 15) + (cardData.subtitle.length > 15 ? '...' : '') : ''}
-          </p>
           <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
             {cardData.timeLeftSeconds !== undefined && (
               <>
@@ -451,6 +426,29 @@ const Card = memo<CardProps>(({
             )}
             {!cardData.timeLeftSeconds && cardData.additionalText && (
               <span>{cardData.additionalText}</span>
+            )}
+            {/* Only show badge in title area if it's not a specials card (badge is on image for specials) */}
+            {cardData.badge && !cardData.price && (
+              <div
+                className={cn(
+                  "flex items-center bg-transparent text-gray-700 font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent",
+                  variantStyles.badgeClass
+                )}
+                style={{
+                  transform: isScrolling ? 'none' : undefined,
+                  transition: isScrolling ? 'none' : undefined,
+                  animation: isScrolling ? 'none' : undefined,
+                  flexShrink: 0,
+                  margin: 0,
+                  padding: 0
+                }}
+                aria-label={`Rating: ${cardData.badge}`}
+              >
+                {showStarInBadge && (
+                  <Star size={12} className="fill-yellow-400 text-yellow-400 flex-shrink-0 mr-0.5" />
+                )}
+                <span className="leading-none">{cardData.badge}</span>
+              </div>
             )}
           </div>
         </div>
@@ -474,11 +472,6 @@ const Card = memo<CardProps>(({
           </div>
         )}
 
-        {cardData.claimsLeft !== undefined && cardData.claimsLeft > 0 && (
-          <div className="text-xs text-gray-500 mt-1">
-            {cardData.claimsLeft} claims left
-          </div>
-        )}
       </div>
     </>
   );
