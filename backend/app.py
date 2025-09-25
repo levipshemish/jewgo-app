@@ -199,6 +199,16 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+print('Registering Google OAuth blueprint...')
+try:
+    from routes.v5.oauth_google import google_oauth_bp
+    app.register_blueprint(google_oauth_bp)
+    print(f'SUCCESS: Registered {google_oauth_bp.name} with prefix {google_oauth_bp.url_prefix}')
+except Exception as e:
+    print(f'ERROR: Failed to register Google OAuth blueprint: {e}')
+    import traceback
+    traceback.print_exc()
+
 # Disable incomplete reviews system in production
 if os.environ.get('FLASK_ENV') != 'production':
     print('Registering reviews blueprint (development only)...')
