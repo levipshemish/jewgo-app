@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
       console.log("Password reset requested for:", email);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setIsSubmitted(true);
-    } catch (error) {
+    } catch (_error) {
       setError("Failed to send reset email. Please try again.");
     }
 
@@ -40,10 +40,10 @@ export default function ForgotPasswordPage() {
       <AuthLayout title="Check your email">
         <div className="text-center space-y-4">
           <p className="text-gray-600">
-            We've sent a password reset link to <strong>{email}</strong>
+            We&apos;ve sent a password reset link to <strong>{email}</strong>
           </p>
           <p className="text-sm text-gray-500">
-            Didn't receive the email? Check your spam folder or{" "}
+            Didn&apos;t receive the email? Check your spam folder or{" "}
             <button onClick={() => setIsSubmitted(false)} className="text-green-500 hover:text-green-600 underline">
               try again
             </button>

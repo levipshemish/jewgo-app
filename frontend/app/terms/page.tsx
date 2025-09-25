@@ -130,8 +130,23 @@ export default function TermsOfServicePage() {
               </p>
             </section>
 
+            <section id="payments">
+              <h2 className="text-xl font-semibold text-white mb-3">11. Payment Terms</h2>
+              <p>
+                JewGo may offer premium features, marketplace transactions, or other paid services. 
+                When you make a purchase through our Service:
+              </p>
+              <ul className="list-disc pl-6 mt-2 space-y-1">
+                <li>All payments are processed securely through our payment partners (Stripe)</li>
+                <li>You authorize us to charge your chosen payment method for all fees and charges</li>
+                <li>Prices are subject to change with reasonable notice</li>
+                <li>Refunds are handled according to our refund policy</li>
+                <li>You are responsible for any applicable taxes</li>
+              </ul>
+            </section>
+
             <section>
-              <h2 className="text-xl font-semibold text-white mb-3">11. Termination</h2>
+              <h2 className="text-xl font-semibold text-white mb-3">12. Termination</h2>
               <p>
                 We may terminate or suspend your account and access to the Service immediately, 
                 without prior notice, for any reason, including breach of these Terms. Upon termination, 
@@ -140,7 +155,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-3">12. Governing Law</h2>
+              <h2 className="text-xl font-semibold text-white mb-3">13. Governing Law</h2>
               <p>
                 These Terms shall be governed by and construed in accordance with the laws of the 
                 jurisdiction in which JewGo operates, without regard to its conflict of law provisions.
@@ -148,7 +163,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-3">13. Changes to Terms</h2>
+              <h2 className="text-xl font-semibold text-white mb-3">14. Changes to Terms</h2>
               <p>
                 We reserve the right to modify these Terms at any time. We will notify users of any 
                 material changes by posting the new Terms on this page and updating the &quot;Last Updated&quot; date.
@@ -156,7 +171,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-white mb-3">14. Contact Information</h2>
+              <h2 className="text-xl font-semibold text-white mb-3">15. Contact Information</h2>
               <p>
                 If you have any questions about these Terms of Service, please contact us:
               </p>

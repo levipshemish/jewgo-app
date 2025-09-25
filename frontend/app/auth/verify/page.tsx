@@ -44,7 +44,7 @@ function VerifyContent() {
       } else {
         setError("Invalid verification code. Please try again.");
       }
-    } catch (error) {
+    } catch (_error) {
       setError("Verification failed. Please try again.");
     }
 
@@ -62,7 +62,7 @@ function VerifyContent() {
       setCanResend(false);
       setCountdown(30);
       setError("");
-    } catch (error) {
+    } catch (_error) {
       setError("Failed to resend code. Please try again.");
     }
   };

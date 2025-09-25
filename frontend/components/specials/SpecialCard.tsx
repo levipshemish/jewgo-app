@@ -17,9 +17,9 @@ const createBaseCardData = (special: any): Partial<CardData> => ({
 })
 
 // Helper function to create view details handler
-const createViewDetailsHandler = (special: any, onViewDetails?: (special: any) => void) => () => {
+const createViewDetailsHandler = (specialData: any, onViewDetails?: (special: any) => void) => () => {
   if (onViewDetails) {
-    onViewDetails(special)
+    onViewDetails(specialData)
   }
 }
 
@@ -48,47 +48,38 @@ export default function SpecialCard({
   const cardData: CardData = useMemo(() => {
     const baseData = createBaseCardData(special)
     
-    // Handle badge structure from DealGridCard interface
-    const badge = (special as unknown as { badge?: { text?: string; type?: string } })?.badge
-    const badgeText = badge?.text || specialsApi.formatDiscountLabel(special)
+    // Use discount_label from database as badge
+    const badgeText = special.discount_label || specialsApi.formatDiscountLabel(special)
 
-    // Handle merchant name
-    const merchantName = (special as unknown as { merchantName?: string; merchant_name?: string })
-      ?.merchantName
-      || (special as unknown as { merchant_name?: string })?.merchant_name
+    // Remove merchant name - subtitle should not be used for merchant name
+    // The price section will show the discount information instead
 
-    // Handle price structure from DealGridCard interface
-    const price = (special as unknown as { 
-      price?: { 
-        original?: number | string; 
-        sale?: number | string; 
-        currency?: string;
-      } 
-    })?.price
-    const priceData = price || {
-      original: (special as unknown as { price_original?: number | string })?.price_original,
-      sale: (special as unknown as { price_sale?: number | string })?.price_sale,
+    // Calculate pricing from discount fields - using real database fields
+    const priceData = {
+      discount: {
+        type: special.discount_type,        // Real DB field: discount_type
+        value: special.discount_value,      // Real DB field: discount_value  
+        label: special.discount_label      // Real DB field: discount_label
+      },
       currency: 'USD'
     }
 
-    // Handle time left - prefer timeLeftSeconds from interface, fallback to calculation
-    const timeLeftSeconds = (special as unknown as { timeLeftSeconds?: number })?.timeLeftSeconds
-      ?? Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
+    // Handle time left - calculate from valid_until (real DB field)
+    const timeLeftSeconds = Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
 
-    // Handle claims left
-    const claimsLeft = (special as unknown as { claimsLeft?: number })?.claimsLeft
-
-    // Handle overlay tag
-    const overlayTag = (special as unknown as { overlayTag?: string })?.overlayTag
+    // Handle claims left from database - use max_claims_total (real DB field)
+    const claimsLeft = special.max_claims_total ? 
+      Math.max(0, special.max_claims_total - 0) : // No claims data available in current type
+      undefined
 
     return {
       ...baseData,
       badge: badgeText,
-      subtitle: merchantName || special.subtitle || '',
+      subtitle: '', // No subtitle - price info goes in price section
       price: priceData,
       timeLeftSeconds,
       claimsLeft,
-      overlayTag,
+      overlayTag: undefined, // Don't show overlay tag - only show discount label in badge
       ctaText: 'Claim',
       showHeart: true, // Enable heart for specials
     } as CardData

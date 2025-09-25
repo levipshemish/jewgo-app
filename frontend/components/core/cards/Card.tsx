@@ -29,6 +29,12 @@ export interface CardData {
     original?: number | string;
     sale?: number | string;
     currency?: string;
+    // Discount-based pricing for specials
+    discount?: {
+      type: string;
+      value: number;
+      label: string;
+    };
   };
   timeLeftSeconds?: number;
   claimsLeft?: number;
@@ -142,6 +148,10 @@ const Card = memo<CardProps>(({
   // Price formatting for specials
   const salePrice = formatCurrency(cardData.price?.sale, cardData.price?.currency)
   const originalPrice = formatCurrency(cardData.price?.original, cardData.price?.currency)
+  
+  // Handle discount-based pricing for specials
+  const discountInfo = cardData.price?.discount
+  const discountLabel = discountInfo?.label || ''
 
   // Get safe image URL using existing utility
   const heroImageUrl = useMemo(() => {
@@ -351,15 +361,36 @@ const Card = memo<CardProps>(({
 
         {/* Badge for specials - positioned in top left corner of image */}
         {cardData.badge && (
-          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-            {cardData.badge}
+          <div className="absolute top-3 left-3">
+            <span 
+              className={cn(
+                "inline-block rounded-full shadow-md font-medium text-xs px-2.5 py-1.5 text-white whitespace-nowrap",
+                cardStyles['kosher-badge']
+              )}
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                isolation: 'isolate'
+              }}
+            >
+              {cardData.badge}
+            </span>
           </div>
         )}
 
         {/* Overlay Tag for specials (e.g., "Meat", "Dairy") */}
         {cardData.overlayTag && (
-          <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">
-            {cardData.overlayTag}
+          <div className="absolute top-3 right-3">
+            <span 
+              className="inline-block rounded-full shadow-md font-medium text-xs px-2.5 py-1.5 text-white whitespace-nowrap"
+              style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                isolation: 'isolate'
+              }}
+            >
+              {cardData.overlayTag}
+            </span>
           </div>
         )}
 
@@ -402,7 +433,8 @@ const Card = memo<CardProps>(({
           animation: isScrolling ? 'none' : undefined
         }}
       >
-        <div className="flex justify-between items-start gap-1 mb-0 min-h-[16px] w-full">
+        {/* Title + Timer row */}
+        <div className="flex justify-between items-center gap-1 mb-0 min-h-[16px] w-full">
           <h3 
             className={cn(
               variantStyles.titleClass,
@@ -411,66 +443,63 @@ const Card = memo<CardProps>(({
             style={{ flex: '1 1 0%', minWidth: 0 }}
             aria-label={`Title: ${cardData.title}`}
           >
-            {cardData.title}
+            {cardData.title ? cardData.title.substring(0, 11) + (cardData.title.length > 11 ? '...' : '') : ''}
           </h3>
-          {/* Only show badge in title area if it's not a specials card (badge is on image for specials) */}
-          {cardData.badge && !cardData.price && (
-            <div
-              className={cn(
-                "flex items-center bg-transparent text-gray-700 font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent",
-                variantStyles.badgeClass
-              )}
-              style={{
-                transform: isScrolling ? 'none' : undefined,
-                transition: isScrolling ? 'none' : undefined,
-                animation: isScrolling ? 'none' : undefined,
-                flexShrink: 0,
-                margin: 0,
-                padding: 0
-              }}
-              aria-label={`Rating: ${cardData.badge}`}
-            >
-              {showStarInBadge && (
-                <Star size={12} className="fill-yellow-400 text-yellow-400 flex-shrink-0 mr-0.5" />
-              )}
-              <span className="leading-none">{cardData.badge}</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-between items-center mt-0.5 gap-3">
-          <p className="text-xs text-muted-foreground line-clamp-1 flex-1 min-w-0">
-            {cardData.subtitle ? cardData.subtitle.substring(0, 15) + (cardData.subtitle.length > 15 ? '...' : '') : ''}
-          </p>
-          <p className="text-xs text-muted-foreground line-clamp-1 flex-shrink-0">
-            {cardData.additionalText || ''}
-          </p>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+            {cardData.timeLeftSeconds !== undefined && (
+              <>
+                <Clock className="h-3 w-3" />
+                <span>{timeLeftLabel}</span>
+              </>
+            )}
+            {!cardData.timeLeftSeconds && cardData.additionalText && (
+              <span>{cardData.additionalText}</span>
+            )}
+            {/* Only show badge in title area if it's not a specials card (badge is on image for specials) */}
+            {cardData.badge && !cardData.price && (
+              <div
+                className={cn(
+                  "flex items-center bg-transparent text-gray-700 font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent",
+                  variantStyles.badgeClass
+                )}
+                style={{
+                  transform: isScrolling ? 'none' : undefined,
+                  transition: isScrolling ? 'none' : undefined,
+                  animation: isScrolling ? 'none' : undefined,
+                  flexShrink: 0,
+                  margin: 0,
+                  padding: 0
+                }}
+                aria-label={`Rating: ${cardData.badge}`}
+              >
+                {showStarInBadge && (
+                  <Star size={12} className="fill-yellow-400 text-yellow-400 flex-shrink-0 mr-0.5" />
+                )}
+                <span className="leading-none">{cardData.badge}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Specials-specific content */}
+        {/* Price + Claim row */}
         {cardData.price && (
-          <div className="flex items-center gap-2 mt-2">
-            {salePrice && (
-              <span className="font-semibold text-green-600 text-sm">{salePrice}</span>
-            )}
-            {originalPrice && originalPrice !== salePrice && (
-              <span className="text-xs text-gray-500 line-through">{originalPrice}</span>
-            )}
-          </div>
-        )}
-
-        {cardData.claimsLeft !== undefined && cardData.claimsLeft > 0 && (
-          <div className="text-xs text-gray-500 mt-1">
-            {cardData.claimsLeft} claims left
-          </div>
-        )}
-
-        {/* Time Left and Claim Button for specials */}
-        {cardData.timeLeftSeconds !== undefined && (
           <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Clock className="h-3 w-3" />
-              <span>{timeLeftLabel}</span>
+            <div className="flex items-center gap-2">
+              {/* Show discount-based pricing for specials */}
+              {discountInfo ? (
+                <span className="text-xs font-bold text-red-600">
+                  {discountLabel ? discountLabel.substring(0, 15) + (discountLabel.length > 15 ? '...' : '') : ''}
+                </span>
+              ) : (
+                <>
+                  {salePrice && (
+                    <span className="font-semibold text-green-600 text-sm">{salePrice}</span>
+                  )}
+                  {originalPrice && originalPrice !== salePrice && (
+                    <span className="text-xs text-gray-500 line-through">{originalPrice}</span>
+                  )}
+                </>
+              )}
             </div>
             {cardData.ctaText && (
               <span className="text-xs font-semibold text-green-600">
@@ -479,6 +508,7 @@ const Card = memo<CardProps>(({
             )}
           </div>
         )}
+
       </div>
     </>
   );

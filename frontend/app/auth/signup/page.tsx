@@ -3,10 +3,11 @@
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { InputField } from '@/components/auth/InputField';
 import { Button } from '@/components/ui/button';
+import ComingSoonModal from '@/components/ui/ComingSoonModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Check, AlertCircle } from 'lucide-react';
 
 interface SignUpFormData {
@@ -17,7 +18,7 @@ interface SignUpFormData {
   confirmPassword: string
 }
 
-export default function SignUpPage() {
+function SignUpPageContent() {
   const [formData, setFormData] = useState<SignUpFormData>({
     firstName: "",
     lastName: "",
@@ -28,8 +29,13 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<"weak" | "medium" | "strong">("weak");
+  const [passwordMatch, setPasswordMatch] = useState<"match" | "no-match" | "empty">("empty");
+  const [showAppleComingSoon, setShowAppleComingSoon] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { register } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/specials";
 
   const handleInputChange = (field: keyof SignUpFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -48,6 +54,22 @@ export default function SignUpPage() {
       } else {
         setPasswordStrength("weak");
       }
+      
+      // Check password match when password changes
+      if (formData.confirmPassword) {
+        setPasswordMatch(value === formData.confirmPassword ? "match" : "no-match");
+      }
+    }
+
+    // Update password match when confirm password changes
+    if (field === "confirmPassword") {
+      if (!value) {
+        setPasswordMatch("empty");
+      } else if (value === formData.password) {
+        setPasswordMatch("match");
+      } else {
+        setPasswordMatch("no-match");
+      }
     }
   };
 
@@ -58,11 +80,14 @@ export default function SignUpPage() {
     if (!formData.lastName) newErrors.lastName = "Last name is required";
     if (!formData.email) newErrors.email = "Email is required";
     if (!formData.password) newErrors.password = "Password is required";
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
     if (formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
+    }
+    if (passwordMatch === "no-match") {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    if (!termsAccepted) {
+      newErrors.terms = "You must accept the terms and conditions to create an account";
     }
 
     return newErrors;
@@ -82,7 +107,7 @@ export default function SignUpPage() {
           password: formData.password,
           name: `${formData.firstName} ${formData.lastName}`,
         });
-        router.push('/eatery');
+        router.push(redirectTo);
       } catch (error: any) {
         setErrors({ general: error.message || 'Registration failed' });
       }
@@ -158,31 +183,148 @@ export default function SignUpPage() {
             <Check className="text-green-500" size={16} />
             <span className="text-sm text-green-500">Must be at least 8 characters</span>
           </div>
+
+          {/* Password Match Indicator */}
+          {formData.password && formData.confirmPassword && (
+            <div className="flex items-center space-x-2">
+              {passwordMatch === "match" ? (
+                <Check className="text-green-500" size={16} />
+              ) : (
+                <AlertCircle className="text-red-500" size={16} />
+              )}
+              <span className={`text-sm ${passwordMatch === "match" ? "text-green-500" : "text-red-500"}`}>
+                {passwordMatch === "match" ? "Passwords match" : "Passwords do not match"}
+              </span>
+            </div>
+          )}
         </div>
 
         {errors.general && <div className="text-sm text-red-500 text-center">{errors.general}</div>}
 
         {/* Terms Agreement */}
-        <div className="text-sm text-gray-600 text-center">
-          By selecting Agree and continue below, I agree to <span className="underline">Jewgo's Terms of Service</span>,{" "}
-          <span className="underline">Payments Terms of Service</span> and{" "}
-          <span className="underline">Privacy Policy</span>
+        <div className="space-y-3">
+          <div className="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-1 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+            />
+            <label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">
+              By selecting Agree and continue below, I agree to{" "}
+              <a 
+                href="/terms" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-green-500 hover:text-green-600 underline"
+              >
+                Jewgo&apos;s Terms of Service
+              </a>
+              ,{" "}
+              <a 
+                href="/terms#payments" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-green-500 hover:text-green-600 underline"
+              >
+                Payments Terms of Service
+              </a>
+              {" "}and{" "}
+              <a 
+                href="/privacy" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-green-500 hover:text-green-600 underline"
+              >
+                Privacy Policy
+              </a>
+            </label>
+          </div>
+          {errors.terms && (
+            <div className="text-sm text-red-500">{errors.terms}</div>
+          )}
         </div>
 
         <Button
           type="submit"
-          disabled={isLoading}
-          className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-xl"
+          disabled={isLoading || !termsAccepted || passwordMatch === "no-match"}
+          className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl"
         >
           {isLoading ? "Creating Account..." : "Agree & Continue"}
         </Button>
 
-        <div className="text-center">
-          <Link href="/auth/login" className="text-green-500 hover:text-green-600 text-sm">
+        <div className="text-center space-y-3">
+          <Link href="/auth/login" className="text-green-500 hover:text-green-600 text-sm block">
             Already have an account? Sign in
+          </Link>
+          
+          <div className="text-gray-400 text-sm">or</div>
+          
+          <Link href="/auth/guest" className="text-green-400 hover:text-green-300 text-sm block">
+            Continue as guest
           </Link>
         </div>
       </form>
+
+      {/* OAuth Section */}
+      <div className="mt-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-3">
+          {/* Google OAuth */}
+          <Button
+            onClick={() => {
+              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || '';
+              if (!backendUrl) {
+                setErrors({ general: 'Missing backend configuration' });
+                return;
+              }
+              const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/google/start?returnTo=${encodeURIComponent(redirectTo)}`;
+              window.location.href = url;
+            }}
+            variant="outline"
+            className="w-full"
+            title="Sign in with Google"
+          >
+            Continue with Google
+          </Button>
+
+          {/* Apple OAuth */}
+          <Button
+            onClick={() => setShowAppleComingSoon(true)}
+            variant="outline"
+            className="w-full"
+            title="Sign in with Apple"
+          >
+            Continue with Apple
+          </Button>
+        </div>
+      </div>
+
+      {/* Apple Coming Soon Modal */}
+      <ComingSoonModal
+        isOpen={showAppleComingSoon}
+        onClose={() => setShowAppleComingSoon(false)}
+        title="Apple Sign-In Coming Soon"
+        description="We're currently configuring Apple Sign-In authentication. This feature will be available soon!"
+        feature="Apple Sign-In"
+      />
     </AuthLayout>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignUpPageContent />
+    </Suspense>
   );
 }
