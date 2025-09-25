@@ -51,21 +51,39 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('page')) pagination.page = parseInt(searchParams.get('page')!);
     if (searchParams.get('include_filter_options')) pagination.includeFilterOptions = searchParams.get('include_filter_options') === 'true';
 
+    // Build backend query params – start with an empty set so we only forward known keys
+    const backendParams = new URLSearchParams();
+
+    if (filters.search) backendParams.set('search', filters.search);
+    if (filters.status) backendParams.set('status', filters.status);
+    if (filters.category) backendParams.set('category', filters.category);
+    if (filters.createdAfter) backendParams.set('created_after', filters.createdAfter);
+    if (filters.updatedAfter) backendParams.set('updated_after', filters.updatedAfter);
+    if (filters.cuisine_type) backendParams.set('cuisine', String(filters.cuisine_type));
+    if (filters.price_range !== undefined) backendParams.set('price_range', String(filters.price_range));
+    if (filters.kosher_certification) backendParams.set('kosher_cert', filters.kosher_certification);
+    if (filters.kosher_category) backendParams.set('kosher_category', filters.kosher_category);
+    if (filters.hoursFilter) backendParams.set('hoursFilter', filters.hoursFilter);
+
+    if (filters.location) {
+      backendParams.set('latitude', filters.location.latitude.toString());
+      backendParams.set('longitude', filters.location.longitude.toString());
+      if (typeof filters.location.radius === 'number') {
+        backendParams.set('radius', filters.location.radius.toString());
+      }
+    }
+
+    if (pagination.cursor) backendParams.set('cursor', pagination.cursor);
+    if (pagination.limit !== undefined) backendParams.set('limit', String(pagination.limit));
+    if (pagination.sort) backendParams.set('sort', pagination.sort);
+    if (pagination.page !== undefined) backendParams.set('page', String(pagination.page));
+    if (pagination.includeFilterOptions !== undefined) {
+      backendParams.set('include_filter_options', String(pagination.includeFilterOptions));
+    }
+
     // Call backend API through client - get full response object
     const response = await apiClient.request(
-      `/api/v5/restaurants?${new URLSearchParams({
-        ...Object.fromEntries(
-          Object.entries(filters).map(([key, value]) => [
-            key,
-            key === 'location' && typeof value === 'object' 
-              ? `${value.latitude},${value.longitude}${value.radius ? `,${value.radius}` : ''}`
-              : value.toString()
-          ])
-        ),
-        ...Object.fromEntries(
-          Object.entries(pagination).map(([key, value]) => [key, value.toString()])
-        )
-      }).toString()}`,
+      `/api/v5/restaurants?${backendParams.toString()}`,
       { method: 'GET' }
     );
 
