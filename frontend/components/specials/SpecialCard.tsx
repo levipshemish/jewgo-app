@@ -80,7 +80,7 @@ export default function SpecialCard({
     return {
       ...baseData,
       badge: badgeText,
-      subtitle: '', // No subtitle - price info goes in price section
+      subtitle: special.discount_label || '', // Use discount label as subtitle
       price: priceData,
       timeLeftSeconds,
       claimsLeft,

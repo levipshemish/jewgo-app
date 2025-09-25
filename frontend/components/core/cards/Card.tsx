@@ -481,6 +481,15 @@ const Card = memo<CardProps>(({
           </div>
         </div>
 
+        {/* Subtitle - Price/Discount info for specials */}
+        {cardData.subtitle && (
+          <div className="mt-1">
+            <span className="text-xs font-bold text-red-600">
+              {cardData.subtitle ? cardData.subtitle.substring(0, 15) + (cardData.subtitle.length > 15 ? '...' : '') : ''}
+            </span>
+          </div>
+        )}
+
         {/* Price + Claim row */}
         {cardData.price && (
           <div className="flex items-center justify-between mt-2">
