@@ -351,8 +351,16 @@ const Card = memo<CardProps>(({
 
         {/* Badge for specials - positioned in top left corner of image */}
         {cardData.badge && (
-          <div className="absolute top-2 left-2">
-            <span className="unified-card-tag px-1.5 py-0.5 text-xs font-medium rounded-full text-white shadow-sm bg-red-500">
+          <div className="absolute top-3 left-3">
+            <span 
+              className="absolute rounded-full shadow-md font-medium truncate text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] text-white"
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                isolation: 'isolate'
+              }}
+            >
               {cardData.badge}
             </span>
           </div>
@@ -360,8 +368,16 @@ const Card = memo<CardProps>(({
 
         {/* Overlay Tag for specials (e.g., "Meat", "Dairy") */}
         {cardData.overlayTag && (
-          <div className="absolute top-2 right-2">
-            <span className="unified-card-tag px-1.5 py-0.5 text-xs font-medium rounded-full text-white shadow-sm bg-blue-500">
+          <div className="absolute top-3 right-3">
+            <span 
+              className="absolute rounded-full shadow-md font-medium truncate text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] text-white"
+              style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                isolation: 'isolate'
+              }}
+            >
               {cardData.overlayTag}
             </span>
           </div>
