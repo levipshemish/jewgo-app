@@ -442,19 +442,34 @@ const Card = memo<CardProps>(({
           <p className="text-xs text-muted-foreground line-clamp-1 flex-1 min-w-0">
             {cardData.subtitle ? cardData.subtitle.substring(0, 15) + (cardData.subtitle.length > 15 ? '...' : '') : ''}
           </p>
-          <p className="text-xs text-muted-foreground line-clamp-1 flex-shrink-0">
-            {cardData.additionalText || ''}
-          </p>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+            {cardData.timeLeftSeconds !== undefined && (
+              <>
+                <Clock className="h-3 w-3" />
+                <span>{timeLeftLabel}</span>
+              </>
+            )}
+            {!cardData.timeLeftSeconds && cardData.additionalText && (
+              <span>{cardData.additionalText}</span>
+            )}
+          </div>
         </div>
 
         {/* Specials-specific content */}
         {cardData.price && (
-          <div className="flex items-center gap-2 mt-2">
-            {salePrice && (
-              <span className="font-semibold text-green-600 text-sm">{salePrice}</span>
-            )}
-            {originalPrice && originalPrice !== salePrice && (
-              <span className="text-xs text-gray-500 line-through">{originalPrice}</span>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-2">
+              {salePrice && (
+                <span className="font-semibold text-green-600 text-sm">{salePrice}</span>
+              )}
+              {originalPrice && originalPrice !== salePrice && (
+                <span className="text-xs text-gray-500 line-through">{originalPrice}</span>
+              )}
+            </div>
+            {cardData.ctaText && (
+              <span className="text-xs font-semibold text-green-600">
+                {cardData.ctaText}
+              </span>
             )}
           </div>
         )}
@@ -462,21 +477,6 @@ const Card = memo<CardProps>(({
         {cardData.claimsLeft !== undefined && cardData.claimsLeft > 0 && (
           <div className="text-xs text-gray-500 mt-1">
             {cardData.claimsLeft} claims left
-          </div>
-        )}
-
-        {/* Time Left and Claim Button for specials */}
-        {cardData.timeLeftSeconds !== undefined && (
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Clock className="h-3 w-3" />
-              <span>{timeLeftLabel}</span>
-            </div>
-            {cardData.ctaText && (
-              <span className="text-xs font-semibold text-green-600">
-                {cardData.ctaText}
-              </span>
-            )}
           </div>
         )}
       </div>

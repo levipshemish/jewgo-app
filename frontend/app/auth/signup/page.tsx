@@ -3,8 +3,10 @@
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { InputField } from '@/components/auth/InputField';
 import { Button } from '@/components/ui/button';
+import { AppleSignInButton } from '@/components/ui/AppleSignInButton';
+import ComingSoonModal from '@/components/ui/ComingSoonModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Check, AlertCircle } from 'lucide-react';
