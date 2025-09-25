@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Loader2, Users, AlertCircle } from 'lucide-react';
 import { DraftFilters } from '@/lib/filters/filters.types';
 import { validateFilters, normalizeFilters } from '@/lib/utils/filterValidation';
+import { buildRestaurantSearchParams, DEFAULT_DISTANCE_RADIUS_KM } from '@/lib/filters/restaurantQueryBuilder';
 // import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 // import { fetchRestaurants } from '@/lib/api/restaurants';
 
@@ -65,74 +66,16 @@ export function FilterPreview({
     setPreview(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Build location payload (fetchRestaurants will attach radius if present)
-      const location = userLocation
-        ? { latitude: userLocation.latitude, longitude: userLocation.longitude }
-        : undefined;
-
-      // For distance sorting, we need to ensure the backend properly calculates the total count
-      // by using the same sorting parameters as the main grid
-      const previewFilters = { ...normalizedFilters } as any;
-      
-      // Map frontend filter names to API parameter names (same as EateryGrid)
-      if (previewFilters.q && previewFilters.q.trim()) {
-        previewFilters.search = previewFilters.q.trim();
-        delete previewFilters.q; // Remove the frontend field name
-      }
-      
-      if (previewFilters.category) {
-        previewFilters.kosher_category = previewFilters.category;
-        delete previewFilters.category; // Remove the frontend field name
-      }
-      
-      // Map price range to separate min/max fields
-      if (previewFilters.priceRange && Array.isArray(previewFilters.priceRange)) {
-        const [min, max] = previewFilters.priceRange;
-        if (min) previewFilters.price_min = min.toString();
-        if (max) previewFilters.price_max = max.toString();
-        delete previewFilters.priceRange; // Remove the frontend field name
-      }
-      
-      
-      // If user location is available, ensure distance sorting is applied for accurate count
-      if (userLocation) {
-        previewFilters.sort = 'distance_asc';
-      }
-      
-      // Ensure distance filter is properly converted to radius (same as main API)
-      const distanceMi = previewFilters.distanceMi;
-      if (userLocation && distanceMi) {
-        const radiusKm = Number(distanceMi) * 1.60934;
-        previewFilters.radius = radiusKm.toString();
-      }
-
-      // Debug: Log the filters being sent to the API
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 FilterPreview final filters being sent:', previewFilters);
-      }
-
-      // Ask backend for count by requesting minimal page directly from production backend
-      // Build URL with filters
-      const url = new URL('https://api.jewgo.app/api/v5/restaurants');
-      
-      // Add location params
-      if (location) {
-        url.searchParams.set('latitude', location.latitude.toString());
-        url.searchParams.set('longitude', location.longitude.toString());
-      }
-      
-      // Add filters
-      Object.entries(previewFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          url.searchParams.set(key, String(value));
-        }
+      const params = buildRestaurantSearchParams(normalizedFilters, {
+        userLocation,
+        fallbackRadiusKm: DEFAULT_DISTANCE_RADIUS_KM,
+        limit: 1,
+        page: 1,
+        sort: userLocation ? 'distance_asc' : undefined,
+        defaultSort: 'created_at_desc',
       });
-      
-      // Add pagination params
-      url.searchParams.set('page', '1');
-      url.searchParams.set('limit', '1');
-      
-      const directResponse = await fetch(url.toString());
+
+      const directResponse = await fetch(`/api/v5/restaurants?${params.toString()}`);
       const backendData = await directResponse.json();
       
       // Debug: Log the response structure to understand what we're getting

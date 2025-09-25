@@ -9,6 +9,7 @@ import type { LightRestaurant } from "../types"
 import { getBestAvailableRating, formatRating } from "@/lib/utils/ratingCalculation"
 import EateryGridSkeleton from "./EateryGridSkeleton"
 import { fetchRestaurants as apiFetchRestaurants } from "@/lib/api/restaurants"
+import { buildRestaurantSearchParams, DEFAULT_DISTANCE_RADIUS_KM } from "@/lib/filters/restaurantQueryBuilder"
 
 // Import the mock data generator (fallback)
 import { generateMockRestaurants, type MockRestaurant } from "@/lib/mockData/restaurants"
@@ -224,80 +225,16 @@ export default function EateryGrid({
 
   // Build search parameters for API calls
   const buildSearchParams = useCallback(() => {
-    const params = new URLSearchParams()
-    
-    // Add active filters to search parameters with proper API parameter mapping
-    if (activeFilters) {
-      
-      // Map frontend filter names to API parameter names
-      if (activeFilters.q && activeFilters.q.trim()) {
-        params.set('search', activeFilters.q.trim())
-      }
-    }
-    
-    // Override with searchQuery if provided (from header search)
-    if (searchQuery && searchQuery.trim() !== '') {
-      params.set('search', searchQuery.trim())
-    }
-    
-    if (category && category !== 'all') {
-      params.set('kosher_category', category)
-    }
-    
-    // Continue with other active filters
-    if (activeFilters) {
-      if (activeFilters.category) {
-        params.set('kosher_category', activeFilters.category)
-      }
-      
-      if (activeFilters.agency) {
-        params.set('agency', activeFilters.agency)
-      }
-      
-      if (activeFilters.distanceMi) {
-        // Convert miles to km for backend (backend expects radius in km)
-        const radiusKm = activeFilters.distanceMi * 1.60934
-        params.set('radius', radiusKm.toString())
-      }
-      
-      if (activeFilters.priceRange && Array.isArray(activeFilters.priceRange)) {
-        const [min, max] = activeFilters.priceRange
-        if (min) params.set('price_min', min.toString())
-        if (max) params.set('price_max', max.toString())
-      }
-      
-      if (activeFilters.ratingMin) {
-        params.set('ratingMin', activeFilters.ratingMin.toString())
-      }
-      
-      if (activeFilters.hoursFilter) {
-        params.set('hoursFilter', activeFilters.hoursFilter)
-      }
-      
-      if (activeFilters.openNow) {
-        params.set('openNow', 'true')
-      }
-      
-      if (activeFilters.kosherDetails) {
-        params.set('kosherDetails', activeFilters.kosherDetails)
-      }
-    }
-    
-    // Add location parameters for distance sorting
-    if (userLocation) {
-      params.set('latitude', userLocation.latitude.toString())
-      params.set('longitude', userLocation.longitude.toString())
-      // Automatically sort by distance when location is available
-      params.set('sort', 'distance_asc')
-      console.log(`🔍 Using distance sorting with location: ${userLocation.latitude}, ${userLocation.longitude}`);
-    } else {
-      // Set default sort when no location is available to ensure consistent pagination
-      params.set('sort', 'created_at_desc')
-      console.log('🔍 No location available, using created_at_desc sorting');
-    }
-    
+    const params = buildRestaurantSearchParams(activeFilters, {
+      searchQuery,
+      categoryOverride: category !== 'all' ? category : undefined,
+      userLocation,
+      defaultSort: 'created_at_desc',
+      fallbackRadiusKm: DEFAULT_DISTANCE_RADIUS_KM,
+    })
+
     return params.toString()
-  }, [searchQuery, category, activeFilters, userLocation])
+  }, [activeFilters, searchQuery, category, userLocation])
 
   // Stable key for fetch dependencies to avoid re-fetch on same params
   const searchParamsKey = useMemo(() => buildSearchParams(), [buildSearchParams])

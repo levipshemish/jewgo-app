@@ -9,8 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { apiClient } from '@/lib/api/index-v5';
 import { validateAuthFromRequest } from '@/lib/api/utils-v5';
 import type { EntityFilters, PaginationOptions } from '@/lib/api/types-v5';
-
-const DEFAULT_DISTANCE_RADIUS_KM = parseFloat(process.env.NEXT_PUBLIC_DEFAULT_DISTANCE_RADIUS_KM || '10000');
+import { DEFAULT_DISTANCE_RADIUS_KM } from '@/lib/filters/restaurantQueryBuilder';
 
 export async function GET(request: NextRequest) {
   try {
