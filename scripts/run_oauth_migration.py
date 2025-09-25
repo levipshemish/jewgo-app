@@ -27,6 +27,7 @@ def run_migration():
             state_token VARCHAR(255) NOT NULL UNIQUE,
             provider VARCHAR(32) NOT NULL,
             return_to VARCHAR(500),
+            extra_data JSONB,
             expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
             consumed_at TIMESTAMP WITH TIME ZONE,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

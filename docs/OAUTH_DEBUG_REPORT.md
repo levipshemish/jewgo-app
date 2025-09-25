@@ -122,6 +122,7 @@ User experiencing OAuth authentication failures with error code `oauth_failed` a
 3. **Database Connectivity:** Test OAuth state table operations
 4. **Live Debugging:** Monitor backend logs during OAuth attempt
 5. **Frontend Testing:** Use browser developer tools to trace OAuth flow
+6. **Schema Alignment:** Apply `backend/migrations/add_extra_data_to_oauth_states_v5.sql` so the `extra_data` column exists before redeploying the OAuth fix
 
 ## Files Analyzed
 

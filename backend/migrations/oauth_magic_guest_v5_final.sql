@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS oauth_states_v5 (
     state_token VARCHAR(255) NOT NULL UNIQUE,
     provider VARCHAR(32) NOT NULL,
     return_to VARCHAR(500),
+    extra_data JSONB,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     consumed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -67,4 +68,3 @@ CREATE INDEX IF NOT EXISTS idx_accounts_provider_pid
     ON accounts(provider, provideraccountid);
 
 COMMIT;
-

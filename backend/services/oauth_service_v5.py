@@ -85,18 +85,20 @@ class OAuthService:
         state_token = f"{signature[:16]}.{secrets.token_urlsafe(32)}"
 
         try:
+            extra_data_json = json.dumps(extra_data) if extra_data else None
             with self.db.connection_manager.session_scope() as session:
                 session.execute(
                     text(
                         """
-                        INSERT INTO oauth_states_v5 (state_token, provider, return_to, expires_at)
-                        VALUES (:state_token, :provider, :return_to, :expires_at)
+                        INSERT INTO oauth_states_v5 (state_token, provider, return_to, extra_data, expires_at)
+                        VALUES (:state_token, :provider, :return_to, :extra_data, :expires_at)
                         """
                     ),
                     {
                         'state_token': state_token,
                         'provider': provider,
                         'return_to': return_to,
+                        'extra_data': extra_data_json,
                         'expires_at': datetime.utcnow() + timedelta(minutes=30)
                     }
                 )
@@ -126,7 +128,16 @@ class OAuthService:
                 ).fetchone()
 
                 if result:
-                    extra_data = result[1] if result[1] else {}
+                    raw_extra = result[1]
+                    if not raw_extra:
+                        extra_data = {}
+                    elif isinstance(raw_extra, str):
+                        try:
+                            extra_data = json.loads(raw_extra)
+                        except json.JSONDecodeError:
+                            extra_data = {}
+                    else:
+                        extra_data = raw_extra
                     return result[0], extra_data
                 else:
                     # Audit log failed state validation
@@ -867,4 +878,3 @@ class OAuthService:
         except Exception as e:
             logger.error(f"Failed to verify Apple ID token: {e}")
             raise OAuthError("Apple ID token verification failed")
-

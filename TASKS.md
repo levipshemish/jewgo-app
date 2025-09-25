@@ -22,7 +22,7 @@ Status: open — add new tasks here. Flip to Status: working before edits. Remov
 
 * [ ] OAuth Error Analysis — investigate OAuth failure patterns and authentication flow
 
-  * Status: open
+  * Status: working
   * Notes: User experiencing OAuth failures with error code `oauth_failed` and auth token clearing. Analysis completed.
     - OAuth error flow: Backend redirects to `/auth/error?error=oauth_failed` from multiple failure points in `backend/routes/v5/oauth_google.py`
     - Error page: `frontend/app/auth/error/AuthErrorHandler.tsx` logs detailed debug info and provides session clearing
@@ -30,6 +30,9 @@ Status: open — add new tasks here. Flip to Status: working before edits. Remov
     - Token clearing: When sync-user returns `authenticated: false` and `guest: undefined`, tokens are cleared automatically
     - Root cause: OAuth failures occur at multiple stages (service init, callback processing, token exchange, session creation)
     - Monitoring: Error details are logged with debug info including error_code, timestamp, url_params, and user_agent
+    - 📄 Requirements: `plans/REQ_google_oauth_state_fix.md`
+    - 📄 Design: `plans/DES_google_oauth_state_fix.md`
+    - 📄 Implementation: `plans/IMP_google_oauth_state_fix.md`
 
 * [x] **Deployment Issues Resolution** — fix critical deployment failures preventing server startup
 
