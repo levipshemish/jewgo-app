@@ -10,6 +10,8 @@ import { apiClient } from '@/lib/api/index-v5';
 import { validateAuthFromRequest } from '@/lib/api/utils-v5';
 import type { EntityFilters, PaginationOptions } from '@/lib/api/types-v5';
 
+const DEFAULT_DISTANCE_RADIUS_KM = parseFloat(process.env.NEXT_PUBLIC_DEFAULT_DISTANCE_RADIUS_KM || '10000');
+
 export async function GET(request: NextRequest) {
   try {
     // Parse search parameters
@@ -68,8 +70,11 @@ export async function GET(request: NextRequest) {
     if (filters.location) {
       backendParams.set('latitude', filters.location.latitude.toString());
       backendParams.set('longitude', filters.location.longitude.toString());
+
       if (typeof filters.location.radius === 'number') {
         backendParams.set('radius', filters.location.radius.toString());
+      } else if (!searchParams.get('radius') && Number.isFinite(DEFAULT_DISTANCE_RADIUS_KM)) {
+        backendParams.set('radius', DEFAULT_DISTANCE_RADIUS_KM.toString());
       }
     }
 
