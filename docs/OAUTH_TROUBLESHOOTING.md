@@ -15,7 +15,43 @@ curl -I https://api.jewgo.app/api/v5/auth/google/start
 curl -s https://api.jewgo.app/oauth-debug | jq .
 ```
 
-### 2. Verify Environment Variables
+### 2. Check cbid Correlation Flow
+The new OAuth system uses `cbid` (correlation ID) for tracking:
+- Each OAuth flow gets a unique `cbid` (e.g., `oauth_1758822715_1721801`)
+- `cbid` is stored in `oauth_cbid` cookie and Redis handshake
+- All logs are correlated by `cbid` for easier debugging
+
+```bash
+# Check Redis handshake data
+redis-cli KEYS "oauth:cbid:*"
+redis-cli GET "oauth:cbid:oauth_1758822715_1721801"
+
+# Check logs for specific cbid
+grep "oauth_1758822715_1721801" /var/log/nginx/access.log
+```
+
+### 3. Step-Level Diagnostics
+The new OAuth system provides detailed step-level logging:
+
+```bash
+# Check for specific OAuth steps in logs
+grep "callback_start" /var/log/backend.log
+grep "handshake_load" /var/log/backend.log
+grep "state_check" /var/log/backend.log
+grep "pkce_check" /var/log/backend.log
+grep "token_exchange" /var/log/backend.log
+grep "session_write" /var/log/backend.log
+```
+
+Each step logs structured data:
+- `callback_start { cbid, hasCode, hasState }`
+- `handshake_load { found, ttl }`
+- `state_check { equal }`
+- `pkce_check { present }`
+- `token_exchange { ok, status }`
+- `session_write { ok }`
+
+### 4. Verify Environment Variables
 Required variables on the backend server:
 ```bash
 FRONTEND_URL=https://jewgo.app
@@ -23,6 +59,7 @@ GOOGLE_REDIRECT_URI=https://api.jewgo.app/api/v5/auth/google/callback
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 OAUTH_STATE_SIGNING_KEY=your_32_character_signing_key
+REDIS_URL=redis://localhost:6379/0
 ```
 
 ## 🛠️ Common Fixes
@@ -62,6 +99,26 @@ OAUTH_STATE_SIGNING_KEY=your_32_character_signing_key
 2. Update `GOOGLE_CLIENT_SECRET` in server environment
 3. Restart backend service
 
+### Fix 5: Missing oauth_states_v5.extra_data Column (Hotfix + Migration)
+**Problem:** Backend expects `oauth_states_v5.extra_data` JSONB column. If missing in production DB, callback may fail with `callback_processing_failed` and redirect to `/auth/error?error=oauth_failed`.
+
+**Solution:**
+- Code now includes a safe fallback: if the column is missing, state is stored and validated without `extra_data` to avoid breaking OAuth.
+- Plan to apply the migration to add the column for full functionality.
+
+**Migration (apply during maintenance window):**
+```sql
+-- backend/migrations/add_extra_data_to_oauth_states_v5.sql
+ALTER TABLE oauth_states_v5
+    ADD COLUMN IF NOT EXISTS extra_data JSONB;
+```
+
+**Operational steps:**
+1) Backup: create a fresh DB snapshot.
+2) Review and run the SQL on the production DB.
+3) Verify: `SELECT column_name FROM information_schema.columns WHERE table_name='oauth_states_v5';`
+4) Monitor OAuth sign-ins and logs after change.
+
 ## 🔧 Testing OAuth Flow
 
 ### Test 1: Start OAuth Flow
@@ -83,13 +140,42 @@ curl -s "https://api.jewgo.app/api/v5/auth/google/callback?error=access_denied"
 # Should redirect to: https://jewgo.app/auth/error?error=oauth_denied
 ```
 
+### Test 4: Validate State Table and Column
+```sql
+SELECT COUNT(*) FROM oauth_states_v5;
+SELECT return_to, consumed_at FROM oauth_states_v5 ORDER BY created_at DESC LIMIT 5;
+-- Optional after migration:
+SELECT jsonb_typeof(extra_data) FROM oauth_states_v5 WHERE extra_data IS NOT NULL LIMIT 5;
+```
+
+### Test 5: OAuth Canary Test
+Use the canary script to test token exchange manually:
+```bash
+# Get authorization code from OAuth flow
+# Then test token exchange
+./scripts/oauth_canary.sh <authorization_code>
+
+# The script will:
+# 1. Generate PKCE verifier/challenge
+# 2. Exchange code for tokens
+# 3. Test profile fetch
+# 4. Show detailed error information
+```
+
 ## 📝 Error Code Meanings
 
 | Error Code | Meaning | Solution |
 |------------|---------|----------|
 | `oauth_denied` | User cancelled OAuth | Normal - user chose not to sign in |
 | `missing_params` | No code/state in callback | Check OAuth flow, may be direct access |
-| `oauth_failed` | Token exchange failed | Check Google credentials and redirect URI |
+| `handshake_missing` | Redis handshake not found | Check Redis connection, cbid cookie |
+| `state_mismatch` | State parameter mismatch | Check handshake data integrity |
+| `pkce_missing` | PKCE verifier missing | Check Redis handshake storage |
+| `token_exchange_failed` | Google token exchange failed | Check credentials, redirect URI |
+| `id_token_invalid` | ID token validation failed | Check nonce, audience, issuer |
+| `session_write_failed` | Cookie setting failed | Check cookie policy, domain |
+| `code_replayed` | Authorization code already used | Check handshake usage tracking |
+| `oauth_failed` | Generic OAuth failure | Check logs for specific error |
 | `service_error` | OAuth service crashed | Check environment variables and logs |
 
 ## 🚀 Quick Fix Commands

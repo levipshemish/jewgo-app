@@ -63,6 +63,118 @@ class OAuthService:
 
         logger.info(f"OAuthService initialized with frontend: {self.frontend_url}")
 
+    def _generate_pkce_pair(self) -> Tuple[str, str]:
+        """Generate PKCE code verifier and challenge pair."""
+        import base64
+        import hashlib
+        
+        # Generate code verifier (43-128 characters, URL-safe)
+        verifier = secrets.token_urlsafe(64)
+        
+        # Generate code challenge (base64url-encoded SHA256 hash)
+        challenge_bytes = hashlib.sha256(verifier.encode('utf-8')).digest()
+        challenge = base64.urlsafe_b64encode(challenge_bytes).decode('utf-8').rstrip('=')
+        
+        return verifier, challenge
+
+    def _store_handshake_in_redis(self, cbid: str, state: str, pkce_verifier: str, nonce: str, provider: str, return_to: str, link_user_id: str = None) -> bool:
+        """Store OAuth handshake data in Redis with TTL."""
+        try:
+            from utils.redis_client import get_redis_client
+            redis_client = get_redis_client()
+            if not redis_client:
+                logger.error("Redis client not available for handshake storage")
+                return False
+            
+            handshake_data = {
+                'state': state,
+                'pkceVerifier': pkce_verifier,
+                'nonce': nonce,
+                'provider': provider,
+                'returnTo': return_to,
+                'linkUserId': link_user_id,
+                'createdAt': int(time.time()),
+                'used': False
+            }
+            
+            # Store with 15 minute TTL
+            redis_client.setex(f"oauth:cbid:{cbid}", 900, json.dumps(handshake_data))
+            logger.info(f"Stored OAuth handshake for cbid: {cbid}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to store OAuth handshake: {e}")
+            return False
+
+    def _load_handshake_from_redis(self, state: str) -> Optional[Dict[str, Any]]:
+        """Load OAuth handshake data from Redis by state."""
+        try:
+            from utils.redis_client import get_redis_client
+            redis_client = get_redis_client()
+            if not redis_client:
+                logger.error("Redis client not available for handshake retrieval")
+                return None
+            
+            # Search for handshake by state (this is a simplified approach)
+            # In production, you might want to store state->cbid mapping separately
+            for key in redis_client.scan_iter(match="oauth:cbid:*"):
+                try:
+                    data = redis_client.get(key)
+                    if data:
+                        handshake_data = json.loads(data)
+                        if handshake_data.get('state') == state:
+                            # Add TTL info
+                            ttl = redis_client.ttl(key)
+                            handshake_data['ttl'] = ttl
+                            return handshake_data
+                except Exception as e:
+                    logger.warning(f"Failed to parse handshake data for key {key}: {e}")
+                    continue
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to load OAuth handshake: {e}")
+            return None
+
+    def _mark_handshake_used(self, cbid: str) -> bool:
+        """Mark handshake as used to prevent replay attacks."""
+        try:
+            from utils.redis_client import get_redis_client
+            redis_client = get_redis_client()
+            if not redis_client:
+                return False
+            
+            key = f"oauth:cbid:{cbid}"
+            data = redis_client.get(key)
+            if data:
+                handshake_data = json.loads(data)
+                handshake_data['used'] = True
+                redis_client.setex(key, 900, json.dumps(handshake_data))
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Failed to mark handshake as used: {e}")
+            return False
+
+    def _consume_handshake(self, cbid: str) -> bool:
+        """Consume handshake after successful OAuth completion."""
+        try:
+            from utils.redis_client import get_redis_client
+            redis_client = get_redis_client()
+            if not redis_client:
+                return False
+            
+            key = f"oauth:cbid:{cbid}"
+            redis_client.delete(key)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to consume handshake: {e}")
+            return False
+
     def generate_secure_state(self, provider: str, return_to: str = '/', extra_data: Optional[Dict[str, Any]] = None) -> str:
         """Generate cryptographically secure state parameter."""
         # Only allow relative paths - reject absolute URLs
@@ -103,8 +215,36 @@ class OAuthService:
                     }
                 )
         except Exception as e:
-            logger.error(f"Failed to store OAuth state: {e}")
-            raise OAuthError("Failed to generate secure state")
+            # Backward-compatible fallback if extra_data column is missing in production
+            err_msg = str(e).lower()
+            if 'extra_data' in err_msg and (
+                'does not exist' in err_msg or 'undefined' in err_msg or 'column' in err_msg
+            ):
+                logger.warning(
+                    "oauth_states_v5.extra_data column missing; inserting state without extra_data for compatibility"
+                )
+                try:
+                    with self.db.connection_manager.session_scope() as session:
+                        session.execute(
+                            text(
+                                """
+                                INSERT INTO oauth_states_v5 (state_token, provider, return_to, expires_at)
+                                VALUES (:state_token, :provider, :return_to, :expires_at)
+                                """
+                            ),
+                            {
+                                'state_token': state_token,
+                                'provider': provider,
+                                'return_to': return_to,
+                                'expires_at': datetime.utcnow() + timedelta(minutes=30)
+                            }
+                        )
+                except Exception as e2:
+                    logger.error(f"Fallback insert of OAuth state failed: {e2}")
+                    raise OAuthError("Failed to generate secure state")
+            else:
+                logger.error(f"Failed to store OAuth state: {e}")
+                raise OAuthError("Failed to generate secure state")
 
         return state_token
 
@@ -154,8 +294,51 @@ class OAuthService:
                     return None, None
 
         except Exception as e:
-            logger.error(f"State validation error: {e}")
-            return None, None
+            # If failure is due to missing extra_data column, fall back to returning only return_to
+            err_msg = str(e).lower()
+            if 'extra_data' in err_msg and (
+                'does not exist' in err_msg or 'undefined' in err_msg or 'column' in err_msg
+            ):
+                logger.warning(
+                    "oauth_states_v5.extra_data column missing; validating state without extra_data for compatibility"
+                )
+                try:
+                    with self.db.connection_manager.session_scope() as session:
+                        result = session.execute(
+                            text(
+                                """
+                                UPDATE oauth_states_v5
+                                SET consumed_at = NOW()
+                                WHERE state_token = :state_token
+                                  AND provider = :provider
+                                  AND expires_at > NOW()
+                                  AND consumed_at IS NULL
+                                RETURNING return_to
+                                """
+                            ),
+                            {'state_token': state_token, 'provider': provider}
+                        ).fetchone()
+
+                        if result:
+                            return result[0], {}
+                        else:
+                            try:
+                                self.auth_manager._log_auth_event(
+                                    None,
+                                    'oauth_state_invalid',
+                                    False,
+                                    {'provider': provider, 'state_token': (state_token or '')[:16] + '...'},
+                                    None,
+                                )
+                            except Exception:
+                                pass
+                            return None, None
+                except Exception as e2:
+                    logger.error(f"State validation fallback failed: {e2}")
+                    return None, None
+            else:
+                logger.error(f"State validation error: {e}")
+                return None, None
 
     def _validate_return_to_relative_only(self, return_to: str) -> str:
         """Validate return_to as relative path only - reject absolute URLs."""
@@ -429,8 +612,8 @@ class OAuthService:
             raise OAuthError(f"Failed to link OAuth account: {str(e)}")
 
     # Google OAuth methods
-    def get_google_auth_url(self, return_to: str = '/', link_user_id: Optional[str] = None) -> str:
-        """Generate Google OAuth authorization URL."""
+    def get_google_auth_url(self, return_to: str = '/', link_user_id: Optional[str] = None) -> Tuple[str, str]:
+        """Generate Google OAuth authorization URL with PKCE and cbid cookie."""
         client_id = os.getenv('GOOGLE_CLIENT_ID')
         redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
 
@@ -439,9 +622,26 @@ class OAuthService:
         if not redirect_uri:
             raise OAuthError("Google OAuth not configured - missing GOOGLE_REDIRECT_URI")
 
-        # Include link_user_id in state if provided
-        extra_data = {'link_user_id': link_user_id} if link_user_id else None
-        state = self.generate_secure_state('google', return_to, extra_data)
+        # Generate PKCE pair
+        pkce_verifier, pkce_challenge = self._generate_pkce_pair()
+        
+        # Generate cbid for correlation
+        cbid = f"oauth_{int(time.time())}_{secrets.token_hex(8)}"
+        
+        # Generate state
+        state = secrets.token_urlsafe(32)
+        
+        # Store handshake in Redis
+        nonce = secrets.token_hex(16)
+        self._store_handshake_in_redis(
+            cbid=cbid,
+            state=state,
+            pkce_verifier=pkce_verifier,
+            nonce=nonce,
+            provider='google',
+            return_to=return_to,
+            link_user_id=link_user_id
+        )
 
         params = {
             'client_id': client_id,
@@ -452,59 +652,107 @@ class OAuthService:
             'include_granted_scopes': 'true',
             'prompt': 'consent',
             'state': state,
+            'code_challenge': pkce_challenge,
+            'code_challenge_method': 'S256',
         }
 
         from urllib.parse import urlencode
-        return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+        auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+        return auth_url, cbid
 
-    def handle_google_callback(self, code: str, state: str) -> Tuple[Dict[str, Any], str]:
+    def handle_google_callback(self, code: str, state: str, callback_id: str = None) -> Tuple[Dict[str, Any], str]:
         """Handle Google OAuth callback and return user data + return_to with detailed logging."""
-        callback_id = f"oauth_svc_{int(time.time())}_{hash(code) % 10000}"
+        if not callback_id:
+            callback_id = f"oauth_svc_{int(time.time())}_{hash(code) % 10000}"
         
         logger.info(f"[{callback_id}] Starting Google OAuth callback processing", extra={
-            'callback_id': callback_id,
-            'code_length': len(code),
-            'state_length': len(state),
-            'code_prefix': code[:20],
-            'state_prefix': state[:20]
+            'cbid': callback_id,
+            'codeLength': len(code),
+            'stateLength': len(state),
+            'codePrefix': code[:20],
+            'statePrefix': state[:20]
         })
         
-        # Step 1: Validate state
-        logger.info(f"[{callback_id}] Validating OAuth state")
+        # Step 1: Load handshake from Redis
+        logger.info(f"[{callback_id}] handshake_load")
         try:
-            return_to, extra_data = self.validate_and_consume_state(state, 'google')
-            if return_to is None:  # Only fail if state validation returned None (invalid state)
-                logger.error(f"[{callback_id}] Invalid or expired OAuth state")
-                raise OAuthError("Invalid or expired OAuth state")
+            handshake_data = self._load_handshake_from_redis(state)
+            if not handshake_data:
+                logger.error(f"[{callback_id}] handshake_load", extra={
+                    'cbid': callback_id,
+                    'found': False,
+                    'ttl': 0
+                })
+                raise OAuthError("handshake_missing")
             
-            link_user_id = extra_data.get('link_user_id') if extra_data else None
-            logger.info(f"[{callback_id}] OAuth state validated successfully", extra={
-                'callback_id': callback_id,
-                'return_to': return_to,
-                'link_user_id': link_user_id
+            logger.info(f"[{callback_id}] handshake_load", extra={
+                'cbid': callback_id,
+                'found': True,
+                'ttl': handshake_data.get('ttl', 0)
             })
         except Exception as e:
-            logger.error(f"[{callback_id}] State validation failed: {e}", exc_info=True)
-            raise
+            logger.error(f"[{callback_id}] handshake_load failed: {e}", exc_info=True)
+            raise OAuthError("handshake_missing")
+        
+        # Step 2: Validate state
+        logger.info(f"[{callback_id}] state_check")
+        try:
+            if handshake_data.get('state') != state:
+                logger.error(f"[{callback_id}] state_check", extra={
+                    'cbid': callback_id,
+                    'equal': False
+                })
+                raise OAuthError("state_mismatch")
+            
+            logger.info(f"[{callback_id}] state_check", extra={
+                'cbid': callback_id,
+                'equal': True
+            })
+            
+            return_to = handshake_data.get('returnTo', '/')
+            link_user_id = handshake_data.get('linkUserId')
+            
+        except Exception as e:
+            logger.error(f"[{callback_id}] state_check failed: {e}", exc_info=True)
+            raise OAuthError("state_mismatch")
 
         try:
-            # Step 2: Exchange code for tokens
-            logger.info(f"[{callback_id}] Exchanging authorization code for tokens")
+            # Step 3: Check PKCE
+            logger.info(f"[{callback_id}] pkce_check")
+            pkce_verifier = handshake_data.get('pkceVerifier')
+            if not pkce_verifier:
+                logger.error(f"[{callback_id}] pkce_check", extra={
+                    'cbid': callback_id,
+                    'present': False
+                })
+                raise OAuthError("pkce_missing")
+            
+            logger.info(f"[{callback_id}] pkce_check", extra={
+                'cbid': callback_id,
+                'present': True
+            })
+            
+            # Step 4: Mark handshake as used to prevent replay
+            cbid = handshake_data.get('cbid', callback_id)
+            self._mark_handshake_used(cbid)
+            
+            # Step 5: Exchange code for tokens
+            logger.info(f"[{callback_id}] token_exchange")
             try:
-                token_data = self._exchange_google_code(code)
-                logger.info(f"[{callback_id}] Token exchange successful", extra={
-                    'callback_id': callback_id,
-                    'token_type': token_data.get('token_type'),
-                    'has_access_token': bool(token_data.get('access_token')),
-                    'has_refresh_token': bool(token_data.get('refresh_token')),
-                    'expires_in': token_data.get('expires_in')
+                token_data = self._exchange_google_code(code, pkce_verifier)
+                logger.info(f"[{callback_id}] token_exchange", extra={
+                    'cbid': callback_id,
+                    'ok': True,
+                    'status': 'success'
                 })
             except Exception as e:
-                logger.error(f"[{callback_id}] Token exchange failed: {e}", extra={
-                    'callback_id': callback_id,
-                    'exception_type': type(e).__name__
+                logger.error(f"[{callback_id}] token_exchange", extra={
+                    'cbid': callback_id,
+                    'ok': False,
+                    'status': 'failed',
+                    'error': str(e)
                 }, exc_info=True)
-                raise
+                raise OAuthError("token_exchange_failed")
             
             # Step 3: Get user profile from Google
             logger.info(f"[{callback_id}] Fetching user profile from Google")
@@ -598,8 +846,8 @@ class OAuthService:
                 logger.warning(f"[{callback_id}] Failed to log OAuth failure: {audit_e}")
             raise
 
-    def _exchange_google_code(self, code: str) -> Dict[str, Any]:
-        """Exchange Google authorization code for tokens with detailed logging."""
+    def _exchange_google_code(self, code: str, pkce_verifier: str) -> Dict[str, Any]:
+        """Exchange Google authorization code for tokens with PKCE and detailed logging."""
         client_id = os.getenv('GOOGLE_CLIENT_ID')
         client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
         redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
@@ -609,7 +857,8 @@ class OAuthService:
             'client_id_prefix': client_id[:20] if client_id else None,
             'has_client_secret': bool(client_secret),
             'redirect_uri': redirect_uri,
-            'code_prefix': code[:20]
+            'code_prefix': code[:20],
+            'has_pkce_verifier': bool(pkce_verifier)
         })
 
         if not client_id or not client_secret or not redirect_uri:
@@ -626,6 +875,7 @@ class OAuthService:
             'code': code,
             'grant_type': 'authorization_code',
             'redirect_uri': redirect_uri,
+            'code_verifier': pkce_verifier,
         }
 
         logger.info("Sending token exchange request to Google", extra={

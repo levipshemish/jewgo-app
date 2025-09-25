@@ -38,7 +38,7 @@ def _get_oauth_service():
 @google_oauth_bp.route('/start', methods=['GET'])
 @rate_limit_by_user(max_requests=20, window_minutes=60)
 def google_oauth_start():
-    """Initiate Google OAuth flow."""
+    """Initiate Google OAuth flow with cbid cookie."""
     try:
         # Check if Google OAuth is configured
         if not os.getenv('GOOGLE_CLIENT_ID'):
@@ -49,12 +49,33 @@ def google_oauth_start():
             }), 501
 
         return_to = request.args.get('returnTo', '/')
+        link_user_id = request.args.get('linkUserId')
         oauth_service = _get_oauth_service()
 
-        auth_url = oauth_service.get_google_auth_url(return_to)
+        auth_url, cbid = oauth_service.get_google_auth_url(return_to, link_user_id)
 
-        logger.info(f"Google OAuth initiated, return_to: {return_to}")
-        return redirect(auth_url)
+        logger.info(f"Google OAuth initiated, return_to: {return_to}, cbid: {cbid}")
+        
+        # Create response with redirect
+        response = make_response(redirect(auth_url))
+        
+        # Set oauth_cbid cookie
+        from services.auth.cookies import CookiePolicyManager
+        policy_manager = CookiePolicyManager()
+        cookie_config = policy_manager.get_cookie_config()
+        
+        response.set_cookie(
+            'oauth_cbid',
+            cbid,
+            httponly=True,
+            secure=cookie_config.get('secure', True),
+            samesite=cookie_config.get('samesite', 'None'),
+            max_age=900,  # 15 minutes
+            domain=cookie_config.get('domain'),
+            path='/'
+        )
+        
+        return response
 
     except ValueError as e:
         logger.error(f"Google OAuth configuration error: {e}")
@@ -82,12 +103,12 @@ def google_oauth_start():
 @google_oauth_bp.route('/callback', methods=['GET'])
 @rate_limit_by_user(max_requests=20, window_minutes=60)
 def google_oauth_callback():
-    """Handle Google OAuth callback with comprehensive logging."""
-    # Enhanced logging for OAuth debugging
+    """Handle Google OAuth callback with step-level diagnostics and cbid correlation."""
+    # Enhanced logging for OAuth debugging with cbid correlation
     callback_id = f"oauth_{int(time.time())}_{request.remote_addr.replace('.', '')}"
     
-    logger.info(f"[{callback_id}] Google OAuth callback initiated", extra={
-        'callback_id': callback_id,
+    logger.info(f"[{callback_id}] callback_start", extra={
+        'cbid': callback_id,
         'ip': request.remote_addr,
         'user_agent': request.headers.get('User-Agent'),
         'referer': request.headers.get('Referer'),
@@ -102,7 +123,7 @@ def google_oauth_callback():
         # Get configured frontend URL (never trust headers)
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
         
-        # Helper for consistent error redirects with diagnostic breadcrumbs
+        # Helper for consistent error redirects with step-level error codes
         def _error_redirect(step: str, error_code: str = 'oauth_failed', description: str | None = None):
             ts = int(time.time() * 1000)
             # Prefer description for more specific provider errors when available; fallback to step
@@ -116,15 +137,13 @@ def google_oauth_callback():
                 f"&cbid={quote_plus(callback_id)}"
             )
         
-        logger.info(f"[{callback_id}] OAuth callback parameters", extra={
-            'callback_id': callback_id,
-            'has_code': bool(code),
-            'code_length': len(code) if code else 0,
-            'has_state': bool(state),
-            'state_length': len(state) if state else 0,
-            'has_error': bool(error),
-            'error_value': error,
-            'frontend_url': frontend_url
+        logger.info(f"[{callback_id}] callback_start", extra={
+            'cbid': callback_id,
+            'hasCode': bool(code),
+            'hasState': bool(state),
+            'hasError': bool(error),
+            'errorValue': error,
+            'frontendUrl': frontend_url
         })
 
         if error:
@@ -133,9 +152,9 @@ def google_oauth_callback():
 
         if not code or not state:
             logger.warning(f"[{callback_id}] Missing required OAuth parameters", extra={
-                'callback_id': callback_id,
-                'missing_code': not code,
-                'missing_state': not state
+                'cbid': callback_id,
+                'missingCode': not code,
+                'missingState': not state
             })
             return _error_redirect('missing_params', 'missing_params')
 
@@ -146,25 +165,25 @@ def google_oauth_callback():
             logger.info(f"[{callback_id}] OAuth service initialized successfully")
         except Exception as e:
             logger.error(f"[{callback_id}] Failed to initialize OAuth service: {e}", exc_info=True)
-            return _error_redirect('service_init_failed')
+            return _error_redirect('service_init_failed', 'service_error')
         
         # Step 2: Handle Google callback (token exchange + profile fetch)
         logger.info(f"[{callback_id}] Processing Google OAuth callback")
         try:
-            user_data, return_to = oauth_service.handle_google_callback(code, state)
+            user_data, return_to = oauth_service.handle_google_callback(code, state, callback_id)
             logger.info(f"[{callback_id}] Google OAuth callback processed successfully", extra={
-                'callback_id': callback_id,
-                'user_id': user_data.get('id', 'unknown'),
-                'user_email': user_data.get('email', 'unknown'),
-                'is_new_user': user_data.get('is_new', False),
-                'return_to': return_to
+                'cbid': callback_id,
+                'userId': user_data.get('id', 'unknown'),
+                'userEmail': user_data.get('email', 'unknown'),
+                'isNewUser': user_data.get('is_new', False),
+                'returnTo': return_to
             })
         except Exception as e:
             logger.error(f"[{callback_id}] Google OAuth callback processing failed: {e}", extra={
-                'callback_id': callback_id,
-                'exception_type': type(e).__name__,
-                'code_prefix': code[:20] if code else None,
-                'state_prefix': state[:20] if state else None
+                'cbid': callback_id,
+                'exceptionType': type(e).__name__,
+                'codePrefix': code[:20] if code else None,
+                'statePrefix': state[:20] if state else None
             }, exc_info=True)
             # Try to surface provider error code for easier diagnosis (e.g., invalid_grant, invalid_client)
             err_msg = (str(e) or '').lower()
@@ -179,26 +198,26 @@ def google_oauth_callback():
         logger.info(f"[{callback_id}] Generating authentication tokens")
         try:
             tokens = auth_service.generate_tokens(user_data, remember_me=True)
-            logger.info(f"[{callback_id}] Tokens generated successfully", extra={
-                'callback_id': callback_id,
-                'has_access_token': bool(tokens.get('access_token')),
-                'has_refresh_token': bool(tokens.get('refresh_token')),
-                'expires_in': tokens.get('expires_in'),
-                'token_type': tokens.get('token_type')
+            logger.info(f"[{callback_id}] token_generation", extra={
+                'cbid': callback_id,
+                'hasAccessToken': bool(tokens.get('access_token')),
+                'hasRefreshToken': bool(tokens.get('refresh_token')),
+                'expiresIn': tokens.get('expires_in'),
+                'tokenType': tokens.get('token_type')
             })
         except Exception as e:
             logger.error(f"[{callback_id}] Token generation failed: {e}", extra={
-                'callback_id': callback_id,
-                'user_id': user_data.get('id', 'unknown')
+                'cbid': callback_id,
+                'userId': user_data.get('id', 'unknown')
             }, exc_info=True)
-            return _error_redirect('token_generation_failed')
+            return _error_redirect('token_generation_failed', 'session_write_failed')
 
         # Step 4: Prepare redirect response
         redirect_url = f"{frontend_url}{return_to}"
         logger.info(f"[{callback_id}] Preparing redirect response", extra={
-            'callback_id': callback_id,
-            'redirect_url': redirect_url,
-            'return_to': return_to
+            'cbid': callback_id,
+            'redirectUrl': redirect_url,
+            'returnTo': return_to
         })
 
         try:
@@ -206,7 +225,7 @@ def google_oauth_callback():
             logger.info(f"[{callback_id}] Redirect response created successfully")
         except Exception as e:
             logger.error(f"[{callback_id}] Failed to create redirect response: {e}", exc_info=True)
-            return _error_redirect('redirect_creation_failed')
+            return _error_redirect('redirect_creation_failed', 'service_error')
 
         # Step 5: Set authentication cookies
         logger.info(f"[{callback_id}] Setting authentication cookies")
@@ -217,10 +236,13 @@ def google_oauth_callback():
                 tokens.get('refresh_token', ''),
                 int(tokens.get('expires_in', 3600)),
             )
-            logger.info(f"[{callback_id}] Authentication cookies set successfully")
+            logger.info(f"[{callback_id}] session_write", extra={
+                'cbid': callback_id,
+                'ok': True
+            })
         except Exception as e:
             logger.error(f"[{callback_id}] Failed to set authentication cookies: {e}", exc_info=True)
-            return _error_redirect('cookie_set_failed')
+            return _error_redirect('cookie_set_failed', 'session_write_failed')
 
         # Step 6: Audit logging
         logger.info(f"[{callback_id}] Recording OAuth success audit log")
@@ -240,10 +262,10 @@ def google_oauth_callback():
 
         # Step 7: Final success
         logger.info(f"[{callback_id}] Google OAuth completed successfully", extra={
-            'callback_id': callback_id,
-            'user_id': user_data['id'],
-            'redirect_url': redirect_url,
-            'final_status': 'success'
+            'cbid': callback_id,
+            'userId': user_data['id'],
+            'redirectUrl': redirect_url,
+            'finalStatus': 'success'
         })
         return response
 

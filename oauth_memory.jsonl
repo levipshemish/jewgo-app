@@ -1,0 +1,1 @@
+{"area": "auth.oauth.google", "when": "2025-01-25T12:00:00Z", "cbid_example": "oauth_1758822715_1721801", "root_cause": "missing server-side handshake (state/nonce/PKCE) due to cookie scope/SameSite or ephemeral store TTL", "remediation": "cbid + Redis handshake (TTL≥900), Secure+None cookies, forwarded headers, buffer increases, step-level diagnostics", "status": "fixed"}

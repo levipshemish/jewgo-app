@@ -28,7 +28,7 @@ Status: open — add new tasks here. Flip to Status: working before edits. Remov
     - Error page: `frontend/app/auth/error/AuthErrorHandler.tsx` logs detailed debug info and provides session clearing
     - Auth sync: `frontend/lib/auth/postgres-auth.ts` calls `/sync-user` endpoint to validate tokens
     - Token clearing: When sync-user returns `authenticated: false` and `guest: undefined`, tokens are cleared automatically
-    - Root cause: OAuth failures occur at multiple stages (service init, callback processing, token exchange, session creation)
+    - Root cause: In some environments, missing DB column `oauth_states_v5.extra_data` caused callback failures. Hotfix added; migration available.
     - Monitoring: Error details are logged with debug info including error_code, timestamp, url_params, and user_agent
     - 📄 Requirements: `plans/REQ_google_oauth_state_fix.md`
     - 📄 Design: `plans/DES_google_oauth_state_fix.md`
