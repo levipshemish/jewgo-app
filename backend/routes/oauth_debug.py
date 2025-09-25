@@ -5,7 +5,7 @@ This is a temporary debug endpoint to help identify OAuth failures.
 
 import os
 from datetime import datetime
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, current_app
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -103,3 +103,22 @@ def oauth_debug():
             'error': str(e),
             'note': 'Debug endpoint failed'
         }), 500
+
+
+@oauth_debug_bp.route('/oauth-debug/routes', methods=['GET'])
+def list_routes():
+    """List registered routes to verify OAuth endpoints are mounted."""
+    try:
+        rules = []
+        for rule in current_app.url_map.iter_rules():
+            rules.append({
+                'endpoint': rule.endpoint,
+                'methods': sorted(list(rule.methods or [])),
+                'rule': str(rule)
+            })
+        # Filter highlights
+        highlights = [r for r in rules if '/api/v5/auth' in r['rule'] or 'google' in r['rule']]
+        return jsonify({'success': True, 'count': len(rules), 'highlights': highlights, 'routes': rules})
+    except Exception as e:
+        logger.error(f"Failed to list routes: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
