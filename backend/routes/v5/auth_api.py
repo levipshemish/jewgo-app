@@ -19,6 +19,7 @@ from services.auth.token_manager_v5 import TokenManagerV5
 from services.auth.cookies import set_auth, clear_auth
 from services.auth.jwks_manager import JWKSManager
 from services.auth.sessions import revoke_family
+from services.oauth_service_v5 import OAuthService, OAuthError
 from utils.postgres_auth import get_postgres_auth
 from utils.logging_config import get_logger
 from utils.feature_flags_v5 import feature_flags_v5

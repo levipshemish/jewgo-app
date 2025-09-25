@@ -976,6 +976,18 @@ def create_app(config_class=None):
             logger.info("V5 feature flags API blueprint registered (fallback)")
         except ImportError:
             pass
+
+    # Ensure Google OAuth blueprint is registered even if earlier registration path was skipped
+    try:
+        if 'google_oauth' not in app.blueprints:
+            logger.info("Google OAuth blueprint not found; attempting late registration")
+            from routes.v5.oauth_google import google_oauth_bp
+            app.register_blueprint(google_oauth_bp)
+            logger.info("Google OAuth blueprint registered in late phase")
+        else:
+            logger.info("Google OAuth blueprint already registered")
+    except Exception as e:
+        logger.warning(f"Late registration of Google OAuth blueprint failed: {e}")
     
     # Register error handlers
     @app.errorhandler(404)
