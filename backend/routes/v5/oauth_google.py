@@ -103,15 +103,18 @@ def google_oauth_callback():
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
         
         # Helper for consistent error redirects with diagnostic breadcrumbs
-        def _error_redirect(step: str, error_code: str = 'oauth_failed'):
+def _error_redirect(step: str, error_code: str = 'oauth_failed', description: str | None = None):
             ts = int(time.time() * 1000)
-            return redirect(
-                f"{frontend_url}/auth/error?error={error_code}"
-                f"&error_step={quote_plus(step)}"
-                f"&details={quote_plus(step)}"
-                f"&timestamp={ts}"
-                f"&cbid={quote_plus(callback_id)}"
-            )
+    # Prefer description for more specific provider errors when available; fallback to step
+    details_value = description or step
+    return redirect(
+        f"{frontend_url}/auth/error?error={error_code}"
+        f"&error_step={quote_plus(step)}"
+        f"&description={quote_plus(details_value)}"
+        f"&details={quote_plus(details_value)}"
+        f"&timestamp={ts}"
+        f"&cbid={quote_plus(callback_id)}"
+    )
         
         logger.info(f"[{callback_id}] OAuth callback parameters", extra={
             'callback_id': callback_id,
@@ -163,7 +166,14 @@ def google_oauth_callback():
                 'code_prefix': code[:20] if code else None,
                 'state_prefix': state[:20] if state else None
             }, exc_info=True)
-            return _error_redirect('callback_processing_failed')
+            # Try to surface provider error code for easier diagnosis (e.g., invalid_grant, invalid_client)
+            err_msg = (str(e) or '').lower()
+            provider_error = None
+            for token in ['invalid_grant', 'invalid_client', 'redirect_uri_mismatch', 'access_denied', 'unauthorized_client']:
+                if token in err_msg:
+                    provider_error = token
+                    break
+            return _error_redirect('callback_processing_failed', 'oauth_failed', provider_error)
 
         # Step 3: Generate authentication tokens
         logger.info(f"[{callback_id}] Generating authentication tokens")
