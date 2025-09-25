@@ -13,6 +13,7 @@ from services.oauth_service_v5 import OAuthService, OAuthError
 from services.auth_service_v5 import AuthServiceV5
 from services.auth.cookies import set_auth
 from utils.logging_config import get_logger
+from urllib.parse import quote_plus
 
 logger = get_logger(__name__)
 
@@ -101,6 +102,16 @@ def google_oauth_callback():
         # Get configured frontend URL (never trust headers)
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
         
+        # Helper for consistent error redirects with diagnostic breadcrumbs
+        def _error_redirect(step: str, error_code: str = 'oauth_failed'):
+            ts = int(time.time() * 1000)
+            return redirect(
+                f"{frontend_url}/auth/error?error={error_code}"
+                f"&error_step={quote_plus(step)}"
+                f"&details={quote_plus(step)}"
+                f"&timestamp={ts}"
+            )
+        
         logger.info(f"[{callback_id}] OAuth callback parameters", extra={
             'callback_id': callback_id,
             'has_code': bool(code),
@@ -114,7 +125,7 @@ def google_oauth_callback():
 
         if error:
             logger.warning(f"[{callback_id}] Google OAuth returned error: {error}")
-            return redirect(f"{frontend_url}/auth/error?error=oauth_denied")
+            return _error_redirect('provider_denied', 'oauth_denied')
 
         if not code or not state:
             logger.warning(f"[{callback_id}] Missing required OAuth parameters", extra={
@@ -122,7 +133,7 @@ def google_oauth_callback():
                 'missing_code': not code,
                 'missing_state': not state
             })
-            return redirect(f"{frontend_url}/auth/error?error=missing_params")
+            return _error_redirect('missing_params', 'missing_params')
 
         # Step 1: Initialize OAuth service
         logger.info(f"[{callback_id}] Initializing OAuth service")
@@ -131,7 +142,7 @@ def google_oauth_callback():
             logger.info(f"[{callback_id}] OAuth service initialized successfully")
         except Exception as e:
             logger.error(f"[{callback_id}] Failed to initialize OAuth service: {e}", exc_info=True)
-            return redirect(f"{frontend_url}/auth/error?error=oauth_failed")
+            return _error_redirect('service_init_failed')
         
         # Step 2: Handle Google callback (token exchange + profile fetch)
         logger.info(f"[{callback_id}] Processing Google OAuth callback")
@@ -151,7 +162,7 @@ def google_oauth_callback():
                 'code_prefix': code[:20] if code else None,
                 'state_prefix': state[:20] if state else None
             }, exc_info=True)
-            return redirect(f"{frontend_url}/auth/error?error=oauth_failed")
+            return _error_redirect('callback_processing_failed')
 
         # Step 3: Generate authentication tokens
         logger.info(f"[{callback_id}] Generating authentication tokens")
@@ -169,7 +180,7 @@ def google_oauth_callback():
                 'callback_id': callback_id,
                 'user_id': user_data.get('id', 'unknown')
             }, exc_info=True)
-            return redirect(f"{frontend_url}/auth/error?error=oauth_failed")
+            return _error_redirect('token_generation_failed')
 
         # Step 4: Prepare redirect response
         redirect_url = f"{frontend_url}{return_to}"
@@ -184,7 +195,7 @@ def google_oauth_callback():
             logger.info(f"[{callback_id}] Redirect response created successfully")
         except Exception as e:
             logger.error(f"[{callback_id}] Failed to create redirect response: {e}", exc_info=True)
-            return redirect(f"{frontend_url}/auth/error?error=oauth_failed")
+            return _error_redirect('redirect_creation_failed')
 
         # Step 5: Set authentication cookies
         logger.info(f"[{callback_id}] Setting authentication cookies")
@@ -198,7 +209,7 @@ def google_oauth_callback():
             logger.info(f"[{callback_id}] Authentication cookies set successfully")
         except Exception as e:
             logger.error(f"[{callback_id}] Failed to set authentication cookies: {e}", exc_info=True)
-            return redirect(f"{frontend_url}/auth/error?error=oauth_failed")
+            return _error_redirect('cookie_set_failed')
 
         # Step 6: Audit logging
         logger.info(f"[{callback_id}] Recording OAuth success audit log")
@@ -232,7 +243,9 @@ def google_oauth_callback():
             'error_message': str(e)
         }, exc_info=True)
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
-        return redirect(f"{frontend_url}/auth/error?error=oauth_failed")
+        # Use a lightweight local helper to avoid nested scope issues
+        ts = int(time.time() * 1000)
+        return redirect(f"{frontend_url}/auth/error?error=oauth_failed&error_step={quote_plus('oauth_error')}&details={quote_plus('oauth_error')}&timestamp={ts}")
     except Exception as e:
         logger.error(f"[{callback_id}] Google OAuth callback unexpected error: {e}", extra={
             'callback_id': callback_id,
@@ -240,7 +253,8 @@ def google_oauth_callback():
             'error_message': str(e)
         }, exc_info=True)
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
-        return redirect(f"{frontend_url}/auth/error?error=service_error")
+        ts = int(time.time() * 1000)
+        return redirect(f"{frontend_url}/auth/error?error=service_error&error_step={quote_plus('unexpected_error')}&details={quote_plus('unexpected_error')}&timestamp={ts}")
 
 
 __all__ = ['google_oauth_bp']
