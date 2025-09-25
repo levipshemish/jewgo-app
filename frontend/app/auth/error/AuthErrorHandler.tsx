@@ -96,12 +96,17 @@ export default function AuthErrorHandler() {
             {/* Add clear session button for OAuth failures */}
             {code === 'oauth_failed' && (
               <button
-                onClick={() => {
-                  // Clear all auth cookies and redirect
-                  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.jewgo.app';
-                  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.jewgo.app';
-                  document.cookie = '_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.jewgo.app';
-                  window.location.href = '/auth/signin';
+                onClick={async () => {
+                  try {
+                    await fetch('/api/v5/auth/clear-session', {
+                      method: 'POST',
+                      credentials: 'include',
+                    });
+                  } catch (e) {
+                    console.warn('Failed to clear session via API:', e);
+                  } finally {
+                    window.location.href = '/auth/signin';
+                  }
                 }}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 w-full justify-center"
               >
