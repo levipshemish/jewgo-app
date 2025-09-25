@@ -21,7 +21,7 @@ function LoginPageContent() {
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
   const [magicLinkCooldown, setMagicLinkCooldown] = useState<number>(0);
   const [showMagicLinkModal, setShowMagicLinkModal] = useState(false);
-  const [csrfReady, setCsrfReady] = useState<boolean | null>(null);
+  const [_csrfReady, setCsrfReady] = useState<boolean | null>(null);
   const { login } = useAuth();
   const { showSuccess, showError } = useToast();
   const router = useRouter();
@@ -34,7 +34,7 @@ function LoginPageContent() {
       try {
         await postgresAuth.getCsrf();
         setCsrfReady(true);
-      } catch (e) {
+      } catch (_e) {
         setCsrfReady(false);
       }
     };
@@ -340,7 +340,7 @@ function LoginPageContent() {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
-              Enter your email address and we'll send you a secure magic link to sign in.
+              Enter your email address and we&apos;ll send you a secure magic link to sign in.
             </p>
 
             <div className="mb-4">

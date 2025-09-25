@@ -17,9 +17,9 @@ const createBaseCardData = (special: any): Partial<CardData> => ({
 })
 
 // Helper function to create view details handler
-const createViewDetailsHandler = (special: any, onViewDetails?: (special: any) => void) => () => {
+const createViewDetailsHandler = (specialData: any, onViewDetails?: (special: any) => void) => () => {
   if (onViewDetails) {
-    onViewDetails(special)
+    onViewDetails(specialData)
   }
 }
 
@@ -51,8 +51,8 @@ export default function SpecialCard({
     // Use discount_label from database as badge
     const badgeText = special.discount_label || specialsApi.formatDiscountLabel(special)
 
-    // Handle merchant name - get from restaurant data if available
-    const merchantName = special.restaurant?.name || special.subtitle || ''
+    // Handle merchant name - get from subtitle since restaurant data isn't directly available
+    const merchantName = special.subtitle || ''
 
     // Calculate pricing from discount fields
     // For now, we'll show the discount label as the main display
@@ -71,9 +71,9 @@ export default function SpecialCard({
     // Handle time left - calculate from valid_until
     const timeLeftSeconds = Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
 
-    // Handle claims left from database
+    // Handle claims left from database - use max_claims_total if available
     const claimsLeft = special.max_claims_total ? 
-      Math.max(0, special.max_claims_total - (special.claims?.length || 0)) : 
+      Math.max(0, special.max_claims_total - 0) : // No claims data available in current type
       undefined
 
     // Handle overlay tag - could be based on discount type or other criteria

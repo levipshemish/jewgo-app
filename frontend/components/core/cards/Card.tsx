@@ -363,11 +363,12 @@ const Card = memo<CardProps>(({
         {cardData.badge && (
           <div className="absolute top-3 left-3">
             <span 
-              className="absolute rounded-full shadow-md font-medium truncate text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] text-white"
+              className={cn(
+                "absolute rounded-full shadow-md font-medium truncate text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] text-white",
+                cardStyles['kosher-badge']
+              )}
               style={{
                 backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
                 isolation: 'isolate'
               }}
             >

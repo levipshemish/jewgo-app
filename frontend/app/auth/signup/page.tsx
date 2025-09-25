@@ -3,7 +3,6 @@
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { InputField } from '@/components/auth/InputField';
 import { Button } from '@/components/ui/button';
-import { AppleSignInButton } from '@/components/ui/AppleSignInButton';
 import ComingSoonModal from '@/components/ui/ComingSoonModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -220,7 +219,7 @@ function SignUpPageContent() {
                 rel="noopener noreferrer"
                 className="text-green-500 hover:text-green-600 underline"
               >
-                Jewgo's Terms of Service
+                Jewgo&apos;s Terms of Service
               </a>
               ,{" "}
               <a 

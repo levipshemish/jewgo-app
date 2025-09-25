@@ -17,7 +17,7 @@ export default function GuestPage() {
       // Ensure CSRF is available before attempting guest login
       try {
         await postgresAuth.getCsrf();
-      } catch (e) {
+      } catch (_e) {
         setError('Authentication service is temporarily unavailable. Guest sessions are disabled.');
         setIsLoading(false);
         return;
@@ -27,9 +27,9 @@ export default function GuestPage() {
       
       // Redirect to specials page after successful guest login
       router.push('/specials');
-    } catch (e: any) {
-      console.error('Guest login failed:', e);
-      setError(e.message || 'Failed to start guest session. Please try again.');
+        } catch (_e: any) {
+      console.error('Guest login failed:', _e);
+      setError(_e.message || 'Failed to start guest session. Please try again.');
     }
 
     setIsLoading(false);
