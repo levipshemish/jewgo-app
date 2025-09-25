@@ -42,6 +42,16 @@ groups:
           summary: "Low application throughput"
           description: "Request rate is {{ $value }}/sec, below normal threshold"
 
+      - alert: DistanceSortFallback
+        expr: increase(distance_sort_fallback_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "Distance sorting fallback detected"
+          description: "{{ $value }} fallback events in the last 5 minutes. PostGIS distance ordering may be degraded."
+
   - name: jewgo_database
     rules:
       # Database Alerts

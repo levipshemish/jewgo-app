@@ -6,6 +6,8 @@ services:
     container_name: jewgo_backend
     env_file:
       - ./.env
+    environment:
+      ENABLE_GEO_DEBUG_HEADER: ${ENABLE_GEO_DEBUG_HEADER:-false}
     ports:
       - "5000:5000"
     volumes:

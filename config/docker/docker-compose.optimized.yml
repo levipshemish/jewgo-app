@@ -67,6 +67,7 @@ services:
       
       # Monitoring
       SENTRY_DSN: ${SENTRY_DSN}
+      ENABLE_GEO_DEBUG_HEADER: ${ENABLE_GEO_DEBUG_HEADER:-false}
       
       # AWS (for backups)
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}

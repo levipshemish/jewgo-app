@@ -20,7 +20,23 @@ from database.base_repository import BaseRepository
 from database.unified_connection_manager import UnifiedConnectionManager
 from utils.logging_config import get_logger
 
+try:  # pragma: no cover - optional dependency
+    from prometheus_client import Counter
+except ImportError:  # pragma: no cover - metrics optional in some environments
+    Counter = None
+
 logger = get_logger(__name__)
+
+
+DISTANCE_SORT_FALLBACK_COUNTER = (
+    Counter(
+        'distance_sort_fallback_total',
+        'Total number of times distance sorting fell back to non-distance ordering',
+        ['entity_type'],
+    )
+    if Counter is not None
+    else None
+)
 
 
 class Geography(UserDefinedType):
@@ -1217,9 +1233,20 @@ class EntityRepositoryV5(BaseRepository):
                 distance_expr = self._build_distance_expression(model_class, filters['latitude'], filters['longitude'])
                 if distance_expr is not None:
                     return query.order_by(distance_expr.asc(), model_class.id.asc())
-                logger.warning("Distance sorting requested but distance expression unavailable; falling back to created_at")
+                entity_type_name = getattr(model_class, '__name__', str(model_class))
+                logger.error(
+                    "Distance sorting fallback triggered; distance expression unavailable",
+                    entity_type=entity_type_name,
+                    filters=filters,
+                )
+                if DISTANCE_SORT_FALLBACK_COUNTER is not None:
+                    DISTANCE_SORT_FALLBACK_COUNTER.labels(entity_type=entity_type_name).inc()
             else:
-                logger.info("Distance sorting requested without coordinates; falling back to created_at")
+                logger.warning(
+                    "Distance sorting requested without coordinates; falling back to created_at",
+                    entity_type=getattr(model_class, '__name__', str(model_class)),
+                    filters=filters,
+                )
             primary_field = getattr(model_class, 'created_at')
             secondary_field = getattr(model_class, 'id')
             return query.order_by(desc(primary_field), desc(secondary_field))

@@ -30,6 +30,7 @@ from utils.cursor_v5 import CursorV5Manager
 from utils.etag_v5 import ETagV5Manager
 
 logger = get_logger(__name__)
+DEBUG_GEO_HEADER_ENABLED = os.environ.get('ENABLE_GEO_DEBUG_HEADER', 'false').lower() == 'true'
 
 # Create blueprint using the factory
 api_v5 = BlueprintFactoryV5.create_blueprint(
@@ -336,7 +337,10 @@ def get_entities(entity_type: str):
         response = jsonify(result)
         
         # Only allow debug information in development
-        if os.environ.get('FLASK_ENV') != 'production' and request.args.get('debug_geo', 'false').lower() == 'true':
+        if (
+            (os.environ.get('FLASK_ENV') != 'production' or DEBUG_GEO_HEADER_ENABLED)
+            and request.args.get('debug_geo', 'false').lower() == 'true'
+        ):
             try:
                 repo = getattr(service, 'repository', None)
                 postgis_available = getattr(repo, '_postgis_available', None)
