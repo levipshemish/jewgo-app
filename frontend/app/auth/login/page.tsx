@@ -165,16 +165,16 @@ function LoginPageContent() {
 
         {/* Main Content Card */}
         <div className="flex-1 flex items-center justify-center px-4 pb-8">
-          <div className="w-full max-w-md bg-white rounded-[64px] shadow-xl p-10 md:p-12">
+          <div className="w-full max-w-md bg-white rounded-[64px] shadow-xl p-8 md:p-10">
             {/* Form Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Sign in to your account</h1>
               <p className="text-green-400 text-sm">
                 Or <Link href="/auth/signup" className="underline">create a new account</Link>
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                 <input
@@ -182,7 +182,7 @@ function LoginPageContent() {
                   placeholder="Enter your email address"
                   value={formData.identifier}
                   onChange={(e) => handleInputChange("identifier", e.target.value)}
-                  className="w-full px-5 py-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  className="w-full px-4 py-3.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
                 />
                 {errors.identifier && (
                   <p className="text-red-500 text-sm mt-1">{errors.identifier}</p>
@@ -197,7 +197,7 @@ function LoginPageContent() {
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="w-full px-5 py-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                    className="w-full px-4 py-3.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
                   />
                   <button
                     type="button"
@@ -217,27 +217,27 @@ function LoginPageContent() {
                 )}
               </div>
 
-              {errors.general && (
-                <div className="text-sm text-red-500 text-center">{errors.general}</div>
-              )}
-
-              <div className="text-right">
+              <div className="mt-1">
                 <Link href="/auth/forgot-password" className="text-green-400 hover:text-green-500 text-sm">
                   Forgot your password?
                 </Link>
               </div>
 
+              {errors.general && (
+                <div className="text-sm text-red-500 text-center">{errors.general}</div>
+              )}
+
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-green-400 hover:bg-green-500 disabled:bg-gray-400 text-white font-medium py-4 rounded-full transition-colors"
+                className="w-full bg-green-400 hover:bg-green-500 disabled:bg-gray-400 text-white font-medium py-3.5 rounded-full transition-colors"
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </button>
             </form>
 
             {/* OAuth Section */}
-            <div className="mt-8">
+              <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300" />
@@ -247,7 +247,7 @@ function LoginPageContent() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-3">
+              <div className="mt-5 space-y-3">
                 {/* Google OAuth */}
                 <button
                   onClick={() => {
@@ -259,7 +259,7 @@ function LoginPageContent() {
                     const url = `${backendUrl.replace(/\/$/, '')}/api/v5/auth/google/start?returnTo=${encodeURIComponent(redirectTo)}`;
                     window.location.href = url;
                   }}
-                  className="w-full flex items-center justify-center space-x-3 px-5 py-4 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                   title="Sign up with Google"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -274,7 +274,7 @@ function LoginPageContent() {
                 {/* Apple OAuth */}
                 <button
                   onClick={() => setShowAppleComingSoon(true)}
-                  className="w-full flex items-center justify-center space-x-3 px-5 py-4 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                   title="Sign up with Apple"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -287,7 +287,7 @@ function LoginPageContent() {
                 <button
                   onClick={() => setShowMagicLinkModal(true)}
                   disabled={magicLinkCooldown > 0}
-                  className="w-full flex items-center justify-center space-x-3 px-5 py-4 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -301,7 +301,7 @@ function LoginPageContent() {
 
               {/* Guest Option */}
               <div className="mt-6 text-center">
-                <Link href="/auth/guest" className="text-gray-600 hover:text-gray-800 text-sm">
+                <Link href="/auth/guest" className="text-green-400 hover:text-green-500 text-sm">
                   Continue as guest
                 </Link>
               </div>
