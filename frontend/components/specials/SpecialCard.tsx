@@ -48,43 +48,43 @@ export default function SpecialCard({
   const cardData: CardData = useMemo(() => {
     const baseData = createBaseCardData(special)
     
-    // Handle badge structure from DealGridCard interface
-    const badge = (special as unknown as { badge?: { text?: string; type?: string } })?.badge
-    const badgeText = badge?.text || specialsApi.formatDiscountLabel(special)
+    // Use discount_label from database as badge
+    const badgeText = special.discount_label || specialsApi.formatDiscountLabel(special)
 
-    // Handle merchant name
-    const merchantName = (special as unknown as { merchantName?: string; merchant_name?: string })
-      ?.merchantName
-      || (special as unknown as { merchant_name?: string })?.merchant_name
+    // Handle merchant name - get from restaurant data if available
+    const merchantName = special.restaurant?.name || special.subtitle || ''
 
-    // Handle price structure from DealGridCard interface
-    const price = (special as unknown as { 
-      price?: { 
-        original?: number | string; 
-        sale?: number | string; 
-        currency?: string;
-      } 
-    })?.price
-    const priceData = price || {
-      original: (special as unknown as { price_original?: number | string })?.price_original,
-      sale: (special as unknown as { price_sale?: number | string })?.price_sale,
+    // Calculate pricing from discount fields
+    // For now, we'll show the discount label as the main display
+    // In a real implementation, you'd need original prices stored somewhere
+    const priceData = {
+      // Since we don't have original/sale prices in the database,
+      // we'll show the discount information instead
+      discount: {
+        type: special.discount_type,
+        value: special.discount_value,
+        label: special.discount_label
+      },
       currency: 'USD'
     }
 
-    // Handle time left - prefer timeLeftSeconds from interface, fallback to calculation
-    const timeLeftSeconds = (special as unknown as { timeLeftSeconds?: number })?.timeLeftSeconds
-      ?? Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
+    // Handle time left - calculate from valid_until
+    const timeLeftSeconds = Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
 
-    // Handle claims left
-    const claimsLeft = (special as unknown as { claimsLeft?: number })?.claimsLeft
+    // Handle claims left from database
+    const claimsLeft = special.max_claims_total ? 
+      Math.max(0, special.max_claims_total - (special.claims?.length || 0)) : 
+      undefined
 
-    // Handle overlay tag
-    const overlayTag = (special as unknown as { overlayTag?: string })?.overlayTag
+    // Handle overlay tag - could be based on discount type or other criteria
+    const overlayTag = special.discount_type === 'percentage' ? 'Discount' : 
+                      special.discount_type === 'fixed_amount' ? 'Save' : 
+                      special.discount_type === 'bogo' ? 'BOGO' : undefined
 
     return {
       ...baseData,
       badge: badgeText,
-      subtitle: merchantName || special.subtitle || '',
+      subtitle: merchantName,
       price: priceData,
       timeLeftSeconds,
       claimsLeft,

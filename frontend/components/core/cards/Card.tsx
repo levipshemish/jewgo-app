@@ -29,6 +29,12 @@ export interface CardData {
     original?: number | string;
     sale?: number | string;
     currency?: string;
+    // Discount-based pricing for specials
+    discount?: {
+      type: string;
+      value: number;
+      label: string;
+    };
   };
   timeLeftSeconds?: number;
   claimsLeft?: number;
@@ -142,6 +148,10 @@ const Card = memo<CardProps>(({
   // Price formatting for specials
   const salePrice = formatCurrency(cardData.price?.sale, cardData.price?.currency)
   const originalPrice = formatCurrency(cardData.price?.original, cardData.price?.currency)
+  
+  // Handle discount-based pricing for specials
+  const discountInfo = cardData.price?.discount
+  const discountLabel = discountInfo?.label || ''
 
   // Get safe image URL using existing utility
   const heroImageUrl = useMemo(() => {
@@ -473,11 +483,18 @@ const Card = memo<CardProps>(({
         {cardData.price && (
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-2">
-              {salePrice && (
-                <span className="font-semibold text-green-600 text-sm">{salePrice}</span>
-              )}
-              {originalPrice && originalPrice !== salePrice && (
-                <span className="text-xs text-gray-500 line-through">{originalPrice}</span>
+              {/* Show discount-based pricing for specials */}
+              {discountInfo ? (
+                <span className="font-semibold text-green-600 text-sm">{discountLabel}</span>
+              ) : (
+                <>
+                  {salePrice && (
+                    <span className="font-semibold text-green-600 text-sm">{salePrice}</span>
+                  )}
+                  {originalPrice && originalPrice !== salePrice && (
+                    <span className="text-xs text-gray-500 line-through">{originalPrice}</span>
+                  )}
+                </>
               )}
             </div>
             {cardData.ctaText && (
