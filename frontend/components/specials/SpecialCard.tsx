@@ -72,19 +72,14 @@ export default function SpecialCard({
       Math.max(0, special.max_claims_total - 0) : // No claims data available in current type
       undefined
 
-    // Handle overlay tag - based on discount type (real DB field)
-    const overlayTag = special.discount_type === 'percentage' ? 'Discount' : 
-                      special.discount_type === 'fixed_amount' ? 'Save' : 
-                      special.discount_type === 'bogo' ? 'BOGO' : undefined
-
     return {
       ...baseData,
       badge: badgeText,
-      subtitle: special.discount_label || '', // Use discount label as subtitle
+      subtitle: '', // No subtitle - price info goes in price section
       price: priceData,
       timeLeftSeconds,
       claimsLeft,
-      overlayTag,
+      overlayTag: undefined, // Don't show overlay tag - only show discount label in badge
       ctaText: 'Claim',
       showHeart: true, // Enable heart for specials
     } as CardData

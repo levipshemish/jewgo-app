@@ -14,13 +14,11 @@ export function AuthLayout({ children, title, subtitle, showLogo = true }: AuthL
         {showLogo && (
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center space-x-1">
-                <span className="text-4xl font-bold text-white">Jew</span>
-                <div className="bg-green-500 rounded-2xl p-2 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-900">g</span>
-                </div>
-                <span className="text-4xl font-bold text-white">o</span>
-              </div>
+              <img 
+                src="/logo.svg" 
+                alt="Jewgo" 
+                className="h-16 w-auto"
+              />
             </div>
           </div>
         )}

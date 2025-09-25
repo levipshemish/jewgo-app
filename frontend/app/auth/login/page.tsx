@@ -156,10 +156,11 @@ function LoginPageContent() {
       <div className="min-h-screen bg-gray-800 flex flex-col">
         {/* Logo Section */}
         <div className="flex justify-center pt-8 pb-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-white text-2xl font-bold">Jew</span>
-            <span className="text-green-500 text-2xl font-bold">go</span>
-          </div>
+          <img 
+            src="/logo-dark.svg" 
+            alt="Jewgo" 
+            className="h-12 w-auto"
+          />
         </div>
 
         {/* Main Content Card */}

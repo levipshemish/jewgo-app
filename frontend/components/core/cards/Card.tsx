@@ -481,22 +481,15 @@ const Card = memo<CardProps>(({
           </div>
         </div>
 
-        {/* Subtitle - Price/Discount info for specials */}
-        {cardData.subtitle && (
-          <div className="mt-1">
-            <span className="text-xs font-bold text-red-600">
-              {cardData.subtitle ? cardData.subtitle.substring(0, 15) + (cardData.subtitle.length > 15 ? '...' : '') : ''}
-            </span>
-          </div>
-        )}
-
         {/* Price + Claim row */}
         {cardData.price && (
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-2">
               {/* Show discount-based pricing for specials */}
               {discountInfo ? (
-                <span className="font-semibold text-green-600 text-sm">{discountLabel}</span>
+                <span className="text-xs font-bold text-red-600">
+                  {discountLabel ? discountLabel.substring(0, 15) + (discountLabel.length > 15 ? '...' : '') : ''}
+                </span>
               ) : (
                 <>
                   {salePrice && (
