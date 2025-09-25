@@ -157,7 +157,7 @@ function LoginPageContent() {
         {/* Logo Section */}
         <div className="flex justify-center pt-8 pb-4 px-4">
           <img 
-            src="/logo-dark.svg" 
+            src="/logo.svg" 
             alt="Jewgo" 
             className="w-full max-w-md h-auto"
           />
