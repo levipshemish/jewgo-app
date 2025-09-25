@@ -110,6 +110,7 @@ def google_oauth_callback():
                 f"&error_step={quote_plus(step)}"
                 f"&details={quote_plus(step)}"
                 f"&timestamp={ts}"
+                f"&cbid={quote_plus(callback_id)}"
             )
         
         logger.info(f"[{callback_id}] OAuth callback parameters", extra={
@@ -245,7 +246,7 @@ def google_oauth_callback():
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
         # Use a lightweight local helper to avoid nested scope issues
         ts = int(time.time() * 1000)
-        return redirect(f"{frontend_url}/auth/error?error=oauth_failed&error_step={quote_plus('oauth_error')}&details={quote_plus('oauth_error')}&timestamp={ts}")
+        return redirect(f"{frontend_url}/auth/error?error=oauth_failed&error_step={quote_plus('oauth_error')}&details={quote_plus('oauth_error')}&timestamp={ts}&cbid={quote_plus(callback_id)}")
     except Exception as e:
         logger.error(f"[{callback_id}] Google OAuth callback unexpected error: {e}", extra={
             'callback_id': callback_id,
@@ -254,7 +255,7 @@ def google_oauth_callback():
         }, exc_info=True)
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
         ts = int(time.time() * 1000)
-        return redirect(f"{frontend_url}/auth/error?error=service_error&error_step={quote_plus('unexpected_error')}&details={quote_plus('unexpected_error')}&timestamp={ts}")
+        return redirect(f"{frontend_url}/auth/error?error=service_error&error_step={quote_plus('unexpected_error')}&details={quote_plus('unexpected_error')}&timestamp={ts}&cbid={quote_plus(callback_id)}")
 
 
 __all__ = ['google_oauth_bp']
