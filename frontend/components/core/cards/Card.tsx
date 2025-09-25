@@ -364,7 +364,7 @@ const Card = memo<CardProps>(({
           <div className="absolute top-3 left-3">
             <span 
               className={cn(
-                "absolute rounded-full shadow-md font-medium truncate text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] text-white",
+                "inline-block rounded-full shadow-md font-medium text-xs px-2.5 py-1.5 text-white whitespace-nowrap",
                 cardStyles['kosher-badge']
               )}
               style={{
@@ -381,7 +381,7 @@ const Card = memo<CardProps>(({
         {cardData.overlayTag && (
           <div className="absolute top-3 right-3">
             <span 
-              className="absolute rounded-full shadow-md font-medium truncate text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] text-white"
+              className="inline-block rounded-full shadow-md font-medium text-xs px-2.5 py-1.5 text-white whitespace-nowrap"
               style={{
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 backdropFilter: 'blur(8px)',
