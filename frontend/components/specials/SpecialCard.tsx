@@ -48,40 +48,22 @@ export default function SpecialCard({
   const cardData: CardData = useMemo(() => {
     const baseData = createBaseCardData(special)
     
-    // Use discount_label from database as badge
-    const badgeText = special.discount_label || specialsApi.formatDiscountLabel(special)
-
-    // Remove merchant name - subtitle should not be used for merchant name
-    // The price section will show the discount information instead
-
-    // Calculate pricing from discount fields - using real database fields
-    const priceData = {
-      discount: {
-        type: special.discount_type,        // Real DB field: discount_type
-        value: special.discount_value,      // Real DB field: discount_value  
-        label: special.discount_label      // Real DB field: discount_label
-      },
-      currency: 'USD'
-    }
-
-    // Handle time left - calculate from valid_until (real DB field)
-    const timeLeftSeconds = Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
-
-    // Handle claims left from database - use max_claims_total (real DB field)
-    const claimsLeft = special.max_claims_total ? 
-      Math.max(0, special.max_claims_total - 0) : // No claims data available in current type
-      undefined
+    // Format discount info for subtitle (price range equivalent)
+    const discountText = special.discount_label || specialsApi.formatDiscountLabel(special)
+    
+    // Format time remaining for badge (rating equivalent)
+    const timeRemaining = specialsApi.getTimeRemaining(special)
+    const timeText = timeRemaining.isExpired ? 'Expired' : 
+                    timeRemaining.total <= 0 ? 'Ending Soon' :
+                    timeRemaining.hours > 0 ? `${timeRemaining.hours}h left` :
+                    timeRemaining.minutes > 0 ? `${timeRemaining.minutes}m left` : 'Ending Soon'
 
     return {
       ...baseData,
-      badge: badgeText,
-      subtitle: '', // No subtitle - price info goes in price section
-      price: priceData,
-      timeLeftSeconds,
-      claimsLeft,
-      overlayTag: undefined, // Don't show overlay tag - only show discount label in badge
-      ctaText: 'Claim',
-      showHeart: true, // Enable heart for specials
+      badge: timeText, // Time remaining in badge position (like rating)
+      subtitle: discountText, // Discount info in subtitle position (like price range)
+      additionalText: 'Claim', // CTA text in additionalText position (like distance)
+      showHeart: true,
     } as CardData
   }, [special, now])
 

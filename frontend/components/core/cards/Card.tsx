@@ -1,5 +1,59 @@
 'use client';
 
+/**
+ * CARD COMPONENT - UNIVERSAL UTILITY
+ * 
+ * This is a utility component that works across ALL pages (eatery, specials, shul, mikvah, marketplace).
+ * It uses a consistent field mapping system to display different types of content.
+ * 
+ * LAYOUT STRUCTURE:
+ * ┌─────────────────────────────────────┐
+ * │  [Image Container]                  │
+ * │  ┌─────────────────────────────────┐ │
+ * │  │  [Image]                       │ │
+ * │  │  [Image Tag] (top-left)         │ │
+ * │  │                    [Heart] (bottom-right) │ │
+ * │  └─────────────────────────────────┘ │
+ * └─────────────────────────────────────┘
+ * ┌─────────────────────────────────────┐
+ * │  Row 1: Title + Badge               │
+ * │  Row 2: Subtitle + AdditionalText   │
+ * └─────────────────────────────────────┘
+ * 
+ * FIELD MAPPING BY PAGE TYPE:
+ * 
+ * EATERY PAGE:
+ * - title: Restaurant name
+ * - badge: Rating (4.5)
+ * - subtitle: Price range ($$$)
+ * - additionalText: Distance (2.3mi)
+ * - imageTag: Kosher category
+ * 
+ * SPECIALS PAGE:
+ * - title: Special title
+ * - badge: Time remaining (2h left)
+ * - subtitle: Discount info (50% OFF)
+ * - additionalText: CTA text (Claim)
+ * - imageTag: Discount label
+ * 
+ * SHUL/MIKVAH PAGES:
+ * - title: Location name
+ * - badge: Rating or status
+ * - subtitle: Address or description
+ * - additionalText: Distance or hours
+ * - imageTag: Category or type
+ * 
+ * MARKETPLACE PAGE:
+ * - title: Product name
+ * - badge: Price or discount
+ * - subtitle: Description
+ * - additionalText: Seller or location
+ * - imageTag: Category
+ * 
+ * IMPORTANT: This component should NEVER be modified to add page-specific logic.
+ * All pages must use the same field mapping system for consistency.
+ */
+
 import React, { useState, useCallback, useMemo, memo } from 'react';
 import { Star, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -13,23 +67,24 @@ import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 
 // TypeScript Interfaces
 export interface CardData {
+  // Core fields - used by ALL pages
   id: string;
   imageUrl?: string;
-  imageTag?: string;
-  title: string;
-  badge?: string | null;
-  subtitle?: string;
-  additionalText?: string | null;
+  imageTag?: string;        // Top-left overlay (kosher category, discount label, etc.)
+  title: string;            // Main title (restaurant name, special title, etc.)
+  badge?: string | null;    // Top-right badge (rating, time remaining, price, etc.)
+  subtitle?: string;        // Row 2 left (price range, discount info, address, etc.)
+  additionalText?: string | null; // Row 2 right (distance, CTA, hours, etc.)
   showHeart?: boolean;
   isLiked?: boolean;
-  kosherCategory?: string;
-  city?: string;
-  // Specials-specific fields
+  kosherCategory?: string;  // Legacy field - use imageTag instead
+  city?: string;            // Legacy field - use subtitle instead
+  
+  // Legacy specials fields - DO NOT USE, use standard fields instead
   price?: {
     original?: number | string;
     sale?: number | string;
     currency?: string;
-    // Discount-based pricing for specials
     discount?: {
       type: string;
       value: number;
@@ -452,9 +507,6 @@ const Card = memo<CardProps>(({
                 <span>{timeLeftLabel}</span>
               </>
             )}
-            {!cardData.timeLeftSeconds && cardData.additionalText && (
-              <span>{cardData.additionalText}</span>
-            )}
             {/* Only show badge in title area if it's not a specials card (badge is on image for specials) */}
             {cardData.badge && !cardData.price && (
               <div
@@ -480,6 +532,20 @@ const Card = memo<CardProps>(({
             )}
           </div>
         </div>
+
+        {/* Subtitle + Additional Text row */}
+        {(cardData.subtitle || cardData.additionalText) && (
+          <div className="flex items-center justify-between mt-1 min-h-[14px] w-full">
+            <span className="text-xs text-gray-600 flex-1 min-w-0">
+              {cardData.subtitle}
+            </span>
+            {cardData.additionalText && (
+              <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                {cardData.additionalText}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Price + Claim row */}
         {cardData.price && (
