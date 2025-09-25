@@ -63,7 +63,6 @@ export default function SpecialCard({
       badge: timeText, // Time remaining in badge position (like rating)
       subtitle: discountText, // Discount info in subtitle position (like price range)
       additionalText: 'Claim', // CTA text in additionalText position (like distance)
-      imageTag: special.discount_label, // Discount label as image tag (like kosher category)
       showHeart: true,
     } as CardData
   }, [special, now])

@@ -507,9 +507,6 @@ const Card = memo<CardProps>(({
                 <span>{timeLeftLabel}</span>
               </>
             )}
-            {!cardData.timeLeftSeconds && cardData.additionalText && !cardData.subtitle && (
-              <span className="mr-2">{cardData.additionalText}</span>
-            )}
             {/* Only show badge in title area if it's not a specials card (badge is on image for specials) */}
             {cardData.badge && !cardData.price && (
               <div
