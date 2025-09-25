@@ -51,32 +51,28 @@ export default function SpecialCard({
     // Use discount_label from database as badge
     const badgeText = special.discount_label || specialsApi.formatDiscountLabel(special)
 
-    // Handle merchant name - get from subtitle since restaurant data isn't directly available
-    const merchantName = special.subtitle || ''
+    // Remove merchant name - subtitle should not be used for merchant name
+    // The price section will show the discount information instead
 
-    // Calculate pricing from discount fields
-    // For now, we'll show the discount label as the main display
-    // In a real implementation, you'd need original prices stored somewhere
+    // Calculate pricing from discount fields - using real database fields
     const priceData = {
-      // Since we don't have original/sale prices in the database,
-      // we'll show the discount information instead
       discount: {
-        type: special.discount_type,
-        value: special.discount_value,
-        label: special.discount_label
+        type: special.discount_type,        // Real DB field: discount_type
+        value: special.discount_value,      // Real DB field: discount_value  
+        label: special.discount_label      // Real DB field: discount_label
       },
       currency: 'USD'
     }
 
-    // Handle time left - calculate from valid_until
+    // Handle time left - calculate from valid_until (real DB field)
     const timeLeftSeconds = Math.max(0, Math.floor((new Date(special.valid_until).getTime() - now) / 1000))
 
-    // Handle claims left from database - use max_claims_total if available
+    // Handle claims left from database - use max_claims_total (real DB field)
     const claimsLeft = special.max_claims_total ? 
       Math.max(0, special.max_claims_total - 0) : // No claims data available in current type
       undefined
 
-    // Handle overlay tag - could be based on discount type or other criteria
+    // Handle overlay tag - based on discount type (real DB field)
     const overlayTag = special.discount_type === 'percentage' ? 'Discount' : 
                       special.discount_type === 'fixed_amount' ? 'Save' : 
                       special.discount_type === 'bogo' ? 'BOGO' : undefined
@@ -84,7 +80,7 @@ export default function SpecialCard({
     return {
       ...baseData,
       badge: badgeText,
-      subtitle: merchantName,
+      subtitle: '', // No subtitle - price info goes in price section
       price: priceData,
       timeLeftSeconds,
       claimsLeft,

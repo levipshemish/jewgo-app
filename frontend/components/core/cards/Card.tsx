@@ -433,6 +433,7 @@ const Card = memo<CardProps>(({
           animation: isScrolling ? 'none' : undefined
         }}
       >
+        {/* Title + Timer row */}
         <div className="flex justify-between items-center gap-1 mb-0 min-h-[16px] w-full">
           <h3 
             className={cn(
@@ -480,7 +481,7 @@ const Card = memo<CardProps>(({
           </div>
         </div>
 
-        {/* Specials-specific content */}
+        {/* Price + Claim row */}
         {cardData.price && (
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-2">
